@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "common.h"
 
+#include <strsafe.h>
 
 #include <stdlib.h>
 #include <assert.h>
@@ -43,8 +44,8 @@ unsigned int Shutdown_Soft(void)
   pf_shutdown_callback *beg = g_shutdown_callbacks.contents,
                        *cur = beg+cnt;
 
-  static int lock = 0;
-  assert( lock == 0 ); // One of the logging functions generated a log message
+  static int lock = 0;// Avoid recursion
+  assert( lock == 0 ); 
   lock = 1;
 
   while( cur-- > beg )
@@ -161,8 +162,7 @@ void Reporting_Setup_Log_To_File( FILE *file )
 // ------------------------
 //
 
-#include <windows.h>
-#include <strsafe.h>
+
 
 void ReportLastWindowsError(void) 
 { 

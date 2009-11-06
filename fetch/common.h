@@ -52,6 +52,8 @@ void Reporting_Setup_Log_To_File( FILE *file );
 
 void ReportLastWindowsError(void);
 
+typedef void (*pf_reporter)(const char* fmt, ...);
+
 void error  (const char* fmt, ...);
 void warning(const char* fmt, ...);
 void debug  (const char* fmt, ...);

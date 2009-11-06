@@ -209,7 +209,6 @@ LRESULT CALLBACK Logger_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
     }
     break;
-
   case WM_SIZE:
     { RECT rect;
       GetClientRect(hWnd, &rect);
@@ -227,7 +226,9 @@ LRESULT CALLBACK Logger_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		  switch (wmId)
 	    {
 	    case IDM_LOG_CLOSE:
-        ShowWindow( hWnd, FALSE );
+        { debug("IDM_LOG_CLOSE\r\n");
+          ShowWindow( hWnd, FALSE );
+        }
 		    break;
       case IDM_LOG_CLEAR:
         { debug("IDM_LOG_CLEAR\r\n");

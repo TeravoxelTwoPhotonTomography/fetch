@@ -21,6 +21,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
+			InheritedPropertySheets=".\NIDAQmx.vsprops;.\NIScope.vsprops;.\DisableWarnings.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
@@ -92,6 +93,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
+			InheritedPropertySheets=".\NIDAQmx.vsprops;.\NIScope.vsprops;.\DisableWarnings.vsprops"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
@@ -175,11 +177,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\device-digitizer.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\fetch.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\logger.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\microscope.cpp"
 				>
 			</File>
 			<File
@@ -202,6 +212,10 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath=".\util-niscope.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -213,11 +227,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\device-digitizer.h"
+				>
+			</File>
+			<File
 				RelativePath=".\fetch.h"
 				>
 			</File>
 			<File
 				RelativePath=".\logger.h"
+				>
+			</File>
+			<File
+				RelativePath=".\microscope.h"
 				>
 			</File>
 			<File
@@ -230,6 +252,10 @@
 			</File>
 			<File
 				RelativePath=".\targetver.h"
+				>
+			</File>
+			<File
+				RelativePath=".\util-niscope.h"
 				>
 			</File>
 		</Filter>

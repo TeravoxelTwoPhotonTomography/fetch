@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "fetch.h"
 #include "logger.h"
+#include "microscope.h"
 
 #define MAX_LOADSTRING 100
 
@@ -20,6 +21,16 @@ BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
+void ApplicationStart(HINSTANCE hInstance)
+{
+  Logger_RegisterClass(hInstance);
+  g_hwndLogger = Logger_InitInstance( hInstance, SW_HIDE );
+  
+  Microscope_Application_Start(); // Registers devices and
+                                  // Puts microscope into default holding state
+
+}
+
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPTSTR    lpCmdLine,
@@ -28,7 +39,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
- 	// TODO: Place code here.
 	MSG msg;
 	HACCEL hAccelTable;
 
@@ -46,8 +56,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	{
 		return FALSE;
 	}
-  Logger_RegisterClass(hInstance);
-  g_hwndLogger = Logger_InitInstance( hInstance, SW_HIDE );
+
+  ApplicationStart(hInstance);
 
 	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_FETCH));
 
@@ -60,8 +70,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 			DispatchMessage(&msg);
 		}
 	}
-
-	return (int) msg.wParam;
+  
+  return (int) Shutdown_Soft() | msg.wParam;
 }
 
 
@@ -117,7 +127,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hInst = hInstance; // Store instance handle in our global variable
 
    hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
+      CW_USEDEFAULT, 0, 320, 45, NULL, NULL, hInstance, NULL);
 
    if (!hWnd)
    {
