@@ -173,11 +173,19 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\asynq.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\common.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\device-digitizer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\device-galvo-mirror.cpp"
 				>
 			</File>
 			<File
@@ -223,11 +231,19 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\asynq.h"
+				>
+			</File>
+			<File
 				RelativePath=".\common.h"
 				>
 			</File>
 			<File
 				RelativePath=".\device-digitizer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\device-galvo-mirror.h"
 				>
 			</File>
 			<File
@@ -252,6 +268,10 @@
 			</File>
 			<File
 				RelativePath=".\targetver.h"
+				>
+			</File>
+			<File
+				RelativePath=".\util-nidaqmx.h"
 				>
 			</File>
 			<File

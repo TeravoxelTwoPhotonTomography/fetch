@@ -10,6 +10,55 @@
 #include <stdlib.h>
 #include <string.h>
 
+//
+// Utility functions
+//
+inline u8 _next_pow2_u8(u8 v)
+{ v--;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;  
+  v++;
+  return v;
+}
+
+inline u32 _next_pow2_u32(u32 v)
+{ v--;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+  v++;
+  return v;
+}
+
+inline u64 _next_pow2_u64(u64 v)
+{ v--;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+  v |= v >> 32;
+  v++;
+  return v;
+}
+
+inline size_t _next_pow2_size_t(size_t v)
+{ v--;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+#ifdef _WIN64
+  v |= v >> 32;
+#endif
+  v++;
+  return v;
+}
+
 // --------
 // Shutdown
 // --------
@@ -355,6 +404,15 @@ void RequestStorage( void** array, size_t *nelem, size_t request, size_t bytes_p
   Guarded_Realloc( array, *nelem * bytes_per_elem, "Resize" );
 }
 
+void RequestStorageLog2( void** array, size_t *nelem, size_t request, size_t bytes_per_elem, const char *msg )
+{ size_t n = request+1;
+  if( n <= *nelem ) return;
+  *nelem = _next_pow2_size_t(n);
+#ifdef DEBUG_REQUEST_STORAGE
+  printf("REQUEST %7d bytes (%7d items) above current %7d bytes by %s\n",request * bytes_per_elem, request, *nelem * bytes_per_elem, msg);
+#endif
+  Guarded_Realloc( array, *nelem * bytes_per_elem, "Resize" );
+}
 
 //
 // Container types

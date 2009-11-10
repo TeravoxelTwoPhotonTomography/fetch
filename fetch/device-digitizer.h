@@ -2,8 +2,11 @@
 
 #include "util-niscope.h"
 
-#define NI5105_MAX_NUM_CHANNELS 8
-#define NI5105_MAX_SAMPLE_RATE  60000000.0
+//
+// Device configuration 
+//    definitions
+//    defaults
+//
 
 #define DIGITIZER_MAX_NUM_CHANNELS NI5105_MAX_NUM_CHANNELS
 #define DIGITIZER_MAX_SAMPLE_RATE  NI5105_MAX_SAMPLE_RATE
@@ -59,7 +62,24 @@ typedef struct _digitizer_config
                         {"7\0",2.0,NISCOPE_VAL_DC,VI_FALSE}}\
                        })
 
+//
+// Device interface
+//
+
 void         Digitizer_Init   (void);
 unsigned int Digitizer_Close  (void);
 unsigned int Digitizer_Off    (void);
 unsigned int Digitizer_Hold   (void);
+
+//
+// Windows
+//    testing utilities
+//
+
+
+#define IDM_DIGITIZER      WM_APP+1
+#define IDM_DIGITIZER_OFF  IDM_DIGITIZER+1
+#define IDM_DIGITIZER_HOLD IDM_DIGITIZER+2
+
+void             Digitizer_Append_Menu  ( HMENU hmenu );
+LRESULT CALLBACK Digitizer_Menu_Handler ( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);

@@ -5,6 +5,7 @@
 #include "fetch.h"
 #include "logger.h"
 #include "microscope.h"
+#include "device-digitizer.h"
 
 #define MAX_LOADSTRING 100
 
@@ -126,11 +127,18 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    hInst = hInstance; // Store instance handle in our global variable
 
-   hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, 320, 45, NULL, NULL, hInstance, NULL);
 
+   hWnd = CreateWindow(szWindowClass, 
+                       szTitle, 
+                       WS_OVERLAPPEDWINDOW,
+                       CW_USEDEFAULT, 0, 
+                       320, 45, 
+                       NULL,         // parent
+                       NULL,         // menu
+                       hInstance,    // instance
+                       NULL);        // lparam
    if (!hWnd)
-   {
+   {  ReportLastWindowsError();
       return FALSE;
    }
 
@@ -158,10 +166,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
+  case WM_CREATE:
+    { HMENU menu = GetMenu( hWnd );
+      Guarded_Assert_WinErr( menu );
+      Digitizer_Append_Menu( menu );
+    }
+    break;
+
 	case WM_COMMAND:
 		wmId    = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
 		// Parse the menu selections:
+    if( !Digitizer_Menu_Handler(hWnd, message, wParam, lParam) )
+      break;
 		switch (wmId)
 		{
 		case IDM_ABOUT:
@@ -180,6 +197,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
 		break;
+
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
 		// TODO: Add any drawing code here...

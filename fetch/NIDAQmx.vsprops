@@ -1,7 +1,16 @@
-<?xml version="1.0"?>
-<VisualStudioPropertySheet 
-	ProjectType="Visual C++" 
-	Version="8.00" 
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
 	Name="NIDAQmx"
 	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(ProgramFiles)\National Instruments\Shared\ExternalCompilerSupport\include&quot;"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		AdditionalDependencies="nidaqmx.lib"
+		AdditionalLibraryDirectories="&quot;$(ProgramFiles)\National Instruments\Shared\ExternalCompilerSupport\lib32\msvc&quot;"
+	/>
 </VisualStudioPropertySheet>

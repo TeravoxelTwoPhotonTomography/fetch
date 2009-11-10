@@ -12,6 +12,17 @@ typedef int            i32;
 typedef float          f32;
 typedef double         f64;
 
+//
+// Utility functions
+//
+#define IS_POW2_OR_ZERO(v) ( ((v) & ((v) - 1)) ==  0  )
+#define IS_POW2(v)         (!((v) & ((v) - 1)) && (v) )
+
+inline u8     _next_pow2_u8    (u8  v);
+inline u32    _next_pow2_u32   (u32 v);
+inline u64    _next_pow2_u64   (u64 v);
+inline size_t _next_pow2_size_t(size_t v);
+
 // --------
 // Shutdown
 // --------
@@ -59,6 +70,7 @@ void warning(const char* fmt, ...);
 void debug  (const char* fmt, ...);
 
 #define Guarded_Assert(expression) if(!(expression)) error("Assertion failed: %s\n\tIn %s (line: %u)\n", #expression, __FILE__ , __LINE__ )
+#define Guarded_Assert_WinErr(expression) if(!(expression)) { ReportLastWindowsError();  error("Assertion failed: %s\n\tIn %s (line: %u)\n", #expression, __FILE__ , __LINE__ ); }
 
 //
 // Memory
@@ -66,11 +78,19 @@ void debug  (const char* fmt, ...);
 void *Guarded_Malloc( size_t nelem, const char *msg );
 void *Guarded_Calloc( size_t nelem, size_t bytes_per_elem, const char *msg );
 
+// Expands array using chunk sizes that linearly increase in size
 void RequestStorage( void** array,           // Pointer to array
                      size_t *nelem,          // Pointer to current maximum element count of array
                      size_t request,         // Request that the array be sized so this index is valid
                      size_t bytes_per_elem,  // The chunk size
                      const char *msg );      // A message to use in the case of an error
+
+// Expands array using chunk sizes that exponentially increase in size.  Size is a power of two.
+void RequestStorageLog2( void** array,           // Pointer to array
+                         size_t *nelem,          // Pointer to current maximum element count of array
+                         size_t request,         // Request that the array be sized so this index is valid
+                         size_t bytes_per_elem,  // The chunk size
+                         const char *msg );      // A message to use in the case of an error
 
 //
 // Container types
@@ -86,6 +106,7 @@ void RequestStorage( void** array,           // Pointer to array
                                   \
   vector_##type *vector_##type##_alloc   ( size_t nelem );\
   void           vector_##type##_request ( vector_##type *self, size_t idx );\
+  void           vector_##type##_request_pow2 ( vector_##type *self, size_t idx );\
   void           vector_##type##_free    ( vector_##type *self )
 
 #define VECTOR_EMPTY { NULL, 0, 0, 0 }
@@ -109,6 +130,16 @@ void vector_##type##_request( vector_##type *self, size_t idx ) \
                   idx,                       \
                   self->bytes_per_elem,      \
                   "vector_request" );        \
+} \
+  \
+void vector_##type##_request_pow2( vector_##type *self, size_t idx ) \
+{ if( !self->bytes_per_elem )                \
+    self->bytes_per_elem = sizeof(type);     \
+  RequestStorageLog2( (void**) &self->contents,  \
+                      &self->nelem,              \
+                      idx,                       \
+                      self->bytes_per_elem,      \
+                      "vector_log2_request" );   \
 } \
   \
 void vector_##type##_free( vector_##type *self ) \
