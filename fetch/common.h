@@ -18,6 +18,10 @@ typedef double         f64;
 #define IS_POW2_OR_ZERO(v) ( ((v) & ((v) - 1)) ==  0  )
 #define IS_POW2(v)         (!((v) & ((v) - 1)) && (v) )
 
+#define MOD_UNSIGNED_POW2(n,d)   ( (n) & ((d)-1) )
+
+#define SWAP(a,b)          (((a) ^ (b)) && ((b) ^= (a) ^= (b), (a) ^= (b)))
+
 inline u8     _next_pow2_u8    (u8  v);
 inline u32    _next_pow2_u32   (u32 v);
 inline u64    _next_pow2_u64   (u64 v);
@@ -44,9 +48,9 @@ int  Register_New_Shutdown_Callback ( pf_shutdown_callback callback );
 void         Shutdown_Hard          ( unsigned int err);
 unsigned int Shutdown_Soft          ( void );
 
-// ---------
-// Reporting
-// ---------
+// -----------------------
+// Reporting and Asserting
+// -----------------------
 
 typedef void (*pf_reporting_callback)(const char* msg);
 
@@ -71,6 +75,11 @@ void debug  (const char* fmt, ...);
 
 #define Guarded_Assert(expression) if(!(expression)) error("Assertion failed: %s\n\tIn %s (line: %u)\n", #expression, __FILE__ , __LINE__ )
 #define Guarded_Assert_WinErr(expression) if(!(expression)) { ReportLastWindowsError();  error("Assertion failed: %s\n\tIn %s (line: %u)\n", #expression, __FILE__ , __LINE__ ); }
+
+#define return_if_fail    ( cond )      { if(!cond) return; }
+#define return_if         ( cond )      { if( cond) return; }
+#define return_val_if_fail( cond, val ) { if(!cond) return (val); }
+#define return_val_if     ( cond, val ) { if( cond) return (val); }
 
 //
 // Memory
@@ -145,6 +154,7 @@ void vector_##type##_request_pow2( vector_##type *self, size_t idx ) \
 void vector_##type##_free( vector_##type *self ) \
 { if(self)                                       \
   { if( self->contents ) free( self->contents ); \
+    self->contents = NULL;                       \
     free(self);                                  \
   }                                              \
 } \

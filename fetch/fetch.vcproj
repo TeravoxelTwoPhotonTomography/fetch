@@ -201,6 +201,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\queue-daisy-chain.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -256,6 +260,10 @@
 			</File>
 			<File
 				RelativePath=".\microscope.h"
+				>
+			</File>
+			<File
+				RelativePath=".\queue-daisy-chain.h"
 				>
 			</File>
 			<File
