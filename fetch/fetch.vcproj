@@ -201,7 +201,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\queue-daisy-chain.cpp"
+				RelativePath=".\ring-fifo.cpp"
 				>
 			</File>
 			<File
@@ -263,11 +263,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\queue-daisy-chain.h"
+				RelativePath=".\Resource.h"
 				>
 			</File>
 			<File
-				RelativePath=".\Resource.h"
+				RelativePath=".\ring-fifo.h"
 				>
 			</File>
 			<File

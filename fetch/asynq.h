@@ -1,16 +1,14 @@
 #pragma once
 
 #include "stdafx.h"
-#include "queue-daisy-chain.h"
+#include "ring-fifo.h"
+
 
 typedef void* PVOID;
 TYPE_VECTOR_DECLARE(PVOID);
 
 typedef struct _asynq
-{ DCQueue *q;
-
-  u32      waiting_threads;
-  u32      ref_count;
+{ RingFIFO *q;  
 
   CRITICAL_SECTION   lock;   // mutex
   HANDLE             notify; // triggered when data becomes available

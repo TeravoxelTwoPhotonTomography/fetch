@@ -1,9 +1,9 @@
 #include "stdafx.h"
-#include "queue-daisy-chain.h"
+#include "ring-fifo.h"
 
-DCQueue*
-DCQueue_Alloc(size_t buffer_count, size_t buffer_size_bytes )
-{ DCQueue *self = Guarded_Malloc( sizeof(DCQueue), "DCQueue_Alloc" );
+RingFIFO*
+RingFIFO_Alloc(size_t buffer_count, size_t buffer_size_bytes )
+{ RingFIFO *self = Guarded_Malloc( sizeof(RingFIFO), "RingFIFO_Alloc" );
   
   Guarded_Assert( IS_POW2( buffer_count ) );
 
@@ -16,14 +16,14 @@ DCQueue_Alloc(size_t buffer_count, size_t buffer_size_bytes )
     PVOID *cur = r->contents + r->nelem,
           *beg = r->contents;
     while( cur-- > beg )
-      *cur = Guarded_Malloc( buffer_size_bytes, "DCQueue_Alloc: Allocating buffers" );
+      *cur = Guarded_Malloc( buffer_size_bytes, "RingFIFO_Alloc: Allocating buffers" );
   }
 
   return self;
 }
 
 void 
-DCQueue_Free( DCQueue *self )
+RingFIFO_Free( RingFIFO *self )
 { return_if_fail(self);
   if( self->ring )
   { vector_PVOID *r = self->ring;
@@ -38,7 +38,7 @@ DCQueue_Free( DCQueue *self )
 }
 
 void 
-DCQueue_Expand( DCQueue *self ) 
+RingFIFO_Expand( RingFIFO *self ) 
 { vector_PVOID *r = self->ring;
   size_t old  = r->nelem,
          head = self->head,
@@ -67,12 +67,12 @@ DCQueue_Expand( DCQueue *self )
     }
     while( cur-- > beg )
       *cur = Guarded_Malloc( buffer_size_bytes, 
-                             "DCQueue_Expand: Allocating new buffers" );
+                             "RingFIFO_Expand: Allocating new buffers" );
   }
 }
 
 static inline void     
-_swap( DCQueue *self, void **pbuf, size_t idx)
+_swap( RingFIFO *self, void **pbuf, size_t idx)
 { vector_PVOID *r = self->ring; 
   idx = MOD_UNSIGNED_POW2( idx, r->nelem );   
   { void **cur = r->contents + idx,
@@ -83,40 +83,40 @@ _swap( DCQueue *self, void **pbuf, size_t idx)
 }
 
 inline void     
-DCQueue_Swap_Head( DCQueue *self, void **pbuf)
+RingFIFO_Swap_Head( RingFIFO *self, void **pbuf)
 { _swap( self, pbuf, self->head );
 }
 
 inline void     
-DCQueue_Swap_Tail( DCQueue *self, void **pbuf)
+RingFIFO_Swap_Tail( RingFIFO *self, void **pbuf)
 { _swap( self, pbuf, self->tail );
 }
 
 unsigned int
-DCQueue_Pop( DCQueue *self, void **pbuf)
-{ return_val_if( DCQueue_Is_Empty(self), 0);
-  DCQueue_Swap_Tail(self,pbuf);
+RingFIFO_Pop( RingFIFO *self, void **pbuf)
+{ return_val_if( RingFIFO_Is_Empty(self), 0);
+  RingFIFO_Swap_Tail(self,pbuf);
   self->tail++;
   return 1;
 }
 
 unsigned int
-DCQueue_Push( DCQueue *self, void **pbuf, int expand_on_full)
-{ if( DCQueue_Is_Full(self) )
+RingFIFO_Push( RingFIFO *self, void **pbuf, int expand_on_full)
+{ if( RingFIFO_Is_Full(self) )
   { if( expand_on_full ) 
-    { DCQueue_Expand(self);
-      Guarded_Assert( !DCQueue_Is_Empty(self) ); // FIXME: Once this is tested it can be removed
+    { RingFIFO_Expand(self);
+      Guarded_Assert( !RingFIFO_Is_Empty(self) ); // FIXME: Once this is tested it can be removed
     }
     else
       return 0;
   }
-  DCQueue_Swap_Head(self,pbuf);
+  RingFIFO_Swap_Head(self,pbuf);
   self->head++;
   return 1;
 }
 
 void*
-DCQueue_Alloc_Token_Buffer( DCQueue *self )
+RingFIFO_Alloc_Token_Buffer( RingFIFO *self )
 { return Guarded_Malloc( self->buffer_size_bytes, 
-                         "DCQueue_Alloc_Token_Buffer" );
+                         "RingFIFO_Alloc_Token_Buffer" );
 }

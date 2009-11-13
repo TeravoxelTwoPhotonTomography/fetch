@@ -5,7 +5,7 @@ asynq*
 Asynq_Alloc(size_t buffer_count, size_t buffer_size_bytes )
 { asynq *self = Guarded_Malloc( sizeof(asynq), "Asynq_Alloc" );
   
-  self->q = DCQueue_Alloc( buffer_count, buffer_size_bytes );
+  self->q = RingFIFO_Alloc( buffer_count, buffer_size_bytes );
   
   self->waiting_threads = 0;
   self->ref_count       = 1;
@@ -30,7 +30,7 @@ Asynq_Alloc(size_t buffer_count, size_t buffer_size_bytes )
 void 
 _asynq_free( asynq *self )
 { return_if_fail(self);  
-  DCQueue_Free( self->q );  
+  RingFIFO_Free( self->q );  
 	DeleteCriticalSection( &self->lock );
 	CloseHandle( self->notify );
 	free(self);
