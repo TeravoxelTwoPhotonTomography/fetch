@@ -19,6 +19,8 @@ RingFIFO_Alloc(size_t buffer_count, size_t buffer_size_bytes )
       *cur = Guarded_Malloc( buffer_size_bytes, "RingFIFO_Alloc: Allocating buffers" );
   }
 
+  Guarded_Assert( RingFIFO_Is_Empty(self) ); // FIXME: Remove when done testing
+  Guarded_Assert(!RingFIFO_Is_Full (self) );
   return self;
 }
 
@@ -41,25 +43,24 @@ void
 RingFIFO_Expand( RingFIFO *self ) 
 { vector_PVOID *r = self->ring;
   size_t old  = r->nelem,
-         head = self->head,
-         tail = self->tail,
+         n,
+         head = MOD_UNSIGNED_POW2( self->head, old ),
+         tail = MOD_UNSIGNED_POW2( self->tail, old ),
          buffer_size_bytes = self->buffer_size_bytes;
-  int n;
 
-  vector_PVOID_request_pow2( r, old+1 ); // size to next pow2
-  self->ring = r;     // update
-  n = r->nelem - old; // the number of spots added
-  
-  Guarded_Assert(n); // I think this should always be >0
+  vector_PVOID_request_pow2( r, old+1 ); // size to next pow2  
+  n = r->nelem - old; // the number of slots added
+    
   { PVOID *buf = r->contents,
           *beg, *cur;
     
     // Need to gaurantee that the new interval is outside of the 
-    //    head -> tail interval.
+    //    head -> tail interval (active data runs from tail to head).
     if( head > tail ) 
     { // Copy right half to put gap between write point and read point
       beg = buf+head;
       cur = buf+head+n;
+      self->head += n;  // Note: self->head has not been modded, where head has.
       memmove( cur, beg, old-head );
     } else
     { beg = old;
@@ -71,47 +72,45 @@ RingFIFO_Expand( RingFIFO *self )
   }
 }
 
-static inline void     
+static inline size_t
 _swap( RingFIFO *self, void **pbuf, size_t idx)
-{ vector_PVOID *r = self->ring; 
-  idx = MOD_UNSIGNED_POW2( idx, r->nelem );   
-  { void **cur = r->contents + idx,
-          *t   = *cur;
-    *cur  = *pbuf;
-    *pbuf = *t;
-  }
+{ vector_PVOID *r = self->ring;                  // taking the mod on read (here) saves some ops                     
+  idx = MOD_UNSIGNED_POW2( idx, r->nelem );      //   relative to on write since that involve writing to a reference.
+  { void **cur = r->contents + idx,              // in pop/push idx could overflow, but that 
+          *t   = *cur;                           //   would be ok since r->nelem is a divisor of
+    *cur  = *pbuf;                               //   2^sizeof(size_t)
+    *pbuf = *t;                                  // Note that the ...Is_Empty and ...Is_Full 
+  }                                              //   constructs still work with the possibility of
+  return idx;                                    //   an overflow
 }
 
-inline void     
-RingFIFO_Swap_Head( RingFIFO *self, void **pbuf)
-{ _swap( self, pbuf, self->head );
-}
-
-inline void     
-RingFIFO_Swap_Tail( RingFIFO *self, void **pbuf)
-{ _swap( self, pbuf, self->tail );
-}
-
-unsigned int
+inline unsigned int
 RingFIFO_Pop( RingFIFO *self, void **pbuf)
-{ return_val_if( RingFIFO_Is_Empty(self), 0);
-  RingFIFO_Swap_Tail(self,pbuf);
-  self->tail++;
-  return 1;
+{ return_val_if( RingFIFO_Is_Empty(self), 1);
+  _swap( self, pbuf, self->tail++ );
+  return 0;
+}
+
+inline unsigned int
+RingFIFO_Push_Try( RingFIFO *self, void **pbuf)
+{ if( RingFIFO_Is_Full(self) )
+    return 1;
+  _swap( self, pbuf, self->head++ );
+  return 0;
 }
 
 unsigned int
 RingFIFO_Push( RingFIFO *self, void **pbuf, int expand_on_full)
-{ if( RingFIFO_Is_Full(self) )
-  { if( expand_on_full ) 
-    { RingFIFO_Expand(self);
-      Guarded_Assert( !RingFIFO_Is_Empty(self) ); // FIXME: Once this is tested it can be removed
-    }
-    else
-      return 0;
+{ return_val_if( RingFIFO_Push_Try(self, pbuf)==0, 0 );
+  // Handle when full
+  if( expand_on_full )      // Expand
+  { RingFIFO_Expand(self);
+    Guarded_Assert( !RingFIFO_Is_Full(self) );  // FIXME: Once this is tested it can be removed
+    Guarded_Assert( !RingFIFO_Is_Empty(self) ); // FIXME: Once this is tested it can be removed
+  } else                    // Overwrite
+  { self->tail++;
+    _swap( self, pbuf, self->head++ );      
   }
-  RingFIFO_Swap_Head(self,pbuf);
-  self->head++;
   return 1;
 }
 
