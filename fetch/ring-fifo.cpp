@@ -92,6 +92,17 @@ RingFIFO_Pop( RingFIFO *self, void **pbuf)
 }
 
 inline unsigned int
+RingFIFO_Peek( RingFIFO *self, void *buf)
+{ return_val_if( RingFIFO_Is_Empty(self), 1);
+  { vector_PVOID *r = self->ring;
+    memcpy( buf, 
+            r->contents[MOD_UNSIGNED_POW2(self->tail, r->nelem)],
+            self->buffer_size_bytes );
+  }
+  return 0;
+}
+
+inline unsigned int
 RingFIFO_Push_Try( RingFIFO *self, void **pbuf)
 { if( RingFIFO_Is_Full(self) )
     return 1;

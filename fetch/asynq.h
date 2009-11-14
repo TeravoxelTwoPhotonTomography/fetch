@@ -37,8 +37,8 @@ typedef struct _asynq
 { RingFIFO *q;  
 
   u32 ref_count;
-  u32 waiting_producer_threads;
-  u32 waiting_consumer_threads;
+  u32 waiting_producers;
+  u32 waiting_consumers;
   
   CRITICAL_SECTION   lock;         // mutex
   HANDLE             notify_space; // triggered when queue is not full (has available space)
@@ -57,9 +57,9 @@ unsigned int Asynq_Pop        ( asynq *self, void **pbuf );
 unsigned int Asynq_Pop_Try    ( asynq *self, void **pbuf );
 unsigned int Asynq_Pop_Timed  ( asynq *self, void **pbuf, DWORD timeout_ms );
 
-unsigned int Asynq_Peek       ( asynq *self, void  *pbuf );
-unsigned int Asynq_Peek_Try   ( asynq *self, void  *pbuf );
-unsigned int Asynq_Peek_Timed ( asynq *self, void  *pbuf, DWORD timeout_ms );
+unsigned int Asynq_Peek       ( asynq *self, void  *buf );
+unsigned int Asynq_Peek_Try   ( asynq *self, void  *buf );
+unsigned int Asynq_Peek_Timed ( asynq *self, void  *buf, DWORD timeout_ms );
 
 inline void  Asynq_Lock    ( asynq *self );
 inline void  Asynq_Unlock  ( asynq *self );
