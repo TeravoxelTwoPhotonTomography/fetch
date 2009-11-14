@@ -2,9 +2,9 @@
 
 #include <stdio.h>
 
-//
+// -----------------
 // fixed width types
-//
+// -----------------
 typedef unsigned char  u8;
 typedef unsigned int   u32;
 typedef char           i8;
@@ -12,9 +12,9 @@ typedef int            i32;
 typedef float          f32;
 typedef double         f64;
 
-//
+// -----------------
 // Utility functions
-//
+// -----------------
 #define IS_POW2_OR_ZERO(v) ( ((v) & ((v) - 1)) ==  0  )
 #define IS_POW2(v)         (!((v) & ((v) - 1)) && (v) )
 
@@ -26,7 +26,16 @@ inline u8     _next_pow2_u8    (u8  v);
 inline u32    _next_pow2_u32   (u32 v);
 inline u64    _next_pow2_u64   (u64 v);
 inline size_t _next_pow2_size_t(size_t v);
+                    
+// -------------------------------------------
+// Threading and Atomic Operations : Utilities
+// -------------------------------------------
 
+#define Interlocked_Inc_u32(atomic)          (InterlockedAdd((atomic),1))
+#define Interlocked_Inc_u64(atomic)          (InterlockedAdd64((atomic),1))
+#define Interlocked_Dec_And_Test_u32(atomic) (InterlockedExchangeAdd((atomic),-1)==1)
+#define Interlocked_Dec_And_Test_u64(atomic) (InterlockedExchangeAdd64((atomic),-1)==1)
+                    
 // --------
 // Shutdown
 // --------
@@ -81,9 +90,9 @@ void debug  (const char* fmt, ...);
 #define return_val_if_fail( cond, val ) { if(!cond) return (val); }
 #define return_val_if     ( cond, val ) { if( cond) return (val); }
 
-//
+// ------
 // Memory
-//
+// ------
 void *Guarded_Malloc( size_t nelem, const char *msg );
 void *Guarded_Calloc( size_t nelem, size_t bytes_per_elem, const char *msg );
 
@@ -101,9 +110,9 @@ void RequestStorageLog2( void** array,           // Pointer to array
                          size_t bytes_per_elem,  // The chunk size
                          const char *msg );      // A message to use in the case of an error
 
-//
+// ---------------
 // Container types
-//
+// ---------------
 
 #define TYPE_VECTOR_DECLARE(type) \
   typedef struct _vector_##type   \

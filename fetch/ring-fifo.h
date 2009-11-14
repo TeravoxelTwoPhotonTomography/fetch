@@ -8,8 +8,10 @@
 
  This is a FIFO queue implimented on a circular store of pointers that each
  address distinct, pre-allocated buffers.  Data is pushed and popped with a 
- swap operation that exchanges the pointer to the pushed/popped data with the
- pointer to the head/tail.
+ swap operation that exchanges the pointer to the input buffer with the
+ pointer to the head/tail. On a push, the token buffer has been filled with
+ data to enqueue.  On a pop, the token buffer is just a token; the contained
+ data may be deleted or overwritten
  
  When pushing to a full queue, there are three behaviors defined.  The queue
  is optionally expanded (involves a block copy and a number of mallocs), or

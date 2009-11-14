@@ -107,10 +107,11 @@ RingFIFO_Push( RingFIFO *self, void **pbuf, int expand_on_full)
   { RingFIFO_Expand(self);
     Guarded_Assert( !RingFIFO_Is_Full(self) );  // FIXME: Once this is tested it can be removed
     Guarded_Assert( !RingFIFO_Is_Empty(self) ); // FIXME: Once this is tested it can be removed
-  } else                    // Overwrite
-  { self->tail++;
-    _swap( self, pbuf, self->head++ );      
-  }
+    return 0;
+  } 
+  // Overwrite
+  self->tail++;
+  _swap( self, pbuf, self->head++ );
   return 1;
 }
 
