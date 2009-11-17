@@ -27,11 +27,12 @@
  - on free, need to wait till no more waiting threads
    I think this will require reference counting
  - need to gaurantee that all pushed data gets popped, if possible
+ - This seems very similar in intention to the SwapChain in DirectX10.
  
 */
 
-typedef void* PVOID;
-TYPE_VECTOR_DECLARE(PVOID);
+#include "stdafx.h"
+#include "ring-fifo.h"
 
 typedef struct _asynq
 { RingFIFO *q;  

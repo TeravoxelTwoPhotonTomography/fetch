@@ -50,4 +50,4 @@ inline unsigned int RingFIFO_Push_Try  ( RingFIFO *self, void **pbuf);
 void*       RingFIFO_Alloc_Token_Buffer( RingFIFO *self );
 
 #define     RingFIFO_Is_Empty(self) ( (self)->head == (self)->tail )
-#define     RingFIFO_Is_Full (self) ( (self)->head == (self)->tail + (self)->ring->nelem )
+#define     RingFIFO_Is_Full(self)  ( (self)->head == (self)->tail + (self)->ring->nelem )

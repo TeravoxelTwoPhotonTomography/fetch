@@ -3,7 +3,7 @@
 
 asynq*
 Asynq_Alloc(size_t buffer_count, size_t buffer_size_bytes )
-{ asynq *self = Guarded_Malloc( sizeof(asynq), "Asynq_Alloc" );
+{ asynq *self = (asynq*)Guarded_Malloc( sizeof(asynq), "Asynq_Alloc" );
   
   self->q = RingFIFO_Alloc( buffer_count, buffer_size_bytes );
   
@@ -22,32 +22,33 @@ Asynq_Alloc(size_t buffer_count, size_t buffer_size_bytes )
     self->notify_data = CreateEvent(NULL,   // default security attributes
                                     TRUE,   // true ==> manual reset
                                     FALSE,  // initial state is untriggered
-                                    NULL ); // unnamed
+                                    NULL )  // unnamed
   );
   Guarded_Assert_WinErr(
     self->notify_space = CreateEvent( NULL,   // default security attributes
                                       TRUE,   // true ==> manual reset
                                       TRUE,   // initial state is triggered
-                                      NULL ); // unnamed
+                                      NULL )  // unnamed
   );  
 
   return self;
 }
 
-void 
+asynq* 
 Asynq_Ref( asynq *self )
-{ return_if_fail( self );  
-  return_if_fail( self->ref_count > 0 );
+{ return_val_if_fail( self, NULL );  
+  return_val_if_fail( self->ref_count > 0, NULL );
   
-  Interlocked_Inc_u32( &self->ref_count );
+  Interlocked_Inc_u32( (LONG*) &self->ref_count );
+  return self;
 }
 
 void 
 Asynq_Unref( asynq *self )
-{ return_if_fail( self );  
+{ return_if_fail( self );
   return_if_fail( self->ref_count > 0 );
   
-  if( Interlocked_Dec_And_Test_u32( &self->ref_count ) )              // Free when last reference is released
+  if( Interlocked_Dec_And_Test_u32( (LONG*) &self->ref_count ) )              // Free when last reference is released
   { return_if_fail( self->waiting_producers == 0 );
     return_if_fail( self->waiting_consumers == 0 );            // Gaurantee no one is waiting
     DeleteCriticalSection( &self->lock );
@@ -94,24 +95,25 @@ _asynq_push_unlocked(                        // Returns 1 on success, 0 otherwis
                       asynq *self,           // 
                       void **pbuf,           // Pointer to the input buffer.  On return from a success, *pbuf points to different but valid buffer for writing.
                       int expand_on_full,    // Allocate additional space in the queue if the queue is full, and then push.
-                      int try,               // if true, push returns immediately whether successful or not.  Never waits.
+                      int is_try,               // if true, push returns immediately whether successful or not.  Never waits.
                       DWORD timeout_ms )     // Time to wait for a self->notify_space event.  Set to INFINITE for no timeout.
 { HANDLE notify = self->notify_space;
-  if( RingFIFO_Is_Full( self->q ) && !expand_on_full)
-  { if(try) return 0;
+  RingFIFO* q = self->q;
+  if( RingFIFO_Is_Full( q ) && !expand_on_full)
+  { if(is_try) return 0;
   
     Guarded_Assert_WinErr( ResetEvent( notify ) );
     self->waiting_producers++;
-    while( RingFIFO_Is_Full( self->q ) )
+    while( RingFIFO_Is_Full( q ) )
       if( !_handle_wait_for_result( 
                   WaitForSingleObject( notify, timeout_ms ), 
                   "Asynq Push") )
         break; 
     self->waiting_producers--;
-    if( RingFIFO_Is_Full( self->q ) )
+    if( RingFIFO_Is_Full( q ) )
       return 0;    
   }
-  RingFIFO_Push( self->q, pbuf, expand_on_full );
+  RingFIFO_Push( q, pbuf, expand_on_full );
   if( self->waiting_consumers )
     SetEvent( self->notify_data );
   return 1;
@@ -121,24 +123,25 @@ static unsigned int
 _asynq_pop_unlocked(                         // Returns 1 on success, 0 otherwise.
                       asynq *self,           // 
                       void **pbuf,           // Pointer to the input buffer.  On return from a success, *pbuf points to different but valid buffer for writing.
-                      int try,               // if true, push returns immediately whether successful or not.  Never waits.
+                      int is_try,               // if true, push returns immediately whether successful or not.  Never waits.
                       DWORD timeout_ms )     // Time to wait for a self->notify_space event.  Set to INFINITE for no timeout.
 { HANDLE notify = self->notify_data;
-  if( RingFIFO_Is_Empty( self->q ))
-  { if(try) return 0;
+  RingFIFO* q = self->q;
+  if( RingFIFO_Is_Empty( q ))
+  { if(is_try) return 0;
   
     Guarded_Assert_WinErr( ResetEvent( notify ) );
     self->waiting_consumers++;
-    while( RingFIFO_Is_Empty( self->q ) )
+    while( RingFIFO_Is_Empty( q ) )
       if( !_handle_wait_for_result( 
                   WaitForSingleObject( notify, timeout_ms ), 
                   "Asynq Pop") )
         break; 
     self->waiting_consumers--;
-    if( RingFIFO_Is_Empty( self->q ) )
+    if( RingFIFO_Is_Empty( q ) )
       return 0;    
   }
-  RingFIFO_Pop( self->q, pbuf );
+  RingFIFO_Pop( q, pbuf );
   if( self->waiting_producers )
     SetEvent( self->notify_space );
   return 1;
@@ -148,24 +151,25 @@ static unsigned int
 _asynq_peek_unlocked(                        // Returns 1 on success, 0 otherwise.
                       asynq *self,           // 
                       void *buf,             // Destination buffer.
-                      int try,               // if true, push returns immediately whether successful or not.  Never waits.
+                      int is_try,               // if true, push returns immediately whether successful or not.  Never waits.
                       DWORD timeout_ms )     // Time to wait for a self->notify_space event.  Set to INFINITE for no timeout.
 { HANDLE notify = self->notify_data;
-  if( RingFIFO_Is_Empty( self->q ))
-  { if(try) return 0;
+  RingFIFO* q = self->q;
+  if( RingFIFO_Is_Empty( q ))
+  { if(is_try) return 0;
   
     Guarded_Assert_WinErr( ResetEvent( notify ) );
     self->waiting_consumers++;
-    while( RingFIFO_Is_Empty( self->q ) )
+    while( RingFIFO_Is_Empty( q ) )
       if( !_handle_wait_for_result( 
                   WaitForSingleObject( notify, timeout_ms ), 
                   "Asynq Peek") )
         break; 
     self->waiting_consumers--;
-    if( RingFIFO_Is_Empty( self->q ) )
+    if( RingFIFO_Is_Empty( q ) )
       return 0;    
   }
-  RingFIFO_Peek( self->q, buf );
+  RingFIFO_Peek( q, buf );
 
   return 1;
 }
@@ -177,33 +181,33 @@ _asynq_peek_unlocked(                        // Returns 1 on success, 0 otherwis
 unsigned int
 Asynq_Push( asynq *self, void **pbuf, int expand_on_full )
 { unsigned int result;
-  Asynq_Lock();
+  Asynq_Lock(self);
   result = _asynq_push_unlocked(self, pbuf, expand_on_full, FALSE, INFINITE );
-  Asynq_Unlock();
+  Asynq_Unlock(self);
   return result;
 }
 
 unsigned int
 Asynq_Push_Try( asynq *self, void **pbuf )
 { unsigned int result;
-  Asynq_Lock();
+  Asynq_Lock(self);
   result = _asynq_push_unlocked(self, pbuf, 
                                 FALSE,      // expand on full
                                 TRUE,       // try
                                 INFINITE ); // timeout
-  Asynq_Unlock();
+  Asynq_Unlock(self);
   return result;
 }
 
 unsigned int
 Asynq_Push_Timed( asynq *self, void **pbuf, DWORD timeout_ms )
 { unsigned int result;
-  Asynq_Lock();
+  Asynq_Lock(self);
   result = _asynq_push_unlocked(self, pbuf, 
                                 FALSE,        // expand on full
                                 FALSE,        // try
                                 timeout_ms ); // timeout
-  Asynq_Unlock();
+  Asynq_Unlock(self);
   return result;
 }
 
@@ -214,31 +218,31 @@ Asynq_Push_Timed( asynq *self, void **pbuf, DWORD timeout_ms )
 unsigned int
 Asynq_Pop( asynq *self, void **pbuf)
 { unsigned int result;
-  Asynq_Lock();
+  Asynq_Lock(self);
   result = _asynq_pop_unlocked(self, pbuf, FALSE, INFINITE );
-  Asynq_Unlock();
+  Asynq_Unlock(self);
   return result;
 }
 
 unsigned int
 Asynq_Pop_Try( asynq *self, void **pbuf )
 { unsigned int result;
-  Asynq_Lock();
+  Asynq_Lock(self);
   result = _asynq_pop_unlocked(self, pbuf, 
                                 TRUE,       // try
                                 INFINITE ); // timeout
-  Asynq_Unlock();
+  Asynq_Unlock(self);
   return result;
 }
 
 unsigned int
 Asynq_Pop_Timed( asynq *self, void **pbuf, DWORD timeout_ms )
 { unsigned int result;
-  Asynq_Lock();
+  Asynq_Lock(self);
   result = _asynq_pop_unlocked(self, pbuf,
                                 FALSE,        // try
                                 timeout_ms ); // timeout
-  Asynq_Unlock();
+  Asynq_Unlock(self);
   return result;
 }
 
@@ -249,31 +253,31 @@ Asynq_Pop_Timed( asynq *self, void **pbuf, DWORD timeout_ms )
 unsigned int
 Asynq_Peek( asynq *self, void *buf)
 { unsigned int result;
-  Asynq_Lock();
+  Asynq_Lock(self);
   result = _asynq_peek_unlocked(self, buf, FALSE, INFINITE );
-  Asynq_Unlock();
+  Asynq_Unlock(self);
   return result;
 }
 
 unsigned int
 Asynq_Peek_Try( asynq *self, void *buf )
 { unsigned int result;
-  Asynq_Lock();
+  Asynq_Lock(self);
   result = _asynq_peek_unlocked(self, buf, 
                                 TRUE,       // try
                                 INFINITE ); // timeout
-  Asynq_Unlock();
+  Asynq_Unlock(self);
   return result;
 }
 
 unsigned int
 Asynq_Peek_Timed( asynq *self, void *buf, DWORD timeout_ms )
 { unsigned int result;
-  Asynq_Lock();
+  Asynq_Lock(self);
   result = _asynq_peek_unlocked(self, buf,
                                 FALSE,        // try
                                 timeout_ms ); // timeout
-  Asynq_Unlock();
+  Asynq_Unlock(self);
   return result;
 }
 

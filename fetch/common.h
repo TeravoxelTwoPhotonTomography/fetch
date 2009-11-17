@@ -1,16 +1,21 @@
 #pragma once
 
+#include "stdafx.h"
 #include <stdio.h>
 
 // -----------------
 // fixed width types
 // -----------------
-typedef unsigned char  u8;
-typedef unsigned int   u32;
-typedef char           i8;
-typedef int            i32;
-typedef float          f32;
-typedef double         f64;
+typedef unsigned __int8    u8;
+typedef unsigned __int16   u16;
+typedef unsigned __int32   u32;
+typedef unsigned __int64   u64;
+typedef __int8             i8;
+typedef __int16            i16;
+typedef __int32            i32;
+typedef __int64            i64;
+typedef float              f32;
+typedef double             f64;
 
 // -----------------
 // Utility functions
@@ -31,8 +36,8 @@ inline size_t _next_pow2_size_t(size_t v);
 // Threading and Atomic Operations : Utilities
 // -------------------------------------------
 
-#define Interlocked_Inc_u32(atomic)          (InterlockedAdd((atomic),1))
-#define Interlocked_Inc_u64(atomic)          (InterlockedAdd64((atomic),1))
+#define Interlocked_Inc_u32(atomic)          (InterlockedIncrement((atomic)))
+#define Interlocked_Inc_u64(atomic)          (InterlockedIncrement64((atomic)))
 #define Interlocked_Dec_And_Test_u32(atomic) (InterlockedExchangeAdd((atomic),-1)==1)
 #define Interlocked_Dec_And_Test_u64(atomic) (InterlockedExchangeAdd64((atomic),-1)==1)
                     
@@ -82,13 +87,20 @@ void error  (const char* fmt, ...);
 void warning(const char* fmt, ...);
 void debug  (const char* fmt, ...);
 
-#define Guarded_Assert(expression) if(!(expression)) error("Assertion failed: %s\n\tIn %s (line: %u)\n", #expression, __FILE__ , __LINE__ )
-#define Guarded_Assert_WinErr(expression) if(!(expression)) { ReportLastWindowsError();  error("Assertion failed: %s\n\tIn %s (line: %u)\n", #expression, __FILE__ , __LINE__ ); }
+#define Guarded_Assert(expression) \
+  if(!(expression))\
+    error("Assertion failed: %s\n\tIn %s (line: %u)\n", #expression, __FILE__ , __LINE__ )
+    
+#define Guarded_Assert_WinErr(expression) \
+  if(!(expression))\
+  { ReportLastWindowsError();\
+    error("Assertion failed: %s\n\tIn %s (line: %u)\n", #expression, __FILE__ , __LINE__ );\
+  }
 
-#define return_if_fail    ( cond )      { if(!cond) return; }
-#define return_if         ( cond )      { if( cond) return; }
-#define return_val_if_fail( cond, val ) { if(!cond) return (val); }
-#define return_val_if     ( cond, val ) { if( cond) return (val); }
+#define return_if_fail( cond )          { if(!(cond)) return; }
+#define return_if( cond )               { if( (cond)) return; }
+#define return_val_if_fail( cond, val ) { if(!(cond)) return (val); }
+#define return_val_if( cond, val )      { if( (cond)) return (val); }
 
 // ------
 // Memory
@@ -179,8 +191,12 @@ void vector_##type##_free_contents( vector_##type *self ) \
 
 TYPE_VECTOR_DECLARE(char);
 TYPE_VECTOR_DECLARE(u8);
+TYPE_VECTOR_DECLARE(u16);
 TYPE_VECTOR_DECLARE(u32);
+TYPE_VECTOR_DECLARE(u64);
 TYPE_VECTOR_DECLARE(i8);
+TYPE_VECTOR_DECLARE(i16);
 TYPE_VECTOR_DECLARE(i32);
+TYPE_VECTOR_DECLARE(i64);
 TYPE_VECTOR_DECLARE(f32);
 TYPE_VECTOR_DECLARE(f64);

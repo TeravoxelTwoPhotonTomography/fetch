@@ -1,9 +1,14 @@
 #include "stdafx.h"
 #include "ring-fifo.h"
 
+#define DEBUG_RINGFIFO_ALLOC
+#define DEBUG_RINGFIFO_EXPAND
+
+TYPE_VECTOR_DEFINE(PVOID);
+
 RingFIFO*
 RingFIFO_Alloc(size_t buffer_count, size_t buffer_size_bytes )
-{ RingFIFO *self = Guarded_Malloc( sizeof(RingFIFO), "RingFIFO_Alloc" );
+{ RingFIFO *self = (RingFIFO *)Guarded_Malloc( sizeof(RingFIFO), "RingFIFO_Alloc" );
   
   Guarded_Assert( IS_POW2( buffer_count ) );
 
@@ -19,8 +24,10 @@ RingFIFO_Alloc(size_t buffer_count, size_t buffer_size_bytes )
       *cur = Guarded_Malloc( buffer_size_bytes, "RingFIFO_Alloc: Allocating buffers" );
   }
 
-  Guarded_Assert( RingFIFO_Is_Empty(self) ); // FIXME: Remove when done testing
+#ifdef DEBUG_RINGFIFO_ALLOC
+  Guarded_Assert( RingFIFO_Is_Empty(self) );
   Guarded_Assert(!RingFIFO_Is_Full (self) );
+#endif
   return self;
 }
 
@@ -42,8 +49,8 @@ RingFIFO_Free( RingFIFO *self )
 void 
 RingFIFO_Expand( RingFIFO *self ) 
 { vector_PVOID *r = self->ring;
-  size_t old  = r->nelem,
-         n,
+  size_t old  = r->nelem,   // size of ring buffer _before_ realloc
+         n,                 // delta in size (number of added elements)
          head = MOD_UNSIGNED_POW2( self->head, old ),
          tail = MOD_UNSIGNED_POW2( self->tail, old ),
          buffer_size_bytes = self->buffer_size_bytes;
@@ -52,24 +59,38 @@ RingFIFO_Expand( RingFIFO *self )
   n = r->nelem - old; // the number of slots added
     
   { PVOID *buf = r->contents,
-          *beg, *cur;
+          *beg = buf,     // (will be) beginning of interval requiring new malloced data
+          *cur = buf + n; // (will be) end       "  "        "         "   "        "
     
     // Need to gaurantee that the new interval is outside of the 
-    //    head -> tail interval (active data runs from tail to head).
-    if( head > tail ) 
-    { // Copy right half to put gap between write point and read point
-      beg = buf+head;
-      cur = buf+head+n;
-      self->head += n;  // Note: self->head has not been modded, where head has.
-      memmove( cur, beg, old-head );
-    } else
-    { beg = old;
-      cur = old+n;
+    //    tail -> head interval (active data runs from tail to head).
+    if( head < tail ) 
+    { // Move data to end
+      size_t nelem = old-tail;  // size of terminal interval
+      beg += tail;              // source
+      cur += tail;              // dest
+      if( n > nelem ) memcpy ( cur, beg, nelem * sizeof(PVOID) ); // no overlap - this should be the common case
+      else            memmove( cur, beg, nelem * sizeof(PVOID) ); // some overlap
+      // adjust indices
+      self->head = head + r->nelem; // want to maintain head-tail == # queue items
+      self->tail = tail;
+    } else // tail < head - no need to move data
+    { //adjust indices
+      self->tail = tail;
+      self->head = head;
+      //setup interval for mallocing new data
+      beg += old;
+      cur += old;
     }
     while( cur-- > beg )
       *cur = Guarded_Malloc( buffer_size_bytes, 
                              "RingFIFO_Expand: Allocating new buffers" );
   }
+  
+#ifdef DEBUG_RINGFIFO_EXPAND
+  Guarded_Assert( MOD_UNSIGNED_POW2( self->head, self->ring->nelem ) == head );
+  Guarded_Assert( MOD_UNSIGNED_POW2( self->tail, self->ring->nelem ) == tail );
+#endif DEBUG_RINGFIFO_EXPAND
 }
 
 static inline size_t
@@ -79,19 +100,21 @@ _swap( RingFIFO *self, void **pbuf, size_t idx)
   { void **cur = r->contents + idx,              // in pop/push idx could overflow, but that 
           *t   = *cur;                           //   would be ok since r->nelem is a divisor of
     *cur  = *pbuf;                               //   2^sizeof(size_t)
-    *pbuf = *t;                                  // Note that the ...Is_Empty and ...Is_Full 
+    *pbuf = t;                                   // Note that the ...Is_Empty and ...Is_Full 
   }                                              //   constructs still work with the possibility of
   return idx;                                    //   an overflow
 }
 
-inline unsigned int
+extern inline 
+unsigned int
 RingFIFO_Pop( RingFIFO *self, void **pbuf)
 { return_val_if( RingFIFO_Is_Empty(self), 1);
   _swap( self, pbuf, self->tail++ );
   return 0;
 }
 
-inline unsigned int
+extern inline 
+unsigned int
 RingFIFO_Peek( RingFIFO *self, void *buf)
 { return_val_if( RingFIFO_Is_Empty(self), 1);
   { vector_PVOID *r = self->ring;
@@ -102,7 +125,8 @@ RingFIFO_Peek( RingFIFO *self, void *buf)
   return 0;
 }
 
-inline unsigned int
+extern inline 
+unsigned int
 RingFIFO_Push_Try( RingFIFO *self, void **pbuf)
 { if( RingFIFO_Is_Full(self) )
     return 1;
