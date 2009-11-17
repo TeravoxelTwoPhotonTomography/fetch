@@ -3,8 +3,7 @@ fetch.ncb
 fetch.suo
 fetch/Debug
 
-fetch/MultiByteCharacterStrings.vsprops
-fetch/fetch.vcproj.SUPERLOG-97C049.Administrator.user
-
 Release/
 fetch/Release/
+
+*.user

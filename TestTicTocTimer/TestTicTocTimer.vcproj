@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="fetch"
-	ProjectGUID="{46D200B2-EA96-4400-98B5-084A8C189842}"
-	RootNamespace="fetch"
+	Name="TestTicTocTimer"
+	ProjectGUID="{4617B7FE-7036-4A82-ADF8-4D1CD59392FB}"
+	RootNamespace="TestTicTocTimer"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -21,7 +21,6 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			InheritedPropertySheets=".\NIDAQmx.vsprops;.\NIScope.vsprops;.\DisableWarnings.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
@@ -42,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -63,7 +62,7 @@
 				Name="VCLinkerTool"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
-				SubSystem="2"
+				SubSystem="1"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -93,7 +92,6 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			InheritedPropertySheets=".\NIDAQmx.vsprops;.\NIScope.vsprops;.\DisableWarnings.vsprops"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>
@@ -116,7 +114,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="2"
@@ -136,7 +134,7 @@
 				Name="VCLinkerTool"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
-				SubSystem="2"
+				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				TargetMachine="1"
@@ -173,35 +171,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\asynq.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\common.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\device-digitizer.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\device-galvo-mirror.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\fetch.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\logger.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\microscope.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ring-fifo.cpp"
+				RelativePath="..\fetch\common.cpp"
 				>
 			</File>
 			<File
@@ -225,7 +195,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\util-niscope.cpp"
+				RelativePath="..\fetch\test-runner.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\TestTicTocTimer.cpp"
 				>
 			</File>
 		</Filter>
@@ -235,39 +209,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\asynq.h"
-				>
-			</File>
-			<File
-				RelativePath=".\common.h"
-				>
-			</File>
-			<File
-				RelativePath=".\device-digitizer.h"
-				>
-			</File>
-			<File
-				RelativePath=".\device-galvo-mirror.h"
-				>
-			</File>
-			<File
-				RelativePath=".\fetch.h"
-				>
-			</File>
-			<File
-				RelativePath=".\logger.h"
-				>
-			</File>
-			<File
-				RelativePath=".\microscope.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Resource.h"
-				>
-			</File>
-			<File
-				RelativePath=".\ring-fifo.h"
+				RelativePath="..\fetch\common.h"
 				>
 			</File>
 			<File
@@ -279,11 +221,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\util-nidaqmx.h"
-				>
-			</File>
-			<File
-				RelativePath=".\util-niscope.h"
+				RelativePath="..\fetch\test-runner.h"
 				>
 			</File>
 		</Filter>
@@ -292,48 +230,6 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
-			<File
-				RelativePath=".\fetch.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\fetch.rc"
-				>
-			</File>
-			<File
-				RelativePath=".\logger.rc"
-				>
-			</File>
-			<File
-				RelativePath=".\small.ico"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="Tests"
-			>
-			<Filter
-				Name="Source Files"
-				Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
-				>
-				<File
-					RelativePath=".\test-ring-fifo.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\test-runner.cpp"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Header Files"
-				Filter="h;hpp;hxx;hm;inl;inc;xsd"
-				>
-				<File
-					RelativePath=".\test-runner.h"
-					>
-				</File>
-			</Filter>
 		</Filter>
 		<File
 			RelativePath=".\ReadMe.txt"
