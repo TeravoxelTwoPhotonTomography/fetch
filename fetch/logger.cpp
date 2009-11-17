@@ -14,12 +14,6 @@
 #define LOGGER_RICH_EDIT
 #include <Richedit.h>  // #defines MSFTEDIT_CLASS and RICHEDIT_CLASS
 
-#undef LOGGER_DOUBLE_BUFFERED_PAINTING // requires Vista or greater - untested
-#ifdef LOGGER_DOUBLE_BUFFERED_PAINTING
-  #include <uxtheme.h>
-  #pragma comment(lib, "uxtheme.lib")
-#endif
-
 #define MAX_LOADSTRING 100
 
 TYPE_VECTOR_DECLARE( TCHAR );

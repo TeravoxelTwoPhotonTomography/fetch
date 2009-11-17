@@ -45,7 +45,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
   // Setup logging
   Logger_Register_Default_Reporting();
-  Reporting_Setup_Log_To_Debugger_Console();
+  Reporting_Setup_Log_To_VSDebugger_Console();
 
 	// Initialize global strings
 	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -132,7 +132,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
                        szTitle, 
                        WS_OVERLAPPEDWINDOW,
                        CW_USEDEFAULT, 0, 
-                       320, 45, 
+                       320, 240, 
                        NULL,         // parent
                        NULL,         // menu
                        hInstance,    // instance

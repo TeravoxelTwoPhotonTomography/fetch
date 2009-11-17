@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 // -----------------
 // fixed width types
@@ -26,6 +27,9 @@ typedef double             f64;
 #define MOD_UNSIGNED_POW2(n,d)   ( (n) & ((d)-1) )
 
 #define SWAP(a,b)          (((a) ^ (b)) && ((b) ^= (a) ^= (b), (a) ^= (b)))
+
+#define MAX(a,b) __max(a,b)
+#define MIN(a,b) __min(a,b)
 
 inline u8     _next_pow2_u8    (u8  v);
 inline u32    _next_pow2_u32   (u32 v);
@@ -76,8 +80,9 @@ void Error_Reporting_Remove_All_Callbacks  (void);
 void Warning_Reporting_Remove_All_Callbacks(void);
 void Debug_Reporting_Remove_All_Callbacks  (void);
 
-void Reporting_Setup_Log_To_Debugger_Console(void);
+void Reporting_Setup_Log_To_VSDebugger_Console(void);
 void Reporting_Setup_Log_To_File( FILE *file );
+void Reporting_Setup_Log_To_Stdout(void);
 
 void ReportLastWindowsError(void);
 

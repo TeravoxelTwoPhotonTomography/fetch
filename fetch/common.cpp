@@ -162,14 +162,14 @@ void Warning_Reporting_Remove_All_Callbacks(void)
 // -----------------------
 //
 
-void _reporting_log_to_console_callback( const char *msg )
+void _reporting_log_to_vs_console_callback( const char *msg )
 { OutputDebugString((TCHAR*)msg);
 }
 
-void Reporting_Setup_Log_To_Debugger_Console(void)
-{ Register_New_Error_Reporting_Callback( &_reporting_log_to_console_callback );
-  Register_New_Warning_Reporting_Callback( &_reporting_log_to_console_callback );
-  Register_New_Debug_Reporting_Callback( &_reporting_log_to_console_callback );
+void Reporting_Setup_Log_To_VSDebugger_Console(void)
+{ Register_New_Error_Reporting_Callback  ( &_reporting_log_to_vs_console_callback );
+  Register_New_Warning_Reporting_Callback( &_reporting_log_to_vs_console_callback );
+  Register_New_Debug_Reporting_Callback  ( &_reporting_log_to_vs_console_callback );
 }
 
 //
@@ -206,11 +206,20 @@ void Reporting_Setup_Log_To_File( FILE *file )
   }
 }
 
+#include <stdio.h>
+void _reporting_log_to_stdout_callback( const char *msg )
+{ fprintf( stdout, msg );
+}
+void Reporting_Setup_Log_To_Stdout( void )
+{ Register_New_Error_Reporting_Callback  ( &_reporting_log_to_stdout_callback );
+  Register_New_Warning_Reporting_Callback( &_reporting_log_to_stdout_callback );
+  Register_New_Debug_Reporting_Callback  ( &_reporting_log_to_stdout_callback );
+}
+
 //
 // Main reporting functions
 // ------------------------
 //
-
 
 
 void ReportLastWindowsError(void) 
