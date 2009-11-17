@@ -4,7 +4,6 @@
 #include "stdafx.h"
 #include <float.h>
 #include <math.h>
-#include "..\fetch\test-runner.h"
 
 void minmax(void)
 { int iter = 1000000;

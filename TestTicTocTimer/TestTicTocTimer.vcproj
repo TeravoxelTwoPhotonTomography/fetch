@@ -195,10 +195,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\fetch\test-runner.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\TestTicTocTimer.cpp"
 				>
 			</File>
@@ -218,10 +214,6 @@
 			</File>
 			<File
 				RelativePath=".\targetver.h"
-				>
-			</File>
-			<File
-				RelativePath="..\fetch\test-runner.h"
 				>
 			</File>
 		</Filter>

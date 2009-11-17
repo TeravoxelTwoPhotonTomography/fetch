@@ -10,6 +10,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if 0
+#define DEBUG_TIC_TOC_TIMER
+#endif
+
 //
 // Utility functions
 //
@@ -57,6 +61,42 @@ inline size_t _next_pow2_size_t(size_t v)
 #endif
   v++;
   return v;
+}
+
+// ---------
+// Profiling
+// ---------
+
+TicTocTimer tic(void)
+{ TicTocTimer t = {0,0};
+  LARGE_INTEGER tmp;
+  Guarded_Assert_WinErr( QueryPerformanceFrequency( &tmp ) );
+  t.rate = tmp.QuadPart;
+  Guarded_Assert_WinErr( QueryPerformanceCounter  ( &tmp ) );
+  t.last = tmp.QuadPart;
+  
+#ifdef DEBUG_TIC_TOC_TIMER  
+  //Guarded_Assert( t.rate > 0 );
+  debug("Tic() timer frequency: %u Hz\r\n"
+        "           resolution: %g ns\r\n"
+        "               counts: %u\r\n",(u32) t.rate, 
+                                        1e9/(double)t.rate, 
+                                        (u32) t.last);
+#endif  
+  return t;
+}
+
+// - returns time since last in seconds
+// - updates timer
+double toc(TicTocTimer *t)
+{ LARGE_INTEGER tmp;
+  u64 now;
+  double delta;
+  Guarded_Assert_WinErr( QueryPerformanceCounter( &tmp ) );
+  now = tmp.QuadPart;
+  delta = ( now - t->last) / (double)t->rate;
+  t->last = now;
+  return delta;
 }
 
 // --------

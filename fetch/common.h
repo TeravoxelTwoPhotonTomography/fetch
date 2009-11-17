@@ -35,6 +35,18 @@ inline u8     _next_pow2_u8    (u8  v);
 inline u32    _next_pow2_u32   (u32 v);
 inline u64    _next_pow2_u64   (u64 v);
 inline size_t _next_pow2_size_t(size_t v);
+
+// ---------
+// Profiling
+// ---------
+ 
+typedef struct _tic_toc_timer
+{ u64 last, // last observation on the counter
+      rate; // counts per second  
+} TicTocTimer;
+
+TicTocTimer tic(void);
+double      toc(TicTocTimer *last); // returns time since last in seconds and updates timer 
                     
 // -------------------------------------------
 // Threading and Atomic Operations : Utilities
