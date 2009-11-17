@@ -7,20 +7,7 @@
 #define CheckPanic( expression ) (niscope_chk( g_digitizer.vi, expression, #expression, &error   ))
 
 Digitizer            g_digitizer        = {0};
-//Digitizer_Config     g_digitizer_config = DIGITIZER_CONFIG_DEFAULT;
-Digitizer_Config     g_digitizer_config =   {"Dev6\0",
-                       DIGITIZER_MAX_SAMPLE_RATE,
-                       1024,
-                       0.0,
-                       {{"0\0",2.0,NISCOPE_VAL_DC,VI_TRUE},
-                        {"1\0",2.0,NISCOPE_VAL_DC,VI_TRUE},
-                        {"2\0",2.0,NISCOPE_VAL_DC,VI_TRUE},
-                        {"3\0",2.0,NISCOPE_VAL_DC,VI_TRUE},
-                        {"4\0",2.0,NISCOPE_VAL_DC,VI_FALSE},
-                        {"5\0",2.0,NISCOPE_VAL_DC,VI_FALSE},
-                        {"6\0",2.0,NISCOPE_VAL_DC,VI_FALSE},
-                        {"7\0",2.0,NISCOPE_VAL_DC,VI_FALSE}}
-                       };
+Digitizer_Config     g_digitizer_config = DIGITIZER_CONFIG_DEFAULT;
 
 void Digitizer_Init(void)
 { // Register Shutdown function

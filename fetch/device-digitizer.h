@@ -8,8 +8,10 @@
 //    defaults
 //
 
-#define DIGITIZER_MAX_NUM_CHANNELS NI5105_MAX_NUM_CHANNELS
-#define DIGITIZER_MAX_SAMPLE_RATE  NI5105_MAX_SAMPLE_RATE
+#define DIGITIZER_MAX_NUM_CHANNELS        NI5105_MAX_NUM_CHANNELS
+#define DIGITIZER_MAX_SAMPLE_RATE         NI5105_MAX_SAMPLE_RATE
+#define DIGITIZER_DEVICE_NAME             "Dev2\0"
+#define DIGITIZER_DEFAULT_RECORD_LENGTH   1024
 
 typedef struct _digitizer 
 { ViSession vi;
@@ -33,7 +35,7 @@ typedef struct _digitizer_config
 } Digitizer_Config;
 
 #define DIGITIZER_CONFIG_EMPTY \
-  ((Digitizer_Config){NULL,\
+                     {NULL,\
                       0.0,\
                         0,\
                       0.0,\
@@ -45,12 +47,12 @@ typedef struct _digitizer_config
                        DIGITIZER_CHANNEL_CONFIG_EMPTY,\
                        DIGITIZER_CHANNEL_CONFIG_EMPTY,\
                        DIGITIZER_CHANNEL_CONFIG_EMPTY}\
-                      })
+                      }
 
 #define DIGITIZER_CONFIG_DEFAULT \
-  ((Digitizer_Config){"Dev6\0",\
+                     { DIGITIZER_DEVICE_NAME,\
                        DIGITIZER_MAX_SAMPLE_RATE,\
-                       1024,\
+                       DIGITIZER_DEFAULT_RECORD_LENGTH,\
                        0.0,\
                        {{"0\0",2.0,NISCOPE_VAL_DC,VI_TRUE},\
                         {"1\0",2.0,NISCOPE_VAL_DC,VI_TRUE},\
@@ -60,7 +62,7 @@ typedef struct _digitizer_config
                         {"5\0",2.0,NISCOPE_VAL_DC,VI_FALSE},\
                         {"6\0",2.0,NISCOPE_VAL_DC,VI_FALSE},\
                         {"7\0",2.0,NISCOPE_VAL_DC,VI_FALSE}}\
-                       })
+                       }
 
 //
 // Device interface

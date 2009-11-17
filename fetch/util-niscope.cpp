@@ -22,7 +22,7 @@ void niscope_log_wfminfo( pf_reporter pfOutput, niScope_wfmInfo *info )
           "ViReal64 absoluteInitialX    %g\r\n"
           "ViReal64 relativeInitialX    %g\r\n"
           "ViReal64 xIncrement          %g\r\n"
-          "ViInt32 actualSamples        %d\r\n"
+          "ViInt32  actualSamples       %d\r\n"
           "ViReal64 offset              %g\r\n"
           "ViReal64 gain                %g\r\n"
           "ViReal64 reserved1           %g\r\n"
