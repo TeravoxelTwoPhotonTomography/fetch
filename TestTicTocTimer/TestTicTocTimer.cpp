@@ -2,7 +2,6 @@
 //
 
 #include "stdafx.h"
-#include <float.h>
 #include <math.h>
 
 void minmax(void)

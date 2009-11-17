@@ -154,7 +154,7 @@ LRESULT CALLBACK Logger_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
                                 rcClient.bottom, //height
                                 hWnd,
                                 (HMENU) IDC_LOGGER_EDIT, // child window identifier
-                                (HINSTANCE) GetWindowLong(hWnd, GWL_HINSTANCE),
+                                (HINSTANCE) GetWindowLongPtr(hWnd, GWLP_HINSTANCE),
                                 NULL )
       );
 #else

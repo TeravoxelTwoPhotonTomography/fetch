@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual C++ Express 2008
+# Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fetch", "fetch\fetch.vcproj", "{46D200B2-EA96-4400-98B5-084A8C189842}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestTicTocTimer", "TestTicTocTimer\TestTicTocTimer.vcproj", "{4617B7FE-7036-4A82-ADF8-4D1CD59392FB}"

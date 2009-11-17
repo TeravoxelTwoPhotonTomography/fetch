@@ -4,6 +4,10 @@
 #define DEBUG_RINGFIFO_ALLOC
 #define DEBUG_RINGFIFO_EXPAND
 
+#if 1
+#define DEBUG_RING_FIFO_PUSH
+#endif
+
 TYPE_VECTOR_DEFINE(PVOID);
 
 RingFIFO*
@@ -76,8 +80,9 @@ RingFIFO_Expand( RingFIFO *self )
       self->tail = tail;
     } else // tail < head - no need to move data
     { //adjust indices
+      self->head += tail - self->tail;
       self->tail = tail;
-      self->head = head;
+      
       //setup interval for mallocing new data
       beg += old;
       cur += old;
@@ -86,11 +91,6 @@ RingFIFO_Expand( RingFIFO *self )
       *cur = Guarded_Malloc( buffer_size_bytes, 
                              "RingFIFO_Expand: Allocating new buffers" );
   }
-  
-#ifdef DEBUG_RINGFIFO_EXPAND
-  Guarded_Assert( MOD_UNSIGNED_POW2( self->head, self->ring->nelem ) == head );
-  Guarded_Assert( MOD_UNSIGNED_POW2( self->tail, self->ring->nelem ) == tail );
-#endif DEBUG_RINGFIFO_EXPAND
 }
 
 static inline size_t
@@ -136,18 +136,20 @@ RingFIFO_Push_Try( RingFIFO *self, void **pbuf)
 
 unsigned int
 RingFIFO_Push( RingFIFO *self, void **pbuf, int expand_on_full)
-{ return_val_if( RingFIFO_Push_Try(self, pbuf)==0, 0 );
+{ unsigned int retval = 0;
+  return_val_if( RingFIFO_Push_Try(self, pbuf)==0, 0 );
   // Handle when full
   if( expand_on_full )      // Expand
   { RingFIFO_Expand(self);
+#ifdef DEBUG_RING_FIFO_PUSH
     Guarded_Assert( !RingFIFO_Is_Full(self) );  // FIXME: Once this is tested it can be removed
     Guarded_Assert( !RingFIFO_Is_Empty(self) ); // FIXME: Once this is tested it can be removed
-    return 0;
-  } 
-  // Overwrite
-  self->tail++;
+#endif    
+  } else {                  // Overwrite    
+    self->tail++;    
+  }
   _swap( self, pbuf, self->head++ );
-  return 1;
+  return !expand_on_full;
 }
 
 void*

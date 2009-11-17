@@ -120,8 +120,8 @@ TYPE_VECTOR_DEFINE ( pf_shutdown_callback );
 
 vector_pf_shutdown_callback g_shutdown_callbacks = VECTOR_EMPTY;
 
-int Register_New_Shutdown_Callback( pf_shutdown_callback callback )
-{ int idx = g_shutdown_callbacks.count++;
+size_t Register_New_Shutdown_Callback( pf_shutdown_callback callback )
+{ size_t idx = g_shutdown_callbacks.count++;
   vector_pf_shutdown_callback_request( &g_shutdown_callbacks, idx );
   g_shutdown_callbacks.contents[idx] = callback;
   return idx;
@@ -161,23 +161,23 @@ vector_pf_reporting_callback g_error_report_callbacks    = VECTOR_EMPTY;
 vector_pf_reporting_callback g_warning_report_callbacks  = VECTOR_EMPTY;
 vector_pf_reporting_callback g_debug_report_callbacks    = VECTOR_EMPTY;
 
-int _register_new_reporting_callback( vector_pf_reporting_callback *vec,
-                                      pf_reporting_callback callback )
+size_t _register_new_reporting_callback( vector_pf_reporting_callback *vec,
+                                         pf_reporting_callback callback )
 { size_t idx = vec->count++;
   vector_pf_reporting_callback_request( vec, idx );
   vec->contents[idx] = callback;
   return idx;
 }
 
-int Register_New_Error_Reporting_Callback( pf_reporting_callback callback )
+size_t Register_New_Error_Reporting_Callback( pf_reporting_callback callback )
 { return _register_new_reporting_callback( &g_error_report_callbacks, callback );
 }
 
-int Register_New_Warning_Reporting_Callback( pf_reporting_callback callback )
+size_t Register_New_Warning_Reporting_Callback( pf_reporting_callback callback )
 { return _register_new_reporting_callback( &g_warning_report_callbacks, callback );
 }
 
-int Register_New_Debug_Reporting_Callback( pf_reporting_callback callback )
+size_t Register_New_Debug_Reporting_Callback( pf_reporting_callback callback )
 { return _register_new_reporting_callback( &g_debug_report_callbacks, callback );
 }
 

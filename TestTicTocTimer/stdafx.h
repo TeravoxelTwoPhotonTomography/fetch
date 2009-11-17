@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <tchar.h>
 
-
+#include <float.h>
 
 // TODO: reference additional headers your program requires here
 #include "..\fetch\common.h"

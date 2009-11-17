@@ -74,7 +74,7 @@ double      toc(TicTocTimer *last); // returns time since last in seconds and up
 //
 typedef unsigned int (*pf_shutdown_callback)(void);
 
-int  Register_New_Shutdown_Callback ( pf_shutdown_callback callback );
+size_t       Register_New_Shutdown_Callback ( pf_shutdown_callback callback );
 void         Shutdown_Hard          ( unsigned int err);
 unsigned int Shutdown_Soft          ( void );
 
@@ -84,9 +84,9 @@ unsigned int Shutdown_Soft          ( void );
 
 typedef void (*pf_reporting_callback)(const char* msg);
 
-int Register_New_Error_Reporting_Callback  ( pf_reporting_callback callback );
-int Register_New_Warning_Reporting_Callback( pf_reporting_callback callback );
-int Register_New_Debug_Reporting_Callback  ( pf_reporting_callback callback );
+size_t Register_New_Error_Reporting_Callback  ( pf_reporting_callback callback );
+size_t Register_New_Warning_Reporting_Callback( pf_reporting_callback callback );
+size_t Register_New_Debug_Reporting_Callback  ( pf_reporting_callback callback );
 
 void Error_Reporting_Remove_All_Callbacks  (void);
 void Warning_Reporting_Remove_All_Callbacks(void);
