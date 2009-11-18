@@ -41,8 +41,8 @@ inline size_t _next_pow2_size_t(size_t v);
 // ---------
  
 typedef struct _tic_toc_timer
-{ u64 last, // last observation on the counter
-      rate; // counts per second  
+{ i64 last; // last observation on the counter
+  i64 rate; // counts per second  
 } TicTocTimer;
 
 TicTocTimer tic(void);

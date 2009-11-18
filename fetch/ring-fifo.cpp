@@ -68,7 +68,7 @@ RingFIFO_Expand( RingFIFO *self )
     
     // Need to gaurantee that the new interval is outside of the 
     //    tail -> head interval (active data runs from tail to head).
-    if( head < tail ) 
+    if( head <= tail && (head!=0 || tail!=0) ) //The `else` case can handle when head=tail=0 and avoid a copy
     { // Move data to end
       size_t nelem = old-tail;  // size of terminal interval
       beg += tail;              // source
@@ -76,8 +76,8 @@ RingFIFO_Expand( RingFIFO *self )
       if( n > nelem ) memcpy ( cur, beg, nelem * sizeof(PVOID) ); // no overlap - this should be the common case
       else            memmove( cur, beg, nelem * sizeof(PVOID) ); // some overlap
       // adjust indices
-      self->head = head + r->nelem; // want to maintain head-tail == # queue items
-      self->tail = tail;
+      self->head += tail + n - self->tail; // want to maintain head-tail == # queue items
+      self->tail = tail + n;
     } else // tail < head - no need to move data
     { //adjust indices
       self->head += tail - self->tail;

@@ -70,6 +70,7 @@ inline size_t _next_pow2_size_t(size_t v)
 TicTocTimer tic(void)
 { TicTocTimer t = {0,0};
   LARGE_INTEGER tmp;
+ 
   Guarded_Assert_WinErr( QueryPerformanceFrequency( &tmp ) );
   t.rate = tmp.QuadPart;
   Guarded_Assert_WinErr( QueryPerformanceCounter  ( &tmp ) );
@@ -77,12 +78,13 @@ TicTocTimer tic(void)
   
 #ifdef DEBUG_TIC_TOC_TIMER  
   //Guarded_Assert( t.rate > 0 );
-  debug("Tic() timer frequency: %u Hz\r\n"
+  debug("Tic() timer frequency: %I64u Hz\r\n"
         "           resolution: %g ns\r\n"
-        "               counts: %u\r\n",(u32) t.rate, 
+        "               counts: %I64u\r\n",t.rate, 
                                         1e9/(double)t.rate, 
-                                        (u32) t.last);
+                                        t.last);
 #endif  
+  
   return t;
 }
 
