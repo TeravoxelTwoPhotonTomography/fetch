@@ -71,6 +71,8 @@ Asynq_Lock ( asynq *self )
  *   abandoned or a timeout elapsed.
  * A warning will be generated if the lock was
  *   abandoned.
+ * Return of 0 indicates a timeout or an 
+ *   abandoned wait.
  */
 static inline unsigned
 _handle_wait_for_result(DWORD result, const char* msg)
@@ -99,19 +101,21 @@ _asynq_push_unlocked(                        // Returns 1 on success, 0 otherwis
                       DWORD timeout_ms )     // Time to wait for a self->notify_space event.  Set to INFINITE for no timeout.
 { HANDLE notify = self->notify_space;
   RingFIFO* q = self->q;
+  DWORD res;
   if( RingFIFO_Is_Full( q ) && !expand_on_full)
   { if(is_try) return 0;
   
     Guarded_Assert_WinErr( ResetEvent( notify ) );
-    self->waiting_producers++;
-    while( RingFIFO_Is_Full( q ) )
-      if( !_handle_wait_for_result( 
-                  WaitForSingleObject( notify, timeout_ms ), 
-                  "Asynq Push") )
-        break; 
+    
+    self->waiting_producers++;    
+    Asynq_Unlock(self);
+    res = WaitForSingleObject( notify, timeout_ms );
+    Asynq_Lock(self);    
     self->waiting_producers--;
-    if( RingFIFO_Is_Full( q ) )
-      return 0;    
+    
+    if( !_handle_wait_for_result( res, "Asynq Push") )
+      if( RingFIFO_Is_Full( q ) )
+        return 0;    
   }
   RingFIFO_Push( q, pbuf, expand_on_full );
   if( self->waiting_consumers )
@@ -127,19 +131,21 @@ _asynq_pop_unlocked(                         // Returns 1 on success, 0 otherwis
                       DWORD timeout_ms )     // Time to wait for a self->notify_space event.  Set to INFINITE for no timeout.
 { HANDLE notify = self->notify_data;
   RingFIFO* q = self->q;
+  DWORD res;
   if( RingFIFO_Is_Empty( q ))
   { if(is_try) return 0;
   
     Guarded_Assert_WinErr( ResetEvent( notify ) );
+    
     self->waiting_consumers++;
-    while( RingFIFO_Is_Empty( q ) )
-      if( !_handle_wait_for_result( 
-                  WaitForSingleObject( notify, timeout_ms ), 
-                  "Asynq Pop") )
-        break; 
+    Asynq_Unlock(self);
+    res = WaitForSingleObject( notify, timeout_ms );
+    Asynq_Lock(self);
     self->waiting_consumers--;
-    if( RingFIFO_Is_Empty( q ) )
-      return 0;    
+    
+    if( !_handle_wait_for_result(res,  "Asynq Pop") )
+      if( RingFIFO_Is_Empty( q ) )
+        return 0;
   }
   RingFIFO_Pop( q, pbuf );
   if( self->waiting_producers )
@@ -155,22 +161,23 @@ _asynq_peek_unlocked(                        // Returns 1 on success, 0 otherwis
                       DWORD timeout_ms )     // Time to wait for a self->notify_space event.  Set to INFINITE for no timeout.
 { HANDLE notify = self->notify_data;
   RingFIFO* q = self->q;
+  DWORD res;
   if( RingFIFO_Is_Empty( q ))
   { if(is_try) return 0;
   
     Guarded_Assert_WinErr( ResetEvent( notify ) );
-    self->waiting_consumers++;
-    while( RingFIFO_Is_Empty( q ) )
-      if( !_handle_wait_for_result( 
-                  WaitForSingleObject( notify, timeout_ms ), 
-                  "Asynq Peek") )
-        break; 
+    
+    self->waiting_consumers++;    
+    Asynq_Unlock(self);
+    res = WaitForSingleObject( notify, timeout_ms );
+    Asynq_Lock(self);
     self->waiting_consumers--;
-    if( RingFIFO_Is_Empty( q ) )
-      return 0;    
+    
+    if( !_handle_wait_for_result( res, "Asynq Peek") )          
+      if( RingFIFO_Is_Empty( q ) )
+        return 0;
   }
   RingFIFO_Peek( q, buf );
-
   return 1;
 }
 

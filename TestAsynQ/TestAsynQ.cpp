@@ -12,28 +12,29 @@ DWORD WINAPI spin(LPVOID lpParam)
 
 DWORD WINAPI simple_pusher(LPVOID lpParam)
 { asynq *q = (asynq*) lpParam;
-  void *buf = Asynq_Alloc_Token_Buffer(q);
-  int n = 100;
+  int *buf = (int*) Asynq_Alloc_Token_Buffer(q);
+  int n = 32;
   unsigned int res = 0;
   debug("pusher start\r\n");
   while(n--)
-  { res |= Asynq_Push(q,&buf,TRUE);
-    debug("\t+ %p %5d\r\n", &buf, n);
+  { buf[0] = n;
+    res = Asynq_Push(q, (void**) &buf,TRUE);
+    debug("\t+%c %p %5d\r\n", res?' ':'x', buf, n);
   }
   Asynq_Free_Token_Buffer(buf);
-  debug("pusher stop: %d\r\n",res);
+  debug("pusher stop: %d\r\n",res);   
   return 0;
 }
 
 DWORD WINAPI simple_popper(LPVOID lpParam)
 { asynq *q = (asynq*) lpParam;
-  void *buf = Asynq_Alloc_Token_Buffer(q);
-  int n = 100;
+  int *buf = (int*) Asynq_Alloc_Token_Buffer(q);
+  int n = 32;
   unsigned int res = 0;
   debug("popper start\r\n");
-  while(1)
-  { if( Asynq_Pop(q,&buf) )
-      debug("\t- %p %5d\r\n", &buf, n);
+  while(n--)
+  { if( res = Asynq_Pop(q,(void**)&buf) )
+      debug("\t-%c %p %5d %5d\r\n",res?' ':'x', buf, n, buf[0]);
   }
   Asynq_Free_Token_Buffer(buf);
   debug("popper stop: %d\r\n",res);
@@ -46,14 +47,14 @@ void simple_pushpop(size_t w, size_t h, size_t nchan, size_t bytes_per_pixel)
   HANDLE threads[] = {
              CreateThread( NULL,     // use default security profile
                      32*1024*1024,   // use stack size in bytes (default 1 MB)
-                     &simple_pusher, // proc
+                     &simple_popper, // proc
                      (LPVOID) q,     // lpparam
                      CREATE_SUSPENDED,  // creation flags - set to 0 to run immediately
                      NULL),          // (output) thread id - NULL ignores
                      
              CreateThread( NULL,     // use default security profile
                      32*1024*1024,   // use stack size in bytes (default 1 MB)
-                     &simple_popper, // proc
+                     &simple_pusher, // proc
                      (LPVOID) q,     // lpparam
                      CREATE_SUSPENDED,  // creation flags - set to 0 to run immediately                     
                      NULL)           // (output) thread id - NULL ignores
