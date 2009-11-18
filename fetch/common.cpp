@@ -14,9 +14,12 @@
 #define DEBUG_TIC_TOC_TIMER
 #endif
 
+
+
 //
 // Utility functions
 //
+
 inline u8 _next_pow2_u8(u8 v)
 { v--;
   v |= v >> 1;
@@ -122,29 +125,54 @@ TYPE_VECTOR_DEFINE ( pf_shutdown_callback );
 
 vector_pf_shutdown_callback g_shutdown_callbacks = VECTOR_EMPTY;
 
+LPCRITICAL_SECTION g_p_shutdown_critical_section = NULL;
+
+static LPCRITICAL_SECTION _get_shutdown_critical_section(void)
+{ static CRITICAL_SECTION gcs;
+  if(!g_p_shutdown_critical_section)
+  { assert( InitializeCriticalSectionAndSpinCount( &gcs, 0x80000400 ) );
+    g_p_shutdown_critical_section = &gcs;
+  }
+  
+  return g_p_shutdown_critical_section;
+}
+
+static void _cleanup_shutdown_critical_section(void)
+{ if(g_p_shutdown_critical_section)
+    DeleteCriticalSection( g_p_shutdown_critical_section );
+  g_p_shutdown_critical_section = NULL;
+}
+
 size_t Register_New_Shutdown_Callback( pf_shutdown_callback callback )
-{ size_t idx = g_shutdown_callbacks.count++;
-  vector_pf_shutdown_callback_request( &g_shutdown_callbacks, idx );
-  g_shutdown_callbacks.contents[idx] = callback;
+{ size_t idx;
+  EnterCriticalSection( _get_shutdown_critical_section() );
+    idx = g_shutdown_callbacks.count++;
+    vector_pf_shutdown_callback_request( &g_shutdown_callbacks, idx );
+    g_shutdown_callbacks.contents[idx] = callback;
+  LeaveCriticalSection( _get_shutdown_critical_section() );
   return idx;
 }
 
 unsigned int Shutdown_Soft(void)
-{ size_t cnt = g_shutdown_callbacks.count;
-  unsigned err = 0;
-  pf_shutdown_callback *beg = g_shutdown_callbacks.contents,
-                       *cur = beg+cnt;
+{ unsigned err = 0;
+  EnterCriticalSection( _get_shutdown_critical_section() );
+  { size_t cnt = g_shutdown_callbacks.count;
+    
+    pf_shutdown_callback *beg = g_shutdown_callbacks.contents,
+                         *cur = beg+cnt;
 
-  static int lock = 0;// Avoid recursion
-  assert( lock == 0 ); 
-  lock = 1;
+    static int lock = 0;// Avoid recursion
+    assert( lock == 0 ); 
+    lock = 1;
 
-  while( cur-- > beg )
-    if(cur)
-      err |= (*cur)();
-  lock = 0;
+    while( cur-- > beg )
+      if(cur)
+        err |= (*cur)();
+    lock = 0;
 
-  vector_pf_shutdown_callback_free_contents( &g_shutdown_callbacks );
+    vector_pf_shutdown_callback_free_contents( &g_shutdown_callbacks );
+  }
+  LeaveCriticalSection( _get_shutdown_critical_section() );  
   return err;
 }
 
@@ -163,11 +191,32 @@ vector_pf_reporting_callback g_error_report_callbacks    = VECTOR_EMPTY;
 vector_pf_reporting_callback g_warning_report_callbacks  = VECTOR_EMPTY;
 vector_pf_reporting_callback g_debug_report_callbacks    = VECTOR_EMPTY;
 
+LPCRITICAL_SECTION g_p_reporting_critical_section = NULL;
+
+static LPCRITICAL_SECTION _get_reporting_critical_section(void)
+{ static CRITICAL_SECTION gcs;
+  if(!g_p_reporting_critical_section)
+  { assert( 0!=InitializeCriticalSectionAndSpinCount( &gcs, 0x80000400 ) );
+    g_p_reporting_critical_section = &gcs;
+  }
+  return g_p_reporting_critical_section;
+}
+
+static void _cleanup_reporting_critical_section(void)
+{ if(g_p_reporting_critical_section)
+    DeleteCriticalSection( g_p_reporting_critical_section );
+  g_p_reporting_critical_section = NULL;
+}
+
 size_t _register_new_reporting_callback( vector_pf_reporting_callback *vec,
                                          pf_reporting_callback callback )
-{ size_t idx = vec->count++;
-  vector_pf_reporting_callback_request( vec, idx );
-  vec->contents[idx] = callback;
+{ size_t idx;
+  EnterCriticalSection( _get_reporting_critical_section() );
+  { idx = vec->count++;
+    vector_pf_reporting_callback_request( vec, idx );
+    vec->contents[idx] = callback;
+  }
+  LeaveCriticalSection( _get_reporting_critical_section() );
   return idx;
 }
 
@@ -265,8 +314,8 @@ void Reporting_Setup_Log_To_Stdout( void )
 
 
 void ReportLastWindowsError(void) 
-{ 
-    // Retrieve the system error message for the last-error code
+{ EnterCriticalSection( _get_reporting_critical_section() );
+  { // Retrieve the system error message for the last-error code
 
     LPVOID lpMsgBuf;
     LPVOID lpDisplayBuf;
@@ -307,33 +356,77 @@ void ReportLastWindowsError(void)
 
     LocalFree(lpMsgBuf);
     LocalFree(lpDisplayBuf);
+  }
+  LeaveCriticalSection( _get_reporting_critical_section() );
 }
 
 void error(const char* fmt, ...)
-{ static char prefix[] = "*** ERROR: ";
-  size_t len;
-  va_list argList;
-  static vector_char vbuf = VECTOR_EMPTY;
-  
-  // render formated string
-  va_start( argList, fmt );
-    len = sizeof(prefix) + _vscprintf(fmt,argList) + 1;
-    vector_char_request( &vbuf, len );
-    memset  ( vbuf.contents, 0, len );
-#pragma warning( push )
-#pragma warning( disable:4996 )
-#pragma warning( disable:4995 )
-    sprintf ( vbuf.contents, prefix );
-    vsprintf( vbuf.contents+sizeof(prefix)-1, fmt, argList);
-#pragma warning( pop )
-  va_end( argList );
+{ EnterCriticalSection( _get_reporting_critical_section() );
+  { static const char prefix[] = "*** ERROR: ";
+    size_t len;
+    va_list argList;
+    static vector_char vbuf = VECTOR_EMPTY;
+    
+    // render formated string
+    va_start( argList, fmt );
+      len = sizeof(prefix) + _vscprintf(fmt,argList) + 1;
+      vector_char_request( &vbuf, len );
+      memset  ( vbuf.contents, 0, len );
+  #pragma warning( push )
+  #pragma warning( disable:4996 )
+  #pragma warning( disable:4995 )
+      sprintf ( vbuf.contents, prefix );
+      vsprintf( vbuf.contents+sizeof(prefix)-1, fmt, argList);
+  #pragma warning( pop )
+    va_end( argList );
 
-  // spam formated string to listeners
-  { static int lock = 0;
+    // spam formated string to listeners
+    { static int lock = 0;
+      assert( lock == 0 ); // One of the logging functions generated a log message
+      lock = 1;
+      { pf_reporting_callback *beg = g_error_report_callbacks.contents;
+        size_t cnt                 = g_error_report_callbacks.count;
+        char *buffer = vbuf.contents;
+        pf_reporting_callback *cur = beg + cnt;
+        while( cur-- > beg )
+          if(cur)
+            (*cur)(buffer);
+      }
+      lock = 0;
+    }
+  }
+  LeaveCriticalSection( _get_reporting_critical_section() );
+  // cleanup and shutdown
+  Shutdown_Hard(1);
+}
+
+void warning(const char* fmt, ...)
+{ EnterCriticalSection( _get_reporting_critical_section() );
+  { static const char prefix[] = "--- WARNING: ";
+    size_t len;
+    va_list argList;
+    static vector_char vbuf = VECTOR_EMPTY;
+
+    static int lock = 0;
     assert( lock == 0 ); // One of the logging functions generated a log message
     lock = 1;
-    { pf_reporting_callback *beg = g_error_report_callbacks.contents;
-      size_t cnt                 = g_error_report_callbacks.count;
+
+    // render formated string
+    va_start( argList, fmt );
+      len = sizeof(prefix) + _vscprintf(fmt,argList) + 1;
+      vector_char_request( &vbuf, len );
+      memset  ( vbuf.contents, 0, len );
+  #pragma warning( push )
+  #pragma warning( disable:4996 )
+  #pragma warning( disable:4995 )
+      sprintf ( vbuf.contents, prefix );
+      vsprintf( vbuf.contents+sizeof(prefix)-1, fmt, argList);
+  #pragma warning( pop )
+    va_end( argList );
+
+    // spam formated string to listeners
+    { pf_reporting_callback *beg = g_warning_report_callbacks.contents;
+      size_t cnt                 = g_warning_report_callbacks.count;
       char *buffer = vbuf.contents;
       pf_reporting_callback *cur = beg + cnt;
       while( cur-- > beg )
@@ -342,77 +435,43 @@ void error(const char* fmt, ...)
     }
     lock = 0;
   }
-
-  // cleanup and shutdown
-  Shutdown_Hard(1);
-}
-
-void warning(const char* fmt, ...)
-{ static char prefix[] = "--- WARNING: ";
-  size_t len;
-  va_list argList;
-  static vector_char vbuf = VECTOR_EMPTY;
-
-  static int lock = 0;
-  assert( lock == 0 ); // One of the logging functions generated a log message
-  lock = 1;
-
-  // render formated string
-  va_start( argList, fmt );
-    len = sizeof(prefix) + _vscprintf(fmt,argList) + 1;
-    vector_char_request( &vbuf, len );
-    memset  ( vbuf.contents, 0, len );
-#pragma warning( push )
-#pragma warning( disable:4996 )
-#pragma warning( disable:4995 )
-    sprintf ( vbuf.contents, prefix );
-    vsprintf( vbuf.contents+sizeof(prefix)-1, fmt, argList);
-#pragma warning( pop )
-  va_end( argList );
-
-  // spam formated string to listeners
-  { pf_reporting_callback *beg = g_warning_report_callbacks.contents;
-    size_t cnt                 = g_warning_report_callbacks.count;
-    char *buffer = vbuf.contents;
-    pf_reporting_callback *cur = beg + cnt;
-    while( cur-- > beg )
-      if(cur)
-        (*cur)(buffer);
-  }
-  lock = 0;
+  LeaveCriticalSection( _get_reporting_critical_section() );
 }
 
 void debug(const char* fmt, ...)
-{ size_t len;
-  va_list argList;
-  static vector_char vbuf = VECTOR_EMPTY;
+{ EnterCriticalSection( _get_reporting_critical_section() );
+  { size_t len;
+    va_list argList;
+    static vector_char vbuf = VECTOR_EMPTY;
 
-  static int lock = 0;
-  assert( lock == 0 ); // One of the logging functions generated a log message
-  lock = 1;
+    static int lock = 0;
+    assert( lock == 0 ); // One of the logging functions generated a log message
+    lock = 1;
 
-  // render formated string
-  va_start( argList, fmt );
-    len = _vscprintf(fmt,argList) + 1;
-    vector_char_request( &vbuf, len );
-    memset  ( vbuf.contents, 0, len );
-#pragma warning( push )
-#pragma warning( disable:4996 )
-#pragma warning( disable:4995 )
-    vsprintf( vbuf.contents, fmt, argList);
-#pragma warning( pop )
-  va_end( argList );
+    // render formated string
+    va_start( argList, fmt );
+      len = _vscprintf(fmt,argList) + 1;
+      vector_char_request( &vbuf, len );
+      memset  ( vbuf.contents, 0, len );
+  #pragma warning( push )
+  #pragma warning( disable:4996 )
+  #pragma warning( disable:4995 )
+      vsprintf( vbuf.contents, fmt, argList);
+  #pragma warning( pop )
+    va_end( argList );
 
-  // spam formated string to listeners
-  { pf_reporting_callback *beg = g_debug_report_callbacks.contents;
-    size_t cnt                 = g_debug_report_callbacks.count;
-    char *buffer = vbuf.contents;
-    pf_reporting_callback *cur = beg + cnt;
-    while( cur-- > beg )
-      if(cur)
-        (*cur)(buffer);
+    // spam formated string to listeners
+    { pf_reporting_callback *beg = g_debug_report_callbacks.contents;
+      size_t cnt                 = g_debug_report_callbacks.count;
+      char *buffer = vbuf.contents;
+      pf_reporting_callback *cur = beg + cnt;
+      while( cur-- > beg )
+        if(cur)
+          (*cur)(buffer);
+    }
+    lock = 0;
   }
-  lock = 0;
+  LeaveCriticalSection( _get_reporting_critical_section() );
 }
 
 //
