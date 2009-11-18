@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
+# Visual C++ Express 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fetch", "fetch\fetch.vcproj", "{46D200B2-EA96-4400-98B5-084A8C189842}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestTicTocTimer", "TestTicTocTimer\TestTicTocTimer.vcproj", "{4617B7FE-7036-4A82-ADF8-4D1CD59392FB}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestRingFIFO", "TestRingFIFO\TestRingFIFO.vcproj", "{F914125A-71CA-40B1-BA15-E89297A1E8E5}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestAsynQ", "TestAsynQ\TestAsynQ.vcproj", "{728D29C7-8997-4079-A998-1754FB9C2EE3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,6 +27,10 @@ Global
 		{F914125A-71CA-40B1-BA15-E89297A1E8E5}.Debug|Win32.Build.0 = Debug|Win32
 		{F914125A-71CA-40B1-BA15-E89297A1E8E5}.Release|Win32.ActiveCfg = Release|Win32
 		{F914125A-71CA-40B1-BA15-E89297A1E8E5}.Release|Win32.Build.0 = Release|Win32
+		{728D29C7-8997-4079-A998-1754FB9C2EE3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{728D29C7-8997-4079-A998-1754FB9C2EE3}.Debug|Win32.Build.0 = Debug|Win32
+		{728D29C7-8997-4079-A998-1754FB9C2EE3}.Release|Win32.ActiveCfg = Release|Win32
+		{728D29C7-8997-4079-A998-1754FB9C2EE3}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
