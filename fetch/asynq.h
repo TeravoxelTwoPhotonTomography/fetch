@@ -48,7 +48,7 @@ typedef struct _asynq
 
 asynq *Asynq_Alloc   ( size_t buffer_count, size_t buffer_size_bytes );
 asynq *Asynq_Ref     ( asynq *self );
-void   Asynq_Unref   ( asynq *self );
+int    Asynq_Unref   ( asynq *self );
 
 unsigned int Asynq_Push       ( asynq *self, void **pbuf, int expand_on_full );
 unsigned int Asynq_Push_Try   ( asynq *self, void **pbuf );
@@ -64,6 +64,9 @@ unsigned int Asynq_Peek_Timed ( asynq *self, void  *buf, DWORD timeout_ms );
 
 inline void  Asynq_Lock    ( asynq *self );
 inline void  Asynq_Unlock  ( asynq *self );
+
+int Asynq_Is_Full( asynq *self );
+int Asynq_Is_Empty( asynq *self );
 
 void*  Asynq_Alloc_Token_Buffer( asynq *self );
 void   Asynq_Free_Token_Buffer ( void *buf   );

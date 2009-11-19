@@ -59,7 +59,7 @@ RingFIFO_Expand( RingFIFO *self )
          tail = MOD_UNSIGNED_POW2( self->tail, old ),
          buffer_size_bytes = self->buffer_size_bytes;
 
-  vector_PVOID_request_pow2( r, old+1 ); // size to next pow2  
+  vector_PVOID_request_pow2( r, old/*+1*/ ); // size to next pow2  
   n = r->nelem - old; // the number of slots added
     
   { PVOID *buf = r->contents,
@@ -146,7 +146,7 @@ RingFIFO_Push( RingFIFO *self, void **pbuf, int expand_on_full)
     Guarded_Assert( !RingFIFO_Is_Empty(self) ); // FIXME: Once this is tested it can be removed
 #endif    
   } else {                  // Overwrite    
-    self->tail++;    
+    self->tail++;
   }
   _swap( self, pbuf, self->head++ );
   return !expand_on_full;

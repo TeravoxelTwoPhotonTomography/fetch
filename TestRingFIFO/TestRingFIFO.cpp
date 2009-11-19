@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "../fetch/ring-fifo.h"
-#include <math.h> // for sqrt
+#include <math.h>  // for sqrt
 #include <float.h> // for DBL_MAX
 
 void create_destroy(size_t w, size_t h, size_t nchan, size_t bytes_per_pixel)
@@ -185,6 +185,54 @@ void pushes_try(size_t w, size_t h, size_t nchan, size_t bytes_per_pixel)
   free(buf);
 }
 
+void pushpop1(size_t w, size_t h, size_t nchan, size_t bytes_per_pixel)
+{ size_t sz = w*h*nchan*bytes_per_pixel;
+  RingFIFO *r = RingFIFO_Alloc( 1, sz); 
+  void * in   = RingFIFO_Alloc_Token_Buffer(r),
+       *out   = RingFIFO_Alloc_Token_Buffer(r),
+       *old   = in;
+  RingFIFO_Push(r,&in,1);
+  RingFIFO_Pop(r,&out);
+  Guarded_Assert(old==out);
+
+  old = in;
+  RingFIFO_Push(r,&in,1);
+  RingFIFO_Push(r,&in,1);
+  RingFIFO_Pop(r,&out);
+  Guarded_Assert(old==out);
+  Guarded_Assert(r->ring->nelem==2);
+  RingFIFO_Pop(r,&out);   // empty
+  
+  old = in;
+  RingFIFO_Push(r,&in,1);
+  RingFIFO_Push(r,&in,1);
+  RingFIFO_Push(r,&in,1);
+  RingFIFO_Pop(r,&out);
+  Guarded_Assert(old==out);
+  Guarded_Assert(r->ring->nelem==4);
+  RingFIFO_Pop(r,&out);
+  RingFIFO_Pop(r,&out);   // empty
+  
+  RingFIFO_Push(r,&in,1);
+  RingFIFO_Push(r,&in,1);
+  RingFIFO_Push(r,&in,1);
+  old = in;
+  RingFIFO_Push(r,&in,1);
+  RingFIFO_Push(r,&in,1);
+  RingFIFO_Pop(r,&out);
+  RingFIFO_Pop(r,&out);
+  RingFIFO_Pop(r,&out);
+  RingFIFO_Pop(r,&out);
+  Guarded_Assert(old==out);
+  Guarded_Assert(r->ring->nelem==8);  
+  RingFIFO_Pop(r,&out);   // empty
+  
+  free( in );
+  free( out);
+  RingFIFO_Free(r);       
+  
+}
+
 void pushpops(size_t w, size_t h, size_t nchan, size_t bytes_per_pixel)
 { size_t sz = w*h*nchan*bytes_per_pixel;
   int maxbuf = 2,
@@ -214,16 +262,19 @@ void pushpops(size_t w, size_t h, size_t nchan, size_t bytes_per_pixel)
   for(j=0;j<n;j++)
   { t = tic();
     for( i=1; i<=onoff[j]; i++ )
-    { toc(&t);
+    { void *u;
+      toc(&t);
       if(j&1)
-        RingFIFO_Pop( r, &buf);
+      { u = buf; RingFIFO_Pop( r, &buf); }
       else
-        RingFIFO_Push( r, &buf, expand[j] );
-      debug("\t\t%c  %6d  %8.1f  % 4d  % 4d   %c  %c  %2d\r\n",
+      { RingFIFO_Push( r, &buf, expand[j] ); u = buf;}
+      debug("\t\t%c  %6d  %8.1f  % 4d  % 4d   %c  %c  %2d 0x%p\r\n",
              (j&1)?'-':'+',
              i, 1e6*toc(&t), r->head, r->tail,
              RingFIFO_Is_Empty(r)?'x':'.',
-             RingFIFO_Is_Full(r) ?'x':'.', r->head - r->tail);
+             RingFIFO_Is_Full(r) ?'x':'.', 
+             r->head - r->tail,
+             u);
     }
   }
   RingFIFO_Free(r);
@@ -346,16 +397,17 @@ int _tmain(int argc, _TCHAR* argv[])
   Reporting_Setup_Log_To_VSDebugger_Console();
   
   // CASES
-  pushes_no_exp(1024,1024,8,2);
-  pushes_w_exp(1024,1024,8,2);
-  pushes_try(1024,1024,8,2);
+  //pushes_no_exp(1024,1024,8,2);
+  //pushes_w_exp(1024,1024,8,2);
+  //pushes_try(1024,1024,8,2);
+  pushpop1(1024,1024,8,2);
   pushpops(1024,1024,8,2);  
   
   // TIMING
-  create_destroy(1024,1024,8,2);
-  time_pushes_no_exp(1024,1024,8,2);
-  time_pushpops(1024,1024,8,2);
-  time_peeks(1024,1024,8,2);
+  //create_destroy(1024,1024,8,2);
+  //time_pushes_no_exp(1024,1024,8,2);
+  //time_pushpops(1024,1024,8,2);
+  //time_peeks(1024,1024,8,2);
   
 	return 0;
 }

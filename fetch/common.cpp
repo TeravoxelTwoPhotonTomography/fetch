@@ -130,7 +130,7 @@ LPCRITICAL_SECTION g_p_shutdown_critical_section = NULL;
 static LPCRITICAL_SECTION _get_shutdown_critical_section(void)
 { static CRITICAL_SECTION gcs;
   if(!g_p_shutdown_critical_section)
-  { assert( InitializeCriticalSectionAndSpinCount( &gcs, 0x80000400 ) );
+  { InitializeCriticalSectionAndSpinCount( &gcs, 0x80000400 ); // don't assert - Release builds will optimize this out.
     g_p_shutdown_critical_section = &gcs;
   }
   
@@ -196,7 +196,7 @@ LPCRITICAL_SECTION g_p_reporting_critical_section = NULL;
 static LPCRITICAL_SECTION _get_reporting_critical_section(void)
 { static CRITICAL_SECTION gcs;
   if(!g_p_reporting_critical_section)
-  { assert( 0!=InitializeCriticalSectionAndSpinCount( &gcs, 0x80000400 ) );
+  { InitializeCriticalSectionAndSpinCount( &gcs, 0x80000400 ); // don't assert - Release builds will optimize this out.
     g_p_reporting_critical_section = &gcs;
   }
   return g_p_reporting_critical_section;
