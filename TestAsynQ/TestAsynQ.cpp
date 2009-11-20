@@ -114,6 +114,9 @@ void pushpop1(size_t w, size_t h, size_t nchan, size_t bytes_per_pixel)
   Guarded_Assert( q->waiting_producers == 0 );
   Guarded_Assert( q->waiting_consumers == 0 );  
   Guarded_Assert( Asynq_Unref(q) );
+  
+  while( nthreads-- )
+    Guarded_Assert_WinErr( CloseHandle( threads[nthreads] ));  
 }                             
 
 //
@@ -196,6 +199,9 @@ void pushpop2(size_t w, size_t h, size_t nchan, size_t bytes_per_pixel)
   Guarded_Assert( q->waiting_producers == 0 );
   Guarded_Assert( q->waiting_consumers == 0 );  
   Guarded_Assert( Asynq_Unref(q) ); // Assert this is the last reference and is freed.
+  
+  while( nthreads-- )
+    Guarded_Assert_WinErr( CloseHandle( threads[nthreads] ));
 } 
 
 //
@@ -356,6 +362,9 @@ void pushpop3(size_t w, size_t h, size_t nchan, size_t bytes_per_pixel)
   Guarded_Assert( q->waiting_producers == 0 );
   Guarded_Assert( q->waiting_consumers == 0 );  
   Guarded_Assert( Asynq_Unref(q) );
+  
+  while( nthreads-- )
+    Guarded_Assert_WinErr( CloseHandle( threads[nthreads] ));
 } 
 
 // ----
