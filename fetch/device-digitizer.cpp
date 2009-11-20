@@ -6,26 +6,65 @@
 #define CheckWarn( expression )  (niscope_chk( g_digitizer.vi, expression, #expression, &warning ))
 #define CheckPanic( expression ) (niscope_chk( g_digitizer.vi, expression, #expression, &error   ))
 
-Digitizer            g_digitizer        = {0};
+Digitizer            g_digitizer        = DIGITIZER_EMPTY;
 Digitizer_Config     g_digitizer_config = DIGITIZER_CONFIG_DEFAULT;
 
+unsigned int Digitizer_Destroy(void)
+{ if(g_digitizer.lock)
+  { DeleteCriticalSection( g_digitizer.lock );
+    g_digitizer.lock = NULL;
+  }
+}
+
+inline void
+Digitizer_Lock(void)
+{ EnterCriticalSection( g_digitizer.lock );
+}
+
+inline void
+Digitizer_Unlock(void)
+{ LeaveCriticalSection( g_digitizer.lock );
+}
+
 void Digitizer_Init(void)
-{ // Register Shutdown function
-  Register_New_Shutdown_Callback( &Digitizer_Close );
+{ //Synchronization
+  static CRITICAL_SECTION cs;
+  if( !g_digitizer.lock )
+    InitializeCriticalSection(g_digitizer.lock = &cs);    
+  g_digitizer.notify_available = CreateEvent( NULL,    // default security attributes
+                                              TRUE,    // requires manual reset
+                                              FALSE,   // initially unsignalled
+                                              NULL );  // no name
+
+  // Register Shutdown functions - these get called in reverse order
+  Register_New_Shutdown_Callback( &Digitizer_Destroy );
+  Register_New_Shutdown_Callback( &Digitizer_Close   );
+  
+  // Register Microscope state functions
   Register_New_Microscope_Hold_Callback( &Digitizer_Hold );
   Register_New_Microscope_Off_Callback( &Digitizer_Off );
 }
 
-unsigned int Digitizer_Close(void)
-{ debug("Digitizer: Close.\r\n");
-  ViSession vi = g_digitizer.vi;
-  ViStatus status = VI_SUCCESS;
-  // Close the session
-  if (vi)
-    status = CheckWarn( niScope_close (vi) );  
 
-  g_digitizer.vi = NULL;
-  return status;
+
+unsigned int Digitizer_Close(void)
+{ Digitizer_Lock();
+  debug("Digitizer: Close.\r\n");
+  { ViSession vi = g_digitizer.vi;
+    ViStatus status = VI_SUCCESS;
+    HRESULT res;
+    
+    // Device is unavailable                     // This doesn't stop others from trying to use the
+    ResetEvent( g_digitizer.notify_available );  // device.  It's just so there is an option to wait
+                                                 // till it's available.
+    // Close the session
+    if (vi)
+      status = CheckWarn( niScope_close (vi) );
+    g_digitizer.vi = NULL;
+    
+    Digitizer_Unlock();
+    return status;
+  }
 }
 
 unsigned int Digitizer_Off(void)
@@ -34,28 +73,29 @@ unsigned int Digitizer_Off(void)
 }
 
 unsigned int Digitizer_Hold(void)
-{ ViSession *vi = &g_digitizer.vi;
+{ Digitizer_Lock();
   ViStatus status = VI_SUCCESS;
-
   debug("Digitizer: Hold\r\n");
-  if( (*vi) == NULL )
-  { // Open the NI-SCOPE instrument handle
-    status = CheckPanic (
-      niScope_init (g_digitizer_config.resource_name, 
-                    NISCOPE_VAL_TRUE,  // ID Query
-                    NISCOPE_VAL_FALSE, // Reset?
-                    vi)                // Session
-    );
+  { ViSession *vi = &g_digitizer.vi;
+
+    if( (*vi) == NULL )
+    { // Open the NI-SCOPE instrument handle
+      status = CheckPanic (
+        niScope_init (g_digitizer_config.resource_name, 
+                      NISCOPE_VAL_TRUE,  // ID Query
+                      NISCOPE_VAL_FALSE, // Reset?
+                      vi)                // Session
+      );
+    }    
   }
   debug("\tGot session %3d with status %d\n",*vi,status);
+  Digitizer_Unlock();
   return status;
 }
 
 //
 // TESTING
-// 
-
-
+//
 
 void Digitizer_Append_Menu( HMENU menu )
 { HMENU submenu = CreatePopupMenu();

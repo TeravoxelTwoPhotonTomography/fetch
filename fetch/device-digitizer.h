@@ -13,9 +13,15 @@
 #define DIGITIZER_DEVICE_NAME             "Dev2\0"
 #define DIGITIZER_DEFAULT_RECORD_LENGTH   1024
 
+#define DIGITIZER_BUFFER_NUM_FRAMES       64 // must be a power of two
+
 typedef struct _digitizer 
-{ ViSession vi;
+{ ViSession           vi;
+  LPCRITICAL_SECTION  lock;
+  HANDLE              notify_available;   // Event
 } Digitizer;
+
+#define DIGITIZER_EMPTY {0,NULL,INVALID_HANDLE_VALUE};
 
 typedef struct _digitizer_channel_config
 { ViChar    *name;     // Null terminated string with channel syntax: e.g. "0-2,7"
@@ -68,20 +74,30 @@ typedef struct _digitizer_config
 // Device interface
 //
 
-void         Digitizer_Init   (void);
-unsigned int Digitizer_Close  (void);
-unsigned int Digitizer_Off    (void);
-unsigned int Digitizer_Hold   (void);
+void         Digitizer_Init    (void);     // Only call once
+void         Digitizer_Destroy (void);     // Only call once
+unsigned int Digitizer_Close   (void);
+unsigned int Digitizer_Off     (void);
+unsigned int Digitizer_Hold    (void);
+
+//
+// Synchronization
+//
+
+inline void  Digitizer_Lock(void);
+inline void  Digitizer_Unlock(void);
+
+unsigned int Digitizer_Wait_Till_Available(DWORD timeout_ms);
 
 //
 // Windows
 //    testing utilities
 //
 
-
-#define IDM_DIGITIZER      WM_APP+1
-#define IDM_DIGITIZER_OFF  IDM_DIGITIZER+1
-#define IDM_DIGITIZER_HOLD IDM_DIGITIZER+2
+#define IDM_DIGITIZER        WM_APP+1
+#define IDM_DIGITIZER_OFF    IDM_DIGITIZER+1
+#define IDM_DIGITIZER_HOLD   IDM_DIGITIZER+2
+#define IDM_DIGITIZER_STREAM IDM_DIGITIZER+3
 
 void             Digitizer_Append_Menu  ( HMENU hmenu );
 LRESULT CALLBACK Digitizer_Menu_Handler ( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
