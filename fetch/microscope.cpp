@@ -26,15 +26,15 @@ void Microscope_Register_Application_Shutdown_Procs(void)
   Register_New_Shutdown_Callback( _free_g_microscope_off_callbacks  );
 }
 
-int Register_New_Microscope_Hold_Callback( pf_microscope_hold_callback callback )
-{ int idx = g_microscope_hold_callbacks.count++;
+size_t Register_New_Microscope_Hold_Callback( pf_microscope_hold_callback callback )
+{ size_t idx = g_microscope_hold_callbacks.count++;
   vector_pf_microscope_hold_callback_request( &g_microscope_hold_callbacks, idx );
   g_microscope_hold_callbacks.contents[idx] = callback;
   return idx;
 }
 
-int Register_New_Microscope_Off_Callback( pf_microscope_off_callback callback )
-{ int idx = g_microscope_off_callbacks.count++;
+size_t Register_New_Microscope_Off_Callback( pf_microscope_off_callback callback )
+{ size_t idx = g_microscope_off_callbacks.count++;
   vector_pf_microscope_off_callback_request( &g_microscope_off_callbacks, idx );
   g_microscope_off_callbacks.contents[idx] = callback;
   return idx;

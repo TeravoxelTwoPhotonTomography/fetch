@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "niScope.h"
 
+#include "niModInst.h"
+
 ViStatus niscope_chk ( ViSession vi, 
                        ViStatus result, 
                        const char *expression,
@@ -36,4 +38,58 @@ void niscope_log_wfminfo( pf_reporter pfOutput, niScope_wfmInfo *info )
           , info->gain
           , info->reserved1
           , info->reserved2 );
+}
+
+void niscope_debug_list_devices(void)
+{ ViInt32 ndevices;
+  ViSession session;
+  Guarded_Assert( 
+    VI_SUCCESS == niModInst_OpenInstalledDevicesSession("niScope",&session, &ndevices));
+  debug("niModInst: found %d devices.\r\n");
+  while(ndevices--)
+  { ViInt32 slot, chassis, bus, socket;
+    char name[1024], model[1024], number[1024];
+    niModInst_GetInstalledDeviceAttributeViInt32 (session,  //ViSession handle,
+                                                  ndevices, //ViInt32 index,
+                                                  NIMODINST_ATTR_SLOT_NUMBER, //ViInt32 attributeID,
+                                                  &slot );  //ViInt32* attributeValue)
+    niModInst_GetInstalledDeviceAttributeViInt32 (session,  //ViSession handle,
+                                                  ndevices, //ViInt32 index,
+                                                  NIMODINST_ATTR_CHASSIS_NUMBER, //ViInt32 attributeID,
+                                                  &chassis );  //ViInt32* attributeValue)
+    niModInst_GetInstalledDeviceAttributeViInt32 (session,  //ViSession handle,
+                                                  ndevices, //ViInt32 index,
+                                                  NIMODINST_ATTR_BUS_NUMBER, //ViInt32 attributeID,
+                                                  &bus );  //ViInt32* attributeValue);
+    niModInst_GetInstalledDeviceAttributeViInt32 (session,  //ViSession handle,
+                                                  ndevices, //ViInt32 index,
+                                                  NIMODINST_ATTR_SOCKET_NUMBER, //ViInt32 attributeID,
+                                                  &socket );  //ViInt32* attributeValue);
+    niModInst_GetInstalledDeviceAttributeViString ( session,  //ViSession handle,
+                                                    ndevices, //ViInt32 index,
+                                                    NIMODINST_ATTR_DEVICE_NAME, //ViInt32 attributeID,
+                                                    1024,     //ViInt32 attributeValueBufferSize,
+                                                    name );   //ViChar attributeValue[]);
+    niModInst_GetInstalledDeviceAttributeViString ( session,  //ViSession handle,
+                                                    ndevices, //ViInt32 index,
+                                                    NIMODINST_ATTR_DEVICE_MODEL, //ViInt32 attributeID,
+                                                    1024,     //ViInt32 attributeValueBufferSize,
+                                                    model );   //ViChar attributeValue[]);
+    niModInst_GetInstalledDeviceAttributeViString ( session,  //ViSession handle,
+                                                    ndevices, //ViInt32 index,
+                                                    NIMODINST_ATTR_SERIAL_NUMBER, //ViInt32 attributeID,
+                                                    1024,     //ViInt32 attributeValueBufferSize,
+                                                    number ); //ViChar attributeValue[]);
+    niModInst_CloseInstalledDevicesSession(session);
+    debug("%2d:\r\n"
+          "     Name: %s\r\n"
+          "    Model: %s\r\n"
+          "       SN: %s\r\n"
+          "     Slot: %d\r\n"
+          "  Chassis: %d\r\n"
+          "      Bus: %d\r\n"
+          "   Socket: %d\r\n",
+          ndevices, name, model, number, slot, chassis, bus, socket);
+    
+  }             
 }

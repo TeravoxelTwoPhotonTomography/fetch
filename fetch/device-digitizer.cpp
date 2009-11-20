@@ -101,7 +101,7 @@ void Digitizer_Append_Menu( HMENU menu )
 { HMENU submenu = CreatePopupMenu();
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_OFF,  "&Off"));
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_HOLD, "&Hold"));
-  Guarded_Assert_WinErr( AppendMenu(    menu, MF_STRING | MF_POPUP, (UINT) submenu, "&Digitizer"));
+  Guarded_Assert_WinErr( AppendMenu(    menu, MF_STRING | MF_POPUP, (UINT_PTR) submenu, "&Digitizer"));
 }
 
 // This has the type of a WinProc

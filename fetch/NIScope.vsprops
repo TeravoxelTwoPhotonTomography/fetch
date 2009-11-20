@@ -10,7 +10,7 @@
 	/>
 	<Tool
 		Name="VCLinkerTool"
-		AdditionalDependencies="niscope.lib ivi.lib"
+		AdditionalDependencies="niscope.lib ivi.lib niModInst.lib"
 		AdditionalLibraryDirectories="&quot;$(VXIPNPPATH)\win95\lib\msc&quot;;&quot;$(VXIPNPPATH)\winnt\lib\msc&quot;"
 	/>
 </VisualStudioPropertySheet>

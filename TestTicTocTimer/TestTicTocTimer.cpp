@@ -52,7 +52,7 @@ void slp(void)
   
   while(iter--)
   { toc(&t);
-    Sleep(100.0);
+    Sleep(100 /*ms*/);
     x = toc(&t)*1e3; // convert to milliseconds
    
     acc  += x;

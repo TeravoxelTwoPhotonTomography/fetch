@@ -72,7 +72,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		}
 	}
   
-  return (int) Shutdown_Soft() | msg.wParam;
+  return Shutdown_Soft() | (unsigned int) msg.wParam;
 }
 
 
