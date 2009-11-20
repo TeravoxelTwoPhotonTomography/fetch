@@ -75,7 +75,7 @@ typedef struct _digitizer_config
 //
 
 void         Digitizer_Init    (void);     // Only call once
-void         Digitizer_Destroy (void);     // Only call once
+unsigned int Digitizer_Destroy (void);     // Only call once
 unsigned int Digitizer_Close   (void);
 unsigned int Digitizer_Off     (void);
 unsigned int Digitizer_Hold    (void);
@@ -84,7 +84,7 @@ unsigned int Digitizer_Hold    (void);
 // Synchronization
 //
 
-inline void  Digitizer_Lock(void);
+inline void  Digitizer_Lock(void);    //Maybe these should be private
 inline void  Digitizer_Unlock(void);
 
 unsigned int Digitizer_Wait_Till_Available(DWORD timeout_ms);

@@ -14,6 +14,7 @@ unsigned int Digitizer_Destroy(void)
   { DeleteCriticalSection( g_digitizer.lock );
     g_digitizer.lock = NULL;
   }
+  return 0;
 }
 
 inline void
@@ -52,11 +53,11 @@ unsigned int Digitizer_Close(void)
   debug("Digitizer: Close.\r\n");
   { ViSession vi = g_digitizer.vi;
     ViStatus status = VI_SUCCESS;
-    HRESULT res;
     
-    // Device is unavailable                     // This doesn't stop others from trying to use the
-    ResetEvent( g_digitizer.notify_available );  // device.  It's just so there is an option to wait
-                                                 // till it's available.
+    // Device is unavailable
+    Guarded_Assert_WinErr(                          // This doesn't stop others from trying to use the
+      ResetEvent( g_digitizer.notify_available ));  // device.  It's just so there is an option to wait
+                                                    // till it's available.
     // Close the session
     if (vi)
       status = CheckWarn( niScope_close (vi) );
@@ -88,7 +89,8 @@ unsigned int Digitizer_Hold(void)
       );
     }    
   }
-  debug("\tGot session %3d with status %d\n",*vi,status);
+  debug("\tGot session %3d with status %d\n",
+  g_digitizer.vi,status);
   Digitizer_Unlock();
   return status;
 }
