@@ -1,6 +1,12 @@
 #include "stdafx.h"
 #include "asynq.h"
 
+#if 0
+#define DEBUG_ASYNQ_UNREF
+#define DEBUG_ASYNQ_FLUSH_WAITING_CONSUMERS
+#define DEBUG_ASYNQ_HANDLE_WAIT_FOR_RESULT
+#endif
+
 //
 // Benchmarks
 // ----------
@@ -70,6 +76,9 @@ Asynq_Unref( asynq *self )
     if( self->q )
       RingFIFO_Free( self->q );
     self->q = NULL;
+#ifdef DEBUG_ASYNQ_UNREF
+    debug("Free Asynq at 0x%p\r\n",self);
+#endif	  
 	  free(self);
 	  return 1;
 	}
@@ -94,8 +103,12 @@ static inline unsigned
 _handle_wait_for_result(DWORD result, const char* msg)
 { return_val_if( result == WAIT_OBJECT_0, 1 );
   Guarded_Assert_WinErr( result != WAIT_FAILED );
-  if( result != WAIT_ABANDONED )
+#ifdef DEBUG_ASYNQ_HANDLE_WAIT_FOR_RESULT  
+  if( result != WAIT_ABANDONED )                   // This is the common timeout result
     warning("Wait abandoned\r\n\t%s\r\n",msg);
+  if( result != WAIT_TIMEOUT )                     // Don't know how to generate this.
+    warning("Wait timeout\r\n\t%s\r\n",msg);  
+#endif
   return 0;
 }
 
@@ -109,7 +122,7 @@ Asynq_Unlock ( asynq *self )
 //
 
 static inline unsigned
-_asynq_wait_for_free_space( asynq *self, DWORD timeout_ms, const char* msg )
+_asynq_wait_for_space( asynq *self, DWORD timeout_ms, const char* msg )
 { HANDLE notify = self->notify_space;
   DWORD res;
   
@@ -124,7 +137,7 @@ _asynq_wait_for_free_space( asynq *self, DWORD timeout_ms, const char* msg )
 }
 
 static inline unsigned
-_asynq_wait_for_free_data( asynq *self, DWORD timeout_ms, const char* msg )
+_asynq_wait_for_data( asynq *self, DWORD timeout_ms, const char* msg )
 { HANDLE notify = self->notify_data;
   DWORD res;
   
@@ -148,7 +161,7 @@ _asynq_push_unlocked(                        // Returns 1 on success, 0 otherwis
 { RingFIFO* q = self->q;
   if( RingFIFO_Is_Full( q ) && (!expand_on_full || self->waiting_consumers>0 ))
   { if(is_try) return 0;
-    if( !_asynq_wait_for_free_space(self, timeout_ms, "Asynq Push") )
+    if( !_asynq_wait_for_space(self, timeout_ms, "Asynq Push") )
       if( RingFIFO_Is_Full( q ) )
         return 0;    
   }
@@ -167,11 +180,11 @@ _asynq_pop_unlocked(                         // Returns 1 on success, 0 otherwis
 { RingFIFO* q = self->q;
   if( RingFIFO_Is_Empty( q ))
   { if(is_try) return 0;
-    if( !_asynq_wait_for_free_data(self, timeout_ms, "Asynq Pop") )
+    if( !_asynq_wait_for_data(self, timeout_ms, "Asynq Pop") )
       if( RingFIFO_Is_Empty( q ) )
         return 0;
   }
-  Guarded_Assert( 0 == RingFIFO_Pop( q, pbuf ) );
+  Guarded_Assert( 0 == RingFIFO_Pop( q, pbuf ) ); // Fail if the queue is empty
   if( self->waiting_producers )
     SetEvent( self->notify_space );
   return 1;
@@ -186,7 +199,7 @@ _asynq_peek_unlocked(                        // Returns 1 on success, 0 otherwis
 { RingFIFO* q = self->q;
   if( RingFIFO_Is_Empty( q ))
   { if(is_try) return 0;
-    if( !_asynq_wait_for_free_data(self, timeout_ms, "Asynq Peek") )          
+    if( !_asynq_wait_for_data(self, timeout_ms, "Asynq Peek") )          
       if( RingFIFO_Is_Empty( q ) )
         return 0;
   }
@@ -302,6 +315,27 @@ Asynq_Peek_Timed( asynq *self, void *buf, DWORD timeout_ms )
 }
 
 //
+// Producer/Consumer management
+//
+
+
+void Asynq_Flush_Waiting_Consumers( asynq *self, int maxiter )
+{ Asynq_Lock(self);
+  while( self->waiting_consumers && maxiter--)
+  { SetEvent( self->notify_data );
+#ifdef DEBUG_ASYNQ_FLUSH_WAITING_CONSUMERS
+    debug(" - Flush - consumers: %-4d remaining iterations: %d\r\n", 
+                self->waiting_consumers,
+                maxiter );
+#endif
+    Asynq_Unlock(self);
+    Sleep(1/*ms*/);
+    Asynq_Lock(self);
+  }
+  Asynq_Unlock(self);
+}
+
+//
 // State queries
 //
 
@@ -325,10 +359,16 @@ int Asynq_Is_Empty( asynq *self )
 //
 // Token buffer management
 //
-void*  Asynq_Alloc_Token_Buffer( asynq *self )
-{ return Guarded_Malloc( self->q->buffer_size_bytes, "Asynq_Alloc_Token_Buffer" );
+void*  Asynq_Token_Buffer_Alloc( asynq *self )
+{ return Guarded_Malloc( self->q->buffer_size_bytes, "Asynq_Token_Buffer_Alloc" );
 }
 
-void   Asynq_Free_Token_Buffer ( void *buf   )
+void*  Asynq_Token_Buffer_Alloc_And_Copy ( asynq *self, void *src )
+{ void *dst = Asynq_Token_Buffer_Alloc(self);
+  memcpy(dst,src,self->q->buffer_size_bytes);
+  return dst;
+}
+
+void   Asynq_Token_Buffer_Free ( void *buf   )
 { free(buf);
 }

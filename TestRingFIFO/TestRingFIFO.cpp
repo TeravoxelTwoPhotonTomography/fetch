@@ -185,9 +185,10 @@ void pushes_try(size_t w, size_t h, size_t nchan, size_t bytes_per_pixel)
   free(buf);
 }
 
+// Tests the various conditions for Push with expansion.
 void pushpop1(size_t w, size_t h, size_t nchan, size_t bytes_per_pixel)
 { size_t sz = w*h*nchan*bytes_per_pixel;
-  RingFIFO *r = RingFIFO_Alloc( 1, sz); 
+  RingFIFO *r = RingFIFO_Alloc( 1, sz);
   void * in   = RingFIFO_Alloc_Token_Buffer(r),
        *out   = RingFIFO_Alloc_Token_Buffer(r),
        *old   = in;
@@ -218,18 +219,18 @@ void pushpop1(size_t w, size_t h, size_t nchan, size_t bytes_per_pixel)
   RingFIFO_Push(r,&in,1);
   old = in;
   RingFIFO_Push(r,&in,1);
-  RingFIFO_Push(r,&in,1);
+  RingFIFO_Push(r,&in,1); // induces Expand on wrapped (requires copy)
   RingFIFO_Pop(r,&out);
   RingFIFO_Pop(r,&out);
   RingFIFO_Pop(r,&out);
   RingFIFO_Pop(r,&out);
   Guarded_Assert(old==out);
   Guarded_Assert(r->ring->nelem==8);  
-  RingFIFO_Pop(r,&out);   // empty
+  RingFIFO_Pop(r,&out);   // empty 
   
   free( in );
   free( out);
-  RingFIFO_Free(r);       
+  RingFIFO_Free(r);
   
 }
 

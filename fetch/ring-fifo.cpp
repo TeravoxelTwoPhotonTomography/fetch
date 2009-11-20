@@ -140,14 +140,9 @@ RingFIFO_Push( RingFIFO *self, void **pbuf, int expand_on_full)
   return_val_if( RingFIFO_Push_Try(self, pbuf)==0, 0 );
   // Handle when full
   if( expand_on_full )      // Expand
-  { RingFIFO_Expand(self);
-#ifdef DEBUG_RING_FIFO_PUSH
-    Guarded_Assert( !RingFIFO_Is_Full(self) );  // FIXME: Once this is tested it can be removed
-    Guarded_Assert( !RingFIFO_Is_Empty(self) ); // FIXME: Once this is tested it can be removed
-#endif    
-  } else {                  // Overwrite    
-    self->tail++;
-  }
+    RingFIFO_Expand(self);  
+  else                      // Overwrite
+    self->tail++;      
   _swap( self, pbuf, self->head++ );
   return !expand_on_full;
 }
