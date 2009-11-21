@@ -2,39 +2,24 @@
 #include "util-niscope.h"
 #include "microscope.h"
 #include "device-digitizer.h"
+#include "device.h"
 
 #define CheckWarn( expression )  (niscope_chk( g_digitizer.vi, expression, #expression, &warning ))
 #define CheckPanic( expression ) (niscope_chk( g_digitizer.vi, expression, #expression, &error   ))
 
-Digitizer            g_digitizer        = DIGITIZER_EMPTY;
-Digitizer_Config     g_digitizer_config = DIGITIZER_CONFIG_DEFAULT;
+Digitizer             g_digitizer              = DIGITIZER_EMPTY;
+Device               *gp_digitizer_device      = NULL;
 
 unsigned int Digitizer_Destroy(void)
-{ if(g_digitizer.lock)
-  { DeleteCriticalSection( g_digitizer.lock );
-    g_digitizer.lock = NULL;
-  }
-}
-
-inline void
-Digitizer_Lock(void)
-{ EnterCriticalSection( g_digitizer.lock );
-}
-
-inline void
-Digitizer_Unlock(void)
-{ LeaveCriticalSection( g_digitizer.lock );
+{ if( !Device_Release( gp_digitizer_device, DIGITIZER_DEFAULT_TIMEOUT ) )
+    warning("Could not cleanly release digitizer.\r\n");
+  Device_Free( gp_digitizer_device );
+  return 0;
 }
 
 void Digitizer_Init(void)
-{ //Synchronization
-  static CRITICAL_SECTION cs;
-  if( !g_digitizer.lock )
-    InitializeCriticalSection(g_digitizer.lock = &cs);    
-  g_digitizer.notify_available = CreateEvent( NULL,    // default security attributes
-                                              TRUE,    // requires manual reset
-                                              FALSE,   // initially unsignalled
-                                              NULL );  // no name
+{ Guarded_Assert( gp_digitizer_device = Device_Alloc() );
+  gp_digitizer_device->context = (void*) &g_digitizer;
 
   // Register Shutdown functions - these get called in reverse order
   Register_New_Shutdown_Callback( &Digitizer_Destroy );
@@ -45,26 +30,20 @@ void Digitizer_Init(void)
   Register_New_Microscope_Off_Callback( &Digitizer_Off );
 }
 
-
-
 unsigned int Digitizer_Close(void)
-{ Digitizer_Lock();
+{ Device_Lock( gp_digitizer_device );
   debug("Digitizer: Close.\r\n");
+  if( !Device_Release( gp_digitizer_device, DIGITIZER_DEFAULT_TIMEOUT ) )
+    warning("Could not cleanly release digitizer.\r\n");
   { ViSession vi = g_digitizer.vi;
     ViStatus status = VI_SUCCESS;
-    HRESULT res;
-    
-    // Device is unavailable                     // This doesn't stop others from trying to use the
-    ResetEvent( g_digitizer.notify_available );  // device.  It's just so there is an option to wait
-                                                 // till it's available.
     // Close the session
     if (vi)
       status = CheckWarn( niScope_close (vi) );
     g_digitizer.vi = NULL;
-    
-    Digitizer_Unlock();
     return status;
   }
+  Device_Unlock( gp_digitizer_device );
 }
 
 unsigned int Digitizer_Off(void)
@@ -73,7 +52,7 @@ unsigned int Digitizer_Off(void)
 }
 
 unsigned int Digitizer_Hold(void)
-{ Digitizer_Lock();
+{ Device_Lock( gp_digitizer_device );
   ViStatus status = VI_SUCCESS;
   debug("Digitizer: Hold\r\n");
   { ViSession *vi = &g_digitizer.vi;
@@ -81,15 +60,16 @@ unsigned int Digitizer_Hold(void)
     if( (*vi) == NULL )
     { // Open the NI-SCOPE instrument handle
       status = CheckPanic (
-        niScope_init (g_digitizer_config.resource_name, 
+        niScope_init (g_digitizer.config.resource_name, 
                       NISCOPE_VAL_TRUE,  // ID Query
                       NISCOPE_VAL_FALSE, // Reset?
                       vi)                // Session
       );
-    }    
+    }
+    niscope_debug_list_devices();
   }
-  debug("\tGot session %3d with status %d\n",*vi,status);
-  Digitizer_Unlock();
+  debug("\tGot session %3d with status %d\n",g_digitizer.vi,status);
+  Device_Unlock( gp_digitizer_device );
   return status;
 }
 

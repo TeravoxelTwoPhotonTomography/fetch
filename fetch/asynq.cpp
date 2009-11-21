@@ -105,9 +105,9 @@ _handle_wait_for_result(DWORD result, const char* msg)
   Guarded_Assert_WinErr( result != WAIT_FAILED );
 #ifdef DEBUG_ASYNQ_HANDLE_WAIT_FOR_RESULT  
   if( result != WAIT_ABANDONED )                   // This is the common timeout result
-    warning("Wait abandoned\r\n\t%s\r\n",msg);
+    warning("Asynq: Wait abandoned\r\n\t%s\r\n",msg);
   if( result != WAIT_TIMEOUT )                     // Don't know how to generate this.
-    warning("Wait timeout\r\n\t%s\r\n",msg);  
+    warning("Asynq: Wait timeout\r\n\t%s\r\n",msg);  
 #endif
   return 0;
 }

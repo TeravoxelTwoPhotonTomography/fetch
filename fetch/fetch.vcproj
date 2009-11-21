@@ -190,6 +190,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\device-task.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\device.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\fetch.cpp"
 				>
 			</File>
@@ -249,6 +257,14 @@
 			</File>
 			<File
 				RelativePath=".\device-galvo-mirror.h"
+				>
+			</File>
+			<File
+				RelativePath=".\device-task.h"
+				>
+			</File>
+			<File
+				RelativePath=".\device.h"
 				>
 			</File>
 			<File

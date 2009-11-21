@@ -53,7 +53,9 @@ double      toc(TicTocTimer *last); // returns time since last in seconds and up
 // -------------------------------------------
 
 #define Interlocked_Inc_u32(atomic)          (InterlockedIncrement((atomic)))
+#define Interlocked_Dec_u32(atomic)          (InterlockedDecrement((atomic)))
 #define Interlocked_Inc_u64(atomic)          (InterlockedIncrement64((atomic)))
+#define Interlocked_Dec_u64(atomic)          (InterlockedDecrement64((atomic)))
 #define Interlocked_Dec_And_Test_u32(atomic) (InterlockedExchangeAdd((atomic),-1)==1)
 #define Interlocked_Dec_And_Test_u64(atomic) (InterlockedExchangeAdd64((atomic),-1)==1)
                     
@@ -116,6 +118,8 @@ void debug  (const char* fmt, ...);
 
 #define return_if_fail( cond )          { if(!(cond)) return; }
 #define return_if( cond )               { if( (cond)) return; }
+#define goto_if_fail( cond, lbl )       { if(!(cond)) goto lbl; }
+#define goto_if( cond, lbl )            { if( (cond)) goto lbl; }
 #define return_val_if_fail( cond, val ) { if(!(cond)) return (val); }
 #define return_val_if( cond, val )      { if( (cond)) return (val); }
 

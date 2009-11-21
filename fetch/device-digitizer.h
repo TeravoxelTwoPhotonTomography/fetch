@@ -1,5 +1,6 @@
 #pragma once
 
+#include "device.h"
 #include "util-niscope.h"
 
 //
@@ -10,18 +11,11 @@
 
 #define DIGITIZER_MAX_NUM_CHANNELS        NI5105_MAX_NUM_CHANNELS
 #define DIGITIZER_MAX_SAMPLE_RATE         NI5105_MAX_SAMPLE_RATE
-#define DIGITIZER_DEVICE_NAME             "Dev2\0"
+#define DIGITIZER_DEVICE_NAME             NI5105_DEVICE_NAME
 #define DIGITIZER_DEFAULT_RECORD_LENGTH   1024
 
-#define DIGITIZER_BUFFER_NUM_FRAMES       64 // must be a power of two
-
-typedef struct _digitizer 
-{ ViSession           vi;
-  LPCRITICAL_SECTION  lock;
-  HANDLE              notify_available;   // Event
-} Digitizer;
-
-#define DIGITIZER_EMPTY {0,NULL,INVALID_HANDLE_VALUE};
+#define DIGITIZER_BUFFER_NUM_FRAMES       64  // must be a power of two
+#define DIGITIZER_DEFAULT_TIMEOUT         100 // ms
 
 typedef struct _digitizer_channel_config
 { ViChar    *name;     // Null terminated string with channel syntax: e.g. "0-2,7"
@@ -30,7 +24,7 @@ typedef struct _digitizer_channel_config
   ViBoolean  enabled;  // Specifies whether the channel is enabled for acquisition. Refer to NISCOPE_ATTR_CHANNEL_ENABLED for more information.
 } Digitizer_Channel_Config;
 
-#define DIGITIZER_CHANNEL_CONFIG_EMPTY ((Digitizer_Channel_Config){NULL,0.0,NISCOPE_VAL_DC,VI_FALSE})
+#define DIGITIZER_CHANNEL_CONFIG_EMPTY {NULL,0.0,NISCOPE_VAL_DC,VI_FALSE}
 
 typedef struct _digitizer_config
 { ViChar                  *resource_name;      // NI device name: e.g. "Dev6"
@@ -70,24 +64,24 @@ typedef struct _digitizer_config
                         {"7\0",2.0,NISCOPE_VAL_DC,VI_FALSE}}\
                        }
 
+typedef struct _digitizer 
+{ ViSession           vi;
+  Digitizer_Config    config;
+} Digitizer;
+
+#define DIGITIZER_EMPTY {0, DIGITIZER_CONFIG_EMPTY};
+
 //
 // Device interface
 //
 
 void         Digitizer_Init    (void);     // Only call once
-void         Digitizer_Destroy (void);     // Only call once
+unsigned int Digitizer_Destroy (void);     // Only call once
 unsigned int Digitizer_Close   (void);
 unsigned int Digitizer_Off     (void);
 unsigned int Digitizer_Hold    (void);
 
-//
-// Synchronization
-//
-
-inline void  Digitizer_Lock(void);
-inline void  Digitizer_Unlock(void);
-
-unsigned int Digitizer_Wait_Till_Available(DWORD timeout_ms);
+Device      *Digitizer_Get_Device(void);
 
 //
 // Windows
