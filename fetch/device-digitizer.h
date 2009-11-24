@@ -69,7 +69,8 @@ typedef struct _digitizer
   Digitizer_Config    config;
 } Digitizer;
 
-#define DIGITIZER_EMPTY {0, DIGITIZER_CONFIG_EMPTY};
+#define DIGITIZER_EMPTY   {0, DIGITIZER_CONFIG_EMPTY};
+#define DIGITIZER_DEFUALT {0, DIGITIZER_CONFIG_DEFAULT};
 
 //
 // Device interface
@@ -88,10 +89,11 @@ Device      *Digitizer_Get_Device(void);
 //    testing utilities
 //
 
-#define IDM_DIGITIZER        WM_APP+1
-#define IDM_DIGITIZER_OFF    IDM_DIGITIZER+1
-#define IDM_DIGITIZER_HOLD   IDM_DIGITIZER+2
-#define IDM_DIGITIZER_STREAM IDM_DIGITIZER+3
+#define IDM_DIGITIZER               WM_APP+1
+#define IDM_DIGITIZER_OFF           IDM_DIGITIZER+1
+#define IDM_DIGITIZER_HOLD          IDM_DIGITIZER+2
+#define IDM_DIGITIZER_STREAM        IDM_DIGITIZER+3
+#define IDM_DIGITIZER_LIST_DEVICES  IDM_DIGITIZER+4
 
 void             Digitizer_Append_Menu  ( HMENU hmenu );
 LRESULT CALLBACK Digitizer_Menu_Handler ( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);

@@ -7,7 +7,7 @@
 #define CheckWarn( expression )  (niscope_chk( g_digitizer.vi, expression, #expression, &warning ))
 #define CheckPanic( expression ) (niscope_chk( g_digitizer.vi, expression, #expression, &error   ))
 
-Digitizer             g_digitizer              = DIGITIZER_EMPTY;
+Digitizer             g_digitizer              = DIGITIZER_DEFUALT;
 Device               *gp_digitizer_device      = NULL;
 
 unsigned int Digitizer_Destroy(void)
@@ -66,7 +66,6 @@ unsigned int Digitizer_Hold(void)
                       vi)                // Session
       );
     }
-    niscope_debug_list_devices();
   }
   debug("\tGot session %3d with status %d\n",g_digitizer.vi,status);
   Device_Unlock( gp_digitizer_device );
@@ -81,6 +80,7 @@ void Digitizer_Append_Menu( HMENU menu )
 { HMENU submenu = CreatePopupMenu();
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_OFF,  "&Off"));
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_HOLD, "&Hold"));
+  Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_LIST_DEVICES, "&List NI modular devices"));
   Guarded_Assert_WinErr( AppendMenu(    menu, MF_STRING | MF_POPUP, (UINT_PTR) submenu, "&Digitizer"));
 }
 
@@ -108,6 +108,11 @@ LRESULT CALLBACK Digitizer_Menu_Handler(HWND hWnd, UINT message, WPARAM wParam, 
     case IDM_DIGITIZER_HOLD:
       { debug("IDM_DIGITIZER_HOLD\r\n");        
         Digitizer_Hold();
+      }
+      break;
+    case IDM_DIGITIZER_LIST_DEVICES:
+      { debug("IDM_DIGITIZER_LIST_DEVICES\r\n");
+        niscope_debug_list_devices();        
       }
       break;
 		default:

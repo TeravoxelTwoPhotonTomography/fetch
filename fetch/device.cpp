@@ -122,6 +122,8 @@ Device_Request_Try( Device *self )
 { return _device_request( self,1,INFINITE );
 }
 
+// Transitions device to "Hold" state
+// In hold state, device can be loaded with a new task.
 // Returns 1 on success, 0 otherwise
 unsigned int
 Device_Release( Device *self, DWORD timeout_ms )
@@ -129,8 +131,9 @@ Device_Release( Device *self, DWORD timeout_ms )
   unsigned int ret;
 
   //Terminate thread
-  SetEvent(self->notify_stop);   //signal thread to quit
-  res = WaitForSingleObject(self->thread, timeout_ms);
+  return_val_if( self->thread == INVALID_HANDLE_VALUE, 1); // No task loaded, so return.
+  SetEvent(self->notify_stop);                             // signal task proc to quit
+  res = WaitForSingleObject(self->thread, timeout_ms);     // wait
   
   Device_Lock(self);
   { if( !(ret=_handle_wait_for_result(res, "Device Release: Wait for thread.")) )
