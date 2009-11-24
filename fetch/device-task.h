@@ -8,6 +8,9 @@ typedef asynq* PASYNQ;
 TYPE_VECTOR_DECLARE(PASYNQ);
 
 typedef struct _device Device;
+
+// Callback types:
+//    return 1 on sucess, 0 otherwise
 typedef unsigned int (*fp_device_task_cfg_proc)( Device *d );
 typedef unsigned int (*fp_device_task_run_proc)( Device *d, 
                                                  vector_PASYNQ *in, 
@@ -35,12 +38,15 @@ typedef struct _device_task
   LPTHREAD_START_ROUTINE   main;       // thread procedure (wraps run_proc)
 } DeviceTask;
 
-DeviceTask *DeviceTask_Alloc( size_t num_inputs,
-                              size_t input_queue_size, 
-                              size_t input_buffer_size,
-                              size_t num_outputs,
-                              size_t output_queue_size,
-                              size_t output_buffer_size,
-                              fp_device_task_cfg_proc cfg,
-                              fp_device_task_run_proc run );
+DeviceTask *DeviceTask_Alloc( fp_device_task_cfg_proc cfg,        // Configuration procedure (run when Device is armed)
+                              fp_device_task_run_proc run );      // Run procedure (run when Device is run)
 void        DeviceTask_Free( DeviceTask *self );
+
+void        DeviceTask_Configure_Inputs(  DeviceTask* self,
+                                          size_t num_inputs,            // Input:  # of pipes        
+                                          size_t input_queue_size,      //         # of buffers/pipe 
+                                          size_t input_buffer_size);    //         buffer size       
+void        DeviceTask_Configure_Outputs( DeviceTask* self,              
+                                          size_t num_outputs,           // Output: # of pipes       
+                                          size_t output_queue_size,     //         # of buffers/pipe
+                                          size_t output_buffer_size);   //         buffer size      

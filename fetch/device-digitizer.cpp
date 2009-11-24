@@ -73,6 +73,95 @@ unsigned int Digitizer_Hold(void)
 }
 
 //
+// TASK - Streaming on all channels
+//
+
+unsigned int
+_Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
+{ ViSession  vi = g_digitizer.vi;
+  Digitizer_Config cfg = g_digitizer.config;
+  ViInt32 i;
+   
+  // Vertical
+  for(i=0; i<cfg.num_channels; i++)
+  { Digitizer_Channel_Config ch = cfg.channels[i];
+    CheckPanic(niScope_ConfigureVertical (vi, 
+                                          ch.name,     //channelName, 
+                                          ch.range,    //verticalRange, 
+                                          0.0,         //verticalOffset, 
+                                          ch.coupling, //verticalCoupling, 
+                                          1.0,         //probeAttenuation, 
+                                          ch.enabled));//enabled?
+  }
+  // Horizontal
+  CheckPanic (niScope_ConfigureHorizontalTiming (vi, 
+                                                cfg.sample_rate,       // sample rate (S/s)
+                                                cfg.record_length,     // record length (S)
+                                                cfg.reference_position,// reference position (% units???)
+                                                cfg.num_records,       // number of records to fetch per acquire
+                                                NISCOPE_VAL_TRUE));    // enforce real time?
+  // Configure software trigger, but never send the trigger.
+  // This starts an infinite acquisition, until you call niScope_Abort
+  // or niScope_close
+  CheckPanic (niScope_ConfigureTriggerSoftware (vi, 
+                                                 0.0,   // hold off (s)
+                                                 0.0)); // delay    (s)
+  
+  { ViInt32 nwfm;   
+    CheckPanic( niScope_ActualNumWfms(vi, cfg->acquisition_channels, &nwfm ) );
+    DeviceTask_Configure_Outputs( d->task, 2, {32,32}, 
+                                  {1024*1024*sizeof(ViReal64*),
+                                   nwfm*sizeof(struct niScope_wfmInfo)}
+                                );
+  }
+}
+
+unsigned int
+_Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
+{ Digitizer *dig = ((Digitizer*)d->context);
+  ViSession   vi = dig->vi;
+  ViChar   *chan = dig->config->acquisition_channels;
+  asynq   *qdata = out->contents[0],
+          *qwfm  = out->contents[1];
+  ViInt32  nelem = qdata->q->buffer_size_bytes / sizeof(ViReal64),          // number of samples per data buffer
+           nfetched = 0;
+
+  ViReal64               *buf = (ViReal64*)        Asynq_Token_Buffer_Alloc(qdata);
+  struct niScope_wfmInfo *wfm = (niScope_wfmInfo*) Asynq_Token_Buffer_Alloc(qwfm);
+
+  CheckPanic (niScope_InitiateAcquisition (vi));
+  CheckPanic (niScope_ActualNumWfms (vi, channelName, &numWfms));           // TODO: alloc/get wfm buffer.
+  CheckPanic (niScope_SetAttributeViInt32 (vi, VI_NULL,                     // TODO: reset to default when done
+                                           NISCOPE_ATTR_FETCH_RELATIVE_TO,  //?TODO: push/pop state for niscope?
+                                           NISCOPE_VAL_READ_POINTER ));
+  Guarded_Assert (numWfms <= 1); // What might limit me to 1 channel?
+  // Loop until the stop event is triggered
+  do 
+  {
+     // Fetch the available data without waiting
+     handleErr (niScope_Fetch (vi, 
+                               channelName,   // (acquistion channels)
+                               0.0,           // Immediate
+                               nelem - ttl,   // Remaining space in buffer
+                               buf   + ttl,   // Where to put the data
+                               &wfm));        // metadata for fetch
+     Asynq_Push( qwfm, &wfm, 0 );    // Push the info from the last fetch
+     ttl += wfm->actualSamples;      // add the chunk size to the total samples count
+     if( ttl == nelem )              // Is buffer full?
+     { Asynq_Push( qdata, &buf, 0 ); //   Push buffer and reset total samples count
+       ttl = 0;
+     }       
+  } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
+}
+
+DeviceTask*
+Create_Digitizer_Task_Stream_All_Channels_Immediate_Trigger(void)
+{ return DeviceTask_Alloc(_Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Cfg,
+                          _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc);
+}
+
+
+//
 // TESTING
 //
 

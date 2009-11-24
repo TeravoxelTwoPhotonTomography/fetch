@@ -13,6 +13,7 @@
 #define DIGITIZER_MAX_SAMPLE_RATE         NI5105_MAX_SAMPLE_RATE
 #define DIGITIZER_DEVICE_NAME             NI5105_DEVICE_NAME
 #define DIGITIZER_DEFAULT_RECORD_LENGTH   1024
+#define DIGITIZER_DEFAULT_RECORD_NUM      1
 
 #define DIGITIZER_BUFFER_NUM_FRAMES       64  // must be a power of two
 #define DIGITIZER_DEFAULT_TIMEOUT         100 // ms
@@ -27,18 +28,24 @@ typedef struct _digitizer_channel_config
 #define DIGITIZER_CHANNEL_CONFIG_EMPTY {NULL,0.0,NISCOPE_VAL_DC,VI_FALSE}
 
 typedef struct _digitizer_config
-{ ViChar                  *resource_name;      // NI device name: e.g. "Dev6"
-  ViReal64                 sample_rate;        // samples/second
-  ViInt32                  record_length;      // samples per scan
-  ViReal64                 reference_position; // as a percentage
-  Digitizer_Channel_Config channels[DIGITIZER_MAX_NUM_CHANNELS];
+{ ViChar                  *resource_name;       // NI device name: e.g. "Dev6"
+  ViReal64                 sample_rate;         // samples/second
+  ViInt32                  record_length;       // samples per scan
+  ViInt32                  num_records;         // number of records per acquire call.
+  ViReal64                 reference_position;  // as a percentage
+  ViChar                  *acquisition_channels;// the channels to acquire data on (NI Channel String syntax)
+  ViInt32                  num_channels;        // number of channels to independantly configure
+  Digitizer_Channel_Config channels[DIGITIZER_MAX_NUM_CHANNELS]; // array of channel configurations  
 } Digitizer_Config;
 
 #define DIGITIZER_CONFIG_EMPTY \
                      {NULL,\
                       0.0,\
                         0,\
+                        0,\
                       0.0,\
+                      " ",\
+                      DIGITIZER_MAX_NUM_CHANNELS,\
                       {DIGITIZER_CHANNEL_CONFIG_EMPTY,\
                        DIGITIZER_CHANNEL_CONFIG_EMPTY,\
                        DIGITIZER_CHANNEL_CONFIG_EMPTY,\
@@ -53,7 +60,10 @@ typedef struct _digitizer_config
                      { DIGITIZER_DEVICE_NAME,\
                        DIGITIZER_MAX_SAMPLE_RATE,\
                        DIGITIZER_DEFAULT_RECORD_LENGTH,\
+                       DIGITIZER_DEFAULT_RECORD_NUM,\
                        0.0,\
+                       "0-4",
+                       DIGITIZER_MAX_NUM_CHANNELS,\
                        {{"0\0",2.0,NISCOPE_VAL_DC,VI_TRUE},\
                         {"1\0",2.0,NISCOPE_VAL_DC,VI_TRUE},\
                         {"2\0",2.0,NISCOPE_VAL_DC,VI_TRUE},\
@@ -81,8 +91,6 @@ unsigned int Digitizer_Destroy (void);     // Only call once
 unsigned int Digitizer_Close   (void);
 unsigned int Digitizer_Off     (void);
 unsigned int Digitizer_Hold    (void);
-
-Device      *Digitizer_Get_Device(void);
 
 //
 // Windows

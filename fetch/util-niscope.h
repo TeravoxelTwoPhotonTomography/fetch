@@ -1,3 +1,5 @@
+//TODO: push/pop state for niscope?
+
 #pragma once
 #include "niscope.h"
 
