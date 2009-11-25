@@ -159,7 +159,7 @@ _asynq_push_unlocked(                        // Returns 1 on success, 0 otherwis
                       int is_try,               // if true, push returns immediately whether successful or not.  Never waits.
                       DWORD timeout_ms )     // Time to wait for a self->notify_space event.  Set to INFINITE for no timeout.
 { RingFIFO* q = self->q;
-  if( RingFIFO_Is_Full( q ) && (!expand_on_full || self->waiting_consumers>0 ))
+  if( RingFIFO_Is_Full( q ) && (expand_on_full || self->waiting_consumers>0 ))
   { if(is_try) return 0;
     if( !_asynq_wait_for_space(self, timeout_ms, "Asynq Push") )
       if( RingFIFO_Is_Full( q ) )
