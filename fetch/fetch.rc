@@ -1,4 +1,4 @@
-//Microsoft Visual C++ generated resource script.
+// Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
 
@@ -13,12 +13,18 @@
 #define APSTUDIO_HIDDEN_SYMBOLS
 #include "windows.h"
 #undef APSTUDIO_HIDDEN_SYMBOLS
+
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
 
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-LANGUAGE 9, 1
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
+#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -27,28 +33,27 @@ LANGUAGE 9, 1
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-
-IDI_FETCH       ICON         "fetch.ico"
-IDI_SMALL               ICON         "small.ico"
+IDI_FETCH               ICON                    "fetch.ico"
+IDI_SMALL               ICON                    "small.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // Menu
 //
 
-IDC_FETCH MENU
+IDC_FETCH MENU 
 BEGIN
     POPUP "&File"
     BEGIN
-        MENUITEM "E&xit",                IDM_EXIT
+        MENUITEM "E&xit",                       IDM_EXIT
     END
     POPUP "&Control"
     BEGIN
-        MENUITEM "&Logger",              IDM_CONTROL_LOGGER
+        MENUITEM "&Logger",                     IDM_CONTROL_LOGGER
     END
     POPUP "&Help"
     BEGIN
-        MENUITEM "&About ...",           IDM_ABOUT
+        MENUITEM "&About ...",                  IDM_ABOUT
     END
 END
 
@@ -58,10 +63,11 @@ END
 // Accelerator
 //
 
-IDC_FETCH ACCELERATORS
+IDC_FETCH ACCELERATORS 
 BEGIN
-    "?",            IDM_ABOUT,              ASCII,  ALT
-    "/",            IDM_ABOUT,              ASCII,  ALT
+    "/",            IDM_ABOUT,              ASCII,  ALT, NOINVERT
+    "?",            IDM_ABOUT,              ASCII,  ALT, NOINVERT
+    "Q",            IDM_EXIT,               VIRTKEY, CONTROL, NOINVERT
 END
 
 
@@ -70,19 +76,20 @@ END
 // Dialog
 //
 
-IDD_ABOUTBOX DIALOGEX 0, 0, 170, 74
+IDD_ABOUTBOX DIALOGEX 0, 0, 170, 75
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About fetch"
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    ICON            IDR_MAINFRAME,IDC_STATIC,14,14,21,20
+    ICON            128,IDC_STATIC,14,14,21,20
     LTEXT           "fetch, Version WIP",IDC_STATIC,42,14,114,8,SS_NOPREFIX
-    LTEXT           "Nathan Clack",IDC_STATIC,42,24,114,8   
+    LTEXT           "Nathan Clack",IDC_STATIC,42,24,114,8
     LTEXT           "Janelia Farms Research Campus",IDC_STATIC,42,34,114,8
-    LTEXT           "Howard Hughes Medical Institute",IDC_STATIC,42,44,114,8    
+    LTEXT           "Howard Hughes Medical Institute",IDC_STATIC,42,44,114,8
     LTEXT           "Copyright (C) 2009",IDC_STATIC,42,54,114,8
-    DEFPUSHBUTTON   "OK",IDOK,113,54,50,14,WS_GROUP
+    DEFPUSHBUTTON   "OK",IDOK,113,55,50,14,WS_GROUP
 END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -90,31 +97,33 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO
+GUIDELINES DESIGNINFO 
 BEGIN
     IDD_ABOUTBOX, DIALOG
     BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 163
         TOPMARGIN, 7
-        BOTTOMMARGIN, 55
+        BOTTOMMARGIN, 69
     END
 END
 #endif    // APSTUDIO_INVOKED
+
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
 //
 // TEXTINCLUDE
 //
-1 TEXTINCLUDE
+
+1 TEXTINCLUDE 
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE
+2 TEXTINCLUDE 
 BEGIN
-	"#ifndef APSTUDIO_INVOKED\r\n"
+    "#ifndef APSTUDIO_INVOKED\r\n"
     "#include ""targetver.h""\r\n"
     "#endif\r\n"
     "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
@@ -123,7 +132,7 @@ BEGIN
     "\0"
 END
 
-3 TEXTINCLUDE
+3 TEXTINCLUDE 
 BEGIN
     "\r\n"
     "\0"
@@ -131,18 +140,19 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // String Table
 //
 
-STRINGTABLE
+STRINGTABLE 
 BEGIN
-   IDC_FETCH   "FETCH"
-   IDS_APP_TITLE       "fetch"
+    IDS_APP_TITLE           "fetch"
+    IDC_FETCH               "FETCH"
 END
 
-#endif
+#endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -153,5 +163,7 @@ END
 // Generated from the TEXTINCLUDE 3 resource.
 //
 
+
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
+

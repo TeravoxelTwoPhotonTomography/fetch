@@ -93,6 +93,11 @@ unsigned int Digitizer_Off     (void);
 unsigned int Digitizer_Hold    (void);
 
 //
+// Tasks
+//
+DeviceTask* Digitizer_Create_Task_Stream_All_Channels_Immediate_Trigger(void);
+
+//
 // Windows
 //    testing utilities
 //
@@ -100,9 +105,12 @@ unsigned int Digitizer_Hold    (void);
 #define IDM_DIGITIZER               WM_APP+1
 #define IDM_DIGITIZER_OFF           IDM_DIGITIZER+1
 #define IDM_DIGITIZER_HOLD          IDM_DIGITIZER+2
-#define IDM_DIGITIZER_TASK_STREAM1  IDM_DIGITIZER+3
-#define IDM_DIGITIZER_LIST_DEVICES  IDM_DIGITIZER+4
-#define IDM_DIGITIZER_TASK_STOP     IDM_DIGITIZER+5
+#define IDM_DIGITIZER_LIST_DEVICES  IDM_DIGITIZER+3
+#define IDM_DIGITIZER_TASK_STOP     IDM_DIGITIZER+4
+#define IDM_DIGITIZER_TASK_RUN      IDM_DIGITIZER+5
+
+#define IDM_DIGITIZER_TASK_0        IDM_DIGITIZER+10
 
 void             Digitizer_UI_Append_Menu  ( HMENU hmenu );
+void             Digitizer_UI_Insert_Menu  ( HMENU menu, UINT uPosition, UINT uFlags );
 LRESULT CALLBACK Digitizer_UI_Handler ( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);

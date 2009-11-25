@@ -12,6 +12,7 @@ typedef struct _device
   CRITICAL_SECTION   lock;               // mutex to synchronize access to a device
   u32                num_waiting;        // number of threads waiting to add a task  
   u32                is_available;       // flag identifies when the device is accepting tasks
+  u32                is_running;         // flag identifies when the device is running
   DeviceTask        *task;               // pointer to current task...not owned by this object
   void              *context;            // Resource handle/description
 } Device;

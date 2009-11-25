@@ -177,7 +177,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
   case WM_CREATE:
     { HMENU menu = GetMenu( hWnd );
       Guarded_Assert_WinErr( menu );
-      Digitizer_UI_Append_Menu( menu );
+      Digitizer_UI_Insert_Menu( menu, GetMenuItemCount(menu)-1, MF_BYPOSITION );
     }
     break;
 	case WM_INITMENU:

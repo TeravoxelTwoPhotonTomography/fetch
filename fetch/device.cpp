@@ -16,8 +16,9 @@ Device_Unlock( Device *self )
 Device*
 Device_Alloc(void)
 { Device* self = (Device*)Guarded_Malloc( sizeof(Device), "Device_Alloc");
-  self->num_waiting = 0;
+  self->num_waiting  = 0;
   self->is_available = 0;
+  self->is_running   = 0;
   self->task = NULL;
   self->thread      = INVALID_HANDLE_VALUE;
   Guarded_Assert_WinErr(  
@@ -130,8 +131,7 @@ Device_Is_Armed( Device *self )
 
 unsigned int 
 Device_Is_Running( Device *self )
-{ return self->thread != INVALID_HANDLE_VALUE                          //thread created
-         && WaitForSingleObject( self->thread, 0 ) != WAIT_OBJECT_0 ;  //thread not signalled
+{ return self->is_running;
 }
 
 unsigned int
@@ -142,26 +142,29 @@ Device_Arm ( Device *self, DeviceTask *task, DWORD timeout_ms )
             "\tAborting.\r\n");
     goto Error;    
   }
+  
+  self->task = task; // save the task
+  
   // Exec device config function
   if( !(task->cfg_proc)(self, task->in, task->out) )
   { warning("While loading task, something went wrong with the device configuration.\r\n"
             "\tDevice not armed.\r\n");
     goto Error;
-  }  
-  self->task = task; // save the task
+  }    
   
   // Create thread for running task
   Guarded_Assert_WinErr(
     self->thread = CreateThread( 0,                  // use default access rights
                                  0,                  // use default stack size (1 MB)
                                  task->main,         // main function
-                                 &self,              // arguments
+                                 self,               // arguments
                                  CREATE_SUSPENDED,   // don't start yet
                                  NULL ));            // don't worry about the threadid
   self->is_available = 0;                                 
   Device_Unlock(self);
   return 1;
 Error:
+  self->task = NULL;
   Device_Unlock(self);
   return 0;
 }
@@ -192,17 +195,22 @@ Device_Disarm( Device *self, DWORD timeout_ms )
 // and could be due to multiple suspensions on the thread.
 unsigned int
 Device_Run ( Device *self )
-{ if( self->thread != INVALID_HANDLE_VALUE )
+{ Device_Lock(self);
+  self->is_running = 1;
+  
+  if( self->thread != INVALID_HANDLE_VALUE )
     return ResumeThread(self->thread) <= 1; // Threads already alloced so go!
+  
   // Otherwise...
   // Create thread for running task
   Guarded_Assert_WinErr(
     self->thread = CreateThread( 0,                  // use default access rights
                                  0,                  // use default stack size (1 MB)
                                  self->task->main,   // main function
-                                 &self,              // arguments
+                                 self,               // arguments
                                  0,                  // run immediately
                                  NULL ));            // don't worry about the threadid  
+  Device_Unlock(self);
   return 1;
 }
 
@@ -211,13 +219,17 @@ Device_Run ( Device *self )
 unsigned int
 Device_Stop( Device *self, DWORD timeout_ms )
 { DWORD res;
-  //Terminate thread
-  return_val_if( self->thread == INVALID_HANDLE_VALUE, 1); // No task running, so return.
-  SetEvent(self->notify_stop);                             // signal task proc to quit
-  res = WaitForSingleObject(self->thread, timeout_ms);     // wait to quit
-  
-  // Handle a timeout on the wait.
+  debug("Device: Stop\r\n");
   Device_Lock(self);
+  
+  //Terminate thread
+  return_val_if( self->thread == INVALID_HANDLE_VALUE, 1); // No task running, so return.  
+  SetEvent(self->notify_stop);                             // signal task proc to quit
+  Device_Unlock(self);
+  res = WaitForSingleObject(self->thread, timeout_ms);     // wait to quit
+  Device_Lock(self);
+  
+  // Handle a timeout on the wait.  
   if( !_handle_wait_for_result(res, "Device Release: Wait for thread."))
   { warning("Timed out waiting for task thread to stop.  Forcing termination.\r\n");
     Guarded_Assert_WinErr( 
@@ -225,6 +237,7 @@ Device_Stop( Device *self, DWORD timeout_ms )
   }
   CloseHandle(self->thread);
   self->thread = INVALID_HANDLE_VALUE;
+  self->is_running = 0;
   Device_Unlock(self);
   return 1;
 }

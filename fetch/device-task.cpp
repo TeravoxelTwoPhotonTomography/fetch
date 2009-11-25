@@ -42,7 +42,7 @@ DeviceTask_Configure_Inputs( DeviceTask* self,
     self->in  = vector_PASYNQ_alloc( num_inputs  ); 
     while( num_inputs-- )
       self->in->contents[num_inputs] 
-          = Asynq_Alloc( input_queue_size [num_inputs], 
+          = Asynq_Alloc( input_queue_size [num_inputs],
                          input_buffer_size[num_inputs] );
     self->in->count = self->in->nelem; // resizable, so use count rather than nelem alone.
   }                                    //            start full
