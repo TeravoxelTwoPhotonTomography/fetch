@@ -23,9 +23,13 @@ Device      *Device_Request    ( Device *self, DWORD timeout_ms );
 Device      *Device_Request_Try( Device *self );
 unsigned int Device_Release    ( Device *self, DWORD timeout_ms );
 
-unsigned int Device_Arm ( Device *self, DeviceTask *task );
-unsigned int Device_Run ( Device *self );
-unsigned int Device_Stop( Device *self );
+unsigned int Device_Arm    ( Device *self, DeviceTask *task );
+unsigned int Device_Disarm ( Device *self ); // TODO
+unsigned int Device_Run    ( Device *self );
+unsigned int Device_Stop   ( Device *self, DWORD timeout_ms ); // TODO
+
+unsigned int Device_Is_Armed  ( Device *self ); // TODO
+unsigned int Device_Is_Running( Device *self ); // TODO
 
 inline void Device_Lock   ( Device *self );
 inline void Device_Unlock ( Device *self );

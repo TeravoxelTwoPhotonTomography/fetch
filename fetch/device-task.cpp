@@ -34,14 +34,16 @@ _devicetask_free_outputs( DeviceTask* self )
 // FIXME: make this more of a resize op to avoid thrashing
 void
 DeviceTask_Configure_Inputs( DeviceTask* self,
-                             size_t num_inputs,
-                             size_t input_queue_size, 
-                             size_t input_buffer_size)
+                             size_t  num_inputs,
+                             size_t *input_queue_size, 
+                             size_t *input_buffer_size)
 { if( num_inputs )
   { _devicetask_free_inputs( self );
     self->in  = vector_PASYNQ_alloc( num_inputs  ); 
     while( num_inputs-- )
-      self->in->contents[num_inputs] = Asynq_Alloc( input_queue_size, input_buffer_size );
+      self->in->contents[num_inputs] 
+          = Asynq_Alloc( input_queue_size [num_inputs], 
+                         input_buffer_size[num_inputs] );
     self->in->count = self->in->nelem; // resizable, so use count rather than nelem alone.
   }                                    //            start full
 }
@@ -49,14 +51,16 @@ DeviceTask_Configure_Inputs( DeviceTask* self,
 // FIXME: make this more of a resize op to avoid thrashing
 void
 DeviceTask_Configure_Outputs( DeviceTask* self,
-                              size_t num_outputs,
-                              size_t output_queue_size, 
-                              size_t output_buffer_size)
+                              size_t  num_outputs,
+                              size_t *output_queue_size, 
+                              size_t *output_buffer_size)
 { if( num_outputs )
   { _devicetask_free_outputs( self );
     self->out  = vector_PASYNQ_alloc( num_outputs ); 
     while( num_outputs-- )
-      self->out->contents[num_outputs] = Asynq_Alloc( output_queue_size, output_buffer_size );
+      self->out->contents[num_outputs] 
+          = Asynq_Alloc( output_queue_size[num_outputs],
+                         output_buffer_size[num_outputs] );
     self->out->count = self->out->nelem; // resizable, so use count rather than nelem alone.
   }                                      //            start full
 }

@@ -163,30 +163,48 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	int wmId, wmEvent;
 	PAINTSTRUCT ps;
 	HDC hdc;
+	static HMENU command_menu = 0;
+	
+	if( !command_menu )
+	  command_menu = GetSubMenu( GetMenu(hWnd), 1);
 
+  if( !Digitizer_UI_Handler(hWnd, message, wParam, lParam) )
+     return 0; // message was handled so return
+     
+  // Top level handler    
 	switch (message)
 	{
   case WM_CREATE:
     { HMENU menu = GetMenu( hWnd );
       Guarded_Assert_WinErr( menu );
-      Digitizer_Append_Menu( menu );
+      Digitizer_UI_Append_Menu( menu );
     }
     break;
-
+	case WM_INITMENU:
+	case WM_INITMENUPOPUP:
+	  { HMENU hmenu = (HMENU) wParam;
+	    if( hmenu == command_menu )
+        Guarded_Assert_WinErr(
+            -1!=CheckMenuItem(command_menu,
+                          IDM_CONTROL_LOGGER,
+                          MF_BYCOMMAND
+                          | (IsWindowVisible(g_hwndLogger)?MF_CHECKED:MF_UNCHECKED) ));
+	  }
+	  break;
 	case WM_COMMAND:
 		wmId    = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
 		// Parse the menu selections:
-    if( !Digitizer_Menu_Handler(hWnd, message, wParam, lParam) )
-      break;
 		switch (wmId)
 		{
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
 			break;
     case IDM_CONTROL_LOGGER:
-      { debug("%d\r\n", g_hwndLogger);
-        ShowWindow(   g_hwndLogger, SW_SHOW );
+      { if( !IsWindowVisible(g_hwndLogger) || IsIconic(g_hwndLogger) )
+          ShowWindow(   g_hwndLogger, SW_SHOWNORMAL );
+        else
+          ShowWindow(   g_hwndLogger, SW_HIDE );
         UpdateWindow( g_hwndLogger );
       }
       break;

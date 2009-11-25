@@ -6,6 +6,7 @@
 
 #define CheckWarn( expression )  (niscope_chk( g_digitizer.vi, expression, #expression, &warning ))
 #define CheckPanic( expression ) (niscope_chk( g_digitizer.vi, expression, #expression, &error   ))
+#define ViErrChk( expression )    goto_if_fail( VI_SUCCESS == CheckWarn(expression), Error )
 
 Digitizer             g_digitizer              = DIGITIZER_DEFUALT;
 Device               *gp_digitizer_device      = NULL;
@@ -31,24 +32,26 @@ void Digitizer_Init(void)
 }
 
 unsigned int Digitizer_Close(void)
-{ Device_Lock( gp_digitizer_device );
-  debug("Digitizer: Close.\r\n");
+{ ViStatus status = 1; //error
+  Device_Lock( gp_digitizer_device );
+  debug("Digitizer: Attempting to close vi: %d\r\n", g_digitizer.vi);
   if( !Device_Release( gp_digitizer_device, DIGITIZER_DEFAULT_TIMEOUT ) )
     warning("Could not cleanly release digitizer.\r\n");
   { ViSession vi = g_digitizer.vi;
-    ViStatus status = VI_SUCCESS;
-    // Close the session
-    if (vi)
-      status = CheckWarn( niScope_close (vi) );
-    g_digitizer.vi = NULL;
-    return status;
+    if(vi)
+      ViErrChk( niScope_close(vi) );  // Close the session
   }
+  status = 0;  // success
+  debug("Digitizer: Closed.\r\n");
+Error:  
+  g_digitizer.vi = 0;
   Device_Unlock( gp_digitizer_device );
+  return status;
 }
 
 unsigned int Digitizer_Off(void)
 { debug("Digitizer: Off\r\n");
-  return Digitizer_Close();
+  return( Digitizer_Close() );
 }
 
 unsigned int Digitizer_Hold(void)
@@ -69,6 +72,7 @@ unsigned int Digitizer_Hold(void)
   }
   debug("\tGot session %3d with status %d\n",g_digitizer.vi,status);
   Device_Unlock( gp_digitizer_device );
+
   return status;
 }
 
@@ -108,81 +112,140 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Cfg( Device *d, vector_PAS
                                                  0.0)); // delay    (s)
   
   { ViInt32 nwfm;   
-    CheckPanic( niScope_ActualNumWfms(vi, cfg->acquisition_channels, &nwfm ) );
-    DeviceTask_Configure_Outputs( d->task, 2, {32,32}, 
-                                  {1024*1024*sizeof(ViReal64*),
-                                   nwfm*sizeof(struct niScope_wfmInfo)}
-                                );
+    size_t nbuf[2] = {32,32},
+             sz[2] = {1024*1024*sizeof(ViReal64*), nwfm*sizeof(struct niScope_wfmInfo)};
+    CheckPanic( niScope_ActualNumWfms(vi, cfg.acquisition_channels, &nwfm ) );
+    DeviceTask_Configure_Outputs( d->task, 2, nbuf, sz );
   }
+  return 1;
 }
 
 unsigned int
 _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 { Digitizer *dig = ((Digitizer*)d->context);
   ViSession   vi = dig->vi;
-  ViChar   *chan = dig->config->acquisition_channels;
+  ViChar   *chan = dig->config.acquisition_channels;
   asynq   *qdata = out->contents[0],
           *qwfm  = out->contents[1];
   ViInt32  nelem = qdata->q->buffer_size_bytes / sizeof(ViReal64),          // number of samples per data buffer
-           nfetched = 0;
-
+           ttl = 0,
+           old_state;
   ViReal64               *buf = (ViReal64*)        Asynq_Token_Buffer_Alloc(qdata);
   struct niScope_wfmInfo *wfm = (niScope_wfmInfo*) Asynq_Token_Buffer_Alloc(qwfm);
 
-  CheckPanic (niScope_InitiateAcquisition (vi));
-  CheckPanic (niScope_ActualNumWfms (vi, channelName, &numWfms));           // TODO: alloc/get wfm buffer.
-  CheckPanic (niScope_SetAttributeViInt32 (vi, VI_NULL,                     // TODO: reset to default when done
-                                           NISCOPE_ATTR_FETCH_RELATIVE_TO,  //?TODO: push/pop state for niscope?
+  ViErrChk (niScope_InitiateAcquisition (vi));
+  ViErrChk   (niScope_GetAttributeViInt32 (vi, NULL,   // TODO: reset to default when done
+                                           NISCOPE_ATTR_FETCH_RELATIVE_TO,         //?TODO: push/pop state for niscope?
+                                           &old_state ));    
+  ViErrChk   (niScope_SetAttributeViInt32 (vi, NULL,   // TODO: reset to default when done
+                                           NISCOPE_ATTR_FETCH_RELATIVE_TO,         //?TODO: push/pop state for niscope?
                                            NISCOPE_VAL_READ_POINTER ));
-  Guarded_Assert (numWfms <= 1); // What might limit me to 1 channel?
   // Loop until the stop event is triggered
   do 
   {
      // Fetch the available data without waiting
-     handleErr (niScope_Fetch (vi, 
-                               channelName,   // (acquistion channels)
-                               0.0,           // Immediate
-                               nelem - ttl,   // Remaining space in buffer
-                               buf   + ttl,   // Where to put the data
-                               &wfm));        // metadata for fetch
-     Asynq_Push( qwfm, &wfm, 0 );    // Push the info from the last fetch
+     ViErrChk (niScope_Fetch (vi, 
+                              chan,          // (acquistion channels)
+                              0.0,           // Immediate
+                              nelem - ttl,   // Remaining space in buffer
+                              buf   + ttl,   // Where to put the data
+                              wfm));         // metadata for fetch
+     Asynq_Push( qwfm,(void**) &wfm, 0 );    // Push the info from the last fetch
      ttl += wfm->actualSamples;      // add the chunk size to the total samples count
      if( ttl == nelem )              // Is buffer full?
-     { Asynq_Push( qdata, &buf, 0 ); //   Push buffer and reset total samples count
+     { Asynq_Push( qdata,(void**) &buf, 0 ); //   Push buffer and reset total samples count
        ttl = 0;
      }       
   } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
+  
+  CheckPanic( niScope_Abort(vi) );
+  return 1;  
+Error:  
+  CheckPanic( niScope_Abort(vi) );
+  return 0;
 }
 
 DeviceTask*
-Create_Digitizer_Task_Stream_All_Channels_Immediate_Trigger(void)
+Digitizer_Create_Task_Stream_All_Channels_Immediate_Trigger(void)
 { return DeviceTask_Alloc(_Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Cfg,
                           _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc);
 }
 
 
 //
-// TESTING
+// USER INTERFACE (WINDOWS)
 //
 
-void Digitizer_Append_Menu( HMENU menu )
-{ HMENU submenu = CreatePopupMenu();
+typedef struct _digitizer_ui_main_menu_state
+{ HMENU menu,
+        taskmenu;
+
+} digitizer_ui_main_menu_state;
+
+digitizer_ui_main_menu_state g_digitizer_ui_main_menu_state = {0};
+
+void Digitizer_UI_Append_Menu( HMENU menu )
+{ HMENU submenu = CreatePopupMenu(),
+        taskmenu = CreatePopupMenu();
+  Guarded_Assert_WinErr( AppendMenu( taskmenu, MF_STRING, IDM_DIGITIZER_TASK_STREAM1, "Continuous &Fetch" ));
+  
+                                       
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_OFF,  "&Off"));
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_HOLD, "&Hold"));
+  Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING | MF_POPUP,  (UINT_PTR) taskmenu, "&Tasks"));
+  Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_TASK_STOP, "&Run" ));
+  Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_TASK_STOP, "&Stop" ));
+  
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_LIST_DEVICES, "&List NI modular devices"));
+  
   Guarded_Assert_WinErr( AppendMenu(    menu, MF_STRING | MF_POPUP, (UINT_PTR) submenu, "&Digitizer"));
+  
+  g_digitizer_ui_main_menu_state.menu     = submenu;
+  g_digitizer_ui_main_menu_state.taskmenu = taskmenu;
 }
 
 // This has the type of a WinProc
 // Returns:
 //    0  if the message was handled
 //    1  otherwise
-LRESULT CALLBACK Digitizer_Menu_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK Digitizer_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	int wmId, wmEvent;
 
 	switch (message)
 	{
+	case WM_INITMENU:
+	case WM_INITMENUPOPUP:
+	  { HMENU hmenu = (HMENU) wParam;
+	    char str[1024] = "\0";
+	    Guarded_Assert_WinErr( GetMenuString( hmenu, 0, str, 1024, MF_BYPOSITION) );
+	    debug("is digitizer      menu: %s\r\n"
+	          "is digitizer task menu: %s\r\n",
+	          (hmenu==g_digitizer_ui_main_menu_state.menu)?"yes":"no",
+	          (hmenu==g_digitizer_ui_main_menu_state.taskmenu)?"yes":"no"
+	         );
+	    if( hmenu == g_digitizer_ui_main_menu_state.menu )
+	    { Guarded_Assert_WinErr(-1!=                                // Grey out the tasks menu
+	        EnableMenuItem( hmenu, 2 /*Tasks*/, MF_BYPOSITION       //   if the vi session is null
+	                        | ( (g_digitizer.vi==0)?MF_GRAYED:MF_ENABLED) ));
+        Guarded_Assert_WinErr(-1!=                               // Grey out the tasks menu
+	        EnableMenuItem( hmenu, 3 /*Run*/, MF_BYPOSITION        //   if the vi session is null
+	                        | ( (gp_digitizer_device->is_available==0
+	                             && gp_digitizer_device->task != NULL)?MF_ENABLED:MF_GRAYED) ));
+        Guarded_Assert_WinErr(-1!=                               // Grey out the tasks menu
+	        EnableMenuItem( hmenu, 4 /*Stop*/, MF_BYPOSITION       //   if the vi session is null
+	                        | ( (gp_digitizer_device->is_available==0)?MF_GRAYED:MF_ENABLED) ));	                        
+	      Guarded_Assert(-1!=                                                   // Detect state
+	        CheckMenuRadioItem(g_digitizer_ui_main_menu_state.menu,             // Toggle radio button to reflect
+                             0,1,((g_digitizer.vi==0)?0:1), MF_BYPOSITION ) );
+	    } else if( hmenu == g_digitizer_ui_main_menu_state.taskmenu )
+	    { Guarded_Assert_WinErr(-1!=                      // Grey out the tasks menu
+	        EnableMenuItem( hmenu, 0, MF_BYPOSITION       //   if the vi session is null
+	                        | ( (gp_digitizer_device->task==0)?MF_GRAYED:MF_ENABLED) ));
+	    }
+	    return 1;
+	  }
+	  break;
 	case WM_COMMAND:
 		wmId    = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
@@ -192,11 +255,12 @@ LRESULT CALLBACK Digitizer_Menu_Handler(HWND hWnd, UINT message, WPARAM wParam, 
     case IDM_DIGITIZER_OFF:
       { debug( "IDM_DIGITIZER_OFF\r\n" );
         Digitizer_Off();
+        
       }
 			break;
     case IDM_DIGITIZER_HOLD:
       { debug("IDM_DIGITIZER_HOLD\r\n");        
-        Digitizer_Hold();
+        Digitizer_Hold();        
       }
       break;
     case IDM_DIGITIZER_LIST_DEVICES:

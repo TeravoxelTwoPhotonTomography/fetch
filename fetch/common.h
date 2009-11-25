@@ -113,13 +113,13 @@ void debug  (const char* fmt, ...);
 #define Guarded_Assert_WinErr(expression) \
   if(!(expression))\
   { ReportLastWindowsError();\
-    error("Assertion failed: %s\n\tIn %s (line: %u)\n", #expression, __FILE__ , __LINE__ );\
+    error("Windows call failed: %s\n\tIn %s (line: %u)\n", #expression, __FILE__ , __LINE__ );\
   }
 
 #define return_if_fail( cond )          { if(!(cond)) return; }
 #define return_if( cond )               { if( (cond)) return; }
-#define goto_if_fail( cond, lbl )       { if(!(cond)) goto lbl; }
-#define goto_if( cond, lbl )            { if( (cond)) goto lbl; }
+#define goto_if_fail( cond, lbl )       { if(!(cond)) goto lbl;}
+#define goto_if( cond, lbl )            { if( (cond)) goto lbl;}
 #define return_val_if_fail( cond, val ) { if(!(cond)) return (val); }
 #define return_val_if( cond, val )      { if( (cond)) return (val); }
 

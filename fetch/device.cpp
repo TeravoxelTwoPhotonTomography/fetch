@@ -164,7 +164,7 @@ Device_Arm ( Device *self, DeviceTask *task )
     goto Error;
   }
   // Exec device config function
-  goto_if_fail( (task->cfg_proc)(self), Error );
+  goto_if_fail( (task->cfg_proc)(self, task->in, task->out), Error );
   self->task = task;
   
   // Create thread for running task
@@ -181,6 +181,20 @@ Device_Arm ( Device *self, DeviceTask *task )
 Error:
   Device_Unlock(self);
   return 0;
+}
+
+unsigned int
+Device_Disarm( Device *self, DWORD timeout_ms )
+{ Device_Lock(self);
+  
+  if( Device_Is_Running(self) )
+    Device_Stop(self, timeout_ms);
+    
+  CloseHandle( self->thread );
+  self->thread = INVALID_HANDLE_VALUE;
+  
+  self->is_available = 1;
+  Device_Unlock(self);
 }
 
 unsigned int

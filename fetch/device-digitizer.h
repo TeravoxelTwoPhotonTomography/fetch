@@ -62,7 +62,7 @@ typedef struct _digitizer_config
                        DIGITIZER_DEFAULT_RECORD_LENGTH,\
                        DIGITIZER_DEFAULT_RECORD_NUM,\
                        0.0,\
-                       "0-4",
+                       "0-4",\
                        DIGITIZER_MAX_NUM_CHANNELS,\
                        {{"0\0",2.0,NISCOPE_VAL_DC,VI_TRUE},\
                         {"1\0",2.0,NISCOPE_VAL_DC,VI_TRUE},\
@@ -100,8 +100,9 @@ unsigned int Digitizer_Hold    (void);
 #define IDM_DIGITIZER               WM_APP+1
 #define IDM_DIGITIZER_OFF           IDM_DIGITIZER+1
 #define IDM_DIGITIZER_HOLD          IDM_DIGITIZER+2
-#define IDM_DIGITIZER_STREAM        IDM_DIGITIZER+3
+#define IDM_DIGITIZER_TASK_STREAM1  IDM_DIGITIZER+3
 #define IDM_DIGITIZER_LIST_DEVICES  IDM_DIGITIZER+4
+#define IDM_DIGITIZER_TASK_STOP     IDM_DIGITIZER+5
 
-void             Digitizer_Append_Menu  ( HMENU hmenu );
-LRESULT CALLBACK Digitizer_Menu_Handler ( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+void             Digitizer_UI_Append_Menu  ( HMENU hmenu );
+LRESULT CALLBACK Digitizer_UI_Handler ( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);

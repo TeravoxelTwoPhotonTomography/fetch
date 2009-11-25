@@ -11,7 +11,9 @@ typedef struct _device Device;
 
 // Callback types:
 //    return 1 on sucess, 0 otherwise
-typedef unsigned int (*fp_device_task_cfg_proc)( Device *d );
+typedef unsigned int (*fp_device_task_cfg_proc)( Device *d, 
+                                                 vector_PASYNQ *in, 
+                                                 vector_PASYNQ *out );
 typedef unsigned int (*fp_device_task_run_proc)( Device *d, 
                                                  vector_PASYNQ *in, 
                                                  vector_PASYNQ *out );
@@ -44,9 +46,9 @@ void        DeviceTask_Free( DeviceTask *self );
 
 void        DeviceTask_Configure_Inputs(  DeviceTask* self,
                                           size_t num_inputs,            // Input:  # of pipes        
-                                          size_t input_queue_size,      //         # of buffers/pipe 
-                                          size_t input_buffer_size);    //         buffer size       
+                                          size_t *input_queue_size,     //         # of buffers/pipe 
+                                          size_t *input_buffer_size);   //         buffer size       
 void        DeviceTask_Configure_Outputs( DeviceTask* self,              
                                           size_t num_outputs,           // Output: # of pipes       
-                                          size_t output_queue_size,     //         # of buffers/pipe
-                                          size_t output_buffer_size);   //         buffer size      
+                                          size_t *output_queue_size,    //         # of buffers/pipe
+                                          size_t *output_buffer_size);  //         buffer size      
