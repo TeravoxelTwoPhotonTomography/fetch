@@ -12,7 +12,7 @@ Digitizer             g_digitizer              = DIGITIZER_DEFUALT;
 Device               *gp_digitizer_device      = NULL;
 
 unsigned int Digitizer_Destroy(void)
-{ if( !Device_Release( gp_digitizer_device, DIGITIZER_DEFAULT_TIMEOUT ) )
+{ if( !Device_Disarm( gp_digitizer_device, DIGITIZER_DEFAULT_TIMEOUT ) )
     warning("Could not cleanly release digitizer.\r\n");
   Device_Free( gp_digitizer_device );
   return 0;
@@ -35,7 +35,7 @@ unsigned int Digitizer_Close(void)
 { ViStatus status = 1; //error
   Device_Lock( gp_digitizer_device );
   debug("Digitizer: Attempting to close vi: %d\r\n", g_digitizer.vi);
-  if( !Device_Release( gp_digitizer_device, DIGITIZER_DEFAULT_TIMEOUT ) )
+  if( !Device_Disarm( gp_digitizer_device, DIGITIZER_DEFAULT_TIMEOUT ) )
     warning("Could not cleanly release digitizer.\r\n");
   { ViSession vi = g_digitizer.vi;
     if(vi)
@@ -111,11 +111,12 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Cfg( Device *d, vector_PAS
                                                  0.0,   // hold off (s)
                                                  0.0)); // delay    (s)
   
-  { ViInt32 nwfm;   
-    size_t nbuf[2] = {32,32},
-             sz[2] = {1024*1024*sizeof(ViReal64*), nwfm*sizeof(struct niScope_wfmInfo)};
-    CheckPanic( niScope_ActualNumWfms(vi, cfg.acquisition_channels, &nwfm ) );
-    DeviceTask_Configure_Outputs( d->task, 2, nbuf, sz );
+  { ViInt32 nwfm;
+    CheckPanic( niScope_ActualNumWfms(vi, cfg.acquisition_channels, &nwfm ) );   
+    { size_t nbuf[2] = {32,32},
+               sz[2] = {1024*1024*sizeof(ViReal64*), nwfm*sizeof(struct niScope_wfmInfo)};
+      DeviceTask_Configure_Outputs( d->task, 2, nbuf, sz );
+    }
   }
   return 1;
 }
@@ -127,7 +128,7 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
   ViChar   *chan = dig->config.acquisition_channels;
   asynq   *qdata = out->contents[0],
           *qwfm  = out->contents[1];
-  ViInt32  nelem = qdata->q->buffer_size_bytes / sizeof(ViReal64),          // number of samples per data buffer
+  ViInt32  nelem = (ViInt32)qdata->q->buffer_size_bytes / sizeof(ViReal64), // number of samples per data buffer
            ttl = 0,
            old_state;
   ViReal64               *buf = (ViReal64*)        Asynq_Token_Buffer_Alloc(qdata);
@@ -195,11 +196,11 @@ void Digitizer_UI_Append_Menu( HMENU menu )
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING | MF_POPUP,  (UINT_PTR) taskmenu, "&Tasks"));
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_TASK_STOP, "&Run" ));
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_TASK_STOP, "&Stop" ));
-  
+  Guarded_Assert_WinErr( AppendMenu( submenu, MF_SEPARATOR, NULL, NULL ));
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_LIST_DEVICES, "&List NI modular devices"));
   
   Guarded_Assert_WinErr( AppendMenu(    menu, MF_STRING | MF_POPUP, (UINT_PTR) submenu, "&Digitizer"));
-  
+                                                                                                                                                                              
   g_digitizer_ui_main_menu_state.menu     = submenu;
   g_digitizer_ui_main_menu_state.taskmenu = taskmenu;
 }
@@ -230,11 +231,10 @@ LRESULT CALLBACK Digitizer_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LP
 	                        | ( (g_digitizer.vi==0)?MF_GRAYED:MF_ENABLED) ));
         Guarded_Assert_WinErr(-1!=                               // Grey out the tasks menu
 	        EnableMenuItem( hmenu, 3 /*Run*/, MF_BYPOSITION        //   if the vi session is null
-	                        | ( (gp_digitizer_device->is_available==0
-	                             && gp_digitizer_device->task != NULL)?MF_ENABLED:MF_GRAYED) ));
+	                        | ( (Device_Is_Armed(gp_digitizer_device))?MF_ENABLED:MF_GRAYED) ));
         Guarded_Assert_WinErr(-1!=                               // Grey out the tasks menu
 	        EnableMenuItem( hmenu, 4 /*Stop*/, MF_BYPOSITION       //   if the vi session is null
-	                        | ( (gp_digitizer_device->is_available==0)?MF_GRAYED:MF_ENABLED) ));	                        
+	                        | ( (Device_Is_Running(gp_digitizer_device))?MF_ENABLED:MF_GRAYED) ));	                        
 	      Guarded_Assert(-1!=                                                   // Detect state
 	        CheckMenuRadioItem(g_digitizer_ui_main_menu_state.menu,             // Toggle radio button to reflect
                              0,1,((g_digitizer.vi==0)?0:1), MF_BYPOSITION ) );

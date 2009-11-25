@@ -85,7 +85,7 @@ _handle_wait_for_result(DWORD result, const char* msg)
 }
 
 static inline unsigned
-_device_wait_for_unlocked(Device *self, int is_try, DWORD timeout_ms )
+_device_wait_for_available(Device *self, DWORD timeout_ms )
 { HANDLE notify = self->notify_available;
   DWORD res;
   Guarded_Assert_WinErr( ResetEvent( notify ) );
@@ -103,7 +103,7 @@ _device_request( Device *self, int is_try, DWORD timeout_ms )
   Device_Lock(self);
   if( !self->is_available )
   { if( is_try ) return NULL;
-    if( !_device_wait_for_unlocked( self, is_try, timeout_ms ))
+    if( !_device_wait_for_available( self, timeout_ms ))
       if( !self->is_available )
         return NULL;
   }
@@ -122,50 +122,33 @@ Device_Request_Try( Device *self )
 { return _device_request( self,1,INFINITE );
 }
 
-// Transitions device to "Hold" state
-// In hold state, device can be loaded with a new task.
-// Returns 1 on success, 0 otherwise
 unsigned int
-Device_Release( Device *self, DWORD timeout_ms )
-{ DWORD res;
-  unsigned int ret;
+Device_Is_Armed( Device *self )
+{ return self->task != NULL           //task is set
+         && !Device_Is_Running(self); //but not running
+}
 
-  //Terminate thread
-  return_val_if( self->thread == INVALID_HANDLE_VALUE, 1); // No task loaded, so return.
-  SetEvent(self->notify_stop);                             // signal task proc to quit
-  res = WaitForSingleObject(self->thread, timeout_ms);     // wait
-  
-  Device_Lock(self);
-  { if( !(ret=_handle_wait_for_result(res, "Device Release: Wait for thread.")) )
-    { warning("Timed out waiting for task thread to stop.  Forcing termination.\r\n");
-      Guarded_Assert_WinErr( 
-        TerminateThread(self->thread, 127) );
-    }
-    Guarded_Assert_WinErr( 
-      CloseHandle(self->thread) );
-    self->thread = INVALID_HANDLE_VALUE;
-    self->task = NULL;
-
-    //Notify waiting tasks
-    self->is_available = 1;
-    if( self->num_waiting > 0 )
-      Guarded_Assert_WinErr( 
-        SetEvent( self->notify_available ) );
-  }
-  Device_Unlock(self);
-  return 1;
+unsigned int 
+Device_Is_Running( Device *self )
+{ return self->thread != INVALID_HANDLE_VALUE                          //thread created
+         && WaitForSingleObject( self->thread, 0 ) != WAIT_OBJECT_0 ;  //thread not signalled
 }
 
 unsigned int
-Device_Arm ( Device *self, DeviceTask *task )
+Device_Arm ( Device *self, DeviceTask *task, DWORD timeout_ms )
 { Device_Lock(self);
-  if( !self->is_available )
-  { warning("Attempted to arm an unavailable device.\r\n");
-    goto Error;
+  if( !Device_Request(self, timeout_ms) )
+  { warning("Device unavailable.  Perhaps another task is running?\r\n"
+            "\tAborting.\r\n");
+    goto Error;    
   }
   // Exec device config function
-  goto_if_fail( (task->cfg_proc)(self, task->in, task->out), Error );
-  self->task = task;
+  if( !(task->cfg_proc)(self, task->in, task->out) )
+  { warning("While loading task, something went wrong with the device configuration.\r\n"
+            "\tDevice not armed.\r\n");
+    goto Error;
+  }  
+  self->task = task; // save the task
   
   // Create thread for running task
   Guarded_Assert_WinErr(
@@ -190,20 +173,58 @@ Device_Disarm( Device *self, DWORD timeout_ms )
   if( Device_Is_Running(self) )
     Device_Stop(self, timeout_ms);
     
-  CloseHandle( self->thread );
-  self->thread = INVALID_HANDLE_VALUE;
+  self->task = NULL;    //Unreference task
   
+  //Notify waiting tasks
   self->is_available = 1;
+  if( self->num_waiting > 0 )
+    Guarded_Assert_WinErr( 
+      SetEvent( self->notify_available ) );  
+
   Device_Unlock(self);
+  return 1;
 }
 
+// Transitions from armed to running state
+// Returns 1 on success
+//         0 otherwise
+// A return of 0 indicates a failure to start the thread
+// and could be due to multiple suspensions on the thread.
 unsigned int
 Device_Run ( Device *self )
-{ Guarded_Assert( self->thread != INVALID_HANDLE_VALUE );
-  return ResumeThread(self->thread) <= 1;
+{ if( self->thread != INVALID_HANDLE_VALUE )
+    return ResumeThread(self->thread) <= 1; // Threads already alloced so go!
+  // Otherwise...
+  // Create thread for running task
+  Guarded_Assert_WinErr(
+    self->thread = CreateThread( 0,                  // use default access rights
+                                 0,                  // use default stack size (1 MB)
+                                 self->task->main,   // main function
+                                 &self,              // arguments
+                                 0,                  // run immediately
+                                 NULL ));            // don't worry about the threadid  
+  return 1;
 }
 
+// Transitions from running to armed state.
+// Returns 1 on success
 unsigned int
-Device_Stop( Device *self )
-{ return SetEvent(self->notify_stop);
+Device_Stop( Device *self, DWORD timeout_ms )
+{ DWORD res;
+  //Terminate thread
+  return_val_if( self->thread == INVALID_HANDLE_VALUE, 1); // No task running, so return.
+  SetEvent(self->notify_stop);                             // signal task proc to quit
+  res = WaitForSingleObject(self->thread, timeout_ms);     // wait to quit
+  
+  // Handle a timeout on the wait.
+  Device_Lock(self);
+  if( !_handle_wait_for_result(res, "Device Release: Wait for thread."))
+  { warning("Timed out waiting for task thread to stop.  Forcing termination.\r\n");
+    Guarded_Assert_WinErr( 
+      TerminateThread(self->thread, 127) ); // Force the thread to stop
+  }
+  CloseHandle(self->thread);
+  self->thread = INVALID_HANDLE_VALUE;
+  Device_Unlock(self);
+  return 1;
 }
