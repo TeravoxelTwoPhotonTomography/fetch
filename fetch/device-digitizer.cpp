@@ -246,6 +246,26 @@ Digitizer_UI_Insert_Menu( HMENU menu, UINT uPosition, UINT uFlags )
                 "&Digitizer")); 
 }
 
+DWORD WINAPI
+_on_arm_digitizer_task( LPVOID lparam )
+{ int task_id = (int) lparam;
+  if(!Device_Arm( gp_digitizer_device, gp_digitizer_tasks[task_id], INFINITE ))
+  { warning("Digitizer: Couldn't arm task 0\r\n");
+    return 0;
+  }
+  return 1;
+}
+
+DWORD WINAPI
+_on_stop_digitizer( LPVOID lparam )
+{ return Device_Stop(gp_digitizer_device, INFINITE);
+}
+
+DWORD WINAPI
+_on_digitizer_off( LPVOID lparam )
+{ return Digitizer_Off();
+}
+
 // This has the type of a WinProc
 // Returns:
 //    0  if the message was handled
@@ -314,7 +334,7 @@ Digitizer_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
     case IDM_DIGITIZER_OFF:
       { debug( "IDM_DIGITIZER_OFF\r\n" );
-        Digitizer_Off();
+        Guarded_Assert_WinErr( QueueUserWorkItem( _on_stop_digitizer, 0, WT_EXECUTEDEFAULT ) );
         
       }
 			break;
@@ -330,8 +350,7 @@ Digitizer_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       break;
     case IDM_DIGITIZER_TASK_0:
       { debug("IDM_DIGITIZER_TASK_0\r\n");
-        if(!Device_Arm( gp_digitizer_device, gp_digitizer_tasks[0], INFINITE ))
-          warning("Digitizer: Couldn't arm task 0\r\n");
+        Guarded_Assert_WinErr( QueueUserWorkItem( _on_arm_digitizer_task, 0, WT_EXECUTEDEFAULT ) );
       }
       break;
     case IDM_DIGITIZER_TASK_RUN:
@@ -341,7 +360,7 @@ Digitizer_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       break;
     case IDM_DIGITIZER_TASK_STOP:
       { debug("IDM_DIGITIZER_STOP\r\n");
-        Device_Stop(gp_digitizer_device, INFINITE);
+        Guarded_Assert_WinErr( QueueUserWorkItem( _on_stop_digitizer, 0, WT_EXECUTEDEFAULT ) );
       }
       break;
 		default:

@@ -199,7 +199,7 @@ Device_Run ( Device *self )
   self->is_running = 1;
   
   if( self->thread != INVALID_HANDLE_VALUE )
-    return ResumeThread(self->thread) <= 1; // Threads already alloced so go!
+    return ResumeThread(self->thread) <= 1; // Thread's already alloced so go!
   
   // Otherwise...
   // Create thread for running task
@@ -223,20 +223,22 @@ Device_Stop( Device *self, DWORD timeout_ms )
   Device_Lock(self);
   
   //Terminate thread
-  return_val_if( self->thread == INVALID_HANDLE_VALUE, 1); // No task running, so return.  
-  SetEvent(self->notify_stop);                             // signal task proc to quit
-  Device_Unlock(self);
-  res = WaitForSingleObject(self->thread, timeout_ms);     // wait to quit
-  Device_Lock(self);
-  
-  // Handle a timeout on the wait.  
-  if( !_handle_wait_for_result(res, "Device Release: Wait for thread."))
-  { warning("Timed out waiting for task thread to stop.  Forcing termination.\r\n");
-    Guarded_Assert_WinErr( 
-      TerminateThread(self->thread, 127) ); // Force the thread to stop
+  if( self->thread != INVALID_HANDLE_VALUE)
+  { SetEvent(self->notify_stop);                             // signal task proc to quit
+    Device_Unlock(self);
+    res = WaitForSingleObject(self->thread, timeout_ms);     // wait to quit
+    Device_Lock(self);
+    
+    // Handle a timeout on the wait.  
+    if( !_handle_wait_for_result(res, "Device Release: Wait for thread."))
+    { warning("Timed out waiting for task thread to stop.  Forcing termination.\r\n");
+      Guarded_Assert_WinErr( 
+        TerminateThread(self->thread, 127) ); // Force the thread to stop
+    }
+    CloseHandle(self->thread);
+    self->thread = INVALID_HANDLE_VALUE;
   }
-  CloseHandle(self->thread);
-  self->thread = INVALID_HANDLE_VALUE;
+  
   self->is_running = 0;
   Device_Unlock(self);
   return 1;
