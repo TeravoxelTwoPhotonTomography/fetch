@@ -147,12 +147,13 @@ DWORD WINAPI pushpop2_popper(LPVOID lpParam)
   int n = 100;
   unsigned int res = 1;
   testasynq_debug("popper start\r\n");
-  while(n--)
-    res &= Asynq_Pop(q,(void**)&buf);
+  while(Asynq_Pop_Timed(q,(void**)&buf,500)) 
+    n--;    
   Asynq_Token_Buffer_Free(buf);
+  testasynq_debug("An abandoned wait was expected.\r\n",res);
   testasynq_debug("popper stop: %d\r\n",res);
   Asynq_Unref(q);
-  ExitThread(res==0); // return 1 on fail
+  ExitThread(0); // return 1 on fail
   return 0;
 }
 

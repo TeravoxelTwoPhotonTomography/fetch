@@ -10,6 +10,7 @@
 #pragma comment(lib, "comdlg32.lib")
 
 #undef  DEBUG_LOGGER_CONTROL
+#undef  DEBUG_LOGGER_USE_BLOCKING_UPDATES
 
 #define LOGGER_RICH_EDIT
 #include <Richedit.h>  // #defines MSFTEDIT_CLASS and RICHEDIT_CLASS
@@ -37,10 +38,19 @@ void Logger_Update( void )
 { HWND    hedit  = GetDlgItem( g_hLogger, IDC_LOGGER_EDIT );
   
   if(hedit)
-    Guarded_Assert( SendMessage( hedit,
-                                 WM_SETTEXT,
-                                 NULL,
-                                 (LPARAM) g_Logger_Buffer.contents ));
+    Guarded_Assert_WinErr( SendMessage( hedit,                                 // Can't use PostMessage here
+                                        WM_SETTEXT,                            // because the message requires access to 
+                                        NULL,                                  // a pointer that's sometimes in another 
+                                        (LPARAM) g_Logger_Buffer.contents ));  // thread.
+}
+
+DWORD WINAPI _logger_update_thread_proc( LPVOID lparam )
+{ Logger_Update(); return 0;
+}
+
+void Logger_Update_Nonblocking( void )
+{ Guarded_Assert_WinErr(
+    QueueUserWorkItem( _logger_update_thread_proc, NULL, NULL ));
 }
 
 //
@@ -96,8 +106,12 @@ void Logger_Push_Text( const TCHAR* msg )
            len+1 );                // copy the null termination
 #pragma warning( pop )
   g_Logger_Buffer.count += len;    // but don't add the null termination to the count
-  
+
+#ifdef DEBUG_LOGGER_USE_BLOCKING_UPDATES
   Logger_Update();
+#else
+  Logger_Update_Nonblocking();
+#endif
 }
 
 //

@@ -176,8 +176,18 @@ unsigned int Shutdown_Soft(void)
   return err;
 }
 
+DWORD WINAPI
+_shutdown_thread_proc( LPVOID lparam )
+{ return Shutdown_Soft();
+}
+
+unsigned int
+Shutdown_Soft_Nonblocking(void)
+{ return QueueUserWorkItem( _shutdown_thread_proc, NULL, NULL );
+}
+
 void Shutdown_Hard(unsigned int err)
-{ exit( err | Shutdown_Soft() );
+{ exit( err | Shutdown_Soft_Nonblocking() );
 }
 
 // ------------------------------------

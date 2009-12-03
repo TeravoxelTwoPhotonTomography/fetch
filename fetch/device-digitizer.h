@@ -16,7 +16,7 @@
 #define DIGITIZER_DEFAULT_RECORD_NUM      1
 
 #define DIGITIZER_BUFFER_NUM_FRAMES       64  // must be a power of two
-#define DIGITIZER_DEFAULT_TIMEOUT         100 // ms
+#define DIGITIZER_DEFAULT_TIMEOUT         INFINITE // ms
 
 typedef struct _digitizer_channel_config
 { ViChar    *name;     // Null terminated string with channel syntax: e.g. "0-2,7"
@@ -86,11 +86,11 @@ typedef struct _digitizer
 // Device interface
 //
 
-void         Digitizer_Init    (void);     // Only call once
-unsigned int Digitizer_Destroy (void);     // Only call once
-unsigned int Digitizer_Close   (void);
-unsigned int Digitizer_Off     (void);
-unsigned int Digitizer_Hold    (void);
+void         Digitizer_Init                (void);     // Only call once - alloc's a global
+unsigned int Digitizer_Destroy             (void);     // Only call once -  free's a global
+unsigned int Digitizer_Detach              (void);     // closes device context - waits for device to disarm
+unsigned int Digitizer_Detach_Nonblocking  (void);     // closes device context - pushes close request to a threadpool
+unsigned int Digitizer_Attach              (void);     // opens device context
 
 //
 // Tasks
@@ -103,8 +103,8 @@ DeviceTask* Digitizer_Create_Task_Stream_All_Channels_Immediate_Trigger(void);
 //
 
 #define IDM_DIGITIZER               WM_APP+1
-#define IDM_DIGITIZER_OFF           IDM_DIGITIZER+1
-#define IDM_DIGITIZER_HOLD          IDM_DIGITIZER+2
+#define IDM_DIGITIZER_DETACH        IDM_DIGITIZER+1
+#define IDM_DIGITIZER_ATTACH        IDM_DIGITIZER+2
 #define IDM_DIGITIZER_LIST_DEVICES  IDM_DIGITIZER+3
 #define IDM_DIGITIZER_TASK_STOP     IDM_DIGITIZER+4
 #define IDM_DIGITIZER_TASK_RUN      IDM_DIGITIZER+5

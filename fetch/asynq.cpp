@@ -159,7 +159,7 @@ _asynq_push_unlocked(                        // Returns 1 on success, 0 otherwis
                       int is_try,               // if true, push returns immediately whether successful or not.  Never waits.
                       DWORD timeout_ms )     // Time to wait for a self->notify_space event.  Set to INFINITE for no timeout.
 { RingFIFO* q = self->q;
-  if( RingFIFO_Is_Full( q ) && (expand_on_full || self->waiting_consumers>0 ))
+  if( RingFIFO_Is_Full( q ) && (self->waiting_consumers>0 ))
   { if(is_try) return 0;
     if( !_asynq_wait_for_space(self, timeout_ms, "Asynq Push") )
       if( RingFIFO_Is_Full( q ) )
@@ -221,6 +221,19 @@ Asynq_Push( asynq *self, void **pbuf, int expand_on_full )
 }
 
 unsigned int
+Asynq_Push_Copy(asynq *self, void *buf, int expand_on_full )
+{ unsigned int result;
+  static void *token = 0;
+  Asynq_Lock(self);
+  if( !token ) // one-time-initialize working space
+    token = Asynq_Token_Buffer_Alloc(self);
+  memcpy(token,buf, self->q->buffer_size_bytes);
+  result = _asynq_push_unlocked(self, &token, expand_on_full, FALSE, INFINITE );
+  Asynq_Unlock(self);
+  return result;
+}
+
+unsigned int
 Asynq_Push_Try( asynq *self, void **pbuf )
 { unsigned int result;
   Asynq_Lock(self);
@@ -264,6 +277,21 @@ Asynq_Pop_Try( asynq *self, void **pbuf )
   result = _asynq_pop_unlocked(self, pbuf, 
                                 TRUE,       // try
                                 INFINITE ); // timeout
+  Asynq_Unlock(self);
+  return result;
+}
+
+unsigned int
+Asynq_Pop_Copy_Try( asynq *self, void *buf )
+{ unsigned int result;
+  static void* token;
+  Asynq_Lock(self);
+  if( !token )
+    token = Asynq_Token_Buffer_Alloc(self);
+  result = _asynq_pop_unlocked(self, &token, 
+                                TRUE,       // try
+                                INFINITE ); // timeout
+  memcpy(buf,token,self->q->buffer_size_bytes);
   Asynq_Unlock(self);
   return result;
 }

@@ -8,6 +8,12 @@
 #define DEBUG_RING_FIFO_PUSH
 #endif
 
+#ifdef DEBUG_RING_FIFO
+#define ringfifo_debug(...) debug(__VA_ARGS__)
+#else
+#define ringfifo_debug(...)
+#endif
+
 TYPE_VECTOR_DEFINE(PVOID);
 
 RingFIFO*
@@ -108,7 +114,8 @@ _swap( RingFIFO *self, void **pbuf, size_t idx)
 extern inline 
 unsigned int
 RingFIFO_Pop( RingFIFO *self, void **pbuf)
-{ return_val_if( RingFIFO_Is_Empty(self), 1);
+{ ringfifo_debug("- head: %-5d tail: %-5d\r\n",self->head, self->tail);
+  return_val_if( RingFIFO_Is_Empty(self), 1);
   _swap( self, pbuf, self->tail++ );
   return 0;
 }
@@ -137,6 +144,7 @@ RingFIFO_Push_Try( RingFIFO *self, void **pbuf)
 unsigned int
 RingFIFO_Push( RingFIFO *self, void **pbuf, int expand_on_full)
 { unsigned int retval = 0;
+  ringfifo_debug("+ head: %-5d tail: %-5d\r\n",self->head,self->tail);
   return_val_if( RingFIFO_Push_Try(self, pbuf)==0, 0 );
   // Handle when full
   if( expand_on_full )      // Expand

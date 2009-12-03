@@ -77,8 +77,9 @@ double      toc(TicTocTimer *last); // returns time since last in seconds and up
 typedef unsigned int (*pf_shutdown_callback)(void);
 
 size_t       Register_New_Shutdown_Callback ( pf_shutdown_callback callback );
-void         Shutdown_Hard          ( unsigned int err);
-unsigned int Shutdown_Soft          ( void );
+void         Shutdown_Hard          ( unsigned int err);   // Calls shutdown functions and exits
+unsigned int Shutdown_Soft          ( void );              // Calls shutdown functions
+unsigned int Shutdown_Soft_Nonblocking(void);              // Uses the windows thread pool to call shutdown functions
 
 // -----------------------
 // Reporting and Asserting

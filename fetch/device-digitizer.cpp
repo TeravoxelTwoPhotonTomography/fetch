@@ -32,6 +32,16 @@ unsigned int Digitizer_Destroy(void)
   return 0;
 }
 
+DWORD WINAPI
+_Digitizer_Destroy_thread_proc( LPVOID lparam )
+{ return Digitizer_Detach();
+}
+
+unsigned int
+Digitizer_Destroy_Nonblocking(void)
+{ return QueueUserWorkItem( _Digitizer_Destroy_thread_proc, NULL, NULL );
+}
+
 void Digitizer_Init(void)
 { Guarded_Assert( gp_digitizer_device = Device_Alloc() );
   gp_digitizer_device->context = (void*) &g_digitizer;
@@ -39,40 +49,45 @@ void Digitizer_Init(void)
   // Register Shutdown functions - these get called in reverse order
   Register_New_Shutdown_Callback( &_digitizer_free_tasks );
   Register_New_Shutdown_Callback( &Digitizer_Destroy );
-  Register_New_Shutdown_Callback( &Digitizer_Close   );
+  Register_New_Shutdown_Callback( &Digitizer_Detach );
   
   // Register Microscope state functions
-  Register_New_Microscope_Hold_Callback( &Digitizer_Hold );
-  Register_New_Microscope_Off_Callback( &Digitizer_Off );
+  Register_New_Microscope_Attach_Callback( &Digitizer_Attach );
+  Register_New_Microscope_Off_Callback( &Digitizer_Detach );
   
   // Create tasks
   gp_digitizer_tasks[0] = Digitizer_Create_Task_Stream_All_Channels_Immediate_Trigger();
 }
 
-unsigned int Digitizer_Close(void)
+unsigned int Digitizer_Detach(void)
 { ViStatus status = 1; //error
   Device_Lock( gp_digitizer_device );
   debug("Digitizer: Attempting to close vi: %d\r\n", g_digitizer.vi);
   if( !Device_Disarm( gp_digitizer_device, DIGITIZER_DEFAULT_TIMEOUT ) )
-    warning("Could not cleanly release digitizer.\r\n");
-  { ViSession vi = g_digitizer.vi;
-    if(vi)
-      ViErrChk( niScope_close(vi) );  // Close the session
-  }
+    warning("Could not cleanly disarm digitizer.\r\n");
+    
+  if( g_digitizer.vi)
+    ViErrChk( niScope_close(g_digitizer.vi) );  // Close the session
+
   status = 0;  // success
-  debug("Digitizer: Closed.\r\n");
+  debug("Digitizer: Detached.\r\n");
 Error:  
   g_digitizer.vi = 0;
   Device_Unlock( gp_digitizer_device );
   return status;
 }
 
-unsigned int Digitizer_Off(void)
-{ debug("Digitizer: Off\r\n");
-  return( Digitizer_Close() );
+DWORD WINAPI
+_Digitizer_Detach_thread_proc( LPVOID lparam )
+{ return Digitizer_Detach();
 }
 
-unsigned int Digitizer_Hold(void)
+unsigned int
+Digitizer_Detach_Nonblocking(void)
+{ return QueueUserWorkItem( _Digitizer_Detach_thread_proc, NULL, NULL );
+}
+
+unsigned int Digitizer_Attach(void)
 { Device_Lock( gp_digitizer_device );
   ViStatus status = VI_SUCCESS;
   debug("Digitizer: Hold\r\n");
@@ -136,6 +151,7 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Cfg( Device *d, vector_PAS
       DeviceTask_Configure_Outputs( d->task, 2, nbuf, sz );
     }
   }
+  debug("Digitizer configured for Stream_All_Channels_Immediate_Trigger\r\n");
   return 1;
 }
 
@@ -161,6 +177,7 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
                                            NISCOPE_ATTR_FETCH_RELATIVE_TO,         //?TODO: push/pop state for niscope?
                                            NISCOPE_VAL_READ_POINTER ));
   // Loop until the stop event is triggered
+  debug("Digitizer Stream_All_Channels_Immediate_Trigger - Running -\r\n");
   do 
   {
      // Fetch the available data without waiting
@@ -177,6 +194,7 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
        ttl = 0;
      }       
   } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
+  debug("Digitizer Stream_All_Channels_Immediate_Trigger - Running done-\r\n");
   
   debug("Task done: normal exit\r\n");
   ret = 0; //success
@@ -213,8 +231,8 @@ _digitizer_ui_make_menu(void)
   Guarded_Assert_WinErr( AppendMenu( taskmenu, MF_STRING, IDM_DIGITIZER_TASK_0, "Continuous &Fetch" ));
   
                                        
-  Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_OFF,  "&Off"));
-  Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_HOLD, "&Hold"));
+  Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_DETACH,  "&Detach"));
+  Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_ATTACH, "&Attach"));
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING | MF_POPUP,  (UINT_PTR) taskmenu, "&Tasks"));
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_TASK_RUN,  "&Run" ));
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_TASK_STOP, "&Stop" ));
@@ -246,26 +264,6 @@ Digitizer_UI_Insert_Menu( HMENU menu, UINT uPosition, UINT uFlags )
                 "&Digitizer")); 
 }
 
-DWORD WINAPI
-_on_arm_digitizer_task( LPVOID lparam )
-{ int task_id = (int) lparam;
-  if(!Device_Arm( gp_digitizer_device, gp_digitizer_tasks[task_id], INFINITE ))
-  { warning("Digitizer: Couldn't arm task 0\r\n");
-    return 0;
-  }
-  return 1;
-}
-
-DWORD WINAPI
-_on_stop_digitizer( LPVOID lparam )
-{ return Device_Stop(gp_digitizer_device, INFINITE);
-}
-
-DWORD WINAPI
-_on_digitizer_off( LPVOID lparam )
-{ return Digitizer_Off();
-}
-
 // This has the type of a WinProc
 // Returns:
 //    0  if the message was handled
@@ -282,11 +280,20 @@ Digitizer_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	  { HMENU hmenu = (HMENU) wParam;
 	    if( hmenu == g_digitizer_ui_main_menu_state.menu )
 	    { Guarded_Assert_WinErr(-1!=
+	        EnableMenuItem( hmenu, 1 /*Attach*/, MF_BYPOSITION
+	                        | ( (g_digitizer.vi==0)?MF_ENABLED:MF_GRAYED) ));
+	      Guarded_Assert_WinErr(-1!=
 	        EnableMenuItem( hmenu, 2 /*Tasks*/, MF_BYPOSITION
 	                        | ( (g_digitizer.vi==0)?MF_GRAYED:MF_ENABLED) ));
+	      Guarded_Assert_WinErr(-1!=
+	        CheckMenuItem( hmenu, 2 /*Tasks*/, MF_BYPOSITION
+	                        | ( Device_Is_Armed(gp_digitizer_device)?MF_CHECKED:MF_UNCHECKED) ));
         Guarded_Assert_WinErr(-1!=
 	        EnableMenuItem( hmenu, 3 /*Run*/, MF_BYPOSITION
 	                        | ( (Device_Is_Armed(gp_digitizer_device))?MF_ENABLED:MF_GRAYED) ));
+	      Guarded_Assert_WinErr(-1!=
+	        CheckMenuItem( hmenu, 3 /*Run*/, MF_BYPOSITION
+	                        | ( Device_Is_Running(gp_digitizer_device)?MF_CHECKED:MF_UNCHECKED) ));
         Guarded_Assert_WinErr(-1!=
 	        EnableMenuItem( hmenu, 4 /*Stop*/, MF_BYPOSITION
 	                        | ( (Device_Is_Running(gp_digitizer_device))?MF_ENABLED:MF_GRAYED) ));	                        
@@ -332,15 +339,14 @@ Digitizer_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Parse the menu selections:
 		switch (wmId)
 		{
-    case IDM_DIGITIZER_OFF:
-      { debug( "IDM_DIGITIZER_OFF\r\n" );
-        Guarded_Assert_WinErr( QueueUserWorkItem( _on_stop_digitizer, 0, WT_EXECUTEDEFAULT ) );
-        
+    case IDM_DIGITIZER_DETACH:
+      { debug( "IDM_DIGITIZER_DETACH\r\n" );
+        Digitizer_Detach_Nonblocking();        
       }
 			break;
-    case IDM_DIGITIZER_HOLD:
-      { debug("IDM_DIGITIZER_HOLD\r\n");        
-        Digitizer_Hold();        
+    case IDM_DIGITIZER_ATTACH:
+      { debug("IDM_DIGITIZER_ATTACH\r\n");        
+        Digitizer_Attach();        
       }
       break;
     case IDM_DIGITIZER_LIST_DEVICES:
@@ -350,17 +356,17 @@ Digitizer_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       break;
     case IDM_DIGITIZER_TASK_0:
       { debug("IDM_DIGITIZER_TASK_0\r\n");
-        Guarded_Assert_WinErr( QueueUserWorkItem( _on_arm_digitizer_task, 0, WT_EXECUTEDEFAULT ) );
+        Device_Arm_Nonblocking( gp_digitizer_device, gp_digitizer_tasks[0], DIGITIZER_DEFAULT_TIMEOUT );        
       }
       break;
     case IDM_DIGITIZER_TASK_RUN:
-      { debug("IDM_DIGITIZER_RUN\r\n");
-        Device_Run(gp_digitizer_device);
+      { debug("IDM_DIGITIZER_RUN\r\n");      
+        Device_Run_Nonblocking(gp_digitizer_device);
       }
       break;
     case IDM_DIGITIZER_TASK_STOP:
       { debug("IDM_DIGITIZER_STOP\r\n");
-        Guarded_Assert_WinErr( QueueUserWorkItem( _on_stop_digitizer, 0, WT_EXECUTEDEFAULT ) );
+        Device_Stop_Nonblocking( gp_digitizer_device, DIGITIZER_DEFAULT_TIMEOUT );        
       }
       break;
 		default:

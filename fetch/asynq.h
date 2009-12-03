@@ -63,13 +63,20 @@ asynq *Asynq_Ref     ( asynq *self );
 int    Asynq_Unref   ( asynq *self );
 
 unsigned int Asynq_Push       ( asynq *self, void **pbuf, int expand_on_full );
+unsigned int Asynq_Push_Copy  ( asynq *self, void  *buf,  int expand_on_full );
 unsigned int Asynq_Push_Try   ( asynq *self, void **pbuf );
 unsigned int Asynq_Push_Timed ( asynq *self, void **pbuf, DWORD timeout_ms );
 
-unsigned int Asynq_Pop        ( asynq *self, void **pbuf );
-unsigned int Asynq_Pop_Try    ( asynq *self, void **pbuf );
-unsigned int Asynq_Pop_Timed  ( asynq *self, void **pbuf, DWORD timeout_ms );
+unsigned int Asynq_Pop          ( asynq *self, void **pbuf );
+unsigned int Asynq_Pop_Try      ( asynq *self, void **pbuf );
+unsigned int Asynq_Pop_Copy_Try ( asynq *self, void  *buf  );
+unsigned int Asynq_Pop_Timed    ( asynq *self, void **pbuf, DWORD timeout_ms );
 
+// FIXME
+// Peeking is a bit broken.  It will increment the waiting consumer count which
+// push uses to determine when to wait, so push will wait on a peek.  Peek never
+// makes space so it never notifies that space is available.
+//
 unsigned int Asynq_Peek       ( asynq *self, void  *buf );
 unsigned int Asynq_Peek_Try   ( asynq *self, void  *buf );
 unsigned int Asynq_Peek_Timed ( asynq *self, void  *buf, DWORD timeout_ms );

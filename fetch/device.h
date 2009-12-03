@@ -20,17 +20,29 @@ typedef struct _device
 Device *Device_Alloc(void);
 void    Device_Free(Device *self);
 
-Device      *Device_Request    ( Device *self, DWORD timeout_ms );
-Device      *Device_Request_Try( Device *self );
-
+// State-change functions
+// ----------------------
 unsigned int Device_Arm    ( Device *self, DeviceTask *task, DWORD timeout_ms );
 unsigned int Device_Disarm ( Device *self, DWORD timeout_ms );
 unsigned int Device_Run    ( Device *self );
 unsigned int Device_Stop   ( Device *self, DWORD timeout_ms );
 
-unsigned int Device_Is_Armed  ( Device *self );
-unsigned int Device_Is_Running( Device *self );
+// Nonblocking state-change functions
+// ----------------------------------
+// These push the normal stat-change functions to the Windows thread queue
+// and return immediately.  Each returns the result of the QueueUserWorkItem call.
+BOOL Device_Arm_Nonblocking    ( Device *self, DeviceTask *task, DWORD timeout_ms );
+BOOL Device_Disarm_Nonblocking ( Device *self, DWORD timeout_ms );
+BOOL Device_Run_Nonblocking    ( Device *self );
+BOOL Device_Stop_Nonblocking   ( Device *self, DWORD timeout_ms );
 
+// State Query functions
+// ---------------------
+unsigned int Device_Is_Available  ( Device *self );
+unsigned int Device_Is_Armed      ( Device *self );
+unsigned int Device_Is_Running    ( Device *self );
+
+// Utilities
+// ---------
 inline void Device_Lock   ( Device *self );
 inline void Device_Unlock ( Device *self );
-//

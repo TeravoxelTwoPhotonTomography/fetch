@@ -326,32 +326,6 @@
 				>
 			</File>
 		</Filter>
-		<Filter
-			Name="Tests"
-			>
-			<Filter
-				Name="Source Files"
-				Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
-				>
-				<File
-					RelativePath=".\test-ring-fifo.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\tester-control.cpp"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Header Files"
-				Filter="h;hpp;hxx;hm;inl;inc;xsd"
-				>
-				<File
-					RelativePath=".\tester-control.h"
-					>
-				</File>
-			</Filter>
-		</Filter>
 		<File
 			RelativePath=".\ReadMe.txt"
 			>
