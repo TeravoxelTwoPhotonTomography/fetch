@@ -8,7 +8,7 @@
 #define CheckPanic( expression ) (niscope_chk( g_digitizer.vi, expression, #expression, &error   ))
 #define ViErrChk( expression )    goto_if_fail( VI_SUCCESS == CheckWarn(expression), Error )
 
-Digitizer             g_digitizer              = DIGITIZER_DEFUALT;
+Digitizer             g_digitizer              = DIGITIZER_DEFAULT;
 Device               *gp_digitizer_device      = NULL;
 
 DeviceTask           *gp_digitizer_tasks[1]    = {NULL};
@@ -43,7 +43,7 @@ void Digitizer_Init(void)
   
   // Register Microscope state functions
   Register_New_Microscope_Attach_Callback( &Digitizer_Attach );
-  Register_New_Microscope_Off_Callback( &Digitizer_Detach );
+  Register_New_Microscope_Detach_Callback( &Digitizer_Detach );
   
   // Create tasks
   gp_digitizer_tasks[0] = Digitizer_Create_Task_Stream_All_Channels_Immediate_Trigger();

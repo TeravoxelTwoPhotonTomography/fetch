@@ -3,6 +3,44 @@
 #include "stdafx.h"
 #include "device-task.h"
 
+//
+// Device
+// ------
+//
+// This abstraction is intended to aid in asynchronous use of hardware 
+// (or software) devices.
+//
+// It models a device that:
+//
+//    1. conforms to the defined state model.
+//    2. can be handled through a context handle.
+//    3. uses a single producer/consumer at a time.
+//
+// Usually device contexts are aquired during the start of the application.
+// During the application devices can be:
+//  
+//    1. Stopped and available for a task (holding).
+//    2. Configured to perform a specific task (armed).
+//    3. Running.
+//
+// This interface manages asynchronous queries and manipulation of these
+// states.
+//
+// This is typically used by defining an API for each individual device
+// that uses the Device object.  Specific device implimentations 
+// usually provide Create/Destroy and Attach/Destroy routines that
+// allocate the Device* and acquire the context handle.  
+//
+// Implimentations also define tasks (see device-task.h for details).  Tasks 
+// can be largely agnostic of any multithreading.  They get run in their own
+// thread and get/put data via asynchronous queues passed as arguments.
+//
+// A task can be assigned to multiple devices, and is not owned by the
+// Device.  The Device should be disarmed before deallocating tasks.
+// Deallocating tasks before stopping the Device will result in undefined
+// behavior.
+//
+
 typedef struct _device_task DeviceTask;
 
 typedef struct _device
