@@ -9,3 +9,5 @@
 
 #define NI6713_MAX_VOLTS_OUT        10       // +/- V
 #define NI6713_OUTPUT_IMPEDANCE     0.1      // ohms
+
+int32 Guarded_DAQmx( int32 error, const char* expression, pf_reporter report );

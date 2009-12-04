@@ -2,6 +2,7 @@
 #include "microscope.h"
 
 #include "device-digitizer.h"
+#include "device-galvo-mirror.h"
 
 TYPE_VECTOR_DEFINE( pf_microscope_attach_callback );
 TYPE_VECTOR_DEFINE( pf_microscope_off_callback );
@@ -87,6 +88,7 @@ void Microscope_Application_Start(void)
   //                               state procedures (off and hold),
   //                               and initialize themselves.
   Digitizer_Init();
+  Galvo_Mirror_Init();
 
   Microscope_Off();
   Microscope_Attach();

@@ -6,6 +6,7 @@
 #include "logger.h"
 #include "microscope.h"
 #include "device-digitizer.h"
+#include "device-galvo-mirror.h"
 
 #define MAX_LOADSTRING 100
 
@@ -170,6 +171,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
   if( !Digitizer_UI_Handler(hWnd, message, wParam, lParam) )
      return 0; // message was handled so return
+
+  if( !Galvo_Mirror_UI_Handler(hWnd, message, wParam, lParam) )
+     return 0; // message was handled so return
      
   // Top level handler    
 	switch (message)
@@ -178,6 +182,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     { HMENU menu = GetMenu( hWnd );
       Guarded_Assert_WinErr( menu );
       Digitizer_UI_Insert_Menu( menu, GetMenuItemCount(menu)-1, MF_BYPOSITION );
+      Galvo_Mirror_UI_Insert_Menu( menu, GetMenuItemCount(menu)-1, MF_BYPOSITION );
     }
     break;
 	case WM_INITMENU:

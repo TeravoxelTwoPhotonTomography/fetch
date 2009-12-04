@@ -234,6 +234,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\util-nidaqmx.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\util-niscope.cpp"
 				>
 			</File>
