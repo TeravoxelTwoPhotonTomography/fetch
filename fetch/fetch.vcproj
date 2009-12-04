@@ -268,6 +268,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\device-video-display.h"
+				>
+			</File>
+			<File
 				RelativePath=".\device.h"
 				>
 			</File>
