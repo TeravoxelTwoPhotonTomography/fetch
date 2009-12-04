@@ -397,6 +397,6 @@ void*  Asynq_Token_Buffer_Alloc_And_Copy ( asynq *self, void *src )
   return dst;
 }
 
-void   Asynq_Token_Buffer_Free ( void *buf   )
+void   Asynq_Token_Buffer_Free ( void *buf )
 { free(buf);
 }
