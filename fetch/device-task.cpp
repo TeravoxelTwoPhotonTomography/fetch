@@ -87,3 +87,16 @@ DeviceTask_Free( DeviceTask *self )
     _devicetask_free_outputs( self );
   }
 }
+
+// Destination channel inherits the source channel's properties
+void
+DeviceTask_Connect( DeviceTask *src, int src_channel,
+                    DeviceTask *dst, int dst_channel)
+{ Guarded_Assert( src_channel < src->out->nelem ); // ensure channel indexes are valid
+  Guarded_Assert( dst_channel < dst->in->nelem );
+  { asynq  *s = src->out->contents[src_channel], 
+          **d = dst->in->contents + dst_channel;
+    Asynq_Unref( *d );
+    *d = Asynq_Ref( s );
+  }
+}
