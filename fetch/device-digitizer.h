@@ -80,7 +80,7 @@ typedef struct _digitizer
 } Digitizer;
 
 #define DIGITIZER_EMPTY   {0, DIGITIZER_CONFIG_EMPTY};
-#define DIGITIZER_DEFUALT {0, DIGITIZER_CONFIG_DEFAULT};
+#define DIGITIZER_DEFAULT {0, DIGITIZER_CONFIG_DEFAULT};
 
 //
 // Device interface
