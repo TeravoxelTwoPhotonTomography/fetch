@@ -187,7 +187,7 @@ Shutdown_Soft_Nonblocking(void)
 }
 
 void Shutdown_Hard(unsigned int err)
-{ exit( err | Shutdown_Soft_Nonblocking() );
+{ exit( err | Shutdown_Soft() );
 }
 
 // ------------------------------------
@@ -393,7 +393,7 @@ void error(const char* fmt, ...)
     // spam formated string to listeners
     { static int lock = 0;
       assert( lock == 0 ); // One of the logging functions generated a log message
-      lock = 1;
+      lock = 1;            // protect against recursion
       { pf_reporting_callback *beg = g_error_report_callbacks.contents;
         size_t cnt                 = g_error_report_callbacks.count;
         char *buffer = vbuf.contents;

@@ -32,16 +32,6 @@ unsigned int Digitizer_Destroy(void)
   return 0;
 }
 
-DWORD WINAPI
-_Digitizer_Destroy_thread_proc( LPVOID lparam )
-{ return Digitizer_Detach();
-}
-
-unsigned int
-Digitizer_Destroy_Nonblocking(void)
-{ return QueueUserWorkItem( _Digitizer_Destroy_thread_proc, NULL, NULL );
-}
-
 void Digitizer_Init(void)
 { Guarded_Assert( gp_digitizer_device = Device_Alloc() );
   gp_digitizer_device->context = (void*) &g_digitizer;
@@ -84,13 +74,13 @@ _Digitizer_Detach_thread_proc( LPVOID lparam )
 
 unsigned int
 Digitizer_Detach_Nonblocking(void)
-{ return QueueUserWorkItem( _Digitizer_Detach_thread_proc, NULL, NULL );
+{ return  QueueUserWorkItem( _Digitizer_Detach_thread_proc, NULL, NULL );
 }
 
 unsigned int Digitizer_Attach(void)
 { Device_Lock( gp_digitizer_device );
   ViStatus status = VI_SUCCESS;
-  debug("Digitizer: Hold\r\n");
+  debug("Digitizer: Attach\r\n");
   { ViSession *vi = &g_digitizer.vi;
 
     if( (*vi) == NULL )
