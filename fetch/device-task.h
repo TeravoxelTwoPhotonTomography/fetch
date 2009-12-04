@@ -51,4 +51,7 @@ void        DeviceTask_Configure_Inputs(  DeviceTask* self,
 void        DeviceTask_Configure_Outputs( DeviceTask* self,              
                                           size_t num_outputs,           // Output: # of pipes       
                                           size_t *output_queue_size,    //         # of buffers/pipe
-                                          size_t *output_buffer_size);  //         buffer size      
+                                          size_t *output_buffer_size);  //         buffer size
+                                          
+void        DeviceTask_Connect( DeviceTask *source,      int source_channel,
+                                DeviceTask *destination, int destination_channel);
