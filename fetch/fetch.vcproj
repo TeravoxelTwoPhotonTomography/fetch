@@ -260,6 +260,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\device-disk-stream.h"
+				>
+			</File>
+			<File
 				RelativePath=".\device-galvo-mirror.h"
 				>
 			</File>
