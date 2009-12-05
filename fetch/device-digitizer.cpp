@@ -100,6 +100,15 @@ unsigned int Digitizer_Attach(void)
 }
 
 //
+// UTILITIES
+//
+
+Device*
+Digitizer_Get_Device(void)
+{ return gp_digitizer_device;
+}
+
+//
 // TASK - Streaming on all channels
 //
 
@@ -201,7 +210,10 @@ Digitizer_Create_Task_Stream_All_Channels_Immediate_Trigger(void)
                           _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc);
 }
 
-
+DeviceTask*
+Digitizer_Get_Default_Task(void)
+{ return gp_digitizer_tasks[0];
+}
 //
 // USER INTERFACE (WINDOWS)
 //

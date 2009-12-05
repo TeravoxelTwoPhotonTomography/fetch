@@ -1,10 +1,10 @@
 #include "stdafx.h"
 #include "asynq.h"
 
+#define DEBUG_ASYNQ_HANDLE_WAIT_FOR_RESULT
 #if 0
 #define DEBUG_ASYNQ_UNREF
 #define DEBUG_ASYNQ_FLUSH_WAITING_CONSUMERS
-#define DEBUG_ASYNQ_HANDLE_WAIT_FOR_RESULT
 #endif
 
 //
@@ -104,9 +104,9 @@ _handle_wait_for_result(DWORD result, const char* msg)
 { return_val_if( result == WAIT_OBJECT_0, 1 );
   Guarded_Assert_WinErr( result != WAIT_FAILED );
 #ifdef DEBUG_ASYNQ_HANDLE_WAIT_FOR_RESULT  
-  if( result != WAIT_ABANDONED )                   // This is the common timeout result
+  if( result == WAIT_ABANDONED )                   // This is the common timeout result
     warning("Asynq: Wait abandoned\r\n\t%s\r\n",msg);
-  if( result != WAIT_TIMEOUT )                     // Don't know how to generate this.
+  if( result == WAIT_TIMEOUT )                     // Don't know how to generate this.
     warning("Asynq: Wait timeout\r\n\t%s\r\n",msg);  
 #endif
   return 0;

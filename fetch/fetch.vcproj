@@ -186,6 +186,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\device-disk-stream.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\device-galvo-mirror.cpp"
 				>
 			</File>

@@ -481,14 +481,14 @@ int _tmain(int argc, _TCHAR* argv[])
 { Reporting_Setup_Log_To_Stdout();
   Reporting_Setup_Log_To_VSDebugger_Console();
  
-  debug("---  pushpop1 ---------------------\r\n");
-  pushpop1( 1024,1024,8,2 );
-  debug("---  pushpop2 ---------------------\r\n");
-  pushpop2( 1024,1024,8,2 );
+  //debug("---  pushpop1 ---------------------\r\n");
+  //pushpop1( 1024,1024,8,2 );
+  //debug("---  pushpop2 ---------------------\r\n");
+  //pushpop2( 1024,1024,8,2 );
   debug("---  pushpop3 ---------------------\r\n");
   pushpop3( 1024,1024,8,2 );
-  debug("---  pushspin1 --------------------\r\n");
-  pushspin1( 1024,1024,8,2 );
+  //debug("---  pushspin1 --------------------\r\n");
+  //pushspin1( 1024,1024,8,2 );
   
 	return 0;
 }
