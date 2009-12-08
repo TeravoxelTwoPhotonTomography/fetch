@@ -115,7 +115,8 @@ Digitizer_Get_Device(void)
 
 unsigned int
 _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
-{ ViSession  vi = g_digitizer.vi;
+{ typedef ViInt16 TPixel;
+  ViSession  vi = g_digitizer.vi;
   Digitizer_Config cfg = g_digitizer.config;
   ViInt32 i;
   int nchan = 0;
@@ -151,7 +152,7 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Cfg( Device *d, vector_PAS
     CheckPanic( niScope_ActualNumWfms(vi, cfg.acquisition_channels, &nwfm ) );
     CheckPanic( niScope_ActualRecordLength(vi, &record_length) );
     { size_t nbuf[2] = {32,32},
-               sz[2] = {nwfm*record_length*sizeof(ViReal64),
+               sz[2] = {nwfm*record_length*sizeof(TPixel),
                         nwfm*sizeof(struct niScope_wfmInfo)};
       DeviceTask_Configure_Outputs( d->task, 2, nbuf, sz );
     }
@@ -162,18 +163,23 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Cfg( Device *d, vector_PAS
 
 unsigned int
 _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
-{ Digitizer *dig = ((Digitizer*)d->context);
+{ typedef ViInt16 TPixel;
+  Digitizer *dig = ((Digitizer*)d->context);
   ViSession   vi = dig->vi;
   ViChar   *chan = dig->config.acquisition_channels;
   asynq   *qdata = out->contents[0],
           *qwfm  = out->contents[1];
-  ViInt32  nelem = (ViInt32)qdata->q->buffer_size_bytes / sizeof(ViReal64) / 4, // number of samples per data buffer
+  ViInt32  nelem,// = (ViInt32)qdata->q->buffer_size_bytes / sizeof(ViReal64) / nwfm, // number of samples per channel
+           nwfm,
            ttl = 0,
            old_state;
   TicTocTimer t;
-  ViReal64               *buf = (ViReal64*)        Asynq_Token_Buffer_Alloc(qdata);
+  TPixel                 *buf = (TPixel*)        Asynq_Token_Buffer_Alloc(qdata);
   struct niScope_wfmInfo *wfm = (niScope_wfmInfo*) Asynq_Token_Buffer_Alloc(qwfm);
   unsigned int ret = 1;
+  
+  CheckPanic( niScope_ActualNumWfms(vi, chan, &nwfm ) );
+  CheckPanic( niScope_ActualRecordLength(vi, &nelem) );
 
   ViErrChk   (niScope_InitiateAcquisition (vi));
   ViErrChk   (niScope_GetAttributeViInt32 (vi, NULL,   // TODO: reset to default when done
@@ -186,9 +192,9 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
   debug("Digitizer Stream_All_Channels_Immediate_Trigger - Running -\r\n");
   t = tic();
   do 
-  {
-     // Fetch the available data without waiting
-     ViErrChk (niScope_Fetch (vi, 
+  { do
+    { // Fetch the available data without waiting
+      ViErrChk (niScope_FetchBinary16 (vi, 
                               chan,          // (acquistion channels)
                               0.0,           // Immediate
                               nelem - ttl,   // Remaining space in buffer
