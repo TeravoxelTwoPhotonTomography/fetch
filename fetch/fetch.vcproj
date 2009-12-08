@@ -245,6 +245,10 @@
 				RelativePath=".\util-niscope.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\window-video.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -313,6 +317,10 @@
 			</File>
 			<File
 				RelativePath=".\util-niscope.h"
+				>
+			</File>
+			<File
+				RelativePath=".\window-video.h"
 				>
 			</File>
 		</Filter>
