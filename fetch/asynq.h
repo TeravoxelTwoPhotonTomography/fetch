@@ -53,9 +53,10 @@ typedef struct _asynq
   u32 waiting_producers;
   u32 waiting_consumers;
   
-  CRITICAL_SECTION   lock;         // mutex
-  HANDLE             notify_space; // triggered when queue is not full (has available space)
-  HANDLE             notify_data;  // triggered when queue is not empty (has available data).
+  CRITICAL_SECTION   lock;            // mutex
+  HANDLE             notify_space;    // triggered when queue is not full (has available space)
+  HANDLE             notify_data;     // triggered when queue is not empty (has available data).
+  HANDLE             notify_abort;    // triggered to abort any pending operations (e.g. for shutdown).
 } asynq;
 
 asynq *Asynq_Alloc   ( size_t buffer_count, size_t buffer_size_bytes );
@@ -81,7 +82,7 @@ unsigned int Asynq_Peek       ( asynq *self, void  *buf );
 unsigned int Asynq_Peek_Try   ( asynq *self, void  *buf );
 unsigned int Asynq_Peek_Timed ( asynq *self, void  *buf, DWORD timeout_ms );
 
-       void  Asynq_Flush_Waiting_Consumers( asynq *self, int maxiter );
+       void  Asynq_Flush_Waiting_Consumers( asynq *self );
 
 inline void  Asynq_Lock    ( asynq *self );
 inline void  Asynq_Unlock  ( asynq *self );

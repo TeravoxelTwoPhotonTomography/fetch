@@ -84,3 +84,5 @@ unsigned int Device_Is_Running    ( Device *self );
 // ---------
 inline void Device_Lock   ( Device *self );
 inline void Device_Unlock ( Device *self );
+
+void Device_Set_Available ( Device *self );

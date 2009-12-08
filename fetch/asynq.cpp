@@ -2,9 +2,10 @@
 #include "asynq.h"
 
 #define DEBUG_ASYNQ_HANDLE_WAIT_FOR_RESULT
+#define DEBUG_ASYNQ_FLUSH_WAITING_CONSUMERS
 #if 0
 #define DEBUG_ASYNQ_UNREF
-#define DEBUG_ASYNQ_FLUSH_WAITING_CONSUMERS
+
 #endif
 
 //
@@ -36,18 +37,21 @@ Asynq_Alloc(size_t buffer_count, size_t buffer_size_bytes )
     InitializeCriticalSectionAndSpinCount( &self->lock, 
                                             0x80000400 ) 
   );
-  Guarded_Assert_WinErr(
-    self->notify_data = CreateEvent(NULL,   // default security attributes
-                                    TRUE,   // true ==> manual reset
-                                    FALSE,  // initial state is untriggered
-                                    NULL )  // unnamed
-  );
-  Guarded_Assert_WinErr(
-    self->notify_space = CreateEvent( NULL,   // default security attributes
-                                      TRUE,   // true ==> manual reset
-                                      TRUE,   // initial state is triggered
-                                      NULL )  // unnamed
-  );  
+  
+  { HANDLE  *es[3] = { &self->notify_data,
+                       &self->notify_space,
+                       &self->notify_abort};
+    BOOL states[3] = { FALSE,
+                       TRUE,
+                       FALSE };
+    int i = 3;
+    while(i--)
+      Guarded_Assert_WinErr(
+        *es[i] = CreateEvent(NULL,       // default security attributes
+                             TRUE,       // true ==> manual reset
+                             states[i],  // initial state
+                             NULL ));    // unnamed
+  }
 
   return self;
 }
@@ -68,11 +72,14 @@ Asynq_Unref( asynq *self )
   return_val_if_fail( self->ref_count > 0, 0 );
   
   if( Interlocked_Dec_And_Test_u32( (LONG*) &self->ref_count ) ) // Free when last reference is released
-  { return_val_if_fail( self->waiting_producers == 0, 0 );       // Gaurantee no one is waiting
-    return_val_if_fail( self->waiting_consumers == 0, 0 );
+  { if(self->waiting_consumers>0 || self->waiting_producers>0)
+    { SetEvent( self->notify_abort );
+      return 0;
+    }  
     DeleteCriticalSection( &self->lock );
     if( !CloseHandle( self->notify_data  )) ReportLastWindowsError();
     if( !CloseHandle( self->notify_space )) ReportLastWindowsError();
+    if( !CloseHandle( self->notify_abort )) ReportLastWindowsError();
     if( self->q )
       RingFIFO_Free( self->q );
     self->q = NULL;
@@ -104,10 +111,34 @@ _handle_wait_for_result(DWORD result, const char* msg)
 { return_val_if( result == WAIT_OBJECT_0, 1 );
   Guarded_Assert_WinErr( result != WAIT_FAILED );
 #ifdef DEBUG_ASYNQ_HANDLE_WAIT_FOR_RESULT  
-  if( result == WAIT_ABANDONED )                   // This is the common timeout result
+  if( result == WAIT_ABANDONED )
     warning("Asynq: Wait abandoned\r\n\t%s\r\n",msg);
-  if( result == WAIT_TIMEOUT )                     // Don't know how to generate this.
+  if( result == WAIT_TIMEOUT )
     warning("Asynq: Wait timeout\r\n\t%s\r\n",msg);  
+#endif
+  return 0;
+}
+
+/* Returns 1 on success, 0 otherwise.
+ * Possibly generates a panic shutdown.
+ * Lack of success could indicate the lock was
+ *   abandoned or a timeout elapsed.
+ * A warning will be generated if the lock was
+ *   abandoned.
+ * Return of 0 indicates a timeout or an 
+ *   abandoned wait.
+ */
+static inline unsigned
+_handle_wait_for_multiple_result(DWORD result, int n, const char* msg)
+{ return_val_if( result >= WAIT_OBJECT_0 && result < WAIT_OBJECT_0+n, 1 );
+  Guarded_Assert_WinErr( result != WAIT_FAILED );
+#ifdef DEBUG_ASYNQ_HANDLE_WAIT_FOR_RESULT  
+  if( result >= WAIT_ABANDONED_0 && result < WAIT_ABANDONED_0+n )
+    warning("Asynq: Wait abandoned on object %d\r\n"
+            "\t%s\r\n",result - WAIT_ABANDONED_0,msg);
+  if( result == WAIT_TIMEOUT )
+    warning("Asynq: Wait timeout\r\n"
+            "\t%s\r\n",msg);  
 #endif
   return 0;
 }
@@ -123,32 +154,32 @@ Asynq_Unlock ( asynq *self )
 
 static inline unsigned
 _asynq_wait_for_space( asynq *self, DWORD timeout_ms, const char* msg )
-{ HANDLE notify = self->notify_space;
+{ HANDLE notify[2] = {self->notify_space, self->notify_abort};
   DWORD res;
   
-  Guarded_Assert_WinErr( ResetEvent( notify ) );
+  Guarded_Assert_WinErr( ResetEvent( notify[0] ) );
   self->waiting_producers++;    
   Asynq_Unlock(self);
-  res = WaitForSingleObject( notify, timeout_ms );
+  res = WaitForMultipleObjects(2, notify, FALSE /*any*/, timeout_ms );
   Asynq_Lock(self);    
   self->waiting_producers--;
   
-  return _handle_wait_for_result(res,msg);
+  return _handle_wait_for_multiple_result(res,2,msg);
 }
 
 static inline unsigned
 _asynq_wait_for_data( asynq *self, DWORD timeout_ms, const char* msg )
-{ HANDLE notify = self->notify_data;
+{ HANDLE notify[2] = {self->notify_data, self->notify_abort};
   DWORD res;
   
-  Guarded_Assert_WinErr( ResetEvent( notify ) );
+  Guarded_Assert_WinErr( ResetEvent( notify[0] ) );
   self->waiting_consumers++;    
   Asynq_Unlock(self);
-  res = WaitForSingleObject( notify, timeout_ms );
+  res = WaitForMultipleObjects(2, notify, FALSE/*any*/,timeout_ms );
   Asynq_Lock(self);    
   self->waiting_consumers--;
   
-  return _handle_wait_for_result(res,msg);
+  return _handle_wait_for_multiple_result(res,2,msg);
 }
 
 static unsigned int                          // Pushes to head.
@@ -156,10 +187,11 @@ _asynq_push_unlocked(                        // Returns 1 on success, 0 otherwis
                       asynq *self,           // 
                       void **pbuf,           // Pointer to the input buffer.  On return from a success, *pbuf points to different but valid buffer for writing.
                       int expand_on_full,    // Allocate additional space in the queue if the queue is full, and then push.
+                      int block_on_full,     // Block (wait) when the queue is full rather than overwrite data.
                       int is_try,               // if true, push returns immediately whether successful or not.  Never waits.
                       DWORD timeout_ms )     // Time to wait for a self->notify_space event.  Set to INFINITE for no timeout.
 { RingFIFO* q = self->q;
-  if( RingFIFO_Is_Full( q ) && (self->waiting_consumers>0 ))
+  if( RingFIFO_Is_Full( q ) && (block_on_full || self->waiting_consumers>0 ))
   { if(is_try) return 0;
     if( !_asynq_wait_for_space(self, timeout_ms, "Asynq Push") )
       if( RingFIFO_Is_Full( q ) )
@@ -184,7 +216,7 @@ _asynq_pop_unlocked(                         // Returns 1 on success, 0 otherwis
       if( RingFIFO_Is_Empty( q ) )
         return 0;
   }
-  Guarded_Assert( 0 == RingFIFO_Pop( q, pbuf ) ); // Fail if the queue is empty
+  return_val_if( RingFIFO_Pop( q, pbuf ), 0 ); // Fail if the queue is empty
   if( self->waiting_producers )
     SetEvent( self->notify_space );
   return 1;
@@ -215,7 +247,7 @@ unsigned int
 Asynq_Push( asynq *self, void **pbuf, int expand_on_full )
 { unsigned int result;
   Asynq_Lock(self);
-  result = _asynq_push_unlocked(self, pbuf, expand_on_full, FALSE, INFINITE );
+  result = _asynq_push_unlocked(self, pbuf, expand_on_full, FALSE, FALSE, INFINITE );
   Asynq_Unlock(self);
   return result;
 }
@@ -228,7 +260,7 @@ Asynq_Push_Copy(asynq *self, void *buf, int expand_on_full )
   if( !token ) // one-time-initialize working space
     token = Asynq_Token_Buffer_Alloc(self);
   memcpy(token,buf, self->q->buffer_size_bytes);
-  result = _asynq_push_unlocked(self, &token, expand_on_full, FALSE, INFINITE );
+  result = _asynq_push_unlocked(self, &token, expand_on_full, FALSE, FALSE, INFINITE );
   Asynq_Unlock(self);
   return result;
 }
@@ -239,6 +271,7 @@ Asynq_Push_Try( asynq *self, void **pbuf )
   Asynq_Lock(self);
   result = _asynq_push_unlocked(self, pbuf, 
                                 FALSE,      // expand on full
+                                FALSE,      // block on full
                                 TRUE,       // try
                                 INFINITE ); // timeout
   Asynq_Unlock(self);
@@ -251,6 +284,7 @@ Asynq_Push_Timed( asynq *self, void **pbuf, DWORD timeout_ms )
   Asynq_Lock(self);
   result = _asynq_push_unlocked(self, pbuf, 
                                 FALSE,        // expand on full
+                                TRUE,         // block on full
                                 FALSE,        // try
                                 timeout_ms ); // timeout
   Asynq_Unlock(self);
@@ -333,7 +367,7 @@ Asynq_Peek_Try( asynq *self, void *buf )
 
 unsigned int
 Asynq_Peek_Timed( asynq *self, void *buf, DWORD timeout_ms )
-{ unsigned int result;
+{ unsigned  int result;
   Asynq_Lock(self);
   result = _asynq_peek_unlocked(self, buf,
                                 FALSE,        // try
@@ -346,21 +380,21 @@ Asynq_Peek_Timed( asynq *self, void *buf, DWORD timeout_ms )
 // Producer/Consumer management
 //
 
-
-void Asynq_Flush_Waiting_Consumers( asynq *self, int maxiter )
-{ Asynq_Lock(self);
-  while( self->waiting_consumers && maxiter--)
-  { SetEvent( self->notify_data );
-#ifdef DEBUG_ASYNQ_FLUSH_WAITING_CONSUMERS
-    debug(" - Flush - consumers: %-4d remaining iterations: %d\r\n", 
-                self->waiting_consumers,
-                maxiter );
-#endif
-    Asynq_Unlock(self);
-    Sleep(1/*ms*/);
-    Asynq_Lock(self);
-  }
-  Asynq_Unlock(self);
+void Asynq_Flush_Waiting_Consumers( asynq *self )
+{ SetEvent( self->notify_abort );
+//  Asynq_Lock(self);  
+//  while( self->waiting_consumers && maxiter--)
+//  { SetEvent( self->notify_data );
+//#ifdef DEBUG_ASYNQ_FLUSH_WAITING_CONSUMERS
+//    debug(" - Flush - consumers: %-4d remaining iterations: %d\r\n", 
+//                self->waiting_consumers,
+//                maxiter );
+//#endif
+//    Asynq_Unlock(self);
+//    Sleep(1/*ms*/);
+//    Asynq_Lock(self);
+//  }
+//  Asynq_Unlock(self);
 }
 
 //

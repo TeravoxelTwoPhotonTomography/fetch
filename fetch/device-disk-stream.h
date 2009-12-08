@@ -51,6 +51,7 @@ Device*      Disk_Stream_Get_Device              (const char* alias);
 DeviceTask* Disk_Stream_Create_Raw_Write_Task(void);
 
 DeviceTask* Disk_Stream_Get_Raw_Write_Task(void);
+DeviceTask* Disk_Stream_Create_Raw_Read_Task(void);
 //
 // Windows
 //    testing utilities

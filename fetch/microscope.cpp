@@ -100,19 +100,19 @@ void Microscope_Application_Start(void)
               INFINITE );
   
   Disk_Stream_Attach("digitizer-frames","frames.raw",'w');
-  Disk_Stream_Attach("digitizer-wfm"   ,   "wfm.raw",'w');
-
   { Device *stream = Disk_Stream_Get_Device( "digitizer-frames" );
-    Device_Arm( stream,
-                Disk_Stream_Get_Raw_Write_Task(),
-                INFINITE );
+    Guarded_Assert( Device_Arm( stream,
+                                stream->task,
+                                INFINITE ));
     Disk_Stream_Connect_To_Input("digitizer-frames",Digitizer_Get_Device(),0);
     Device_Run( stream );
   }
+  
+  Disk_Stream_Attach("digitizer-wfm",   "wfm.raw",'w');
   { Device *stream = Disk_Stream_Get_Device( "digitizer-wfm" );
-    Device_Arm( stream,
-                Disk_Stream_Get_Raw_Write_Task(),
-                INFINITE );
+    Guarded_Assert( Device_Arm( stream,
+                                stream->task,
+                                INFINITE ));
     Disk_Stream_Connect_To_Input("digitizer-wfm"   ,Digitizer_Get_Device(),1);
     Device_Run(stream);
   }

@@ -6,6 +6,8 @@
 
 #if 1
 #define DEBUG_RING_FIFO_PUSH
+#else
+#define DEBUG_RING_FIFO
 #endif
 
 #ifdef DEBUG_RING_FIFO
@@ -114,7 +116,7 @@ _swap( RingFIFO *self, void **pbuf, size_t idx)
 extern inline 
 unsigned int
 RingFIFO_Pop( RingFIFO *self, void **pbuf)
-{ ringfifo_debug("- head: %-5d tail: %-5d\r\n",self->head, self->tail);
+{ ringfifo_debug("- head: %-5d tail: %-5d size: %-5d\r\n",self->head, self->tail, self->head - self->tail);
   return_val_if( RingFIFO_Is_Empty(self), 1);
   _swap( self, pbuf, self->tail++ );
   return 0;
@@ -123,7 +125,8 @@ RingFIFO_Pop( RingFIFO *self, void **pbuf)
 extern inline 
 unsigned int
 RingFIFO_Peek( RingFIFO *self, void *buf)
-{ return_val_if( RingFIFO_Is_Empty(self), 1);
+{ ringfifo_debug("o head: %-5d tail: %-5d size: %-5d\r\n",self->head, self->tail, self->head - self->tail);
+  return_val_if( RingFIFO_Is_Empty(self), 1);
   { vector_PVOID *r = self->ring;
     memcpy( buf, 
             r->contents[MOD_UNSIGNED_POW2(self->tail, r->nelem)],
@@ -135,7 +138,8 @@ RingFIFO_Peek( RingFIFO *self, void *buf)
 extern inline 
 unsigned int
 RingFIFO_Push_Try( RingFIFO *self, void **pbuf)
-{ if( RingFIFO_Is_Full(self) )
+{ //ringfifo_debug("+ head: %-5d tail: %-5d size: %-5d TRY\r\n",self->head, self->tail, self->head - self->tail);
+  if( RingFIFO_Is_Full(self) )
     return 1;
   _swap( self, pbuf, self->head++ );
   return 0;
@@ -144,7 +148,7 @@ RingFIFO_Push_Try( RingFIFO *self, void **pbuf)
 unsigned int
 RingFIFO_Push( RingFIFO *self, void **pbuf, int expand_on_full)
 { unsigned int retval = 0;
-  ringfifo_debug("+ head: %-5d tail: %-5d\r\n",self->head,self->tail);
+  ringfifo_debug("+ head: %-5d tail: %-5d size: %-5d\r\n",self->head, self->tail, self->head - self->tail);
   return_val_if( RingFIFO_Push_Try(self, pbuf)==0, 0 );
   // Handle when full
   if( expand_on_full )      // Expand

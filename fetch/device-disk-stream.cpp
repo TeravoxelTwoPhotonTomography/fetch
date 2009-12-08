@@ -34,16 +34,16 @@ _disk_stream_get_index_critical_section(void)
   return gp_disk_stream_index_lock;
 }
 
-unsigned int
-_disk_stream_free_tasks(void)
-{ u32 i = g_disk_stream_tasks_count;
-  while(i--)
-  { DeviceTask *cur = gp_disk_stream_tasks[i];
-    DeviceTask_Free( cur );
-    gp_disk_stream_tasks[i] = NULL;
-  }
-  return 0; //success
-}
+//unsigned int
+//_disk_stream_free_tasks(void)
+//{ u32 i = g_disk_stream_tasks_count;
+//  while(i--)
+//  { DeviceTask *cur = gp_disk_stream_tasks[i];
+//    DeviceTask_Free( cur );
+//    gp_disk_stream_tasks[i] = NULL;
+//  }
+//  return 0; //success
+//}
 
 unsigned int Disk_Stream_Destroy(void)
 { LPCRITICAL_SECTION cs = _disk_stream_get_index_critical_section();
@@ -66,7 +66,7 @@ void Disk_Stream_Init(void)
     gv_streams = vector_Disk_Stream_Index_Item_alloc( DISK_STREAM_DEFAULT_INDEX_CAPACITY ) );
 
   // Register Shutdown functions - these get called in reverse order
-  Register_New_Shutdown_Callback( &_disk_stream_free_tasks );
+  //Register_New_Shutdown_Callback( &_disk_stream_free_tasks );
   Register_New_Shutdown_Callback( &Disk_Stream_Destroy );
   Register_New_Shutdown_Callback( &Disk_Stream_Detach_All );
   
@@ -75,7 +75,7 @@ void Disk_Stream_Init(void)
   Register_New_Microscope_Detach_Callback   ( &Disk_Stream_Detach_All );
   
   // Create tasks
-  gp_disk_stream_tasks[0] = Disk_Stream_Create_Raw_Write_Task();
+  //gp_disk_stream_tasks[0] = Disk_Stream_Create_Raw_Write_Task();
 }
 
 Disk_Stream_Index_Item*
@@ -113,10 +113,23 @@ _disk_stream_detach_unlocked(Disk_Stream_Index_Item* item)
 { unsigned int sts = 0; //error
   
   debug("Disk Stream: alias - %s\r\n"
-        "\tAttempting to close file: %s\r\n", item->item.path );
-         
+        "\tAttempting to close file: %s\r\n", item->alias, item->item.path );
+
+  // Flush
+  { asynq **beg =       item->device->task->in->contents,
+          **cur = beg + item->device->task->in->nelem;
+    while(cur-- > beg)
+      Asynq_Flush_Waiting_Consumers( cur[0] );
+  }
+  
+  Device_Unlock( item->device );
   if( !Device_Disarm( item->device, DISK_STREAM_DEFAULT_TIMEOUT ) )
     warning("Could not cleanly disarm disk stream for alias %s.\r\n",item->alias);
+  Device_Lock( item->device );
+  
+  // kill the task
+  DeviceTask_Free( item->device->task );
+  item->device->task = NULL;
   
   // Close the file  
   { HANDLE *ph = &item->item.hfile;
@@ -199,7 +212,7 @@ Disk_Stream_Detach_All(void)
     }
   }
   LeaveCriticalSection(cs);
-  return ok;
+  return !ok;
 }
 
 DWORD WINAPI
@@ -237,9 +250,10 @@ Disk_Stream_Attach (const char* alias,     // look-up name for the stream
   item->device = Device_Alloc();
   item->device->context = (void*)&item->item;
   memcpy( item->item.path, filename, sizeof(char)*strlen(filename) );
-  item->item.mode = mode;
+  item->item.mode = mode;  
   
   // Open the file
+  // Associate read/write task
   { DWORD desired_access,
           share_mode,
           creation_disposition,
@@ -250,12 +264,16 @@ Disk_Stream_Attach (const char* alias,     // look-up name for the stream
         share_mode                 =     FILE_SHARE_READ;       //other processes can read
         creation_disposition       =     OPEN_EXISTING;
         flags_and_attr             =     0;
+        Guarded_Assert(
+          item->device->task = Disk_Stream_Create_Raw_Read_Task());
         break;
       case 'w':
         desired_access             =     GENERIC_WRITE;
         share_mode                 =     0;                     //don't share
         creation_disposition       =     CREATE_ALWAYS;
         flags_and_attr             =     FILE_ATTRIBUTE_NORMAL;
+        Guarded_Assert(
+          item->device->task = Disk_Stream_Create_Raw_Write_Task());
         break;
       default:
        Guarded_Assert( mode == 'r' || mode == 'w' ); // a self documenting assert error
@@ -278,6 +296,8 @@ Disk_Stream_Attach (const char* alias,     // look-up name for the stream
     item->device = NULL;
     memset(item->alias,0,sizeof(item->alias));
     sts = 0; //failure
+  } else 
+  { Device_Set_Available(item->device);
   }
   LeaveCriticalSection(cs);
   return sts;
@@ -309,11 +329,7 @@ Disk_Stream_Get_Device(const char* alias)
 // Write
 unsigned int
 _Disk_Stream_Task_Write_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
-{ if( in && in->contents[0] )
-    return 1; //success
-  warning("Could not configure write task for Disk Stream.\r\n"
-          "\tNo input channels configured\r\n");
-  return 0;   //fail - no input channel configured
+{ return 1;
 }
 
 unsigned int
@@ -323,11 +339,16 @@ _Disk_Stream_Task_Write_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   DWORD nbytes = q->q->buffer_size_bytes,
         written;
   Disk_Stream *stream = (Disk_Stream*) d->context;
-  
+  TicTocTimer t = tic();
   do
-  { Guarded_Assert( Asynq_Pop(q, &buf) );
-    WriteFile( stream->hfile, buf, nbytes, &written, NULL );
-    Guarded_Assert( written == nbytes );
+  { if( Asynq_Pop(q, &buf) )
+    { double dt = toc(&t);
+      debug("Writing %s bytes: %d\r\n"
+            "\t%-7.1f bytes per second (dt: %f)\r\n", 
+            stream->path, nbytes, nbytes/dt, dt );
+      WriteFile( stream->hfile, buf, nbytes, &written, NULL );
+      Guarded_Assert( written == nbytes );
+    }
   } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
   Asynq_Token_Buffer_Free(buf); 
   return 1;
@@ -339,7 +360,36 @@ Disk_Stream_Create_Raw_Write_Task(void)
                           _Disk_Stream_Task_Write_Proc);
 }
 
+// Read
+unsigned int
+_Disk_Stream_Task_Read_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
+{ return 1;
+}
+
+unsigned int
+_Disk_Stream_Task_Read_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
+{ asynq *q  = out->contents[0];
+  void *buf = Asynq_Token_Buffer_Alloc(q);
+  DWORD nbytes = q->q->buffer_size_bytes,
+        bytes_read;
+  Disk_Stream *stream = (Disk_Stream*) d->context;
+  TicTocTimer t = tic();
+  do  
+  { double dt;
+    Guarded_Assert_WinErr(
+      ReadFile( stream->hfile, buf, nbytes, &bytes_read, NULL ));  
+    Guarded_Assert( Asynq_Push_Timed(q, &buf, DISK_STREAM_DEFAULT_TIMEOUT) );
+    dt = toc(&t);
+    debug("Read %s bytes: %d\r\n"
+          "\t%-7.1f bytes per second (dt: %f)\r\n", 
+          stream->path, nbytes, nbytes/dt, dt );
+  } while ( nbytes && WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
+  Asynq_Token_Buffer_Free(buf); 
+  return 1;
+}
+
 DeviceTask*
-Disk_Stream_Get_Raw_Write_Task(void)
-{ return gp_disk_stream_tasks[0];
+Disk_Stream_Create_Raw_Read_Task(void)
+{ return DeviceTask_Alloc(_Disk_Stream_Task_Read_Cfg,
+                          _Disk_Stream_Task_Read_Proc);
 }

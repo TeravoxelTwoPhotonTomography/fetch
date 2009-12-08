@@ -198,12 +198,8 @@ Device_Disarm( Device *self, DWORD timeout_ms )
     
   self->task = NULL;    //Unreference task
   
-  //Notify waiting tasks
-  self->is_available = 1;
-  if( self->num_waiting > 0 )
-    Guarded_Assert_WinErr( 
-      SetEvent( self->notify_available ) );  
-
+  Device_Set_Available(self);
+  
   Device_Unlock(self);
   debug("Disarmed\r\n");
   return 1;
@@ -364,4 +360,12 @@ Device_Stop_Nonblocking( Device *self, DWORD timeout_ms )
     return 0;
   }
   return QueueUserWorkItem(&_device_stop_thread_proc, (void*)q, NULL /*default flags*/);
+}
+
+void Device_Set_Available ( Device *self )
+{ //Notify waiting tasks
+  self->is_available = 1;
+  if( self->num_waiting > 0 )
+    Guarded_Assert_WinErr(
+      SetEvent( self->notify_available ) );
 }
