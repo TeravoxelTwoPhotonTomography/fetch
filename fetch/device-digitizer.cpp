@@ -146,9 +146,12 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Cfg( Device *d, vector_PAS
                                                  0.0)); // delay    (s)
   
   { ViInt32 nwfm;
-    CheckPanic( niScope_ActualNumWfms(vi, cfg.acquisition_channels, &nwfm ) );   
+    ViInt32 record_length;
+    CheckPanic( niScope_ActualNumWfms(vi, cfg.acquisition_channels, &nwfm ) );
+    CheckPanic( niScope_ActualRecordLength(vi, &record_length) );
     { size_t nbuf[2] = {32,32},
-               sz[2] = {4*1024*1024*sizeof(ViReal64*), nwfm*sizeof(struct niScope_wfmInfo)};
+               sz[2] = {nwfm*record_length*sizeof(ViReal64*),
+                        nwfm*sizeof(struct niScope_wfmInfo)};
       DeviceTask_Configure_Outputs( d->task, 2, nbuf, sz );
     }
   }
@@ -194,7 +197,7 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
      Asynq_Push( qwfm,(void**) &wfm, 0 );    // Push (swap) the info from the last fetch     
      if( ttl == nelem )              // Is buffer full?
      { double dt;
-       Asynq_Push( qdata,(void**) &buf, 0 ); //   Push buffer and reset total samples count
+       Guarded_Assert( Asynq_Push( qdata,(void**) &buf, 0 )); //   Push buffer and reset total samples count
        ttl = 0;
        dt = toc(&t);
        debug("FPS: %-3.1f Frame time: %f\r\n", 1.0/dt, dt );

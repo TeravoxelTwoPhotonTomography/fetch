@@ -6,8 +6,8 @@
 
 #if 1
 #define DEBUG_RING_FIFO_PUSH
-#else
 #define DEBUG_RING_FIFO
+#else
 #endif
 
 #ifdef DEBUG_RING_FIFO

@@ -88,9 +88,9 @@ void Microscope_Application_Start(void)
   //       Devices should register shutdown procedures,
   //                               state procedures (off and attach),
   //                               and initialize themselves.
-  Digitizer_Init();
+  Disk_Stream_Init();  
   Galvo_Mirror_Init();
-  Disk_Stream_Init();
+  Digitizer_Init();
   
   Microscope_Detach();
   Microscope_Attach();

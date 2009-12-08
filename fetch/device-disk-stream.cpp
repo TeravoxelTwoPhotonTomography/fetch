@@ -341,7 +341,7 @@ _Disk_Stream_Task_Write_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   Disk_Stream *stream = (Disk_Stream*) d->context;
   TicTocTimer t = tic();
   do
-  { if( Asynq_Pop(q, &buf) )
+  { while( Asynq_Pop(q, &buf) )
     { double dt = toc(&t);
       debug("Writing %s bytes: %d\r\n"
             "\t%-7.1f bytes per second (dt: %f)\r\n", 
