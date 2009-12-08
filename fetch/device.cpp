@@ -191,16 +191,15 @@ Device_Arm_Nonblocking( Device *self, DeviceTask *task, DWORD timeout_ms )
 unsigned int
 Device_Disarm( Device *self, DWORD timeout_ms )
 { return_val_if_fail( self, 0 );
-  Device_Lock(self);
   
-  if( Device_Is_Running(self) )                     // Source state can be running or armed
+  if( Device_Is_Running(self) )         // Source state can be running or armed
     Device_Stop(self, timeout_ms);
-    
-  self->task = NULL;    //Unreference task
   
-  Device_Set_Available(self);
-  
+  Device_Lock(self);  
+  self->task = NULL;                    //Unreference task
+  Device_Set_Available(self);  
   Device_Unlock(self);
+  
   debug("Disarmed\r\n");
   return 1;
 }

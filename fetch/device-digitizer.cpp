@@ -51,11 +51,12 @@ void Digitizer_Init(void)
 
 unsigned int Digitizer_Detach(void)
 { ViStatus status = 1; //error
-  Device_Lock( gp_digitizer_device );
+  
   debug("Digitizer: Attempting to close vi: %d\r\n", g_digitizer.vi);
   if( !Device_Disarm( gp_digitizer_device, DIGITIZER_DEFAULT_TIMEOUT ) )
     warning("Could not cleanly disarm digitizer.\r\n");
-    
+
+  Device_Lock( gp_digitizer_device );
   if( g_digitizer.vi)
     ViErrChk( niScope_close(g_digitizer.vi) );  // Close the session
 

@@ -4,9 +4,18 @@
 TYPE_VECTOR_DEFINE( PASYNQ );
 
 DWORD WINAPI Device_Task_Thread_Proc( LPVOID lpParam )
-{ Device        *d = (Device*) lpParam;
+{ DWORD result;
+  Device        *d = (Device*) lpParam;
   DeviceTask *task = d->task;
-  return (task->run_proc)( d, task->in, task->out );
+  result = (task->run_proc)( d, task->in, task->out );
+  // Transition back to stop state when run proc returns
+  Device_Lock(d);
+  d->is_running = 0;  
+  CloseHandle(d->thread);
+  d->thread = INVALID_HANDLE_VALUE;
+  Device_Unlock(d);
+  
+  return result;  
 }
 
 void

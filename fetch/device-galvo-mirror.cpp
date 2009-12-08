@@ -51,11 +51,12 @@ void Galvo_Mirror_Init(void)
 
 unsigned int Galvo_Mirror_Detach(void)
 { unsigned int status = 1; //error
-  Device_Lock( gp_galvo_mirror_device );
+  
   debug("Galvo Mirror: Attempting to close task handle: 0x%p\r\n", g_galvo_mirror.task_handle);
   if( !Device_Disarm( gp_galvo_mirror_device, GALVO_MIRROR_DEFAULT_TIMEOUT ) )
     warning("Could not cleanly disarm Galvo Mirror.\r\n");
-    
+
+  Device_Lock( gp_galvo_mirror_device );  
   if( g_galvo_mirror.task_handle)   // Close the session
     OnErrGoto( DAQmxClearTask( g_galvo_mirror.task_handle) );
 
