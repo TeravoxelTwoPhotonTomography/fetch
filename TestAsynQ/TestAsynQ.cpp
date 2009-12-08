@@ -240,7 +240,7 @@ DWORD WINAPI pushpop3_pusher(LPVOID lpParam)
 DWORD WINAPI pushpop3_popper(LPVOID lpParam)
 { asynq *q = Asynq_Ref( (asynq*) lpParam );
   u8 *buf = (u8*) Asynq_Token_Buffer_Alloc(q);
-  int n = 1000;
+  int n = 100;
   unsigned int res = 1;
   testasynq_debug("popper start\r\n");
   while(n--)
@@ -312,19 +312,19 @@ void pushpop3(size_t w, size_t h, size_t nchan, size_t bytes_per_pixel)
                      CREATE_SUSPENDED,  // creation flags - set to 0 to run immediately
                      NULL),          // (output) thread id - NULL ignores
                      
-             //CreateThread( NULL,     // use default security profile
-             //        1024*1024,      // use stack size in bytes (default 1 MB)
-             //        &pushpop3_peeker,  // proc
-             //        (LPVOID) q,     // lpparam
-             //        CREATE_SUSPENDED,  // creation flags - set to 0 to run immediately
-             //        NULL),          // (output) thread id - NULL ignores
-             //        
-             //CreateThread( NULL,     // use default security profile
-             //        1024*1024,      // use stack size in bytes (default 1 MB)
-             //        &pushpop3_peeker_timed,  // proc
-             //        (LPVOID) q,     // lpparam
-             //        CREATE_SUSPENDED,  // creation flags - set to 0 to run immediately
-             //        NULL),          // (output) thread id - NULL ignores
+             CreateThread( NULL,     // use default security profile
+                     1024*1024,      // use stack size in bytes (default 1 MB)
+                     &pushpop3_peeker,  // proc
+                     (LPVOID) q,     // lpparam
+                     CREATE_SUSPENDED,  // creation flags - set to 0 to run immediately
+                     NULL),          // (output) thread id - NULL ignores
+                     
+             CreateThread( NULL,     // use default security profile
+                     1024*1024,      // use stack size in bytes (default 1 MB)
+                     &pushpop3_peeker_timed,  // proc
+                     (LPVOID) q,     // lpparam
+                     CREATE_SUSPENDED,  // creation flags - set to 0 to run immediately
+                     NULL),          // (output) thread id - NULL ignores
                      
              CreateThread( NULL,     // use default security profile
                      1024*1024,      // use stack size in bytes (default 1 MB)
@@ -473,6 +473,139 @@ void pushspin1(size_t w, size_t h, size_t nchan, size_t bytes_per_pixel)
     Guarded_Assert_WinErr( CloseHandle( threads[nthreads] ));  
 }
 
+//
+// Pushpop5
+// --------
+//  - push with block-on-full
+//  - some load on producer thread (producer bottlenecked)
+//  - one producer/one consumer (pop)
+
+DWORD WINAPI pushpop5_pusher(LPVOID lpParam)
+{ asynq *q = Asynq_Ref( (asynq*) lpParam );
+  u8 *u,*buf = (u8*) Asynq_Token_Buffer_Alloc(q);
+  int n = 16;
+  unsigned int res = 1;
+  testasynq_debug("pusher start\r\n");
+  while(n--)
+  { memset(buf,n,q->q->buffer_size_bytes);
+    u = buf;
+    res &= Asynq_Push_Timed(q, (void**) &buf, 1000);
+    testasynq_debug("\t+%c 0x%p %5d       %5d\r\n",
+                  Asynq_Is_Full(q)?'x':' ',
+                  u,
+                  n,
+                  q->q->ring->nelem);
+  }
+  Asynq_Token_Buffer_Free(buf);
+  testasynq_debug("pusher stop: %d\r\n",res);
+  Asynq_Unref(q);   
+  ExitThread(res==0);
+  return 0;
+}
+
+DWORD WINAPI pushpop5_popper(LPVOID lpParam)
+{ asynq *q = Asynq_Ref( (asynq*) lpParam );
+  u8 *buf = (u8*) Asynq_Token_Buffer_Alloc(q);
+  int n = 10;
+  unsigned int res = 1;
+  testasynq_debug("popper start\r\n");
+  while(n--)
+  { res &= Asynq_Pop(q,(void**)&buf);    
+    testasynq_debug("\t-%c 0x%p %5d %5u\r\n",
+                      Asynq_Is_Empty(q)?'x':' ',
+                      res?buf:NULL,
+                      n,
+                      buf[0]);
+  }
+  Asynq_Token_Buffer_Free(buf);
+  testasynq_debug("popper stop: %d\r\n",res);
+  Asynq_Unref(q);
+  ExitThread(res==0);
+  return 0;
+}
+
+DWORD WINAPI pushpop5_peeker(LPVOID lpParam)
+{ asynq *q = Asynq_Ref( (asynq*) lpParam );
+  u8 *buf = (u8*) Asynq_Token_Buffer_Alloc(q);
+  int n = 50;
+  unsigned int res = 1;
+  testasynq_debug("peeker start\r\n");
+  while(n--)
+  { res &= Asynq_Peek(q,(void*)buf);    
+    testasynq_debug("\to%c 0x%p %5d %5u\r\n",
+                      Asynq_Is_Empty(q)?'x':' ',
+                      res?buf:NULL,
+                      n,
+                      buf[0]);
+  }
+  Asynq_Token_Buffer_Free(buf);
+  testasynq_debug("peeker stop: %d\r\n",res);
+  Asynq_Unref(q);
+  ExitThread(res==0);
+  return 0;
+}
+
+void pushpop5(size_t w, size_t h, size_t nchan, size_t bytes_per_pixel)
+{ 
+  asynq *q = Asynq_Alloc( 4, w*h*nchan*bytes_per_pixel );
+  HANDLE threads[] = {
+             CreateThread( NULL,     // use default security profile
+                     1024*1024,      // use stack size in bytes (default 1 MB)
+                     &pushpop5_popper, // proc
+                     (LPVOID) q,     // lpparam
+                     CREATE_SUSPENDED,  // creation flags - set to 0 to run immediately
+                     NULL),          // (output) thread id - NULL ignores
+                     
+             CreateThread( NULL,     // use default security profile
+                     1024*1024,      // use stack size in bytes (default 1 MB)
+                     &pushpop5_pusher, // proc
+                     (LPVOID) q,     // lpparam
+                     CREATE_SUSPENDED,  // creation flags - set to 0 to run immediately                     
+                     NULL),          // (output) thread id - NULL ignores
+                     
+             CreateThread( NULL,     // use default security profile
+                     1024*1024,      // use stack size in bytes (default 1 MB)
+                     &pushpop5_peeker, // proc
+                     (LPVOID) q,     // lpparam
+                     CREATE_SUSPENDED,  // creation flags - set to 0 to run immediately                     
+                     NULL)           // (output) thread id - NULL ignores
+            };
+  int i,nthreads = sizeof(threads)/sizeof(HANDLE);
+  double x;
+  TicTocTimer t;
+  
+  debug("Before\r\n");
+  debug("\t          Refs: %u\r\n", q->ref_count);
+  debug("\tWaiting pushes: %u\r\n", q->waiting_producers );
+  debug("\tWaiting   pops: %u\r\n", q->waiting_consumers );
+  debug("\t            &Q: 0x%p\r\n", q->q );
+  debug("\t    Q capacity: %d\r\n", q->q->ring->nelem );
+  Guarded_Assert( q->ref_count == 1 );
+  Guarded_Assert( q->waiting_consumers == 0);
+  Guarded_Assert( q->waiting_producers == 0);
+  
+  t = tic();  
+  for(i=0;i<nthreads;i++)
+  { Guarded_Assert( threads[i] );
+    ResumeThread( threads[i] );
+  }
+  WaitForMultipleObjects( nthreads, threads, TRUE, INFINITE );
+  x = toc(&t);
+  debug("After:\r\n");
+  debug("\tElapsed: %f seconds\r\n",x);
+  debug("\t          Refs: %u\r\n", q->ref_count);
+  debug("\tWaiting pushes: %u\r\n", q->waiting_producers );
+  debug("\tWaiting   pops: %u\r\n", q->waiting_consumers );
+  debug("\t    Q capacity: %d\r\n", q->q->ring->nelem );
+  Guarded_Assert( q->ref_count == 1 );
+  Guarded_Assert( q->waiting_producers == 0 );
+  Guarded_Assert( q->waiting_consumers == 0 );  
+  Guarded_Assert( Asynq_Unref(q) );
+  
+  while( nthreads-- )
+    Guarded_Assert_WinErr( CloseHandle( threads[nthreads] ));  
+}        
+
 // ----
 // MAIN
 // ----                                                       
@@ -481,14 +614,16 @@ int _tmain(int argc, _TCHAR* argv[])
 { Reporting_Setup_Log_To_Stdout();
   Reporting_Setup_Log_To_VSDebugger_Console();
  
-  debug("---  pushpop1 ---------------------\r\n");
-  pushpop1( 1024,1024,8,2 );
-  debug("---  pushpop2 ---------------------\r\n");
-  pushpop2( 1024,1024,8,2 );
-  debug("---  pushpop3 ---------------------\r\n");
-  pushpop3( 1024,1024,8,2 );
-  debug("---  pushspin1 --------------------\r\n");
-  pushspin1( 1024,1024,8,2 );
+  //debug("---  pushpop1 ---------------------\r\n");
+  //pushpop1( 1024,1024,8,2 );
+  //debug("---  pushpop2 ---------------------\r\n");
+  //pushpop2( 1024,1024,8,2 );
+  //debug("---  pushpop3 ---------------------\r\n");
+  //pushpop3( 1024,1024,8,2 );
+  //debug("---  pushspin1 --------------------\r\n");
+  //pushspin1( 1024,1024,8,2 );
+  debug("---  pushpop5 ---------------------\r\n");
+  pushpop5( 1024,1024,8,2 );
   
 	return 0;
 }

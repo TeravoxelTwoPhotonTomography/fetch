@@ -150,7 +150,7 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Cfg( Device *d, vector_PAS
     CheckPanic( niScope_ActualNumWfms(vi, cfg.acquisition_channels, &nwfm ) );
     CheckPanic( niScope_ActualRecordLength(vi, &record_length) );
     { size_t nbuf[2] = {32,32},
-               sz[2] = {nwfm*record_length*sizeof(ViReal64*),
+               sz[2] = {nwfm*record_length*sizeof(ViReal64),
                         nwfm*sizeof(struct niScope_wfmInfo)};
       DeviceTask_Configure_Outputs( d->task, 2, nbuf, sz );
     }
@@ -200,7 +200,8 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
        Guarded_Assert( Asynq_Push( qdata,(void**) &buf, 0 )); //   Push buffer and reset total samples count
        ttl = 0;
        dt = toc(&t);
-       debug("FPS: %-3.1f Frame time: %f\r\n", 1.0/dt, dt );
+       debug("FPS: %-3.1f Frame time: %-5.4f MS/s: %-3.1f  MB/s: %-3.1f\r\n",
+              1.0/dt, dt, nelem/dt/1000000.0, nelem*sizeof(f64)*4.0/1000000.0/dt );
      }       
   } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
   debug("Digitizer Stream_All_Channels_Immediate_Trigger - Running done-\r\n");

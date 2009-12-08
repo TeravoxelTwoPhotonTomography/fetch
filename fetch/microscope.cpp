@@ -98,22 +98,15 @@ void Microscope_Application_Start(void)
   Device_Arm( Digitizer_Get_Device(), 
               Digitizer_Get_Default_Task(),
               INFINITE );
-  
-  Disk_Stream_Attach("digitizer-frames","frames.raw",'w');
-  { Device *stream = Disk_Stream_Get_Device( "digitizer-frames" );
-    Guarded_Assert( Device_Arm( stream,
-                                stream->task,
-                                INFINITE ));
-    Disk_Stream_Connect_To_Input("digitizer-frames",Digitizer_Get_Device(),0);
-    Device_Run( stream );
-  }
-  
-  Disk_Stream_Attach("digitizer-wfm",   "wfm.raw",'w');
-  { Device *stream = Disk_Stream_Get_Device( "digitizer-wfm" );
-    Guarded_Assert( Device_Arm( stream,
-                                stream->task,
-                                INFINITE ));
-    Disk_Stream_Connect_To_Input("digitizer-wfm"   ,Digitizer_Get_Device(),1);
-    Device_Run(stream);
-  }
+
+
+  Guarded_Assert(
+    Device_Run( Disk_Stream_Attach_And_Arm("digitizer-frames",             // alias
+                                           "frames.raw", 'w',              // filename
+                                            Digitizer_Get_Device(),0) ));  // source
+  Guarded_Assert(
+    Device_Run( Disk_Stream_Attach_And_Arm("digitizer-wfm",                // alias
+                                           "wfm.raw", 'w',                 // filename
+                                            Digitizer_Get_Device(),1) ));  // source                                          
+
 }

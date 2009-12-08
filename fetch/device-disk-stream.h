@@ -44,6 +44,9 @@ unsigned int Disk_Stream_Attach                  (const char* alias,      // ope
 unsigned int Disk_Stream_Connect_To_Input        (const char* alias, Device *source_device, int channel);
 Device*      Disk_Stream_Get_Device              (const char* alias);
 
+Device*      Disk_Stream_Attach_And_Arm          (const char *alias,
+                                                  const char *filename, char mode,
+                                                  Device *src, int src_channel);
 //                                                  
 // Tasks
 // - different file formats would be implimented through different tasks.

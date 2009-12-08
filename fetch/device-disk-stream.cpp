@@ -322,6 +322,17 @@ Disk_Stream_Get_Device(const char* alias)
   return item->device;
 }
 
+Device* Disk_Stream_Attach_And_Arm (const char *alias,
+                                    const char *filename, char mode,
+                                    Device *src, int src_channel)
+{ Device *stream = NULL;
+  return_val_if_fail(  Disk_Stream_Attach(alias,filename,mode)            , NULL);
+  return_val_if_fail(  stream = Disk_Stream_Get_Device( alias )           , NULL);
+  Guarded_Assert(      Device_Arm( stream, stream->task, DISK_STREAM_DEFAULT_TIMEOUT ));
+  return_val_if_fail(  Disk_Stream_Connect_To_Input(alias,src,src_channel), NULL);
+  return stream;
+}
+
 // -----                                                 
 // Tasks
 // -----
@@ -344,8 +355,8 @@ _Disk_Stream_Task_Write_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   { while( Asynq_Pop(q, &buf) )
     { double dt = toc(&t);
       debug("Writing %s bytes: %d\r\n"
-            "\t%-7.1f bytes per second (dt: %f)\r\n", 
-            stream->path, nbytes, nbytes/dt, dt );
+            "\t%-7.1f MB/s (dt: %f)\r\n", 
+            stream->path, nbytes, nbytes/dt/1000000.0, dt );
       WriteFile( stream->hfile, buf, nbytes, &written, NULL );
       Guarded_Assert( written == nbytes );
     }
