@@ -19,7 +19,7 @@ DWORD WINAPI Device_Task_Thread_Proc( LPVOID lpParam )
 }
 
 void
-_devicetask_free_inputs( DeviceTask* self )
+DeviceTask_Free_Inputs( DeviceTask* self )
 { if( self->in )
   { size_t n = self->in->count;
     while(n--)
@@ -30,7 +30,7 @@ _devicetask_free_inputs( DeviceTask* self )
 }
 
 void
-_devicetask_free_outputs( DeviceTask* self )
+DeviceTask_Free_Outputs( DeviceTask* self )
 { if( self->out )
   { size_t n = self->out->count;
     while(n--)
@@ -42,12 +42,12 @@ _devicetask_free_outputs( DeviceTask* self )
 
 // FIXME: make this more of a resize op to avoid thrashing
 void
-DeviceTask_Configure_Inputs( DeviceTask* self,
+DeviceTask_Alloc_Inputs( DeviceTask* self,
                              size_t  num_inputs,
                              size_t *input_queue_size, 
                              size_t *input_buffer_size)
 { if( num_inputs )
-  { _devicetask_free_inputs( self );
+  { DeviceTask_Free_Inputs( self );
     self->in  = vector_PASYNQ_alloc( num_inputs  ); 
     while( num_inputs-- )
       self->in->contents[num_inputs] 
@@ -59,12 +59,12 @@ DeviceTask_Configure_Inputs( DeviceTask* self,
 
 // FIXME: make this more of a resize op to avoid thrashing
 void
-DeviceTask_Configure_Outputs( DeviceTask* self,
+DeviceTask_Alloc_Outputs( DeviceTask* self,
                               size_t  num_outputs,
                               size_t *output_queue_size, 
                               size_t *output_buffer_size)
 { if( num_outputs )
-  { _devicetask_free_outputs( self );
+  { DeviceTask_Free_Outputs( self );
     self->out  = vector_PASYNQ_alloc( num_outputs ); 
     while( num_outputs-- )
       self->out->contents[num_outputs] 
@@ -92,8 +92,8 @@ DeviceTask_Free( DeviceTask *self )
 { if(self)
   { self->cfg_proc = NULL;
     self->run_proc = NULL;
-    _devicetask_free_inputs( self );
-    _devicetask_free_outputs( self );
+    DeviceTask_Free_Inputs( self );
+    DeviceTask_Free_Outputs( self );
   }
 }
 

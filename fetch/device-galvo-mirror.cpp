@@ -129,7 +129,7 @@ _Galvo_Mirror_Task_Continuous_Scan_Immediate_Trigger_Cfg( Device *d, vector_PASY
   // Configure input queue
   { size_t nbuf = 2,
              sz = ((size_t)cfg.rate)*sizeof(float64);
-    DeviceTask_Configure_Inputs( d->task, 1, &nbuf, &sz );
+    DeviceTask_Alloc_Inputs( d->task, 1, &nbuf, &sz );
   }
   
   // Prime the ADC

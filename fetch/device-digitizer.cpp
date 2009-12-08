@@ -154,7 +154,10 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Cfg( Device *d, vector_PAS
     { size_t nbuf[2] = {32,32},
                sz[2] = {nwfm*record_length*sizeof(TPixel),
                         nwfm*sizeof(struct niScope_wfmInfo)};
-      DeviceTask_Configure_Outputs( d->task, 2, nbuf, sz );
+      // DeviceTask_Free_Outputs( d->task );  // free channels that already exist (FIXME: thrashing)
+      // Channels are reference counted so the memory may not be freed till the other side Unrefs.
+      if( d->task->out == NULL ) // channels may already be alloced (occurs on a detach->attach cycle)
+        DeviceTask_Alloc_Outputs( d->task, 2, nbuf, sz );
     }
   }
   debug("Digitizer configured for Stream_All_Channels_Immediate_Trigger\r\n");
