@@ -43,7 +43,7 @@ void Galvo_Mirror_Init(void)
   
   // Register Microscope state functions
   Register_New_Microscope_Attach_Callback( &Galvo_Mirror_Attach );
-  Register_New_Microscope_Off_Callback   ( &Galvo_Mirror_Detach );
+  Register_New_Microscope_Detach_Callback   ( &Galvo_Mirror_Detach );
   
   // Create tasks
   gp_galvo_mirror_tasks[0] = Galvo_Mirror_Create_Task_Continuous_Scan_Immediate_Trigger();

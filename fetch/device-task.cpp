@@ -88,15 +88,38 @@ DeviceTask_Free( DeviceTask *self )
   }
 }
 
-// Destination channel inherits the source channel's properties
+// Destination channel inherits the existing channel's properties.
+// If both channels exist, the source properties are inhereted.
+// One channel must exist.
 void
-DeviceTask_Connect( DeviceTask *src, int src_channel,
-                    DeviceTask *dst, int dst_channel)
-{ Guarded_Assert( src_channel < src->out->nelem ); // ensure channel indexes are valid
-  Guarded_Assert( dst_channel < dst->in->nelem );
-  { asynq  *s = src->out->contents[src_channel], 
-          **d = dst->in->contents + dst_channel;
-    Asynq_Unref( *d );
-    *d = Asynq_Ref( s );
+DeviceTask_Connect( DeviceTask *dst, size_t dst_channel,
+                    DeviceTask *src, size_t src_channel)
+{ // ensure channel indexes are valid
+  asynq  *s,*d;
+  
+  // alloc in/out channels if neccessary
+  if( src->out == NULL )
+    src->out = vector_PASYNQ_alloc(src_channel + 1);
+  if( dst->in == NULL )
+    dst->in = vector_PASYNQ_alloc(dst_channel + 1);    
+  Guarded_Assert( src->out && dst->in );
+  
+  if( src_channel < src->out->nelem )                // source channel exists
+  { s = src->out->contents[src_channel];
+  
+    if( dst_channel < dst->in->nelem )
+    { asynq **d = dst->in->contents + dst_channel;
+      Asynq_Unref( *d );
+      *d = Asynq_Ref( s ); 
+    } else
+    { vector_PASYNQ_request( dst->in, dst_channel );  // make space
+      dst->in->contents[ dst_channel ] = Asynq_Ref( s );   
+    }
+  } else if( dst_channel < dst->in->nelem ) // dst exists, but not src
+  { d = dst->in->contents[dst_channel];
+    vector_PASYNQ_request( src->out, src_channel );   // make space
+    src->out->contents[src_channel] = Asynq_Ref( d );    
+  } else
+  { error("In DeviceTask_Connect: Neither channel exists\r\n");
   }
 }

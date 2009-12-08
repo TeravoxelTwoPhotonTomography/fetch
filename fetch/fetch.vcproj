@@ -186,6 +186,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\device-disk-stream.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\device-galvo-mirror.cpp"
 				>
 			</File>
@@ -241,6 +245,10 @@
 				RelativePath=".\util-niscope.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\window-video.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -257,6 +265,10 @@
 			</File>
 			<File
 				RelativePath=".\device-digitizer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\device-disk-stream.h"
 				>
 			</File>
 			<File
@@ -309,6 +321,10 @@
 			</File>
 			<File
 				RelativePath=".\util-niscope.h"
+				>
+			</File>
+			<File
+				RelativePath=".\window-video.h"
 				>
 			</File>
 		</Filter>

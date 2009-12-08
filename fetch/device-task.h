@@ -29,6 +29,9 @@ typedef unsigned int (*fp_device_task_run_proc)( Device *d,
  *
  * The in and out pipes provide routes for asynchronous input 
  * and output to the "run_proc."
+ *
+ * A given "cfg_proc" and "run_proc" may be run on multiple/different
+ * Device instances during an application.
  */
 
 typedef struct _device_task
@@ -53,5 +56,5 @@ void        DeviceTask_Configure_Outputs( DeviceTask* self,
                                           size_t *output_queue_size,    //         # of buffers/pipe
                                           size_t *output_buffer_size);  //         buffer size
                                           
-void        DeviceTask_Connect( DeviceTask *source,      int source_channel,
-                                DeviceTask *destination, int destination_channel);
+void        DeviceTask_Connect( DeviceTask *source,      size_t source_channel,
+                                DeviceTask *destination, size_t destination_channel);

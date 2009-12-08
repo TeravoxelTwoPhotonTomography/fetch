@@ -77,9 +77,9 @@ _handle_wait_for_result(DWORD result, const char* msg)
 { return_val_if( result == WAIT_OBJECT_0, 1 );
   Guarded_Assert_WinErr( result != WAIT_FAILED );
 #ifdef DEBUG_DEVICE_HANDLE_WAIT_FOR_RESULT
-  if( result != WAIT_ABANDONED )                   // This is the common timeout result
+  if( result == WAIT_ABANDONED )                   // This is the common timeout result
     warning("Device: Wait abandoned\r\n\t%s\r\n",msg);
-  if( result != WAIT_TIMEOUT )                     // Don't know how to generate this.
+  if( result == WAIT_TIMEOUT )                     // Don't know how to generate this.
     warning("Device: Wait timeout\r\n\t%s\r\n",msg);  
 #endif
   return 0;
@@ -198,12 +198,8 @@ Device_Disarm( Device *self, DWORD timeout_ms )
     
   self->task = NULL;    //Unreference task
   
-  //Notify waiting tasks
-  self->is_available = 1;
-  if( self->num_waiting > 0 )
-    Guarded_Assert_WinErr( 
-      SetEvent( self->notify_available ) );  
-
+  Device_Set_Available(self);
+  
   Device_Unlock(self);
   debug("Disarmed\r\n");
   return 1;
@@ -364,4 +360,12 @@ Device_Stop_Nonblocking( Device *self, DWORD timeout_ms )
     return 0;
   }
   return QueueUserWorkItem(&_device_stop_thread_proc, (void*)q, NULL /*default flags*/);
+}
+
+void Device_Set_Available ( Device *self )
+{ //Notify waiting tasks
+  self->is_available = 1;
+  if( self->num_waiting > 0 )
+    Guarded_Assert_WinErr(
+      SetEvent( self->notify_available ) );
 }

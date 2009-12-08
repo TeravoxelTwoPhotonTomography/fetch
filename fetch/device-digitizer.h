@@ -12,7 +12,7 @@
 #define DIGITIZER_MAX_NUM_CHANNELS        NI5105_MAX_NUM_CHANNELS
 #define DIGITIZER_MAX_SAMPLE_RATE         NI5105_MAX_SAMPLE_RATE
 #define DIGITIZER_DEVICE_NAME             NI5105_DEVICE_NAME
-#define DIGITIZER_DEFAULT_RECORD_LENGTH   1024
+#define DIGITIZER_DEFAULT_RECORD_LENGTH   1024*1024
 #define DIGITIZER_DEFAULT_RECORD_NUM      1
 
 #define DIGITIZER_BUFFER_NUM_FRAMES       64  // must be a power of two
@@ -62,16 +62,16 @@ typedef struct _digitizer_config
                        DIGITIZER_DEFAULT_RECORD_LENGTH,\
                        DIGITIZER_DEFAULT_RECORD_NUM,\
                        0.0,\
-                       "0",\
+                       "0-3",\
                        DIGITIZER_MAX_NUM_CHANNELS,\
-                       {{"0\0",2.0,NISCOPE_VAL_DC,VI_TRUE},\
-                        {"1\0",2.0,NISCOPE_VAL_DC,VI_FALSE},\
-                        {"2\0",2.0,NISCOPE_VAL_DC,VI_FALSE},\
-                        {"3\0",2.0,NISCOPE_VAL_DC,VI_FALSE},\
-                        {"4\0",2.0,NISCOPE_VAL_DC,VI_FALSE},\
-                        {"5\0",2.0,NISCOPE_VAL_DC,VI_FALSE},\
-                        {"6\0",2.0,NISCOPE_VAL_DC,VI_FALSE},\
-                        {"7\0",2.0,NISCOPE_VAL_DC,VI_FALSE}}\
+                       {{"0\0", 10.0,NISCOPE_VAL_DC,VI_TRUE},\
+                        {"1\0", 10.0,NISCOPE_VAL_DC,VI_TRUE},\
+                        {"2\0", 10.0,NISCOPE_VAL_DC,VI_TRUE},\
+                        {"3\0", 10.0,NISCOPE_VAL_DC,VI_TRUE},\
+                        {"4\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\
+                        {"5\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\
+                        {"6\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\
+                        {"7\0", 10.0,NISCOPE_VAL_DC,VI_FALSE}}\
                        }
 
 typedef struct _digitizer 
@@ -80,7 +80,7 @@ typedef struct _digitizer
 } Digitizer;
 
 #define DIGITIZER_EMPTY   {0, DIGITIZER_CONFIG_EMPTY};
-#define DIGITIZER_DEFUALT {0, DIGITIZER_CONFIG_DEFAULT};
+#define DIGITIZER_DEFAULT {0, DIGITIZER_CONFIG_DEFAULT};
 
 //
 // Device interface
@@ -93,10 +93,17 @@ unsigned int Digitizer_Detach_Nonblocking  (void);     // closes device context 
 unsigned int Digitizer_Attach              (void);     // opens device context
 
 //
+// Utilities
+//
+Device *Digitizer_Get_Device(void);
+
+//
 // Tasks
 //
 DeviceTask* Digitizer_Create_Task_Stream_All_Channels_Immediate_Trigger(void);
 
+
+DeviceTask* Digitizer_Get_Default_Task(void);
 //
 // Windows
 //    testing utilities

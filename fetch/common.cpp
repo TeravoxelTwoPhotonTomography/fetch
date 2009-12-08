@@ -519,7 +519,7 @@ void RequestStorage( void** array, size_t *nelem, size_t request, size_t bytes_p
   if( n <= *nelem ) return;
   *nelem = (size_t) (1.25 * n + 64 );
 #ifdef DEBUG_REQUEST_STORAGE
-  printf("REQUEST %7d bytes (%7d items) above current %7d bytes by %s\n",request * bytes_per_elem, request, *nelem * bytes_per_elem, msg);
+  debug("REQUEST %7d bytes (%7d items) above current %7d bytes by %s\n",request * bytes_per_elem, request, *nelem * bytes_per_elem, msg);
 #endif
   Guarded_Realloc( array, *nelem * bytes_per_elem, "Resize" );
 }
@@ -529,7 +529,7 @@ void RequestStorageLog2( void** array, size_t *nelem, size_t request, size_t byt
   if( n <= *nelem ) return;
   *nelem = _next_pow2_size_t(n);
 #ifdef DEBUG_REQUEST_STORAGE
-  printf("REQUEST %7d bytes (%7d items) above current %7d bytes by %s\n",request * bytes_per_elem, request, *nelem * bytes_per_elem, msg);
+  debug("REQUEST %7d bytes (%7d items) above current %7d bytes by %s\n",request * bytes_per_elem, request, *nelem * bytes_per_elem, msg);
 #endif
   Guarded_Realloc( array, *nelem * bytes_per_elem, "Resize" );
 }

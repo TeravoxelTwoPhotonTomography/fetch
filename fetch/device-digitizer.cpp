@@ -8,7 +8,7 @@
 #define CheckPanic( expression ) (niscope_chk( g_digitizer.vi, expression, #expression, &error   ))
 #define ViErrChk( expression )    goto_if_fail( VI_SUCCESS == CheckWarn(expression), Error )
 
-Digitizer             g_digitizer              = DIGITIZER_DEFUALT;
+Digitizer             g_digitizer              = DIGITIZER_DEFAULT;
 Device               *gp_digitizer_device      = NULL;
 
 DeviceTask           *gp_digitizer_tasks[1]    = {NULL};
@@ -43,7 +43,7 @@ void Digitizer_Init(void)
   
   // Register Microscope state functions
   Register_New_Microscope_Attach_Callback( &Digitizer_Attach );
-  Register_New_Microscope_Off_Callback( &Digitizer_Detach );
+  Register_New_Microscope_Detach_Callback( &Digitizer_Detach );
   
   // Create tasks
   gp_digitizer_tasks[0] = Digitizer_Create_Task_Stream_All_Channels_Immediate_Trigger();
@@ -100,6 +100,15 @@ unsigned int Digitizer_Attach(void)
 }
 
 //
+// UTILITIES
+//
+
+Device*
+Digitizer_Get_Device(void)
+{ return gp_digitizer_device;
+}
+
+//
 // TASK - Streaming on all channels
 //
 
@@ -108,6 +117,7 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Cfg( Device *d, vector_PAS
 { ViSession  vi = g_digitizer.vi;
   Digitizer_Config cfg = g_digitizer.config;
   ViInt32 i;
+  int nchan = 0;
    
   // Vertical
   for(i=0; i<cfg.num_channels; i++)
@@ -119,6 +129,7 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Cfg( Device *d, vector_PAS
                                           ch.coupling, //verticalCoupling, 
                                           1.0,         //probeAttenuation, 
                                           ch.enabled));//enabled?
+    nchan += ch.enabled;
   }
   // Horizontal
   CheckPanic (niScope_ConfigureHorizontalTiming (vi, 
@@ -135,9 +146,12 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Cfg( Device *d, vector_PAS
                                                  0.0)); // delay    (s)
   
   { ViInt32 nwfm;
-    CheckPanic( niScope_ActualNumWfms(vi, cfg.acquisition_channels, &nwfm ) );   
+    ViInt32 record_length;
+    CheckPanic( niScope_ActualNumWfms(vi, cfg.acquisition_channels, &nwfm ) );
+    CheckPanic( niScope_ActualRecordLength(vi, &record_length) );
     { size_t nbuf[2] = {32,32},
-               sz[2] = {4*1024*1024*sizeof(ViReal64*), nwfm*sizeof(struct niScope_wfmInfo)};
+               sz[2] = {nwfm*record_length*sizeof(ViReal64),
+                        nwfm*sizeof(struct niScope_wfmInfo)};
       DeviceTask_Configure_Outputs( d->task, 2, nbuf, sz );
     }
   }
@@ -155,6 +169,7 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
   ViInt32  nelem = (ViInt32)qdata->q->buffer_size_bytes / sizeof(ViReal64) / 4, // number of samples per data buffer
            ttl = 0,
            old_state;
+  TicTocTimer t;
   ViReal64               *buf = (ViReal64*)        Asynq_Token_Buffer_Alloc(qdata);
   struct niScope_wfmInfo *wfm = (niScope_wfmInfo*) Asynq_Token_Buffer_Alloc(qwfm);
   unsigned int ret = 1;
@@ -168,6 +183,7 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
                                            NISCOPE_VAL_READ_POINTER ));
   // Loop until the stop event is triggered
   debug("Digitizer Stream_All_Channels_Immediate_Trigger - Running -\r\n");
+  t = tic();
   do 
   {
      // Fetch the available data without waiting
@@ -180,8 +196,12 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
      ttl += wfm->actualSamples;  // add the chunk size to the total samples count     
      Asynq_Push( qwfm,(void**) &wfm, 0 );    // Push (swap) the info from the last fetch     
      if( ttl == nelem )              // Is buffer full?
-     { Asynq_Push( qdata,(void**) &buf, 0 ); //   Push buffer and reset total samples count
+     { double dt;
+       Guarded_Assert( Asynq_Push( qdata,(void**) &buf, 0 )); //   Push buffer and reset total samples count
        ttl = 0;
+       dt = toc(&t);
+       debug("FPS: %-3.1f Frame time: %-5.4f MS/s: %-3.1f  MB/s: %-3.1f\r\n",
+              1.0/dt, dt, nelem/dt/1000000.0, nelem*sizeof(f64)*4.0/1000000.0/dt );
      }       
   } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
   debug("Digitizer Stream_All_Channels_Immediate_Trigger - Running done-\r\n");
@@ -201,7 +221,10 @@ Digitizer_Create_Task_Stream_All_Channels_Immediate_Trigger(void)
                           _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc);
 }
 
-
+DeviceTask*
+Digitizer_Get_Default_Task(void)
+{ return gp_digitizer_tasks[0];
+}
 //
 // USER INTERFACE (WINDOWS)
 //
