@@ -47,6 +47,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
   // Setup logging
   Logger_Register_Default_Reporting();
   Reporting_Setup_Log_To_VSDebugger_Console();
+  Reporting_Setup_Log_To_Filename( "lastrun.log" );
 
 	// Initialize global strings
 	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);

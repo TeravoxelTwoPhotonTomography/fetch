@@ -286,7 +286,7 @@ Disk_Stream_Attach (const char* alias,     // look-up name for the stream
                                   flags_and_attr,
                                   NULL );
   }
-  if( item->item.hfile==0 )
+  if( item->item.hfile==INVALID_HANDLE_VALUE )
   { ReportLastWindowsError();
     warning("Could not open file for alias %s\r\n"
             "\tat %s\r\n"
@@ -354,15 +354,15 @@ _Disk_Stream_Task_Write_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   do
   { while( Asynq_Pop(q, &buf) )
     { double dt = toc(&t);
-      debug("Writing %s bytes: %d\r\n"
-            "\t%-7.1f MB/s (dt: %f)\r\n", 
-            stream->path, nbytes, nbytes/dt/1000000.0, dt );
-      WriteFile( stream->hfile, buf, nbytes, &written, NULL );
+      debug("FPS: %3.1f Frame time: %5.4f            MB/s: %3.1f Q: %3d Write %8d bytes to %s\r\n",
+              1.0/dt, dt,                      nbytes/1000000.0/dt, 
+              q->q->head - q->q->tail,nbytes, stream->path );
+      Guarded_Assert_WinErr( WriteFile( stream->hfile, buf, nbytes, &written, NULL ));
       Guarded_Assert( written == nbytes );
     }
   } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
-  Asynq_Token_Buffer_Free(buf); 
-  return 1;
+  Asynq_Token_Buffer_Free(buf);
+  return 0;
 }
 
 DeviceTask*
@@ -396,7 +396,7 @@ _Disk_Stream_Task_Read_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
           stream->path, nbytes, nbytes/dt, dt );
   } while ( nbytes && WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
   Asynq_Token_Buffer_Free(buf); 
-  return 1;
+  return 0;
 }
 
 DeviceTask*

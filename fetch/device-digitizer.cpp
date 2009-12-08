@@ -203,16 +203,21 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
                               nelem - ttl,   // Remaining space in buffer
                               buf   + ttl,   // Where to put the data
                               wfm));         // metadata for fetch     
-     ttl += wfm->actualSamples;  // add the chunk size to the total samples count     
-     Asynq_Push( qwfm,(void**) &wfm, 0 );    // Push (swap) the info from the last fetch     
-     if( ttl == nelem )              // Is buffer full?
-     { double dt;
-       Guarded_Assert( Asynq_Push( qdata,(void**) &buf, 0 )); //   Push buffer and reset total samples count
-       ttl = 0;
-       dt = toc(&t);
-       debug("FPS: %-3.1f Frame time: %-5.4f MS/s: %-3.1f  MB/s: %-3.1f\r\n",
-              1.0/dt, dt, nelem/dt/1000000.0, nelem*sizeof(f64)*4.0/1000000.0/dt );
-     }       
+      ttl += wfm->actualSamples;  // add the chunk size to the total samples count     
+      Asynq_Push( qwfm,(void**) &wfm, 0 );    // Push (swap) the info from the last fetch
+    } while(ttl!=nelem);
+    // Handle the full buffer
+    { double dt;
+      if( !Asynq_Push_Try( qdata,(void**) &buf )) //   Push buffer and reset total samples count
+      { warning("Digitizer output queue overflowed.\r\n\tAborting acquisition task.\r\n");
+        goto Error;
+      }
+      ttl = 0;
+      dt = toc(&t);
+      debug("FPS: %3.1f Frame time: %5.4f MS/s: %3.1f  MB/s: %3.1f Q: %3d Digitizer\r\n",
+            1.0/dt, dt, nelem/dt/1000000.0, nelem*sizeof(TPixel)*nwfm/1000000.0/dt,
+            qdata->q->head - qdata->q->tail );
+    }    
   } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
   debug("Digitizer Stream_All_Channels_Immediate_Trigger - Running done-\r\n");
   

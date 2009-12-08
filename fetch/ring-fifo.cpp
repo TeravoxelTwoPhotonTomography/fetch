@@ -4,10 +4,10 @@
 #define DEBUG_RINGFIFO_ALLOC
 #define DEBUG_RINGFIFO_EXPAND
 
-#if 1
+#if 0
+#define DEBUG_RING_FIFO
 #define DEBUG_RING_FIFO_PUSH
 #else
-#define DEBUG_RING_FIFO
 #endif
 
 #ifdef DEBUG_RING_FIFO
