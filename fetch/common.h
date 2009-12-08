@@ -97,6 +97,7 @@ void Debug_Reporting_Remove_All_Callbacks  (void);
 
 void Reporting_Setup_Log_To_VSDebugger_Console(void);
 void Reporting_Setup_Log_To_File( FILE *file );
+void Reporting_Setup_Log_To_Filename( const char* filename );
 void Reporting_Setup_Log_To_Stdout(void);
 
 void ReportLastWindowsError(void);

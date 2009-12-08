@@ -283,7 +283,9 @@ FILE *_g_reporting_log_file = NULL;
 
 void _reporting_log_to_file_callback( const char *msg )
 { if( _g_reporting_log_file )
-    fprintf( _g_reporting_log_file, msg );
+  { fprintf( _g_reporting_log_file, msg );
+    fflush( _g_reporting_log_file );
+  }
 }
 
 unsigned int _reporting_log_to_file_shutdown_callback( void )
@@ -307,7 +309,12 @@ void Reporting_Setup_Log_To_File( FILE *file )
   }
 }
 
-#include <stdio.h>
+void Reporting_Setup_Log_To_Filename( const char* filename )
+{ FILE* fp = fopen(filename,"w");
+  assert(fp);
+  Reporting_Setup_Log_To_File(fp);  
+}
+
 void _reporting_log_to_stdout_callback( const char *msg )
 { fprintf( stdout, msg );
 }
