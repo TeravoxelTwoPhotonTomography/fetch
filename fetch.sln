@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestRingFIFO", "TestRingFIF
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestAsynQ", "TestAsynQ\TestAsynQ.vcproj", "{728D29C7-8997-4079-A998-1754FB9C2EE3}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestVideoDisplay", "TestVideoDisplay\TestVideoDisplay.vcproj", "{4895BEF9-F8C5-4352-A6EA-B3C9C07980CB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -31,6 +33,10 @@ Global
 		{728D29C7-8997-4079-A998-1754FB9C2EE3}.Debug|Win32.Build.0 = Debug|Win32
 		{728D29C7-8997-4079-A998-1754FB9C2EE3}.Release|Win32.ActiveCfg = Release|Win32
 		{728D29C7-8997-4079-A998-1754FB9C2EE3}.Release|Win32.Build.0 = Release|Win32
+		{4895BEF9-F8C5-4352-A6EA-B3C9C07980CB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4895BEF9-F8C5-4352-A6EA-B3C9C07980CB}.Debug|Win32.Build.0 = Debug|Win32
+		{4895BEF9-F8C5-4352-A6EA-B3C9C07980CB}.Release|Win32.ActiveCfg = Release|Win32
+		{4895BEF9-F8C5-4352-A6EA-B3C9C07980CB}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
