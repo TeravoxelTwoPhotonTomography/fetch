@@ -19,6 +19,7 @@
 #define IDM_LOG_CLEAR                   115
 #define IDM_LOG_CLOSE                   116
 #define IDR_MAINFRAME                   128
+#define ID_COMMAND_VIDEODISPLAY         32771
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

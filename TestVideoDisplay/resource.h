@@ -13,7 +13,6 @@
 #define IDC_TESTVIDEODISPLAY            109
 #define IDR_MAINFRAME                   128
 #define ID_COMMAND_VIDEODISPLAY         32771
-#define ID_ACCELERATOR32775             32775
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

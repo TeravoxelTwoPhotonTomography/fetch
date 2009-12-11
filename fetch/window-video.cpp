@@ -340,8 +340,46 @@ HRESULT _InitDevice()
     // Set primitive topology
     g_pd3dDevice->IASetPrimitiveTopology( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 
-    // Load the Texture
-    hr = D3DX10CreateShaderResourceViewFromFile( g_pd3dDevice, "seafloor.dds", NULL, NULL, &g_pTextureRV, NULL );
+    // Load the Texture ... from a file
+    hr = D3DX10CreateShaderResourceViewFromFile( g_pd3dDevice, 
+                                                 "seafloor.dds",
+                                                 NULL, 
+                                                 NULL, 
+                                                 &g_pTextureRV, 
+                                                 NULL );
+    // Load the Texture ... from memory!
+    // ...see D3D10_USAGE_STAGING
+    // ...MAP_WRITE with DO_NOT_WAIT to avoid stalls
+    // ...http://www.docstoc.com/docs/3670084/DirectX-10-Performance-Tips
+     
+    //{ D3DX10_IMAGE_LOAD_INFO load_info;
+    //  D3DX10_IMAGE_INFO      src_info;
+    //  
+    //  D3DX10GetImageInfoFromMemory( src, src_nelem, NULL, &src_info, NULL );
+    //  
+    //  load_info.Width;
+    //  load_info.Height;
+    //  load_info.Depth;
+    //  load_info.FirstMipLevel  = 0;                   // Use highest resolution as first
+    //  load_info.MipLevels      = D3DX10_DEFAULT;      // Make full chain of mipmaps
+    //  load_info.Usage          = D3D10_USAGE_DYNAMIC; // Allow CPU to update (see ID3D10Device::UpdateSubresource and  ID3D10Device::CopyResource or ID3D10Device::CopySubresourceRegion)
+    //  load_info.BindFlags      = D3D10_BIND_SHADER_RESOURCE; // Bind to a shader stage
+    //  load_info.CpuAccessFlags = D3D10_CPU_ACCESS_WRITE;     // Allow CPU to update
+    //  load_info.MiscFlags      = D3D10_RESOURCE_MISC_GENERATE_MIPS;
+    //  load_info.Format         = D3DX10_DEFAULT;
+    //  load_info.Filter         = D3DX10_FILTER_LINEAR // Linear interpolation (4-nn)
+    //                           | D3DX10_FILTER_MIRROR;// Mirror boundary conditions (as opposed to wrap)
+    //  load_info.MipFilter      = D3DX10_FILTER_LINEAR;// Linear interpolation (4-nn)
+    //  load_info.pSrcInfo       = &src_info;
+    //                                                  
+    //  hr = D3DX10CreateTextureFromMemory( g_pd3dDevice,
+    //                                      src,
+    //                                      src_nbytes,
+    //                                      loadinfo,
+    //                                      NULL,
+    //                                      &g_pTextureRV,
+    //                                      NULL );
+    //}                                          
     if( FAILED( hr ) )
         return hr;
 
@@ -418,6 +456,9 @@ LRESULT CALLBACK Video_WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM l
                 UpdateWindow( h );
               }
               break;
+            case IDM_EXIT:
+			        DestroyWindow(g_hWnd);
+			        break;
 		        default:
 			        return DefWindowProc(hWnd, message, wParam, lParam);
 		        }
