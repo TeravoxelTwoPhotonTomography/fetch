@@ -49,6 +49,31 @@ D3DXMATRIX                          g_View;
 D3DXMATRIX                          g_Projection;
 D3DXVECTOR4                         g_vMeshColor( 0.7f, 0.7f, 0.7f, 1.0f );
 
+//struct t_video_display
+//{ 
+//  HWND                                hwnd;
+//  D3D10_DRIVER_TYPE                   driver_type;
+//  ID3D10Device*                       device;
+//  IDXGISwapChain*                     swap_chain;
+//  ID3D10RenderTargetView*             render_target_view;
+//  ID3D10Effect*                       effect;;
+//  ID3D10EffectTechnique*              technique = NULL;
+//  ID3D10InputLayout*                  g_pVertexLayout = NULL;
+//  ID3D10Buffer*                       g_pVertexBuffer = NULL;
+//  ID3D10Buffer*                       g_pIndexBuffer = NULL;
+//  ID3D10ShaderResourceView*           g_pTextureRV = NULL;
+//  ID3D10Texture2D*                    g_pStagingTexture = NULL;
+//  ID3D10Texture2D*                    g_pActiveTexture = NULL;
+//  ID3D10EffectMatrixVariable*         g_pWorldVariable = NULL;
+//  ID3D10EffectMatrixVariable*         g_pViewVariable = NULL;
+//  ID3D10EffectMatrixVariable*         g_pProjectionVariable = NULL;
+//  ID3D10EffectVectorVariable*         g_pMeshColorVariable = NULL;
+//  ID3D10EffectShaderResourceVariable* g_pDiffuseVariable = NULL;
+//  D3DXMATRIX                          g_World;
+//  D3DXMATRIX                          g_View;
+//  D3DXMATRIX                          g_Projection;
+//  D3DXVECTOR4                         g_vMeshColor( 0.7f, 0.7f, 0.7f, 1.0f );
+//};
 
 //--------------------------------------------------------------------------------------
 // Forward declarations
@@ -257,30 +282,30 @@ HRESULT _InitDevice()
     // Create vertex buffer
     SimpleVertex vertices[] =
     {
-        { D3DXVECTOR3( -1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
-        { D3DXVECTOR3( 1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 0.0f ) },
-        { D3DXVECTOR3( 1.0f, 1.0f, 1.0f ), D3DXVECTOR2( 1.0f, 1.0f ) },
-        { D3DXVECTOR3( -1.0f, 1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 1.0f ) },
+        //{ D3DXVECTOR3( -1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
+        //{ D3DXVECTOR3( 1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 0.0f ) },
+        //{ D3DXVECTOR3( 1.0f, 1.0f, 1.0f ), D3DXVECTOR2( 1.0f, 1.0f ) },
+        //{ D3DXVECTOR3( -1.0f, 1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 1.0f ) },
 
-        { D3DXVECTOR3( -1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
-        { D3DXVECTOR3( 1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 0.0f ) },
-        { D3DXVECTOR3( 1.0f, -1.0f, 1.0f ), D3DXVECTOR2( 1.0f, 1.0f ) },
-        { D3DXVECTOR3( -1.0f, -1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 1.0f ) },
+        //{ D3DXVECTOR3( -1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
+        //{ D3DXVECTOR3( 1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 0.0f ) },
+        //{ D3DXVECTOR3( 1.0f, -1.0f, 1.0f ), D3DXVECTOR2( 1.0f, 1.0f ) },
+        //{ D3DXVECTOR3( -1.0f, -1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 1.0f ) },
 
-        { D3DXVECTOR3( -1.0f, -1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
-        { D3DXVECTOR3( -1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 0.0f ) },
-        { D3DXVECTOR3( -1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 1.0f ) },
-        { D3DXVECTOR3( -1.0f, 1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 1.0f ) },
+        //{ D3DXVECTOR3( -1.0f, -1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
+        //{ D3DXVECTOR3( -1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 0.0f ) },
+        //{ D3DXVECTOR3( -1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 1.0f ) },
+        //{ D3DXVECTOR3( -1.0f, 1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 1.0f ) },
 
-        { D3DXVECTOR3( 1.0f, -1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
-        { D3DXVECTOR3( 1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 0.0f ) },
-        { D3DXVECTOR3( 1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 1.0f ) },
-        { D3DXVECTOR3( 1.0f, 1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 1.0f ) },
+        //{ D3DXVECTOR3( 1.0f, -1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
+        //{ D3DXVECTOR3( 1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 0.0f ) },
+        //{ D3DXVECTOR3( 1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 1.0f ) },
+        //{ D3DXVECTOR3( 1.0f, 1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 1.0f ) },
 
-        { D3DXVECTOR3( -1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
-        { D3DXVECTOR3( 1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 0.0f ) },
-        { D3DXVECTOR3( 1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 1.0f ) },
-        { D3DXVECTOR3( -1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 0.0f, 1.0f ) },
+        //{ D3DXVECTOR3( -1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
+        //{ D3DXVECTOR3( 1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 0.0f ) },
+        //{ D3DXVECTOR3( 1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 1.0f ) },
+        //{ D3DXVECTOR3( -1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 0.0f, 1.0f ) },
 
         { D3DXVECTOR3( -1.0f, -1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
         { D3DXVECTOR3( 1.0f, -1.0f, 1.0f ), D3DXVECTOR2( 1.0f, 0.0f ) },
@@ -290,7 +315,7 @@ HRESULT _InitDevice()
 
     D3D10_BUFFER_DESC bd;
     bd.Usage = D3D10_USAGE_DEFAULT;
-    bd.ByteWidth = sizeof( SimpleVertex ) * 24;
+    bd.ByteWidth = sizeof(vertices); // sizeof( SimpleVertex );
     bd.BindFlags = D3D10_BIND_VERTEX_BUFFER;
     bd.CPUAccessFlags = 0;
     bd.MiscFlags = 0;
@@ -309,26 +334,28 @@ HRESULT _InitDevice()
     // Create vertex buffer
     DWORD indices[] =
     {
-        3,1,0,
-        2,1,3,
+        //3,1,0,
+        //2,1,3,
 
-        6,4,5,
-        7,4,6,
+        //6,4,5,
+        //7,4,6,
 
-        11,9,8,
-        10,9,11,
+        //11,9,8,
+        //10,9,11,
 
-        14,12,13,
-        15,12,14,
+        //14,12,13,
+        //15,12,14,
 
-        19,17,16,
-        18,17,19,
+        //19,17,16,
+        //18,17,19,
 
-        22,20,21,
-        23,20,22
+        //22,20,21,               
+        //23,20,22
+        
+        3,2,0,1
     };
     bd.Usage = D3D10_USAGE_DEFAULT;
-    bd.ByteWidth = sizeof( DWORD ) * 36;
+    bd.ByteWidth = sizeof(indices); //sizeof( DWORD ) * 36;
     bd.BindFlags = D3D10_BIND_INDEX_BUFFER;
     bd.CPUAccessFlags = 0;
     bd.MiscFlags = 0;
@@ -341,7 +368,7 @@ HRESULT _InitDevice()
     g_pd3dDevice->IASetIndexBuffer( g_pIndexBuffer, DXGI_FORMAT_R32_UINT, 0 );
 
     // Set primitive topology
-    g_pd3dDevice->IASetPrimitiveTopology( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+    g_pd3dDevice->IASetPrimitiveTopology( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP );
     
     // Load the Texture ... from memory!
     // ...see D3D10_USAGE_STAGING
@@ -575,7 +602,7 @@ void Video_Window_Render_One_Frame()
     for( UINT p = 0; p < techDesc.Passes; ++p )
     {
         g_pTechnique->GetPassByIndex( p )->Apply( 0 );
-        g_pd3dDevice->DrawIndexed( 36, 0, 0 );
+        g_pd3dDevice->DrawIndexed( 4, 0, 0 );
     }
 
     //
@@ -583,5 +610,5 @@ void Video_Window_Render_One_Frame()
     //
     g_pSwapChain->Present( 0, 0 );
     double dt = toc(&clock);
-    debug("FPS : %f\r\n", 1/dt);
+    debug("FPS: %f\r\n",1.0/dt);
 }
