@@ -342,15 +342,6 @@ HRESULT _InitDevice()
 
     // Set primitive topology
     g_pd3dDevice->IASetPrimitiveTopology( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
-
-    //// Load the Texture ... from a file
-    //hr = D3DX10CreateShaderResourceViewFromFile( g_pd3dDevice, 
-    //                                             "seafloor.dds",
-    //                                             NULL,               // loadinfo (optional)
-    //                                             NULL,               // pump
-    //                                             &g_pTextureRV, 
-    //                                             NULL );             // return val
-    
     
     // Load the Texture ... from memory!
     // ...see D3D10_USAGE_STAGING
@@ -375,23 +366,29 @@ HRESULT _InitDevice()
         desc.MipLevels = desc.ArraySize    = 1;
         desc.Format                        = DXGI_FORMAT_R8_UNORM;
         desc.SampleDesc.Count              = 1;
-        desc.Usage                         = D3D10_USAGE_DYNAMIC;
+        desc.Usage                         = D3D10_USAGE_DEFAULT;
         desc.BindFlags                     = D3D10_BIND_SHADER_RESOURCE;
-        desc.CPUAccessFlags                = D3D10_CPU_ACCESS_WRITE;
                 
         Guarded_Assert( !FAILED( g_pd3dDevice->CreateTexture2D( &desc, NULL, &g_pActiveTexture ) ));
+        
+        desc.Usage                         = D3D10_USAGE_DYNAMIC;
+        desc.CPUAccessFlags                = D3D10_CPU_ACCESS_WRITE;        
+        
+        Guarded_Assert( !FAILED( g_pd3dDevice->CreateTexture2D( &desc, NULL, &g_pStagingTexture ) ));
       }
 
       { D3D10_MAPPED_TEXTURE2D mappedTex;
-        g_pActiveTexture->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &mappedTex );
+        Guarded_Assert( !FAILED( 
+            g_pStagingTexture->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &mappedTex ) ));
 
         u8* pTexels = (u8*)mappedTex.pData;
-        memcpy(pTexels, src, src_nbytes);       
+        memcpy(pTexels, src, src_nbytes);
 
-        g_pActiveTexture->Unmap( D3D10CalcSubresource(0, 0, 1) );
+        g_pStagingTexture->Unmap( D3D10CalcSubresource(0, 0, 1) );
+        free(src);        
       }
+      g_pd3dDevice->CopyResource( g_pActiveTexture, g_pStagingTexture );
       
-      free(src);
       // Create the resource view and bind the texture
       { D3D10_SHADER_RESOURCE_VIEW_DESC srvDesc;
         D3D10_RESOURCE_DIMENSION type;
@@ -445,6 +442,8 @@ void _CleanupDevice()
     if( g_pIndexBuffer ) g_pIndexBuffer->Release();
     if( g_pVertexLayout ) g_pVertexLayout->Release();
     if( g_pTextureRV ) g_pTextureRV->Release();
+    if( g_pActiveTexture ) g_pActiveTexture->Release();
+    if( g_pStagingTexture ) g_pStagingTexture->Release();
     if( g_pEffect ) g_pEffect->Release();
     if( g_pRenderTargetView ) g_pRenderTargetView->Release();
     if( g_pSwapChain ) g_pSwapChain->Release();
@@ -506,7 +505,7 @@ LRESULT CALLBACK Video_WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 // Render a frame
 //--------------------------------------------------------------------------------------
 void Video_Window_Render_One_Frame()
-{  
+{   TicTocTimer clock = tic();
     static u8* src = NULL;
     size_t src_nbytes = 1024*1024;
     
@@ -523,13 +522,15 @@ void Video_Window_Render_One_Frame()
     }
     
     { D3D10_MAPPED_TEXTURE2D mappedTex;
-      g_pActiveTexture->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &mappedTex );
+      Guarded_Assert( !FAILED( 
+          g_pStagingTexture->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &mappedTex ) ));
 
       u8* pTexels = (u8*)mappedTex.pData;
-      memcpy(pTexels, src, src_nbytes);       
+      memcpy(pTexels, src, src_nbytes);
 
-      g_pActiveTexture->Unmap( D3D10CalcSubresource(0, 0, 1) );
+      g_pStagingTexture->Unmap( D3D10CalcSubresource(0, 0, 1) );        
     }
+    g_pd3dDevice->CopyResource( g_pActiveTexture, g_pStagingTexture );
 
     // Update our time
     static float t = 0.0f;
@@ -543,7 +544,7 @@ void Video_Window_Render_One_Frame()
         DWORD dwTimeCur = GetTickCount();
         if( dwTimeStart == 0 )
             dwTimeStart = dwTimeCur;
-        t = ( dwTimeCur - dwTimeStart ) / 1000.0f;
+        t = 0;//( dwTimeCur - dwTimeStart ) / 1000.0f;
     }
 
     // Rotate cube around the origin
@@ -581,4 +582,6 @@ void Video_Window_Render_One_Frame()
     // Present our back buffer to our front buffer
     //
     g_pSwapChain->Present( 0, 0 );
+    double dt = toc(&clock);
+    debug("FPS : %f\r\n", 1/dt);
 }
