@@ -506,7 +506,7 @@ LRESULT CALLBACK Video_WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 // Render a frame
 //--------------------------------------------------------------------------------------
 void Video_Window_Render_One_Frame()
-{  
+{   TicTocTimer clock = tic();
     static u8* src = NULL;
     size_t src_nbytes = 1024*1024;
     
@@ -581,4 +581,6 @@ void Video_Window_Render_One_Frame()
     // Present our back buffer to our front buffer
     //
     g_pSwapChain->Present( 0, 0 );
+    double dt = toc(&clock);
+    debug("FPS: %f\r\n",1.0/dt);
 }

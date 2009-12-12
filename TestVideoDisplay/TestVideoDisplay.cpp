@@ -112,7 +112,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    HWND hWnd;
 
    hInst = hInstance; // Store instance handle in our global variable
-
+   Reporting_Setup_Log_To_VSDebugger_Console();
    hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, 320, 240, NULL, NULL, hInstance, NULL);
 
