@@ -63,8 +63,8 @@ PS_INPUT VS( VS_INPUT input )
 // Pixel Shader
 //--------------------------------------------------------------------------------------
 float4 PS( PS_INPUT input) : SV_Target
-{
-    return txDiffuse.Sample( samLinear, input.Tex ) * vMeshColor;
+{   float4 c = txDiffuse.Sample( samLinear, input.Tex );
+    return float4(c.x,c.x,c.x,1.0);
 }
 
 

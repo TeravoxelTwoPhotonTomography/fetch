@@ -176,6 +176,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\fetch\shader.fx"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -197,10 +201,6 @@
 			</File>
 			<File
 				RelativePath=".\TestVideoDisplay.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\fetch\Tutorial07.fx"
 				>
 			</File>
 			<File

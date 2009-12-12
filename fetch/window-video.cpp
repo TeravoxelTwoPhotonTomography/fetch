@@ -9,6 +9,7 @@
 #include <d3d10.h>
 #include <d3dx10.h>
 #include "window-video.h"
+#include <stdlib.h> // for rand - for testing - remove when done
 
 
 //--------------------------------------------------------------------------------------
@@ -36,6 +37,8 @@ ID3D10InputLayout*                  g_pVertexLayout = NULL;
 ID3D10Buffer*                       g_pVertexBuffer = NULL;
 ID3D10Buffer*                       g_pIndexBuffer = NULL;
 ID3D10ShaderResourceView*           g_pTextureRV = NULL;
+ID3D10Texture2D*                    g_pStagingTexture = NULL;
+ID3D10Texture2D*                    g_pActiveTexture = NULL;
 ID3D10EffectMatrixVariable*         g_pWorldVariable = NULL;
 ID3D10EffectMatrixVariable*         g_pViewVariable = NULL;
 ID3D10EffectMatrixVariable*         g_pProjectionVariable = NULL;
@@ -203,7 +206,7 @@ HRESULT _InitDevice()
     // the release configuration of this program.
     dwShaderFlags |= D3D10_SHADER_DEBUG;
     #endif
-    hr = D3DX10CreateEffectFromFile( "../fetch/Tutorial07.fx",
+    hr = D3DX10CreateEffectFromFile( "../fetch/shader.fx",
                                      NULL,
                                      NULL,
                                      "fx_4_0",
@@ -340,46 +343,73 @@ HRESULT _InitDevice()
     // Set primitive topology
     g_pd3dDevice->IASetPrimitiveTopology( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 
-    // Load the Texture ... from a file
-    hr = D3DX10CreateShaderResourceViewFromFile( g_pd3dDevice, 
-                                                 "seafloor.dds",
-                                                 NULL, 
-                                                 NULL, 
-                                                 &g_pTextureRV, 
-                                                 NULL );
+    //// Load the Texture ... from a file
+    //hr = D3DX10CreateShaderResourceViewFromFile( g_pd3dDevice, 
+    //                                             "seafloor.dds",
+    //                                             NULL,               // loadinfo (optional)
+    //                                             NULL,               // pump
+    //                                             &g_pTextureRV, 
+    //                                             NULL );             // return val
+    
+    
     // Load the Texture ... from memory!
     // ...see D3D10_USAGE_STAGING
     // ...MAP_WRITE with DO_NOT_WAIT to avoid stalls
     // ...http://www.docstoc.com/docs/3670084/DirectX-10-Performance-Tips
      
-    //{ D3DX10_IMAGE_LOAD_INFO load_info;
-    //  D3DX10_IMAGE_INFO      src_info;
-    //  
-    //  D3DX10GetImageInfoFromMemory( src, src_nelem, NULL, &src_info, NULL );
-    //  
-    //  load_info.Width;
-    //  load_info.Height;
-    //  load_info.Depth;
-    //  load_info.FirstMipLevel  = 0;                   // Use highest resolution as first
-    //  load_info.MipLevels      = D3DX10_DEFAULT;      // Make full chain of mipmaps
-    //  load_info.Usage          = D3D10_USAGE_DYNAMIC; // Allow CPU to update (see ID3D10Device::UpdateSubresource and  ID3D10Device::CopyResource or ID3D10Device::CopySubresourceRegion)
-    //  load_info.BindFlags      = D3D10_BIND_SHADER_RESOURCE; // Bind to a shader stage
-    //  load_info.CpuAccessFlags = D3D10_CPU_ACCESS_WRITE;     // Allow CPU to update
-    //  load_info.MiscFlags      = D3D10_RESOURCE_MISC_GENERATE_MIPS;
-    //  load_info.Format         = D3DX10_DEFAULT;
-    //  load_info.Filter         = D3DX10_FILTER_LINEAR // Linear interpolation (4-nn)
-    //                           | D3DX10_FILTER_MIRROR;// Mirror boundary conditions (as opposed to wrap)
-    //  load_info.MipFilter      = D3DX10_FILTER_LINEAR;// Linear interpolation (4-nn)
-    //  load_info.pSrcInfo       = &src_info;
-    //                                                  
-    //  hr = D3DX10CreateTextureFromMemory( g_pd3dDevice,
-    //                                      src,
-    //                                      src_nbytes,
-    //                                      loadinfo,
-    //                                      NULL,
-    //                                      &g_pTextureRV,
-    //                                      NULL );
-    //}                                          
+    { g_pActiveTexture = NULL;
+    
+      size_t src_nbytes = 1024*1024;          // create the source buffer
+      u8 *src = (u8*)calloc(src_nbytes,1);
+      int i,j;
+      for(i=0;i<1024;i++)
+        for(j=0;j<1024;j++)
+          src[j + 1024 * i] = (u8) rand();           
+      
+      // Based on: ms-help://MS.VSCC.v90/MS.VSIPCC.v90/MS.Windows_Graphics.August.2009.1033/Windows_Graphics/d3d10_graphics_programming_guide_resources_creating_textures.htm#Creating_Empty_Textures
+      {
+        D3D10_TEXTURE2D_DESC desc;
+        ZeroMemory( &desc, sizeof(desc) );
+        desc.Width                         = 1024;
+        desc.Height                        = 1024;
+        desc.MipLevels = desc.ArraySize    = 1;
+        desc.Format                        = DXGI_FORMAT_R8_UNORM;
+        desc.SampleDesc.Count              = 1;
+        desc.Usage                         = D3D10_USAGE_DYNAMIC;
+        desc.BindFlags                     = D3D10_BIND_SHADER_RESOURCE;
+        desc.CPUAccessFlags                = D3D10_CPU_ACCESS_WRITE;
+                
+        Guarded_Assert( !FAILED( g_pd3dDevice->CreateTexture2D( &desc, NULL, &g_pActiveTexture ) ));
+      }
+
+      { D3D10_MAPPED_TEXTURE2D mappedTex;
+        g_pActiveTexture->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &mappedTex );
+
+        u8* pTexels = (u8*)mappedTex.pData;
+        memcpy(pTexels, src, src_nbytes);       
+
+        g_pActiveTexture->Unmap( D3D10CalcSubresource(0, 0, 1) );
+      }
+      
+      free(src);
+      // Create the resource view and bind the texture
+      { D3D10_SHADER_RESOURCE_VIEW_DESC srvDesc;
+        D3D10_RESOURCE_DIMENSION type;
+        g_pActiveTexture->GetType( &type );
+        Guarded_Assert( type == D3D10_RESOURCE_DIMENSION_TEXTURE2D );
+
+        D3D10_TEXTURE2D_DESC desc;
+        g_pActiveTexture->GetDesc( &desc );
+		
+        srvDesc.Format                    = desc.Format;
+        srvDesc.ViewDimension             = D3D10_SRV_DIMENSION_TEXTURE2D;
+        srvDesc.Texture2D.MipLevels       = desc.MipLevels;
+        srvDesc.Texture2D.MostDetailedMip = desc.MipLevels - 1;
+
+        g_pTextureRV = NULL;
+        Guarded_Assert(!FAILED( g_pd3dDevice->CreateShaderResourceView( g_pActiveTexture, &srvDesc, &g_pTextureRV ) ));
+      }
+    }                                          
     if( FAILED( hr ) )
         return hr;
 
@@ -476,7 +506,31 @@ LRESULT CALLBACK Video_WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 // Render a frame
 //--------------------------------------------------------------------------------------
 void Video_Window_Render_One_Frame()
-{
+{  
+    static u8* src = NULL;
+    size_t src_nbytes = 1024*1024;
+    
+    // create the source buffer
+    if(!src)
+      src = (u8*)calloc(src_nbytes,1);
+      
+    { int i,j;
+      int low = 1024 * 0.1,
+         high = 1024 * 0.9;
+      for(i=low;i<high;i++)
+        for(j=low;j<high;j++)
+          src[j + 1024 * i] = (u8) rand();
+    }
+    
+    { D3D10_MAPPED_TEXTURE2D mappedTex;
+      g_pActiveTexture->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &mappedTex );
+
+      u8* pTexels = (u8*)mappedTex.pData;
+      memcpy(pTexels, src, src_nbytes);       
+
+      g_pActiveTexture->Unmap( D3D10CalcSubresource(0, 0, 1) );
+    }
+
     // Update our time
     static float t = 0.0f;
     if( g_driverType == D3D10_DRIVER_TYPE_REFERENCE )
