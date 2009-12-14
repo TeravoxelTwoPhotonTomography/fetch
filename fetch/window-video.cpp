@@ -11,6 +11,9 @@
 #include "window-video.h"
 #include <stdlib.h> // for rand - for testing - remove when done
 
+#define VIDEO_WINDOW_TEXTURE_RESOURCE_NAME "tx"
+#define VIDEO_WINDOW_PATH_TO_SHADER        "../fetch/shader.fx"
+#define VIDEO_WINDOW_SHADER_TECHNIQUE_NAME "Render"
 
 //--------------------------------------------------------------------------------------
 // Structures
@@ -25,7 +28,6 @@ struct SimpleVertex
 //--------------------------------------------------------------------------------------
 // Global Variables
 //--------------------------------------------------------------------------------------
-HINSTANCE                           g_hInst = NULL;
 HWND                                g_hWnd = NULL;
 D3D10_DRIVER_TYPE                   g_driverType = D3D10_DRIVER_TYPE_NULL;
 ID3D10Device*                       g_pd3dDevice = NULL;
@@ -39,15 +41,8 @@ ID3D10Buffer*                       g_pIndexBuffer = NULL;
 ID3D10ShaderResourceView*           g_pTextureRV = NULL;
 ID3D10Texture2D*                    g_pStagingTexture = NULL;
 ID3D10Texture2D*                    g_pActiveTexture = NULL;
-ID3D10EffectMatrixVariable*         g_pWorldVariable = NULL;
-ID3D10EffectMatrixVariable*         g_pViewVariable = NULL;
-ID3D10EffectMatrixVariable*         g_pProjectionVariable = NULL;
-ID3D10EffectVectorVariable*         g_pMeshColorVariable = NULL;
 ID3D10EffectShaderResourceVariable* g_pDiffuseVariable = NULL;
-D3DXMATRIX                          g_World;
-D3DXMATRIX                          g_View;
-D3DXMATRIX                          g_Projection;
-D3DXVECTOR4                         g_vMeshColor( 0.7f, 0.7f, 0.7f, 1.0f );
+
 
 //struct t_video_display
 //{ 
@@ -56,9 +51,9 @@ D3DXVECTOR4                         g_vMeshColor( 0.7f, 0.7f, 0.7f, 1.0f );
 //  ID3D10Device*                       device;
 //  IDXGISwapChain*                     swap_chain;
 //  ID3D10RenderTargetView*             render_target_view;
-//  ID3D10Effect*                       effect;;
+//  ID3D10Effect*                       effect;
 //  ID3D10EffectTechnique*              technique = NULL;
-//  ID3D10InputLayout*                  g_pVertexLayout = NULL;
+//  ID3D10InputLayout*                  vertex_layout = NULL;
 //  ID3D10Buffer*                       g_pVertexBuffer = NULL;
 //  ID3D10Buffer*                       g_pIndexBuffer = NULL;
 //  ID3D10ShaderResourceView*           g_pTextureRV = NULL;
@@ -126,8 +121,7 @@ HRESULT _InitWindow( HINSTANCE hInstance, int nCmdShow )
     if( !RegisterClassEx( &wcex ) )
         return E_FAIL;
 
-    // Create window
-    g_hInst = hInstance;
+    // Create window    
     RECT rc = { 0, 0, 640, 480 };
     AdjustWindowRect( &rc, WS_OVERLAPPEDWINDOW, FALSE );
     g_hWnd = CreateWindow( "TutorialWindowClass", 
@@ -231,7 +225,7 @@ HRESULT _InitDevice()
     // the release configuration of this program.
     dwShaderFlags |= D3D10_SHADER_DEBUG;
     #endif
-    hr = D3DX10CreateEffectFromFile( "../fetch/shader.fx",
+    hr = D3DX10CreateEffectFromFile( VIDEO_WINDOW_PATH_TO_SHADER,
                                      NULL,
                                      NULL,
                                      "fx_4_0",
@@ -244,21 +238,16 @@ HRESULT _InitDevice()
                                      NULL,
                                      NULL );
     if( FAILED( hr ) )
-    {
-        MessageBox( NULL,
-                    "The FX file cannot be located.  Please run this executable from the directory that contains the FX file.", "Error", MB_OK );
+    {   warning( "Could not compile the FX file.  Perhaps it could not be located.");
         return hr;
     }
 
     // Obtain the technique
-    g_pTechnique = g_pEffect->GetTechniqueByName( "Render" );
+    g_pTechnique = g_pEffect->GetTechniqueByName( VIDEO_WINDOW_SHADER_TECHNIQUE_NAME );
 
     // Obtain the variables
-    g_pWorldVariable = g_pEffect->GetVariableByName( "World" )->AsMatrix();
-    g_pViewVariable = g_pEffect->GetVariableByName( "View" )->AsMatrix();
-    g_pProjectionVariable = g_pEffect->GetVariableByName( "Projection" )->AsMatrix();
-    g_pMeshColorVariable = g_pEffect->GetVariableByName( "vMeshColor" )->AsVector();
-    g_pDiffuseVariable = g_pEffect->GetVariableByName( "txDiffuse" )->AsShaderResource();
+    g_pDiffuseVariable = g_pEffect->GetVariableByName( VIDEO_WINDOW_TEXTURE_RESOURCE_NAME )
+                                  ->AsShaderResource();
 
     // Define the input layout
     D3D10_INPUT_ELEMENT_DESC layout[] =
@@ -269,45 +258,20 @@ HRESULT _InitDevice()
     UINT numElements = sizeof( layout ) / sizeof( layout[0] );
 
     // Create the input layout
-    D3D10_PASS_DESC PassDesc;
-    g_pTechnique->GetPassByIndex( 0 )->GetDesc( &PassDesc );
-    hr = g_pd3dDevice->CreateInputLayout( layout, numElements, PassDesc.pIAInputSignature,
-                                          PassDesc.IAInputSignatureSize, &g_pVertexLayout );
-    if( FAILED( hr ) )
-        return hr;
+    { D3D10_PASS_DESC PassDesc;
+      g_pTechnique->GetPassByIndex( 0 )->GetDesc( &PassDesc );
+      hr = g_pd3dDevice->CreateInputLayout( layout, numElements, PassDesc.pIAInputSignature,
+                                            PassDesc.IAInputSignatureSize, &g_pVertexLayout );
+      if( FAILED( hr ) )
+          return hr;
 
-    // Set the input layout
-    g_pd3dDevice->IASetInputLayout( g_pVertexLayout );
+      // Set the input layout
+      g_pd3dDevice->IASetInputLayout( g_pVertexLayout );      
+    }
 
     // Create vertex buffer
     SimpleVertex vertices[] =
-    {
-        //{ D3DXVECTOR3( -1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
-        //{ D3DXVECTOR3( 1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 0.0f ) },
-        //{ D3DXVECTOR3( 1.0f, 1.0f, 1.0f ), D3DXVECTOR2( 1.0f, 1.0f ) },
-        //{ D3DXVECTOR3( -1.0f, 1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 1.0f ) },
-
-        //{ D3DXVECTOR3( -1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
-        //{ D3DXVECTOR3( 1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 0.0f ) },
-        //{ D3DXVECTOR3( 1.0f, -1.0f, 1.0f ), D3DXVECTOR2( 1.0f, 1.0f ) },
-        //{ D3DXVECTOR3( -1.0f, -1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 1.0f ) },
-
-        //{ D3DXVECTOR3( -1.0f, -1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
-        //{ D3DXVECTOR3( -1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 0.0f ) },
-        //{ D3DXVECTOR3( -1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 1.0f ) },
-        //{ D3DXVECTOR3( -1.0f, 1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 1.0f ) },
-
-        //{ D3DXVECTOR3( 1.0f, -1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
-        //{ D3DXVECTOR3( 1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 0.0f ) },
-        //{ D3DXVECTOR3( 1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 1.0f ) },
-        //{ D3DXVECTOR3( 1.0f, 1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 1.0f ) },
-
-        //{ D3DXVECTOR3( -1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
-        //{ D3DXVECTOR3( 1.0f, -1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 0.0f ) },
-        //{ D3DXVECTOR3( 1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 1.0f, 1.0f ) },
-        //{ D3DXVECTOR3( -1.0f, 1.0f, -1.0f ), D3DXVECTOR2( 0.0f, 1.0f ) },
-
-        { D3DXVECTOR3( -1.0f, -1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
+    {   { D3DXVECTOR3( -1.0f, -1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 0.0f ) },
         { D3DXVECTOR3( 1.0f, -1.0f, 1.0f ), D3DXVECTOR2( 1.0f, 0.0f ) },
         { D3DXVECTOR3( 1.0f, 1.0f, 1.0f ), D3DXVECTOR2( 1.0f, 1.0f ) },
         { D3DXVECTOR3( -1.0f, 1.0f, 1.0f ), D3DXVECTOR2( 0.0f, 1.0f ) },
@@ -333,26 +297,7 @@ HRESULT _InitDevice()
     // Create index buffer
     // Create vertex buffer
     DWORD indices[] =
-    {
-        //3,1,0,
-        //2,1,3,
-
-        //6,4,5,
-        //7,4,6,
-
-        //11,9,8,
-        //10,9,11,
-
-        //14,12,13,
-        //15,12,14,
-
-        //19,17,16,
-        //18,17,19,
-
-        //22,20,21,               
-        //23,20,22
-        
-        3,2,0,1
+    { 3,2,0,1
     };
     bd.Usage = D3D10_USAGE_DEFAULT;
     bd.ByteWidth = sizeof(indices); //sizeof( DWORD ) * 36;
@@ -437,21 +382,6 @@ HRESULT _InitDevice()
     if( FAILED( hr ) )
         return hr;
 
-    // Initialize the world matrices
-    D3DXMatrixIdentity( &g_World );
-
-    // Initialize the view matrix
-    D3DXVECTOR3 Eye( 0.0f, 3.0f, -6.0f );
-    D3DXVECTOR3 At( 0.0f, 1.0f, 0.0f );
-    D3DXVECTOR3 Up( 0.0f, 1.0f, 0.0f );
-    D3DXMatrixLookAtLH( &g_View, &Eye, &At, &Up );
-
-    // Initialize the projection matrix
-    D3DXMatrixPerspectiveFovLH( &g_Projection, ( float )D3DX_PI * 0.25f, width / ( FLOAT )height, 0.1f, 100.0f );
-
-    // Update Variables that never change
-    g_pViewVariable->SetMatrix( ( float* )&g_View );
-    g_pProjectionVariable->SetMatrix( ( float* )&g_Projection );
     g_pDiffuseVariable->SetResource( g_pTextureRV );
 
     return S_OK;
@@ -559,29 +489,6 @@ void Video_Window_Render_One_Frame()
     }
     g_pd3dDevice->CopyResource( g_pActiveTexture, g_pStagingTexture );
 
-    // Update our time
-    static float t = 0.0f;
-    if( g_driverType == D3D10_DRIVER_TYPE_REFERENCE )
-    {
-        t += ( float )D3DX_PI * 0.0125f;
-    }
-    else
-    {
-        static DWORD dwTimeStart = 0;
-        DWORD dwTimeCur = GetTickCount();
-        if( dwTimeStart == 0 )
-            dwTimeStart = dwTimeCur;
-        t = 0;//( dwTimeCur - dwTimeStart ) / 1000.0f;
-    }
-
-    // Rotate cube around the origin
-    D3DXMatrixRotationY( &g_World, t );
-
-    // Modify the color
-    g_vMeshColor.x = ( sinf( t * 1.0f ) + 1.0f ) * 0.5f;
-    g_vMeshColor.y = ( cosf( t * 3.0f ) + 1.0f ) * 0.5f;
-    g_vMeshColor.z = ( sinf( t * 5.0f ) + 1.0f ) * 0.5f;
-
     //
     // Clear the back buffer
     //
@@ -591,11 +498,11 @@ void Video_Window_Render_One_Frame()
     //
     // Update variables that change once per frame
     //
-    g_pWorldVariable->SetMatrix( ( float* )&g_World );
-    g_pMeshColorVariable->SetFloatVector( ( float* )g_vMeshColor );
+    //g_pWorldVariable->SetMatrix( ( float* )&g_World );
+    //g_pMeshColorVariable->SetFloatVector( ( float* )g_vMeshColor );
 
     //
-    // Render the cube
+    // Render
     //
     D3D10_TECHNIQUE_DESC techDesc;
     g_pTechnique->GetDesc( &techDesc );

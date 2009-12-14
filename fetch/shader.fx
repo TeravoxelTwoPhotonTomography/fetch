@@ -7,27 +7,17 @@
 //--------------------------------------------------------------------------------------
 // Constant Buffer Variables
 //--------------------------------------------------------------------------------------
-Texture2D txDiffuse;
+Texture2D tx;
+
 SamplerState samLinear
 {
-    Filter = MIN_MAG_MIP_LINEAR;
-    AddressU = Wrap;
-    AddressV = Wrap;
-};
-
-cbuffer cbNeverChanges
-{
-    matrix View;
-};
-
-cbuffer cbChangeOnResize
-{
-    matrix Projection;
+    Filter = MIN_MAG_MIP_POINT;
+    AddressU = Mirror;
+    AddressV = Mirror;
 };
 
 cbuffer cbChangesEveryFrame
 {
-    matrix World;
     float4 vMeshColor;
 };
 
@@ -48,14 +38,7 @@ struct PS_INPUT
 // Vertex Shader
 //--------------------------------------------------------------------------------------
 PS_INPUT VS( VS_INPUT input )
-{
-    PS_INPUT output = (PS_INPUT)0;
-    output.Pos = mul( input.Pos, World );
-    output.Pos = mul( output.Pos, View );
-    output.Pos = mul( output.Pos, Projection );
-    output.Tex = input.Tex;
-    
-    return output;
+{   return input;
 }
 
 
@@ -63,7 +46,7 @@ PS_INPUT VS( VS_INPUT input )
 // Pixel Shader
 //--------------------------------------------------------------------------------------
 float4 PS( PS_INPUT input) : SV_Target
-{   float4 c = txDiffuse.Sample( samLinear, input.Tex );
+{   float4 c = tx.Sample( samLinear, input.Tex );
     return float4(c.x,c.x,c.x,1.0);
 }
 
