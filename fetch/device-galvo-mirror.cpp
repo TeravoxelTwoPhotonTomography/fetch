@@ -14,6 +14,14 @@ Device               *gp_galvo_mirror_device      = NULL;
 DeviceTask           *gp_galvo_mirror_tasks[1]    = {NULL};
 u32                   g_galvo_mirror_tasks_count  = 1;
 
+DECLARE_USER_MESSAGE( IDM_GALVO_MIRROR              ,"{1AC60A65-813E-4fab-AA3D-A3E884104ACC}");
+DECLARE_USER_MESSAGE( IDM_GALVO_MIRROR_DETACH       ,"{1AC60A65-813E-4fab-AA3D-A3E884104ACC}");
+DECLARE_USER_MESSAGE( IDM_GALVO_MIRROR_ATTACH       ,"{1AC60A65-813E-4fab-AA3D-A3E884104ACC}");
+DECLARE_USER_MESSAGE( IDM_GALVO_MIRROR_LIST_DEVICES ,"{1AC60A65-813E-4fab-AA3D-A3E884104ACC}");
+DECLARE_USER_MESSAGE( IDM_GALVO_MIRROR_TASK_STOP    ,"{1AC60A65-813E-4fab-AA3D-A3E884104ACC}");
+DECLARE_USER_MESSAGE( IDM_GALVO_MIRROR_TASK_RUN     ,"{1AC60A65-813E-4fab-AA3D-A3E884104ACC}");
+DECLARE_USER_MESSAGE( IDM_GALVO_MIRROR_TASK_0       ,"{1AC60A65-813E-4fab-AA3D-A3E884104ACC}");
+
 unsigned int
 _galvo_mirror_free_tasks(void)
 { u32 i = g_galvo_mirror_tasks_count;
@@ -307,36 +315,32 @@ Galvo_Mirror_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		wmId    = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
 		// Parse the menu selections:
-		switch (wmId)
-		{
-    case IDM_GALVO_MIRROR_DETACH:
-      { debug( "IDM_GALVO_MIRROR_DETACH\r\n" );
-        Galvo_Mirror_Detach_Nonblocking();        
-      }
-			break;
-    case IDM_GALVO_MIRROR_ATTACH:
-      { debug("IDM_GALVO_MIRROR_ATTACH\r\n");        
-        Galvo_Mirror_Attach();        
-      }
-      break;
-    case IDM_GALVO_MIRROR_TASK_0:
-      { debug("IDM_GALVO_MIRROR_TASK_0\r\n");
-        Device_Arm_Nonblocking( gp_galvo_mirror_device, gp_galvo_mirror_tasks[0], GALVO_MIRROR_DEFAULT_TIMEOUT );        
-      }
-      break;
-    case IDM_GALVO_MIRROR_TASK_RUN:
-      { debug("IDM_GALVO_MIRROR_RUN\r\n");      
-        Device_Run_Nonblocking(gp_galvo_mirror_device);
-      }
-      break;
-    case IDM_GALVO_MIRROR_TASK_STOP:
-      { debug("IDM_GALVO_MIRROR_STOP\r\n");
-        Device_Stop_Nonblocking( gp_galvo_mirror_device, GALVO_MIRROR_DEFAULT_TIMEOUT );        
-      }
-      break;
-		default:
-			return 1;
-		}
+		if (wmId == IDM_GALVO_MIRROR_DETACH )
+    { debug( "IDM_GALVO_MIRROR_DETACH\r\n" );
+      Galvo_Mirror_Detach_Nonblocking();
+      
+    } else if (wmId == IDM_GALVO_MIRROR_ATTACH )
+    { debug("IDM_GALVO_MIRROR_ATTACH\r\n");
+      Galvo_Mirror_Attach();
+      
+    } else if (wmId == IDM_GALVO_MIRROR_TASK_0 )
+    { debug("IDM_GALVO_MIRROR_TASK_0\r\n");
+      Device_Arm_Nonblocking( gp_galvo_mirror_device, gp_galvo_mirror_tasks[0], GALVO_MIRROR_DEFAULT_TIMEOUT );        
+      
+    } else if (wmId == IDM_GALVO_MIRROR_TASK_RUN )
+    { debug("IDM_GALVO_MIRROR_RUN\r\n");      
+      Device_Run_Nonblocking(gp_galvo_mirror_device);
+      
+    } else if (wmId == IDM_GALVO_MIRROR_TASK_RUN )
+    { debug("IDM_GALVO_MIRROR_RUN\r\n");      
+      Device_Run_Nonblocking(gp_galvo_mirror_device);
+      
+    } else if (wmId == IDM_GALVO_MIRROR_TASK_STOP )
+    { debug("IDM_GALVO_MIRROR_STOP\r\n");
+      Device_Stop_Nonblocking( gp_galvo_mirror_device, GALVO_MIRROR_DEFAULT_TIMEOUT );\
+      
+    } else
+      return 1;
 		break;
 	default:
 		return 1;

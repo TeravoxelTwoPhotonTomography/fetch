@@ -14,6 +14,20 @@ Device               *gp_digitizer_device      = NULL;
 DeviceTask           *gp_digitizer_tasks[1]    = {NULL};
 u32                   g_digitizer_tasks_count  = 1;
 
+DECLARE_USER_MESSAGE( IDM_DIGITIZER,              "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
+DECLARE_USER_MESSAGE( IDM_DIGITIZER_DETACH,       "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
+DECLARE_USER_MESSAGE( IDM_DIGITIZER_ATTACH,       "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
+DECLARE_USER_MESSAGE( IDM_DIGITIZER_LIST_DEVICES, "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
+DECLARE_USER_MESSAGE( IDM_DIGITIZER_TASK_STOP,    "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
+DECLARE_USER_MESSAGE( IDM_DIGITIZER_TASK_RUN,     "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
+DECLARE_USER_MESSAGE( IDM_DIGITIZER_TASK_0,       "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
+
+// debug defines
+#define DIGITIZER_DEBUG_FAIL_WHEN_FULL
+#if 0
+#define DIGITIZER_DEBUG_SPIN_WHEN_FULL
+#endif
+
 unsigned int
 _digitizer_free_tasks(void)
 { u32 i = g_digitizer_tasks_count;
@@ -208,7 +222,13 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
     } while(ttl!=nelem);
     // Handle the full buffer
     { double dt;
+#ifdef DIGITIZER_DEBUG_FAIL_WHEN_FULL
       if( !Asynq_Push_Try( qdata,(void**) &buf )) //   Push buffer and reset total samples count
+#elif defined( DIGITIZER_DEBUG_SPIN_WHEN_FULL )
+      if( !Asynq_Push( qdata,(void**) &buf, FALSE ) )
+#else
+      error("Choose a push behavior for digitizer by compileing with the appropriate define.\r\n");
+#endif
       { warning("Digitizer output queue overflowed.\r\n\tAborting acquisition task.\r\n");
         goto Error;
       }
@@ -365,41 +385,32 @@ Digitizer_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		wmId    = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
 		// Parse the menu selections:
-		switch (wmId)
-		{
-    case IDM_DIGITIZER_DETACH:
-      { debug( "IDM_DIGITIZER_DETACH\r\n" );
-        Digitizer_Detach_Nonblocking();        
-      }
-			break;
-    case IDM_DIGITIZER_ATTACH:
-      { debug("IDM_DIGITIZER_ATTACH\r\n");        
-        Digitizer_Attach();        
-      }
-      break;
-    case IDM_DIGITIZER_LIST_DEVICES:
-      { debug("IDM_DIGITIZER_LIST_DEVICES\r\n");
-        niscope_debug_list_devices();        
-      }
-      break;
-    case IDM_DIGITIZER_TASK_0:
-      { debug("IDM_DIGITIZER_TASK_0\r\n");
-        Device_Arm_Nonblocking( gp_digitizer_device, gp_digitizer_tasks[0], DIGITIZER_DEFAULT_TIMEOUT );        
-      }
-      break;
-    case IDM_DIGITIZER_TASK_RUN:
-      { debug("IDM_DIGITIZER_RUN\r\n");      
-        Device_Run_Nonblocking(gp_digitizer_device);
-      }
-      break;
-    case IDM_DIGITIZER_TASK_STOP:
-      { debug("IDM_DIGITIZER_STOP\r\n");
-        Device_Stop_Nonblocking( gp_digitizer_device, DIGITIZER_DEFAULT_TIMEOUT );        
-      }
-      break;
-		default:
-			return 1;
-		}
+		if( wmId == IDM_DIGITIZER_DETACH )
+	  { debug( "IDM_DIGITIZER_DETACH\r\n" );
+      Digitizer_Detach_Nonblocking();
+      
+    } else if( wmId == IDM_DIGITIZER_ATTACH )
+    { debug("IDM_DIGITIZER_ATTACH\r\n");        
+      Digitizer_Attach();
+      
+    } else if( wmId == IDM_DIGITIZER_LIST_DEVICES )
+    { debug("IDM_DIGITIZER_LIST_DEVICES\r\n");
+      niscope_debug_list_devices();
+      
+    } else if( wmId == IDM_DIGITIZER_TASK_0 )
+    { debug("IDM_DIGITIZER_TASK_0\r\n");
+      Device_Arm_Nonblocking( gp_digitizer_device, gp_digitizer_tasks[0], DIGITIZER_DEFAULT_TIMEOUT );
+      
+    } else if( wmId == IDM_DIGITIZER_TASK_RUN )
+    { debug("IDM_DIGITIZER_RUN\r\n");      
+      Device_Run_Nonblocking(gp_digitizer_device);
+      
+    } else if( wmId == IDM_DIGITIZER_TASK_STOP )
+    { debug("IDM_DIGITIZER_STOP\r\n");
+      Device_Stop_Nonblocking( gp_digitizer_device, DIGITIZER_DEFAULT_TIMEOUT );
+      
+    } else
+      return 1;
 		break;
 	default:
 		return 1;

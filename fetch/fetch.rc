@@ -45,11 +45,12 @@ IDC_FETCH MENU
 BEGIN
     POPUP "&File"
     BEGIN
-        MENUITEM "E&xit",                       IDM_EXIT
+        MENUITEM "E&xit\t<Ctrl-Q>",             IDM_EXIT
     END
     POPUP "&Control"
     BEGIN
         MENUITEM "&Logger",                     IDM_CONTROL_LOGGER
+        MENUITEM "&Video\t<Enter>",             ID_COMMAND_VIDEODISPLAY
     END
     POPUP "&Help"
     BEGIN
@@ -68,6 +69,7 @@ BEGIN
     "/",            IDM_ABOUT,              ASCII,  ALT, NOINVERT
     "?",            IDM_ABOUT,              ASCII,  ALT, NOINVERT
     "Q",            IDM_EXIT,               VIRTKEY, CONTROL, NOINVERT
+    VK_RETURN,      ID_COMMAND_VIDEODISPLAY, VIRTKEY, NOINVERT
 END
 
 

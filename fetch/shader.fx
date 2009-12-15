@@ -7,13 +7,15 @@
 //--------------------------------------------------------------------------------------
 // Constant Buffer Variables
 //--------------------------------------------------------------------------------------
-Texture2D tx;
+Texture2D txR;
+Texture2D txG;
+Texture2D txB;
 
 SamplerState samLinear
 {
     Filter = MIN_MAG_MIP_POINT;
-    AddressU = Mirror;
-    AddressV = Mirror;
+    AddressU = Wrap;
+    AddressV = Wrap;
 };
 
 cbuffer cbChangesEveryFrame
@@ -46,8 +48,15 @@ PS_INPUT VS( VS_INPUT input )
 // Pixel Shader
 //--------------------------------------------------------------------------------------
 float4 PS( PS_INPUT input) : SV_Target
-{   float4 c = tx.Sample( samLinear, input.Tex );
-    return float4(c.x,c.x,c.x,1.0);
+{   float  s =  sin(3.14159/4),
+           c =  cos(3.14159/4);
+    float2 gtex = float2( input.Tex.y, input.Tex.x ),
+           btex = float2( s*input.Tex.x + c*input.Tex.y, s*input.Tex.x - c*input.Tex.y );
+    float r = txR.Sample( samLinear, input.Tex ).x,
+          g = txG.Sample( samLinear, gtex ).x,
+          b = txB.Sample( samLinear, btex ).x;
+
+    return float4(r,g,b,1.0);
 }
 
 

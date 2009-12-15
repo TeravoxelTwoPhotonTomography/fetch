@@ -5,6 +5,13 @@
 #include <stdlib.h>
 
 // -----------------
+// Windows utitities
+// -----------------
+
+#define DECLARE_USER_MESSAGE(name,guid) \
+     static const UINT name = ::RegisterWindowMessage( #name guid )
+
+// -----------------
 // fixed width types
 // -----------------
 typedef unsigned __int8    u8;

@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "asynq.h"
 
+#if 0
 #define DEBUG_ASYNQ_HANDLE_WAIT_FOR_RESULT
 #define DEBUG_ASYNQ_FLUSH_WAITING_CONSUMERS
-#if 0
 #define DEBUG_ASYNQ_UNREF
 
 #endif
@@ -383,19 +383,6 @@ Asynq_Peek_Timed( asynq *self, void *buf, DWORD timeout_ms )
 
 void Asynq_Flush_Waiting_Consumers( asynq *self )
 { SetEvent( self->notify_abort );
-//  Asynq_Lock(self);  
-//  while( self->waiting_consumers && maxiter--)
-//  { SetEvent( self->notify_data );
-//#ifdef DEBUG_ASYNQ_FLUSH_WAITING_CONSUMERS
-//    debug(" - Flush - consumers: %-4d remaining iterations: %d\r\n", 
-//                self->waiting_consumers,
-//                maxiter );
-//#endif
-//    Asynq_Unlock(self);
-//    Sleep(1/*ms*/);
-//    Asynq_Lock(self);
-//  }
-//  Asynq_Unlock(self);
 }
 
 //

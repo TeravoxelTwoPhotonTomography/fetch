@@ -69,14 +69,7 @@ DeviceTask* Galvo_Mirror_Create_Task_Continuous_Scan_Immediate_Trigger(void);
 //    testing utilities
 //
 
-#define IDM_GALVO_MIRROR               WM_APP+20
-#define IDM_GALVO_MIRROR_DETACH        IDM_GALVO_MIRROR+1
-#define IDM_GALVO_MIRROR_ATTACH        IDM_GALVO_MIRROR+2
-#define IDM_GALVO_MIRROR_LIST_DEVICES  IDM_GALVO_MIRROR+3
-#define IDM_GALVO_MIRROR_TASK_STOP     IDM_GALVO_MIRROR+4
-#define IDM_GALVO_MIRROR_TASK_RUN      IDM_GALVO_MIRROR+5
 
-#define IDM_GALVO_MIRROR_TASK_0        IDM_GALVO_MIRROR+10
 
 void             Galvo_Mirror_UI_Append_Menu  ( HMENU hmenu );
 void             Galvo_Mirror_UI_Insert_Menu  ( HMENU menu, UINT uPosition, UINT uFlags );

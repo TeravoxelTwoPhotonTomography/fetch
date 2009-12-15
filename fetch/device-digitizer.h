@@ -109,15 +109,6 @@ DeviceTask* Digitizer_Get_Default_Task(void);
 //    testing utilities
 //
 
-#define IDM_DIGITIZER               WM_APP+1
-#define IDM_DIGITIZER_DETACH        IDM_DIGITIZER+1
-#define IDM_DIGITIZER_ATTACH        IDM_DIGITIZER+2
-#define IDM_DIGITIZER_LIST_DEVICES  IDM_DIGITIZER+3
-#define IDM_DIGITIZER_TASK_STOP     IDM_DIGITIZER+4
-#define IDM_DIGITIZER_TASK_RUN      IDM_DIGITIZER+5
-
-#define IDM_DIGITIZER_TASK_0        IDM_DIGITIZER+10
-
 void             Digitizer_UI_Append_Menu  ( HMENU hmenu );
 void             Digitizer_UI_Insert_Menu  ( HMENU menu, UINT uPosition, UINT uFlags );
 LRESULT CALLBACK Digitizer_UI_Handler ( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);

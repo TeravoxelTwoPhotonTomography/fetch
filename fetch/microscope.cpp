@@ -5,6 +5,8 @@
 #include "device-galvo-mirror.h"
 #include "device-disk-stream.h"
 
+#include "window-video.h"
+
 TYPE_VECTOR_DEFINE( pf_microscope_attach_callback );
 TYPE_VECTOR_DEFINE( pf_microscope_detach_callback );
 
@@ -107,6 +109,7 @@ void Microscope_Application_Start(void)
   Guarded_Assert(
     Device_Run( Disk_Stream_Attach_And_Arm("digitizer-wfm",                // alias
                                            "wfm.raw", 'w',                 // filename
-                                            Digitizer_Get_Device(),1) ));  // source                                          
-
+                                            Digitizer_Get_Device(),1) ));  // source
+                                            
+  Video_Display_Connect_Device( Digitizer_Get_Device(), 0 );
 }

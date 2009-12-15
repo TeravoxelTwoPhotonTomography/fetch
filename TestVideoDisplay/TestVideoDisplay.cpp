@@ -41,7 +41,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	{ return FALSE;
 	}
 
-  if(!( g_hwndVideo = Video_Window_Attach(hInstance,nCmdShow) ))
+  if(!( g_hwndVideo = Video_Display_Attach(hInstance,nCmdShow) ))
     return 0;
 
 	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_TESTVIDEODISPLAY));
@@ -54,11 +54,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
         DispatchMessage( &msg );
       }     
     } else
-    { Video_Window_Render_One_Frame();
+    { Video_Display_Render_One_Frame();
     }
   }
   
-  Video_Window_Release();
+  Video_Display_Release();
   
 	return (int) msg.wParam;
 }
@@ -176,12 +176,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (wmId)
 		{
 		case ID_COMMAND_VIDEODISPLAY:
-      { if( !IsWindowVisible(g_hwndVideo) || IsIconic(g_hwndVideo) )
-          ShowWindow(   g_hwndVideo, SW_SHOWNORMAL );
-        else
-          ShowWindow(   g_hwndVideo, SW_HIDE );
-        UpdateWindow( g_hwndVideo );
-      }
+      Video_Display_GUI_On_ID_COMMAND_VIDEODISPLAY();
       break;
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);

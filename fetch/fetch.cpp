@@ -7,6 +7,7 @@
 #include "microscope.h"
 #include "device-digitizer.h"
 #include "device-galvo-mirror.h"
+#include "window-video.h"
 
 #define MAX_LOADSTRING 100
 
@@ -16,6 +17,7 @@ TCHAR szTitle[MAX_LOADSTRING];		  			// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 
 HWND g_hwndLogger = NULL;                 // Logger window
+HWND g_hwndVideo  = NULL;                 // Video  window
 
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -27,7 +29,10 @@ void ApplicationStart(HINSTANCE hInstance)
 {
   Logger_RegisterClass(hInstance);
   g_hwndLogger = Logger_InitInstance( hInstance, SW_HIDE );
+  g_hwndVideo  = Video_Display_Attach( hInstance, SW_HIDE );
   
+  Register_New_Shutdown_Callback( Video_Display_Release );
+
   Microscope_Application_Start(); // Registers devices and
                                   // Puts microscope into default holding state
 
@@ -41,7 +46,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
-	MSG msg;
+	MSG msg = {0};
 	HACCEL hAccelTable;
 
   // Setup logging
@@ -56,23 +61,24 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
 	// Perform application initialization:
 	if (!InitInstance (hInstance, nCmdShow))
-	{
-		return FALSE;
+	{ return FALSE;
 	}
 
   ApplicationStart(hInstance);
 
 	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_FETCH));
 
-	// Main message loop:
-	while (GetMessage(&msg, NULL, 0, 0))
-	{
-		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-	}
+  // Main message loop    
+  while( WM_QUIT != msg.message )
+  { if( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) )
+    { if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+      { TranslateMessage( &msg );
+        DispatchMessage( &msg );
+      }     
+    } else
+    { Video_Display_Render_One_Frame();
+    }
+  }	
   
   return Shutdown_Soft() | (unsigned int) msg.wParam;
 }
@@ -98,17 +104,17 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 
 	wcex.cbSize = sizeof(WNDCLASSEX);
 
-	wcex.style			= CS_HREDRAW | CS_VREDRAW;
-	wcex.lpfnWndProc	= WndProc;
-	wcex.cbClsExtra		= 0;
-	wcex.cbWndExtra		= 0;
-	wcex.hInstance		= hInstance;
-	wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_FETCH));
-	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
-	wcex.lpszMenuName	= MAKEINTRESOURCE(IDC_FETCH);
-	wcex.lpszClassName	= szWindowClass;
-	wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+	wcex.style			           = CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc	         = WndProc;
+	wcex.cbClsExtra		         = 0;
+	wcex.cbWndExtra		         = 0;
+	wcex.hInstance		         = hInstance;
+	wcex.hIcon		             = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_FETCH));
+	wcex.hCursor		           = LoadCursor(NULL, IDC_ARROW);
+	wcex.hbrBackground	       = (HBRUSH)(COLOR_WINDOW+1);
+	wcex.lpszMenuName	         = MAKEINTRESOURCE(IDC_FETCH);
+	wcex.lpszClassName	       = szWindowClass;
+	wcex.hIconSm	            = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
 	return RegisterClassEx(&wcex);
 }
@@ -206,6 +212,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
 			break;
+		case ID_COMMAND_VIDEODISPLAY:
+      Video_Display_GUI_On_ID_COMMAND_VIDEODISPLAY();
+      break;
     case IDM_CONTROL_LOGGER:
       { if( !IsWindowVisible(g_hwndLogger) || IsIconic(g_hwndLogger) )
           ShowWindow(   g_hwndLogger, SW_SHOWNORMAL );

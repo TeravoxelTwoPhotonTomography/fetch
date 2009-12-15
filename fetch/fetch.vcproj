@@ -136,6 +136,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="d3d10.lib d3dx10d.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -216,6 +217,10 @@
 			</File>
 			<File
 				RelativePath=".\ring-fifo.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\shader.fx"
 				>
 			</File>
 			<File

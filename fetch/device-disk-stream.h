@@ -41,7 +41,7 @@ unsigned int Disk_Stream_Attach                  (const char* alias,      // ope
 //
 // Utilities
 //                                                  
-unsigned int Disk_Stream_Connect_To_Input        (const char* alias, Device *source_device, int channel);
+unsigned int Disk_Stream_Connect                 (const char* alias, Device *source_device, int channel);
 Device*      Disk_Stream_Get_Device              (const char* alias);
 
 Device*      Disk_Stream_Attach_And_Arm          (const char *alias,

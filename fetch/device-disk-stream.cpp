@@ -308,7 +308,7 @@ Disk_Stream_Attach (const char* alias,     // look-up name for the stream
 // ---------
 
 unsigned int
-Disk_Stream_Connect_To_Input (const char* alias, Device *source_device, int channel)
+Disk_Stream_Connect (const char* alias, Device *source_device, int channel)
 { Disk_Stream_Index_Item *item;  
   Guarded_Assert(item = _disk_stream_index_lookup(alias));
   DeviceTask_Connect( item->device->task, 0, source_device->task, channel );
@@ -329,7 +329,7 @@ Device* Disk_Stream_Attach_And_Arm (const char *alias,
   return_val_if_fail(  Disk_Stream_Attach(alias,filename,mode)            , NULL);
   return_val_if_fail(  stream = Disk_Stream_Get_Device( alias )           , NULL);
   Guarded_Assert(      Device_Arm( stream, stream->task, DISK_STREAM_DEFAULT_TIMEOUT ));
-  return_val_if_fail(  Disk_Stream_Connect_To_Input(alias,src,src_channel), NULL);
+  return_val_if_fail(  Disk_Stream_Connect(alias,src,src_channel), NULL);
   return stream;
 }
 
