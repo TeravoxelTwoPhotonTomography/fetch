@@ -208,6 +208,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\frame-interface-digitizer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\frame.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\logger.cpp"
 				>
 			</File>
@@ -286,15 +294,19 @@
 				>
 			</File>
 			<File
-				RelativePath=".\device-video-display.h"
-				>
-			</File>
-			<File
 				RelativePath=".\device.h"
 				>
 			</File>
 			<File
 				RelativePath=".\fetch.h"
+				>
+			</File>
+			<File
+				RelativePath=".\frame-interface-digitizer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\frame.h"
 				>
 			</File>
 			<File

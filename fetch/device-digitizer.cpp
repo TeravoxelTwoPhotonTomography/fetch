@@ -3,6 +3,8 @@
 #include "microscope.h"
 #include "device-digitizer.h"
 #include "device.h"
+#include "frame.h"
+#include "frame-interface-digitizer.h"
 
 #define CheckWarn( expression )  (niscope_chk( g_digitizer.vi, expression, #expression, &warning ))
 #define CheckPanic( expression ) (niscope_chk( g_digitizer.vi, expression, #expression, &error   ))
@@ -165,13 +167,14 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Cfg( Device *d, vector_PAS
     ViInt32 record_length;
     CheckPanic( niScope_ActualNumWfms(vi, cfg.acquisition_channels, &nwfm ) );
     CheckPanic( niScope_ActualRecordLength(vi, &record_length) );
-    { size_t nbuf[2] = {32,32},
-               sz[2] = {nwfm*record_length*sizeof(TPixel),
-                        nwfm*sizeof(struct niScope_wfmInfo)};
+    { size_t nbuf[3] = {32,32,32},
+               sz[3] = {nwfm*record_length*sizeof(TPixel),      // raw pixels
+                        nwfm*sizeof(struct niScope_wfmInfo),    // niScope_wfmInfo from each fetch
+                        sizeof( Frame_Descriptor )};            // description of each frame
       // DeviceTask_Free_Outputs( d->task );  // free channels that already exist (FIXME: thrashing)
       // Channels are reference counted so the memory may not be freed till the other side Unrefs.
       if( d->task->out == NULL ) // channels may already be alloced (occurs on a detach->attach cycle)
-        DeviceTask_Alloc_Outputs( d->task, 2, nbuf, sz );
+        DeviceTask_Alloc_Outputs( d->task, 3, nbuf, sz );
     }
   }
   debug("Digitizer configured for Stream_All_Channels_Immediate_Trigger\r\n");
@@ -185,19 +188,31 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
   ViSession   vi = dig->vi;
   ViChar   *chan = dig->config.acquisition_channels;
   asynq   *qdata = out->contents[0],
-          *qwfm  = out->contents[1];
-  ViInt32  nelem,// = (ViInt32)qdata->q->buffer_size_bytes / sizeof(ViReal64) / nwfm, // number of samples per channel
+          *qwfm  = out->contents[1],
+          *qdesc = out->contents[2];
+  ViInt32  nelem, // = (ViInt32)qdata->q->buffer_size_bytes / sizeof(ViReal64) / nwfm, // number of samples per channel
            nwfm,
            ttl = 0,
            old_state;
   TicTocTimer t;
-  TPixel                 *buf = (TPixel*)        Asynq_Token_Buffer_Alloc(qdata);
-  struct niScope_wfmInfo *wfm = (niScope_wfmInfo*) Asynq_Token_Buffer_Alloc(qwfm);
+  TPixel                 *buf  = (TPixel*)           Asynq_Token_Buffer_Alloc(qdata);
+  struct niScope_wfmInfo *wfm  = (niScope_wfmInfo*)  Asynq_Token_Buffer_Alloc(qwfm);
+  Frame_Descriptor       *desc = (Frame_Descriptor*) Asynq_Token_Buffer_Alloc(qdesc);
   unsigned int ret = 1;
+  Digitizer_Frame_Metadata meta;
   
   CheckPanic( niScope_ActualNumWfms(vi, chan, &nwfm ) );
   CheckPanic( niScope_ActualRecordLength(vi, &nelem) );
-
+  
+  // Fill in frame description
+  {
+    meta.width  = 1024;
+    meta.height = (u16)nelem / meta.width;
+    meta.nchan  = (u8) nwfm;
+    meta.Bpp    = 2;
+    Frame_Descriptor_Change( desc, FRAME_INTEFACE_DIGITIZER__INTERFACE_ID, &meta, sizeof(meta) );
+  }
+  
   ViErrChk   (niScope_InitiateAcquisition (vi));
   ViErrChk   (niScope_GetAttributeViInt32 (vi, NULL,   // TODO: reset to default when done
                                            NISCOPE_ATTR_FETCH_RELATIVE_TO,         //?TODO: push/pop state for niscope?
@@ -223,15 +238,18 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
     // Handle the full buffer
     { double dt;
 #ifdef DIGITIZER_DEBUG_FAIL_WHEN_FULL
-      if( !Asynq_Push_Try( qdata,(void**) &buf )) //   Push buffer and reset total samples count
+      if(  !Asynq_Push_Try( qdata,(void**) &buf )
+        || !Asynq_Push    ( qdesc,(void**) &desc,0 )) //   Push buffer and reset total samples count
 #elif defined( DIGITIZER_DEBUG_SPIN_WHEN_FULL )
-      if( !Asynq_Push( qdata,(void**) &buf, FALSE ) )
+      if(  !Asynq_Push( qdata,(void**) &buf )
+        || !Asynq_Push( qdesc,(void**) &desc )) //   Push buffer and reset total samples count
 #else
       error("Choose a push behavior for digitizer by compileing with the appropriate define.\r\n");
 #endif
       { warning("Digitizer output queue overflowed.\r\n\tAborting acquisition task.\r\n");
         goto Error;
       }
+      desc->is_change = 0; // Mark future frame descriptors as unchanged from the last.
       ttl = 0;
       dt = toc(&t);
       debug("FPS: %3.1f Frame time: %5.4f MS/s: %3.1f  MB/s: %3.1f Q: %3d Digitizer\r\n",

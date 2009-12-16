@@ -238,11 +238,22 @@ LRESULT CALLBACK Logger_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
           ShowWindow( hWnd, FALSE );
         }
 		    break;
+		  case IDM_EXIT:
+			  DestroyWindow(hWnd);
+			  break;
       case IDM_LOG_CLEAR:
         { debug("IDM_LOG_CLEAR\r\n");
           ZeroMemory( g_Logger_Buffer.contents, g_Logger_Buffer.count );
           g_Logger_Buffer.count = 0;
           Logger_Update();
+        }
+        break;
+      case IDM_CONTROL_LOGGER:
+        { if( !IsWindowVisible(hWnd) || IsIconic(hWnd) )
+            ShowWindow(   hWnd, SW_SHOWNORMAL );
+          else
+            ShowWindow(   hWnd, SW_HIDE );
+          UpdateWindow( hWnd );
         }
         break;
       case IDM_LOG_SAVE:

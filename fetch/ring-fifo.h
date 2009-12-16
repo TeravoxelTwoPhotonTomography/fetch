@@ -44,6 +44,7 @@ void        RingFIFO_Free    ( RingFIFO *self );
 
 inline unsigned int RingFIFO_Pop       ( RingFIFO *self, void **pbuf);
 inline unsigned int RingFIFO_Peek      ( RingFIFO *self, void  *buf);
+inline unsigned int RingFIFO_Peek_At   ( RingFIFO *self, void  *buf,  size_t index);
        unsigned int RingFIFO_Push      ( RingFIFO *self, void **pbuf, int expand_on_full);
 inline unsigned int RingFIFO_Push_Try  ( RingFIFO *self, void **pbuf);
 

@@ -137,6 +137,19 @@ RingFIFO_Peek( RingFIFO *self, void *buf)
 
 extern inline 
 unsigned int
+RingFIFO_Peek_At( RingFIFO *self, void *buf, size_t index)
+{ ringfifo_debug("o head: %-5d tail: %-5d size: %-5d\r\n",self->head, self->tail, self->head - self->tail);
+  return_val_if( RingFIFO_Is_Empty(self), 1);
+  { vector_PVOID *r = self->ring;
+    memcpy( buf, 
+            r->contents[MOD_UNSIGNED_POW2(index, r->nelem)],
+            self->buffer_size_bytes );
+  }
+  return 0;
+}
+
+extern inline 
+unsigned int
 RingFIFO_Push_Try( RingFIFO *self, void **pbuf)
 { //ringfifo_debug("+ head: %-5d tail: %-5d size: %-5d TRY\r\n",self->head, self->tail, self->head - self->tail);
   if( RingFIFO_Is_Full(self) )

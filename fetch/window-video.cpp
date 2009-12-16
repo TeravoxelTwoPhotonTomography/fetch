@@ -4,6 +4,7 @@
 #include "window-video.h"
 #include <stdlib.h> // for rand - for testing - remove when done
 #include "asynq.h"
+#include "frame.h"
 
 #define VIDEO_WINDOW_TEXTURE_RESOURCE_NAME "tx"
 #define VIDEO_WINDOW_PATH_TO_SHADER        "shader.fx"
@@ -31,6 +32,7 @@ struct t_video_display
   ID3D10EffectShaderResourceVariable *active_texture_shader_resource[3];
   
   asynq                              *frame_source;
+  asynq                              *frame_desc_source;
 };
 
 #define VIDEO_DISPLAY_EMPTY { NULL,\
@@ -46,6 +48,7 @@ struct t_video_display
                               {NULL, NULL, NULL},\
                               {NULL, NULL, NULL},\
                               {NULL, NULL, NULL},\
+                              NULL,\
                               NULL}
 
 struct t_video_display g_video = VIDEO_DISPLAY_EMPTY;
@@ -180,6 +183,22 @@ _copy_data_to_texture2d( ID3D10Texture2D *dst, void* src, size_t nbytes )
   dst->Unmap( D3D10CalcSubresource(0, 0, 1) );        
 }
 
+inline void 
+_copy_data_to_texture2d_ex( ID3D10Texture2D *dst, void* src, Frame_Descriptor *desc, int ichan )
+{ D3D10_MAPPED_TEXTURE2D mappedTex;
+  Frame_Interface *f = Frame_Descriptor_Get_Interface( desc );
+  
+  Guarded_Assert( !FAILED( 
+      dst->Map( D3D10CalcSubresource(0, 0, 1),
+                D3D10_MAP_WRITE_DISCARD,
+                0,                               // wait for the gpu 
+                &mappedTex ) ));  
+  memcpy(mappedTex.pData, 
+         f->get_channel(desc,src,ichan), 
+         f->get_nbytes(desc));
+  dst->Unmap( D3D10CalcSubresource(0, 0, 1) );        
+}
+
 inline void
 _setup_viewport(UINT width,UINT height)
 { D3D10_VIEWPORT vp;
@@ -258,10 +277,12 @@ _load_shader(const char* path, const char* technique)
     error( "Could not compile the FX file.  Perhaps it could not be located.");   
 
   // Obtain the technique ang get references to variables
-  g_video.technique                         = g_video.effect->GetTechniqueByName( technique );  
+  g_video.technique                         = g_video.effect->GetTechniqueByName( technique );
+  if( g_video.effect->GetVariableByName( "tx" )->IsValid() )
+    debug("huh\n");
   g_video.active_texture_shader_resource[0] = g_video.effect->GetVariableByName( "txR" )->AsShaderResource();
   g_video.active_texture_shader_resource[1] = g_video.effect->GetVariableByName( "txG" )->AsShaderResource();
-  g_video.active_texture_shader_resource[2] = g_video.effect->GetVariableByName( "txB" )->AsShaderResource();
+  g_video.active_texture_shader_resource[2] = g_video.effect->GetVariableByName( "txB" )->AsShaderResource();  
   Guarded_Assert( g_video.technique );
   Guarded_Assert( g_video.active_texture_shader_resource[0] );
   Guarded_Assert( g_video.active_texture_shader_resource[1] );
@@ -304,7 +325,7 @@ _create_texture_i16( ID3D10Texture2D **pptex, UINT width, UINT height )
 
 void
 _refresh_active_texture_shader_resource_view(void)
-// Create the resource view and bind it to the shader varable
+// Create the resource view for textures and bind it to the shader varable
 { D3D10_SHADER_RESOURCE_VIEW_DESC srvDesc;
   D3D10_RESOURCE_DIMENSION type;
   D3D10_TEXTURE2D_DESC desc;
@@ -328,7 +349,8 @@ _refresh_active_texture_shader_resource_view(void)
       g_video.device->CreateShaderResourceView( g_video.active_texture[i], 
                                                &srvDesc, 
                                                &g_video.texture_resource_view[i] ) ));
-    g_video.active_texture_shader_resource[i]->SetResource( g_video.texture_resource_view[i] );
+    Guarded_Assert(SUCCEEDED(
+      g_video.active_texture_shader_resource[i]->SetResource( g_video.texture_resource_view[i] ) ));
   }
 }
       
@@ -478,7 +500,10 @@ LRESULT CALLBACK Video_Display_WndProc( HWND hWnd, UINT message, WPARAM wParam, 
 
 void Video_Display_Render_One_Frame()
 {   TicTocTimer clock = tic();
-    static u8* src = NULL;
+    static u8* src = NULL; 
+    static Frame_Descriptor *desc = NULL, *tmp = NULL;
+    static asynq *qs[2]   = {g_video.frame_source, g_video.frame_desc_source};
+    static void  *bufs[2];
     size_t src_nbytes = 1024*1024*sizeof(u16);
     static float wait_time_ms = 1000.0/10.0,
                 efficiency_accumulator = 0.0, 
@@ -498,12 +523,23 @@ void Video_Display_Render_One_Frame()
     if( g_video.frame_source )
     { // create the source buffer
       if(!src)
-        src = (u8*) Asynq_Token_Buffer_Alloc( g_video.frame_source );
+      { src  = (u8*) Asynq_Token_Buffer_Alloc( qs[0] );
+        desc = (Frame_Descriptor*) Asynq_Token_Buffer_Alloc( qs[1] );
+        tmp  = (Frame_Descriptor*) Asynq_Token_Buffer_Alloc( qs[1] );
+        bufs[0] = src;
+        bufs[1] = tmp;
+      }
       
-      if( Asynq_Peek_Timed( g_video.frame_source, src, wait_time_ms ) )
-      { _copy_data_to_texture2d( g_video.active_texture[0], src,              src_nbytes );
-        _copy_data_to_texture2d( g_video.active_texture[1], src+  src_nbytes, src_nbytes );
-        _copy_data_to_texture2d( g_video.active_texture[2], src+2*src_nbytes, src_nbytes );
+      //if( Asynq_Peek_Timed( g_video.frame_source, src, (DWORD) wait_time_ms ) ){}
+      if( Asynq_Slaved_Peek_Timed( qs, 2, 0, bufs, (DWORD) wait_time_ms ) )
+      { int i=3;
+        if( tmp->is_change == 1 )
+        { memcpy(desc,tmp,sizeof(Frame_Descriptor));
+        }
+        while(i--)
+          _copy_data_to_texture2d_ex( g_video.active_texture[i], src, desc, i );
+        //while(i--)
+        //  _copy_data_to_texture2d( g_video.active_texture[i], src + i * src_nbytes, src_nbytes );
         efficiency_accumulator++;
         efficiency_hit = 1.0;
       }
@@ -513,12 +549,11 @@ void Video_Display_Render_One_Frame()
     // Frame rate govenor
     if( efficiency_hit )
     { float mean = efficiency_accumulator/efficiency_count;
-      wait_time_ms += -50.0 * (mean - 0.5);
-      wait_time_ms = MIN( wait_time_ms, 1000.0 );
-      wait_time_ms = MAX( wait_time_ms, 0.0 );
+      wait_time_ms += -50.0f * (mean - 0.5f);
+      wait_time_ms = MIN( wait_time_ms, 1000.0f );
+      wait_time_ms = MAX( wait_time_ms, 0.0f );
     }
     
-
     //
     // Clear the back buffer
     //
@@ -554,17 +589,23 @@ void Video_Display_Render_One_Frame()
 //--------------------------------------------------------------------------------------
 // Connect frame source and reconfigure textures
 //--------------------------------------------------------------------------------------
-void Video_Display_Connect_Device( Device *source, int channel )
+void Video_Display_Connect_Device( Device *source, size_t data_channel, size_t desc_channel )
 { asynq *q = NULL;
   DeviceTask *task = source->task;
-  Guarded_Assert( task );                       // source task must exist
-  Guarded_Assert( task->out );                  // source channel must exist
-  Guarded_Assert( task->out->nelem > channel ); // channel index must be valid
+  Guarded_Assert( task );                            // source task must exist
+  Guarded_Assert( task->out );                       // source channel must exist
+  Guarded_Assert( task->out->nelem > data_channel ); // channel index must be valid
+  Guarded_Assert( task->out->nelem > desc_channel ); // channel index must be valid
 
-  q = Asynq_Ref( task->out->contents[channel] );// bind the queue  
-  if( g_video.frame_source )
+  q = Asynq_Ref( task->out->contents[data_channel] );// bind the queue  
+  if( g_video.frame_source )                         // if there's an old queue, unref it first
     Asynq_Unref( g_video.frame_source );  
   g_video.frame_source = q;
+  
+  q = Asynq_Ref( task->out->contents[desc_channel] );// bind the queue  
+  if( g_video.frame_desc_source )                    // if there's an old queue, unref it first
+    Asynq_Unref( g_video.frame_desc_source );  
+  g_video.frame_desc_source = q;
   
   // TODO: reset texture resources for data format  
 }
