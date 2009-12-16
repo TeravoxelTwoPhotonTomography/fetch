@@ -279,7 +279,7 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
   debug("Task done: normal exit\r\n");
   ret = 0; //success
 Error:
-  free( buf );
+  free( frm );
   free( wfm );
   CheckPanic( niScope_Abort(vi) );
   return ret;
