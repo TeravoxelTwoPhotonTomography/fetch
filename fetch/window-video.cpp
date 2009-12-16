@@ -32,7 +32,6 @@ struct t_video_display
   ID3D10EffectShaderResourceVariable *active_texture_shader_resource[3];
   
   asynq                              *frame_source;
-  asynq                              *frame_desc_source;
 };
 
 #define VIDEO_DISPLAY_EMPTY { NULL,\
@@ -48,7 +47,6 @@ struct t_video_display
                               {NULL, NULL, NULL},\
                               {NULL, NULL, NULL},\
                               {NULL, NULL, NULL},\
-                              NULL,\
                               NULL}
 
 struct t_video_display g_video = VIDEO_DISPLAY_EMPTY;
@@ -500,46 +498,34 @@ LRESULT CALLBACK Video_Display_WndProc( HWND hWnd, UINT message, WPARAM wParam, 
 
 void Video_Display_Render_One_Frame()
 {   TicTocTimer clock = tic();
-    static u8* src = NULL; 
-    static Frame_Descriptor *desc = NULL, *tmp = NULL;
-    static asynq *qs[2]   = {g_video.frame_source, g_video.frame_desc_source};
-    static void  *bufs[2];
-    size_t src_nbytes = 1024*1024*sizeof(u16);
-    static float wait_time_ms = 1000.0/10.0,
+    static Frame                  *frm = NULL;
+    static Frame_Descriptor       last;
+    static float          wait_time_ms = 1000.0/10.0,
                 efficiency_accumulator = 0.0, 
-                efficiency_count = 0.0,
-                efficiency_hit = 0.0;
- 
-      
-    //{ int i,j;
-    //  int low = 1024 * 0.1,
-    //     high = 1024 * 0.9;
-    //  for(i=low;i<high;i++)
-    //    for(j=low;j<high;j++)
-    //      src[j + 1024 * i] = (u8) j + 1024 * i + rand()/256;
-    //}
-    //_copy_data_to_texture2d( g_video.active_texture, src, src_nbytes );
+                      efficiency_count = 0.0,
+                        efficiency_hit = 0.0;
+    asynq               *q = g_video.frame_source;
+    void              *src = NULL; 
+    Frame_Descriptor *desc = NULL; 
     
-    if( g_video.frame_source )
+    if( q )
     { // create the source buffer
-      if(!src)
-      { src  = (u8*) Asynq_Token_Buffer_Alloc( qs[0] );
-        desc = (Frame_Descriptor*) Asynq_Token_Buffer_Alloc( qs[1] );
-        tmp  = (Frame_Descriptor*) Asynq_Token_Buffer_Alloc( qs[1] );
-        bufs[0] = src;
-        bufs[1] = tmp;
+      if(!frm)
+      { frm  = (Frame*) Asynq_Token_Buffer_Alloc( q );
+        Frame_From_Bytes( frm, &src, &desc );
       }
       
-      //if( Asynq_Peek_Timed( g_video.frame_source, src, (DWORD) wait_time_ms ) ){}
-      if( Asynq_Slaved_Peek_Timed( qs, 2, 0, bufs, (DWORD) wait_time_ms ) )
+      if( Asynq_Peek_Timed(q, frm, (DWORD) wait_time_ms ) )
       { int i=3;
-        if( tmp->is_change == 1 )
-        { memcpy(desc,tmp,sizeof(Frame_Descriptor));
+        Frame_From_Bytes( frm, &src, &desc );
+        if( desc->is_change )
+        { Guarded_Assert( desc->is_change == 1 );
+          memcpy(&last,desc,sizeof(Frame_Descriptor));
+          //TODO: Handle change in dimensions/channels/data type/etc...
         }
         while(i--)
-          _copy_data_to_texture2d_ex( g_video.active_texture[i], src, desc, i );
-        //while(i--)
-        //  _copy_data_to_texture2d( g_video.active_texture[i], src + i * src_nbytes, src_nbytes );
+          _copy_data_to_texture2d_ex( g_video.active_texture[i], src, &last, i );
+          
         efficiency_accumulator++;
         efficiency_hit = 1.0;
       }
@@ -582,30 +568,24 @@ void Video_Display_Render_One_Frame()
     //
     g_video.swap_chain->Present( 0, 0 );
     //
-    //double dt = toc(&clock);
-    //debug("FPS: %5.1f Efficiency: %g\r\n",1.0/dt, efficiency_accumulator/efficiency_count);
+    double dt = toc(&clock);
+    debug("FPS: %5.1f Efficiency: %g\r\n",1.0/dt, efficiency_accumulator/efficiency_count);
 }
 
 //--------------------------------------------------------------------------------------
 // Connect frame source and reconfigure textures
 //--------------------------------------------------------------------------------------
-void Video_Display_Connect_Device( Device *source, size_t data_channel, size_t desc_channel )
+void Video_Display_Connect_Device( Device *source, size_t data_channel )
 { asynq *q = NULL;
   DeviceTask *task = source->task;
   Guarded_Assert( task );                            // source task must exist
   Guarded_Assert( task->out );                       // source channel must exist
   Guarded_Assert( task->out->nelem > data_channel ); // channel index must be valid
-  Guarded_Assert( task->out->nelem > desc_channel ); // channel index must be valid
 
   q = Asynq_Ref( task->out->contents[data_channel] );// bind the queue  
   if( g_video.frame_source )                         // if there's an old queue, unref it first
     Asynq_Unref( g_video.frame_source );  
   g_video.frame_source = q;
-  
-  q = Asynq_Ref( task->out->contents[desc_channel] );// bind the queue  
-  if( g_video.frame_desc_source )                    // if there's an old queue, unref it first
-    Asynq_Unref( g_video.frame_desc_source );  
-  g_video.frame_desc_source = q;
   
   // TODO: reset texture resources for data format  
 }

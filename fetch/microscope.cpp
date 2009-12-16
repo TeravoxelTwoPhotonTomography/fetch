@@ -111,5 +111,5 @@ void Microscope_Application_Start(void)
                                            "wfm.raw", 'w',                 // filename
                                             Digitizer_Get_Device(),1) ));  // source
                                             
-  Video_Display_Connect_Device( Digitizer_Get_Device(), 0, 2 );
+  Video_Display_Connect_Device( Digitizer_Get_Device(), 0 );
 }

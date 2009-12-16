@@ -35,23 +35,7 @@
  The one to use depends on the situation.  Flushing all waiting consumers is
  really designed to be performed on shutdown after waiting for threads to
  terminate (with a timeout).  The flush will ensure that consumer threads can
- unblock and exit normally, giving them a chance to release resources.       
-
- *_Slaved_* functions
- ....................
- 
- These functions are for accessing multiple queue's in lock-step.  This is 
- useful when different types of data are pushed on to different queue's at
- the same source.
- 
- These functions operate by first locking and waiting on the master queue
- (to have data for example).  Once the master is no longer waiting, it is 
- assumed the other queues have been updated.  The push/pop/peek is performed
- using the same index as the master queue (that is, they use the master's head
- and tail index).
- 
- This seems a bit unsafe since the slaves might not have been updated.
- The choice of master may be important here.
+ unblock and exit normally, giving them a chance to release resources.
 
  Notes to self:
  ..............
@@ -92,10 +76,6 @@ unsigned int Asynq_Pop_Timed    ( asynq *self, void **pbuf, DWORD timeout_ms );
 unsigned int Asynq_Peek       ( asynq *self, void  *buf );
 unsigned int Asynq_Peek_Try   ( asynq *self, void  *buf );
 unsigned int Asynq_Peek_Timed ( asynq *self, void  *buf, DWORD timeout_ms );
-
-unsigned int Asynq_Slaved_Peek       ( asynq **qs, unsigned int nelem, unsigned int imaster, void **bufs );
-unsigned int Asynq_Slaved_Peek_Timed ( asynq **qs, unsigned int nelem, unsigned int imaster, void **bufs, DWORD timeout_ms );
-
 
        void  Asynq_Flush_Waiting_Consumers( asynq *self );
 

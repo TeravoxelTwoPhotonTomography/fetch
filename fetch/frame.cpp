@@ -2,6 +2,7 @@
 #include "frame.h"
 
 #define DEBUG_FRAME_DESCRIPTOR_TO_FILE
+#define DEBUG_FRAME_DESCRIPTOR_GET_INTERFACE
 
 //----------------------------------------------------------------------------
 // PROTOCOL TABLE
@@ -21,10 +22,12 @@ Frame_Interface g_interfaces[] = {
 //----------------------------------------------------------------------------
 // Frame_Descriptor_Get_Interface
 //----------------------------------------------------------------------------
-Frame_Interface*
+extern inline Frame_Interface*
 Frame_Descriptor_Get_Interface( Frame_Descriptor *self )
 { int n = sizeof(g_interfaces)/sizeof(Frame_Interface);
+#ifdef DEBUG_FRAME_DESCRIPTOR_GET_INTERFACE
   Guarded_Assert( self->interface_id < n );
+#endif  
   
   return g_interfaces + self->interface_id;
 }
@@ -87,3 +90,47 @@ err:
   Guarded_Assert( feof(fp) );  
   return 0; // failed to read (eof)   
 }
+
+//----------------------------------------------------------------------------
+// Frame_Get_Size_Bytes
+//----------------------------------------------------------------------------
+size_t
+Frame_Get_Size_Bytes ( Frame_Descriptor *desc )
+{ Frame_Interface *face = Frame_Descriptor_Get_Interface(desc);
+  size_t nchan  = face->get_nchannels(desc),
+         nbytes = face->get_nbytes(desc);
+  return nchan*nbytes + sizeof(Frame_Descriptor);
+}
+
+//----------------------------------------------------------------------------
+// Frame_From_Bytes
+//----------------------------------------------------------------------------
+void
+Frame_From_Bytes( void *bytes, void **data, Frame_Descriptor **desc )
+{ *desc = (Frame_Descriptor*) bytes;
+  *data = (void*) ((u8*)bytes + sizeof( Frame_Descriptor ));      // MSVS makes you do all this casting - sorry
+}
+
+//----------------------------------------------------------------------------
+// Frame_Alloc
+//----------------------------------------------------------------------------
+Frame*
+Frame_Alloc( Frame_Descriptor *desc )
+{ size_t nbytes = Frame_Get_Size_Bytes( desc );
+  Frame_Descriptor *target;
+  void *data, 
+       *frame = Guarded_Malloc( nbytes, "Frame_Alloc" );  
+  Frame_From_Bytes( frame, &data, &target);
+  memcpy(target, desc, sizeof(Frame_Descriptor) );
+  return frame;
+}
+
+//----------------------------------------------------------------------------
+// Frame_Free
+//----------------------------------------------------------------------------
+void
+Frame_Free( Frame* frame )
+{ if( frame ) free(frame);
+}
+
+

@@ -15,6 +15,8 @@
 
 #define FRAME_DESCRIPTOR_MAX_METADATA_BYTES 256
 
+typedef void Frame;
+
 typedef struct _t_frame_descriptor
 { u8                       is_change;        // Used to signal the frame format is a change.  When false the rest of the structure should be ignored.
   u8                       interface_id;  
@@ -35,10 +37,30 @@ typedef struct _t_frame_interface
 } Frame_Interface;
 
 //
-// Functions
+// Frame Descriptor
 //
 
-Frame_Interface  *Frame_Descriptor_Get_Interface         ( Frame_Descriptor *self );
-void              Frame_Descriptor_Change                ( Frame_Descriptor *self, u8 interface_id, void *metadata, size_t nbytes );
-void              Frame_Descriptor_To_File               ( FILE *fp, Frame_Descriptor *self );
-u8                Frame_Descriptor_From_File_Read_Next   ( FILE *fp, Frame_Descriptor *self, size_t *repeat_count );
+inline Frame_Interface  *Frame_Descriptor_Get_Interface ( Frame_Descriptor *self );
+       void              Frame_Descriptor_Change        ( Frame_Descriptor *self, u8 interface_id, void *metadata, size_t nbytes );
+
+// TODO: Finish file i/o interface
+void              Frame_Descriptor_To_File              ( FILE *fp, Frame_Descriptor *self );
+u8                Frame_Descriptor_From_File_Read_Next  ( FILE *fp, Frame_Descriptor *self, size_t *repeat_count );
+
+//
+// Frame
+//
+// To create a frame:
+//
+// 1. allocate a buffer of size Frame_Get_Size_Bytes with malloc
+// 2. Use Frame_From_Bytes to get access to the data and the frame description.
+// 3. Set the descriptor
+// - or -
+// 1. Use Frame_Alloc
+// 2. Use Frame_From_Bytes to get access to the data and the frame description.
+// 
+
+size_t            Frame_Get_Size_Bytes ( Frame_Descriptor *desc );
+Frame*            Frame_Alloc          ( Frame_Descriptor *desc );
+void              Frame_Free           ( void );
+void              Frame_From_Bytes     ( Frame *bytes, void **data, Frame_Descriptor **desc );

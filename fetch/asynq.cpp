@@ -237,8 +237,7 @@ _asynq_peek_unlocked(                        // Returns 1 on success, 0 otherwis
       if( RingFIFO_Is_Empty( q ) )
         return 0;
   }
-  RingFIFO_Peek( q, buf );
-  return 1;
+  return 0== RingFIFO_Peek( q, buf );  
 }
 
 //
@@ -375,51 +374,6 @@ Asynq_Peek_Timed( asynq *self, void *buf, DWORD timeout_ms )
                                 FALSE,        // try
                                 timeout_ms ); // timeout
   Asynq_Unlock(self);
-  return result;
-}
-
-unsigned int
-Asynq_Slaved_Peek( asynq **qs, unsigned int nelem, unsigned int imaster, void **bufs )
-{ unsigned int i = nelem,
-               result;
-  size_t       tail;
-  
-  Asynq_Lock( qs[imaster] );    
-  result = _asynq_peek_unlocked(qs[imaster], bufs[imaster], FALSE, INFINITE );
-  tail   = qs[imaster]->q->tail;
-  
-  i = nelem;
-  while(--i > imaster)
-    RingFIFO_Peek_At( qs[i]->q, bufs[i], tail );
-  while(i--)
-    RingFIFO_Peek_At( qs[i]->q, bufs[i], tail );
-  
-  Asynq_Unlock( qs[imaster] );
-    
-  return result;
-}
-
-unsigned int
-Asynq_Slaved_Peek_Timed( asynq **qs, unsigned int nelem, unsigned int imaster, void **bufs, DWORD timeout_ms )
-{ unsigned int i = nelem,
-               result;
-  size_t       tail;
-  
-  Asynq_Lock( qs[imaster] );    
-  result = _asynq_peek_unlocked(qs[imaster], bufs[imaster], FALSE, timeout_ms );
-  if(!result)
-    return result;
-    
-  tail   = qs[imaster]->q->tail;
-  
-  i = nelem;
-  while(--i > imaster)
-    RingFIFO_Peek_At( qs[i]->q, bufs[i], tail );
-  while(i--)
-    RingFIFO_Peek_At( qs[i]->q, bufs[i], tail );
-  
-  Asynq_Unlock( qs[imaster] );
-    
   return result;
 }
 

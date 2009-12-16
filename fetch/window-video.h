@@ -14,4 +14,4 @@ void                Video_Display_Render_One_Frame();
 void                Video_Display_GUI_On_ID_COMMAND_VIDEODISPLAY(void);
 
 // Data
-void                Video_Display_Connect_Device( Device *source, size_t data_channel, size_t desc_channel );
+void                Video_Display_Connect_Device( Device *source, size_t data_channel );

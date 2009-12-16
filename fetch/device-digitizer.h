@@ -106,7 +106,7 @@ DeviceTask* Digitizer_Create_Task_Stream_All_Channels_Immediate_Trigger(void);
 DeviceTask* Digitizer_Get_Default_Task(void);
 //
 // Windows
-//    testing utilities
+//    UI utilities
 //
 
 void             Digitizer_UI_Append_Menu  ( HMENU hmenu );
