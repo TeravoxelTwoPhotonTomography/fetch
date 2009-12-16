@@ -32,6 +32,8 @@ struct t_video_display
   ID3D10EffectShaderResourceVariable *active_texture_shader_resource[3];
   
   asynq                              *frame_source;
+  
+  float                               aspect;
 };
 
 #define VIDEO_DISPLAY_EMPTY { NULL,\
@@ -47,7 +49,8 @@ struct t_video_display
                               {NULL, NULL, NULL},\
                               {NULL, NULL, NULL},\
                               {NULL, NULL, NULL},\
-                              NULL}
+                              NULL,\
+                              1.0f}
 
 struct t_video_display g_video = VIDEO_DISPLAY_EMPTY;
 
@@ -451,6 +454,64 @@ Video_Display_GUI_On_ID_COMMAND_VIDEODISPLAY(void)
   UpdateWindow( h );
 }
 
+LRESULT
+Video_Display_On_Sizing (  WPARAM wParam, LPARAM lParam )
+{ RECT *rect = (RECT*) lParam;
+  float aspect = g_video.aspect;  // want to maintain this width/height ratio
+  LONG  width  = rect->right   - rect->left,
+        height = rect->bottom  - rect->top;
+  //width and height
+  switch( wParam )
+  {
+    case WMSZ_BOTTOM:
+    case WMSZ_TOP:
+      width = (LONG) aspect*height;
+      break;
+    case WMSZ_LEFT:
+    case WMSZ_RIGHT:
+      height = (LONG) width/aspect;
+      break;
+    case WMSZ_BOTTOMLEFT:
+    case WMSZ_BOTTOMRIGHT:
+    case WMSZ_TOPLEFT:
+    case WMSZ_TOPRIGHT:
+      if(width>height)
+        height = (LONG) width/aspect;
+      else
+        width = (LONG) aspect*height;
+      break;
+    default:
+      error("Wierd wParam\r\n");
+  }
+  //anchor point - top or bottom
+  switch( wParam )
+  {
+    case WMSZ_BOTTOM:      // use top left as anchor
+    case WMSZ_RIGHT:
+    case WMSZ_BOTTOMRIGHT:
+      rect->right  = rect->left + width;
+      rect->bottom = rect->top  + height;
+      break;
+    case WMSZ_TOP:         // use bottom right as anchor
+    case WMSZ_LEFT:
+    case WMSZ_TOPLEFT:
+      rect->left = rect->right  - width;
+      rect->top  = rect->bottom - height;
+      break;               // use top right as anchor
+    case WMSZ_BOTTOMLEFT:
+      rect->left = rect->right  - width;
+      rect->bottom = rect->top  + height;
+      break;
+    case WMSZ_TOPRIGHT:    // use bottom left as anchor
+      rect->right  = rect->left + width;
+      rect->top  = rect->bottom - height;
+      break;
+    default:
+      error("Wierd wParam\r\n");
+  }
+  return TRUE;
+}
+
 LRESULT CALLBACK Video_Display_WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 {   int wmId, wmEvent;
     PAINTSTRUCT ps;
@@ -466,6 +527,10 @@ LRESULT CALLBACK Video_Display_WndProc( HWND hWnd, UINT message, WPARAM wParam, 
         case WM_DESTROY:
             PostQuitMessage( 0 );
             break;
+         
+        case WM_SIZING:
+            return Video_Display_On_Sizing(wParam, lParam );
+            break; 
             
         case WM_COMMAND:
 		        wmId    = LOWORD(wParam);
@@ -520,8 +585,12 @@ void Video_Display_Render_One_Frame()
         Frame_From_Bytes( frm, &src, &desc );
         if( desc->is_change )
         { Guarded_Assert( desc->is_change == 1 );
-          memcpy(&last,desc,sizeof(Frame_Descriptor));
+          memcpy(&last,desc,sizeof(Frame_Descriptor));          
           //TODO: Handle change in dimensions/channels/data type/etc...
+          //meta = desc->metadata;
+          //GetWindowRect( g_video.hwnd, rect );
+          //rect->right = rectleft + meta.width;
+          //SendMessage( g_video.hwnd, WM_SIZING, (WPARAM) WMSZ_BOTTOMRIGHT, (LPARAM) rect);
         }
         while(i--)
           _copy_data_to_texture2d_ex( g_video.active_texture[i], src, &last, i );
@@ -533,6 +602,7 @@ void Video_Display_Render_One_Frame()
         efficiency_count++;
     }
     // Frame rate govenor
+
     if( efficiency_hit )
     { float mean = efficiency_accumulator/efficiency_count;
       wait_time_ms += -50.0f * (mean - 0.5f);
