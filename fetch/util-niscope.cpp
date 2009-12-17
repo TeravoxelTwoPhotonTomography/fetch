@@ -45,7 +45,7 @@ void niscope_debug_list_devices(void)
   ViSession session;
   Guarded_Assert( 
     VI_SUCCESS == niModInst_OpenInstalledDevicesSession("niScope",&session, &ndevices));
-  debug("niModInst: found %d devices.\r\n");
+  debug("niModInst: found %d devices.\r\n",ndevices);
   while(ndevices--)
   { ViInt32 slot, chassis, bus, socket;
     char name[1024], model[1024], number[1024];
@@ -80,7 +80,7 @@ void niscope_debug_list_devices(void)
                                                     NIMODINST_ATTR_SERIAL_NUMBER, //ViInt32 attributeID,
                                                     1024,     //ViInt32 attributeValueBufferSize,
                                                     number ); //ViChar attributeValue[]);
-    niModInst_CloseInstalledDevicesSession(session);
+   
     debug("%2d:\r\n"
           "     Name: %s\r\n"
           "    Model: %s\r\n"
@@ -92,4 +92,5 @@ void niscope_debug_list_devices(void)
           ndevices, name, model, number, slot, chassis, bus, socket);
     
   }             
+  niModInst_CloseInstalledDevicesSession(session);
 }
