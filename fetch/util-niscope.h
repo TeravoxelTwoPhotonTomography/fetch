@@ -5,7 +5,7 @@
 
 #define NI5105_MAX_NUM_CHANNELS 8
 #define NI5105_MAX_SAMPLE_RATE  60000000.0
-#define NI5105_DEVICE_NAME      "Dev2\0"    // TODO: autodetect this
+#define NI5105_DEVICE_NAME      "Dev3\0"    // TODO: autodetect this
 
 ViStatus niscope_chk ( ViSession vi, 
                        ViStatus result, 
