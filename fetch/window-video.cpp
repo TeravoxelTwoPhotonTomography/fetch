@@ -77,7 +77,7 @@ HRESULT _InitWindow( HINSTANCE hInstance, int nCmdShow )
         return E_FAIL;
 
     // Create window    
-    RECT rc = { 0, 0, 640, 480 };
+    RECT rc = { 0, 0, 512, 512 };
     AdjustWindowRect( &rc, WS_OVERLAPPEDWINDOW, FALSE );
     g_video.hwnd = CreateWindow(  "VideoDisplayClass", 
                                   "Fetch: Video Display",
@@ -127,7 +127,7 @@ _create_device_and_swap_chain(UINT width,UINT height)
   };
   UINT numDriverTypes = sizeof( driverTypes ) / sizeof( driverTypes[0] );  
   HRESULT hr = S_OK;
-  UINT msaa_quality = 0, msaa_levels = 1;
+  UINT msaa_quality = 1, msaa_levels = 4;
   
 #ifdef _DEBUG
   createDeviceFlags |= D3D10_CREATE_DEVICE_DEBUG;
@@ -279,8 +279,6 @@ _load_shader(const char* path, const char* technique)
 
   // Obtain the technique ang get references to variables
   g_video.technique                         = g_video.effect->GetTechniqueByName( technique );
-  if( g_video.effect->GetVariableByName( "tx" )->IsValid() )
-    debug("huh\n");
   g_video.active_texture_shader_resource[0] = g_video.effect->GetVariableByName( "txR" )->AsShaderResource();
   g_video.active_texture_shader_resource[1] = g_video.effect->GetVariableByName( "txG" )->AsShaderResource();
   g_video.active_texture_shader_resource[2] = g_video.effect->GetVariableByName( "txB" )->AsShaderResource();  
@@ -296,8 +294,8 @@ _create_texture( ID3D10Texture2D **pptex, DXGI_FORMAT format, UINT width, UINT h
 { D3D10_TEXTURE2D_DESC desc;
   ZeroMemory( &desc, sizeof(desc) );
   int i = 3;
-  desc.Width                         = 1024;
-  desc.Height                        = 1024;
+  desc.Width                         = width;
+  desc.Height                        = height;
   desc.MipLevels = desc.ArraySize    = 1;
   desc.Format                        = format;
   desc.SampleDesc.Count              = 1;
@@ -359,8 +357,8 @@ HRESULT _InitDevice()
 { HRESULT hr = S_OK;
   RECT rc;
   GetClientRect( g_video.hwnd, &rc );
-  UINT width = rc.right - rc.left;
-  UINT height = rc.bottom - rc.top;  
+  UINT width  = 1024; //rc.right - rc.left;
+  UINT height = 1024; //rc.bottom - rc.top;  
     
   _create_device_and_swap_chain(width, height);
   _setup_viewport( width, height );
@@ -368,17 +366,17 @@ HRESULT _InitDevice()
   _setup_geometry();
                                   
   
-  { _create_texture_i16( g_video.active_texture, 1024, 1024 );               
+  { _create_texture_i16( g_video.active_texture, width, height );               
     _refresh_active_texture_shader_resource_view();
     
     // Initialize the texture with test data
     { typedef i16 T;
-      size_t src_nelem = 1024*1024;      // create the source buffer
+      size_t src_nelem = width*height;      // create the source buffer
       u16 *src = (u16*)calloc(src_nelem,sizeof(T));
       int i,j;
-      for(i=0;i<1024;i++)
-        for(j=0;j<1024;j++)
-          src[j + 1024 * i] = (T) j + 1024 * i + rand()/(1<<16);
+      for(i=0;i<height;i++)
+        for(j=0;j<width;j++)
+          src[j + width * i] = (T) j + width * i + rand()/(1<<16);
       _copy_data_to_texture2d( g_video.active_texture[0], src, src_nelem*sizeof(T) );
       _copy_data_to_texture2d( g_video.active_texture[1], src, src_nelem*sizeof(T) );
       _copy_data_to_texture2d( g_video.active_texture[2], src, src_nelem*sizeof(T) );
@@ -527,6 +525,16 @@ LRESULT CALLBACK Video_Display_WndProc( HWND hWnd, UINT message, WPARAM wParam, 
         case WM_DESTROY:
             PostQuitMessage( 0 );
             break;
+        
+        case WM_SIZE:
+            //{ INT width  = LOWORD(lParam),
+            //      height = HIWORD(lParam);
+            //  g_video.swap_chain->ResizeBuffers(2, width, height, 
+            //                                    DXGI_FORMAT_R8G8B8A8_UNORM, 
+            //                                    DXGI_SWAP_CHAIN_FLAG_GDI_COMPATIBLE);
+            //  _setup_viewport(width,height);
+            //}
+            break;
          
         case WM_SIZING:
             return Video_Display_On_Sizing(wParam, lParam );
@@ -565,13 +573,18 @@ void Video_Display_Render_One_Frame()
 {   TicTocTimer clock = tic();
     static Frame                  *frm = NULL;
     static Frame_Descriptor       last;
-    static float          wait_time_ms = 1000.0/10.0,
+    static float          wait_time_ms = 50.0,//1000.0/1.0,
                 efficiency_accumulator = 0.0, 
                       efficiency_count = 0.0,
                         efficiency_hit = 0.0;
     asynq               *q = g_video.frame_source;
     void              *src = NULL; 
-    Frame_Descriptor *desc = NULL; 
+    Frame_Descriptor *desc = NULL;
+    static vector_size_t *vdim = NULL;
+    Frame_Interface *fint = NULL;
+    
+    if( !vdim )
+      vdim = vector_size_t_alloc(2);
     
     if( q )
     { // create the source buffer
@@ -584,13 +597,30 @@ void Video_Display_Render_One_Frame()
       { int i=3;
         Frame_From_Bytes( frm, &src, &desc );
         if( desc->is_change )
-        { Guarded_Assert( desc->is_change == 1 );
-          memcpy(&last,desc,sizeof(Frame_Descriptor));          
-          //TODO: Handle change in dimensions/channels/data type/etc...
-          //meta = desc->metadata;
-          //GetWindowRect( g_video.hwnd, rect );
-          //rect->right = rectleft + meta.width;
-          //SendMessage( g_video.hwnd, WM_SIZING, (WPARAM) WMSZ_BOTTOMRIGHT, (LPARAM) rect);
+        { RECT *rect = NULL;
+          Guarded_Assert( desc->is_change == 1 );
+          memcpy(&last,desc,sizeof(Frame_Descriptor));
+          //TODO: Clean
+          fint = Frame_Descriptor_Get_Interface(desc);
+          fint->get_dimensions(desc, vdim);
+          { size_t w = vdim->contents[0], 
+                   h = vdim->contents[1];
+            DXGI_MODE_DESC mode;
+            mode.Width = w;
+            mode.Height = h;
+            mode.RefreshRate.Numerator = 60;
+            mode.RefreshRate.Denominator = 1;
+            mode.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            mode.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+            mode.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+            g_video.swap_chain->ResizeBuffers(2, w, h,
+                                              DXGI_FORMAT_R8G8B8A8_UNORM, 
+                                              DXGI_SWAP_CHAIN_FLAG_GDI_COMPATIBLE);
+            g_video.swap_chain->ResizeTarget(&mode);
+            _setup_viewport(w,h);
+            _create_texture_i16( g_video.active_texture, w,h );               
+            _refresh_active_texture_shader_resource_view();
+          }
         }
         while(i--)
           _copy_data_to_texture2d_ex( g_video.active_texture[i], src, &last, i );
@@ -601,14 +631,7 @@ void Video_Display_Render_One_Frame()
       if( efficiency_hit > 0.5 )
         efficiency_count++;
     }
-    // Frame rate govenor
-
-    if( efficiency_hit )
-    { float mean = efficiency_accumulator/efficiency_count;
-      wait_time_ms += -50.0f * (mean - 0.5f);
-      wait_time_ms = MIN( wait_time_ms, 1000.0f );
-      wait_time_ms = MAX( wait_time_ms, 0.0f );
-    }
+    // TODO: Frame rate govenor
     
     //
     // Clear the back buffer
