@@ -242,7 +242,7 @@ Device_Disarm_Nonblocking( Device *self, DWORD timeout_ms )
 unsigned int
 Device_Run ( Device *self )
 { DWORD sts = 0;  
-  return_val_if_fail( self, 0 );  
+  Guarded_Assert( self );  
   Device_Lock(self);  
   if( Device_Is_Armed(self) )      // Source state condition: Must be armed.
   { self->is_running = 1;    
@@ -258,6 +258,9 @@ Device_Run ( Device *self )
                                      self,               // arguments
                                      0,                  // run immediately
                                      NULL ));            // don't worry about the threadid
+      Guarded_Assert_WinErr(
+        SetThreadPriority( self->thread,
+                           THREAD_PRIORITY_TIME_CRITICAL ));
       debug("Run:4b\r\n");
     }
   } else

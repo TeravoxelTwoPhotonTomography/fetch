@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestAsynQ", "TestAsynQ\Test
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestVideoDisplay", "TestVideoDisplay\TestVideoDisplay.vcproj", "{4895BEF9-F8C5-4352-A6EA-B3C9C07980CB}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDigitizer", "TestDigitizer\TestDigitizer.vcproj", "{6B8520E4-49E2-477F-9A82-9B4F7125B438}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -37,6 +39,10 @@ Global
 		{4895BEF9-F8C5-4352-A6EA-B3C9C07980CB}.Debug|Win32.Build.0 = Debug|Win32
 		{4895BEF9-F8C5-4352-A6EA-B3C9C07980CB}.Release|Win32.ActiveCfg = Release|Win32
 		{4895BEF9-F8C5-4352-A6EA-B3C9C07980CB}.Release|Win32.Build.0 = Release|Win32
+		{6B8520E4-49E2-477F-9A82-9B4F7125B438}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6B8520E4-49E2-477F-9A82-9B4F7125B438}.Debug|Win32.Build.0 = Debug|Win32
+		{6B8520E4-49E2-477F-9A82-9B4F7125B438}.Release|Win32.ActiveCfg = Release|Win32
+		{6B8520E4-49E2-477F-9A82-9B4F7125B438}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

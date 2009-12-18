@@ -12,10 +12,10 @@
 #define DIGITIZER_MAX_NUM_CHANNELS        NI5105_MAX_NUM_CHANNELS
 #define DIGITIZER_MAX_SAMPLE_RATE         NI5105_MAX_SAMPLE_RATE
 #define DIGITIZER_DEVICE_NAME             NI5105_DEVICE_NAME
-#define DIGITIZER_DEFAULT_RECORD_LENGTH   1024*1024
+#define DIGITIZER_DEFAULT_RECORD_LENGTH   512*512
 #define DIGITIZER_DEFAULT_RECORD_NUM      1
 
-#define DIGITIZER_BUFFER_NUM_FRAMES       64  // must be a power of two
+#define DIGITIZER_BUFFER_NUM_FRAMES       4   // must be a power of two
 #define DIGITIZER_DEFAULT_TIMEOUT         INFINITE // ms
 
 typedef struct _digitizer_channel_config
@@ -62,12 +62,12 @@ typedef struct _digitizer_config
                        DIGITIZER_DEFAULT_RECORD_LENGTH,\
                        DIGITIZER_DEFAULT_RECORD_NUM,\
                        0.0,\
-                       "0-3",\
+                       "0-2",\
                        DIGITIZER_MAX_NUM_CHANNELS,\
-                       {{"0\0", 10.0,NISCOPE_VAL_DC,VI_TRUE},\
+                       {{"0\0", 1.0,NISCOPE_VAL_DC,VI_TRUE},\
                         {"1\0", 10.0,NISCOPE_VAL_DC,VI_TRUE},\
                         {"2\0", 10.0,NISCOPE_VAL_DC,VI_TRUE},\
-                        {"3\0", 10.0,NISCOPE_VAL_DC,VI_TRUE},\
+                        {"3\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\
                         {"4\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\
                         {"5\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\
                         {"6\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\

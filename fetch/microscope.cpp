@@ -67,7 +67,7 @@ unsigned int Microscope_Attach( void )
 { size_t cnt = g_microscope_attach_callbacks.count;
   unsigned int err = 0;
   pf_microscope_attach_callback *beg = g_microscope_attach_callbacks.contents,
-                              *cur = beg+cnt;
+                                *cur = beg+cnt;
 
   static int lock = 0; // Avoid recursion
   assert( lock == 0 ); 
@@ -111,5 +111,5 @@ void Microscope_Application_Start(void)
                                            "wfm.raw", 'w',                 // filename
                                             Digitizer_Get_Device(),1) ));  // source
                                             
-  Video_Display_Connect_Device( Digitizer_Get_Device(), 0 );
+   Video_Display_Connect_Device( Digitizer_Get_Device(), 0 );
 }

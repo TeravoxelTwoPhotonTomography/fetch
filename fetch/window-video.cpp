@@ -357,14 +357,13 @@ HRESULT _InitDevice()
 { HRESULT hr = S_OK;
   RECT rc;
   GetClientRect( g_video.hwnd, &rc );
-  UINT width  = 1024; //rc.right - rc.left;
-  UINT height = 1024; //rc.bottom - rc.top;  
+  UINT width  = 512; //rc.right - rc.left;
+  UINT height = 512; //rc.bottom - rc.top;  
     
   _create_device_and_swap_chain(width, height);
   _setup_viewport( width, height );
   _load_shader(VIDEO_WINDOW_PATH_TO_SHADER, VIDEO_WINDOW_SHADER_TECHNIQUE_NAME);
   _setup_geometry();
-                                  
   
   { _create_texture_i16( g_video.active_texture, width, height );               
     _refresh_active_texture_shader_resource_view();
@@ -373,7 +372,7 @@ HRESULT _InitDevice()
     { typedef i16 T;
       size_t src_nelem = width*height;      // create the source buffer
       u16 *src = (u16*)calloc(src_nelem,sizeof(T));
-      int i,j;
+      unsigned int i,j;
       for(i=0;i<height;i++)
         for(j=0;j<width;j++)
           src[j + width * i] = (T) j + width * i + rand()/(1<<16);
@@ -463,20 +462,20 @@ Video_Display_On_Sizing (  WPARAM wParam, LPARAM lParam )
   {
     case WMSZ_BOTTOM:
     case WMSZ_TOP:
-      width = (LONG) aspect*height;
+      width = (LONG) (aspect*height);
       break;
     case WMSZ_LEFT:
     case WMSZ_RIGHT:
-      height = (LONG) width/aspect;
+      height = (LONG) (width/aspect);
       break;
     case WMSZ_BOTTOMLEFT:
     case WMSZ_BOTTOMRIGHT:
     case WMSZ_TOPLEFT:
     case WMSZ_TOPRIGHT:
       if(width>height)
-        height = (LONG) width/aspect;
+        height = (LONG) (width/aspect);
       else
-        width = (LONG) aspect*height;
+        width = (LONG) (aspect*height);
       break;
     default:
       error("Wierd wParam\r\n");
@@ -600,27 +599,27 @@ void Video_Display_Render_One_Frame()
         { RECT *rect = NULL;
           Guarded_Assert( desc->is_change == 1 );
           memcpy(&last,desc,sizeof(Frame_Descriptor));
-          //TODO: Clean
+          //TODO: FIX
           fint = Frame_Descriptor_Get_Interface(desc);
           fint->get_dimensions(desc, vdim);
-          { size_t w = vdim->contents[0], 
-                   h = vdim->contents[1];
-            DXGI_MODE_DESC mode;
-            mode.Width = w;
-            mode.Height = h;
-            mode.RefreshRate.Numerator = 60;
-            mode.RefreshRate.Denominator = 1;
-            mode.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-            mode.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-            mode.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-            g_video.swap_chain->ResizeBuffers(2, w, h,
-                                              DXGI_FORMAT_R8G8B8A8_UNORM, 
-                                              DXGI_SWAP_CHAIN_FLAG_GDI_COMPATIBLE);
-            g_video.swap_chain->ResizeTarget(&mode);
-            _setup_viewport(w,h);
-            _create_texture_i16( g_video.active_texture, w,h );               
-            _refresh_active_texture_shader_resource_view();
-          }
+          //{ size_t w = vdim->contents[0], 
+          //         h = vdim->contents[1];
+          //  DXGI_MODE_DESC mode;
+          //  mode.Width = w;
+          //  mode.Height = h;
+          //  mode.RefreshRate.Numerator = 60;
+          //  mode.RefreshRate.Denominator = 1;
+          //  mode.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+          //  mode.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+          //  mode.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+          //  g_video.swap_chain->ResizeBuffers(2, w, h,
+          //                                    DXGI_FORMAT_R8G8B8A8_UNORM, 
+          //                                    DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
+          //  g_video.swap_chain->ResizeTarget(&mode);
+          //  _setup_viewport(w,h);
+          //  _create_texture_i16( g_video.active_texture, w,h );               
+          //  _refresh_active_texture_shader_resource_view();
+          //}
         }
         while(i--)
           _copy_data_to_texture2d_ex( g_video.active_texture[i], src, &last, i );
@@ -660,9 +659,9 @@ void Video_Display_Render_One_Frame()
     // Present our back buffer to our front buffer
     //
     g_video.swap_chain->Present( 0, 0 );
-    //
-    double dt = toc(&clock);
-    debug("FPS: %5.1f Efficiency: %g\r\n",1.0/dt, efficiency_accumulator/efficiency_count);
+    //// XXX: dx10 swap chain has it's own performance metrics
+    //double dt = toc(&clock);
+    //debug("FPS: %5.1f Efficiency: %g\r\n",1.0/dt, efficiency_accumulator/efficiency_count);
 }
 
 //--------------------------------------------------------------------------------------
