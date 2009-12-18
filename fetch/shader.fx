@@ -7,9 +7,13 @@
 //--------------------------------------------------------------------------------------
 // Constant Buffer Variables
 //--------------------------------------------------------------------------------------
-Texture2D txR;
-Texture2D txG;
-Texture2D txB;
+Texture2D<unorm float> tx0;
+Texture2D<unorm float> tx1;
+Texture2D<unorm float> tx2;
+
+Texture1D<unorm float4> cmap0;
+Texture1D<unorm float4> cmap1;
+Texture1D<unorm float4> cmap2;
 
 SamplerState samLinear
 {
@@ -52,11 +56,14 @@ float4 PS( PS_INPUT input) : SV_Target
            c =  cos(3.14159/4);
     float2 gtex = float2( input.Tex.y, input.Tex.x ),
            btex = float2( s*input.Tex.x + c*input.Tex.y, s*input.Tex.x - c*input.Tex.y );
-    float r = txR.Sample( samLinear, input.Tex ).x,
-          g = txG.Sample( samLinear, gtex ).x,
-          b = txB.Sample( samLinear, btex ).x;
+    float i = tx0.Sample( samLinear, input.Tex ).x,
+          j = tx1.Sample( samLinear, gtex ).x,
+          k = tx2.Sample( samLinear, btex ).x;
+    float4 c0 = cmap0.Sample( samLinear, i ),
+           c1 = cmap1.Sample( samLinear, j ),
+           c2 = cmap2.Sample( samLinear, k );
 
-    return float4(r,g,b,1.0);
+    return c0+c1+c2; //additive mixing
 }
 
 
