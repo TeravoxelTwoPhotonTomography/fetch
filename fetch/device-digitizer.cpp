@@ -66,6 +66,7 @@ void Digitizer_Init(void)
   Register_New_Shutdown_Callback( &Digitizer_Destroy );
   Register_New_Shutdown_Callback( &Digitizer_Detach );
 
+
 #ifndef DIGITIZER_NO_REGISTER_WITH_MICROSCOPE  
   // Register Microscope state functions
   Register_New_Microscope_Attach_Callback( &Digitizer_Attach );

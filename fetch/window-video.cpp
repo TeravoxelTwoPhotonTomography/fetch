@@ -349,8 +349,8 @@ HRESULT _InitDevice()
 { HRESULT hr = S_OK;
   RECT rc;
   GetClientRect( g_video.hwnd, &rc );
-  UINT width  = 1024; //rc.right - rc.left;
-  UINT height = 1024; //rc.bottom - rc.top;  
+  UINT width  = 512; //rc.right - rc.left;
+  UINT height = 512; //rc.bottom - rc.top;  
     
   _create_device_and_swap_chain(width, height);
   _setup_viewport( width, height );
