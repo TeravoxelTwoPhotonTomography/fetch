@@ -77,7 +77,7 @@ HRESULT _InitWindow( HINSTANCE hInstance, int nCmdShow )
         return E_FAIL;
 
     // Create window    
-    RECT rc = { 0, 0, 512, 512 };
+    RECT rc = { 0, 0, 1024, 1024 };
     AdjustWindowRect( &rc, WS_OVERLAPPEDWINDOW, FALSE );
     g_video.hwnd = CreateWindow(  "VideoDisplayClass", 
                                   "Fetch: Video Display",
@@ -304,12 +304,7 @@ _create_texture( ID3D10Texture2D **pptex, DXGI_FORMAT format, UINT width, UINT h
   desc.BindFlags                     = D3D10_BIND_SHADER_RESOURCE;
   
   while(i--)
-  { if( g_video.active_texture[i] )
-    { g_video.active_texture[i]->Release();
-      g_video.active_texture[i] = NULL;
-    }
     Guarded_Assert( !FAILED( g_video.device->CreateTexture2D( &desc, NULL, g_video.active_texture+i ) ));
-  }
 }
 
 inline void 
@@ -340,14 +335,11 @@ _refresh_active_texture_shader_resource_view(void)
   srvDesc.Texture2D.MostDetailedMip = desc.MipLevels - 1;
 
   while(i--)
-  { if( g_video.texture_resource_view[i] )
-    { g_video.texture_resource_view[i]->Release();
-      g_video.texture_resource_view[i] = NULL;
-    }
+  { 
     Guarded_Assert(SUCCEEDED( 
       g_video.device->CreateShaderResourceView( g_video.active_texture[i], 
                                                &srvDesc, 
-                                               &g_video.texture_resource_view[i] ) ));
+                                               &g_video.texture_resource_view[i] ) ));                                               
     Guarded_Assert(SUCCEEDED(
       g_video.active_texture_shader_resource[i]->SetResource( g_video.texture_resource_view[i] ) ));
   }
@@ -410,6 +402,44 @@ void _CleanupDevice()
     if( g_video.swap_chain )            g_video.swap_chain->Release();
     if( g_video.device )                g_video.device->Release();
 }
+
+//--------------------------------------------------------------------------------------
+// Set up the device objects (setup after a resize)
+//--------------------------------------------------------------------------------------
+void _refresh_objects(UINT width, UINT height)
+{ int i = 3;
+  HRESULT hr;
+  // Create a render target view
+  { ID3D10Texture2D* pBuffer;
+  
+    Guarded_Assert(SUCCEEDED( hr = g_video.swap_chain->GetBuffer( 0, __uuidof( ID3D10Texture2D ), ( LPVOID* )&pBuffer ) ));    
+    Guarded_Assert(SUCCEEDED( hr = g_video.device->CreateRenderTargetView( pBuffer, NULL, &g_video.render_target_view )    ));
+    pBuffer->Release();
+
+    g_video.device->OMSetRenderTargets( 1, &g_video.render_target_view, NULL );
+  }
+  _setup_viewport( width, height );
+  _load_shader(VIDEO_WINDOW_PATH_TO_SHADER, VIDEO_WINDOW_SHADER_TECHNIQUE_NAME);
+  _create_texture_i16( g_video.active_texture, width, height );               
+  _refresh_active_texture_shader_resource_view();
+}
+
+//--------------------------------------------------------------------------------------
+// Clean up the device objects (prep for a resize)
+//--------------------------------------------------------------------------------------
+void _invalidate_objects(void)
+{   int i = 3;
+    int cnt = 0;
+    cnt = g_video.render_target_view->Release();    
+    cnt = g_video.effect->Release();
+    while(i--)
+    {
+      cnt = g_video.texture_resource_view[i]->Release();
+      cnt = g_video.active_texture[i]->Release();
+    }
+}
+
+
 
 //--------------------------------------------------------------------------------------
 // Initializes everything.
@@ -594,32 +624,32 @@ void Video_Display_Render_One_Frame()
       
       if( Asynq_Peek_Timed(q, frm, (DWORD) wait_time_ms ) )
       { int i=3;
+        ULONG cnt;
         Frame_From_Bytes( frm, &src, &desc );
         if( desc->is_change )
         { RECT *rect = NULL;
           Guarded_Assert( desc->is_change == 1 );
           memcpy(&last,desc,sizeof(Frame_Descriptor));
-          //TODO: FIX
+          //Resize window and buffers
           fint = Frame_Descriptor_Get_Interface(desc);
           fint->get_dimensions(desc, vdim);
-          //{ size_t w = vdim->contents[0], 
-          //         h = vdim->contents[1];
-          //  DXGI_MODE_DESC mode;
-          //  mode.Width = w;
-          //  mode.Height = h;
-          //  mode.RefreshRate.Numerator = 60;
-          //  mode.RefreshRate.Denominator = 1;
-          //  mode.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-          //  mode.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-          //  mode.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-          //  g_video.swap_chain->ResizeBuffers(2, w, h,
-          //                                    DXGI_FORMAT_R8G8B8A8_UNORM, 
-          //                                    DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
-          //  g_video.swap_chain->ResizeTarget(&mode);
-          //  _setup_viewport(w,h);
-          //  _create_texture_i16( g_video.active_texture, w,h );               
-          //  _refresh_active_texture_shader_resource_view();
-          //}
+          { size_t w = vdim->contents[0], 
+                   h = vdim->contents[1];
+            DXGI_MODE_DESC mode;
+            mode.Width = w;
+            mode.Height = h;
+            mode.RefreshRate.Numerator = 60;
+            mode.RefreshRate.Denominator = 1;
+            mode.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            mode.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+            mode.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+            g_video.swap_chain->ResizeTarget(&mode);
+            _invalidate_objects();
+            Guarded_Assert(SUCCEEDED( g_video.swap_chain->ResizeBuffers(2, w, h,
+                                              DXGI_FORMAT_R8G8B8A8_UNORM, 
+                                              DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH)));
+            _refresh_objects(w,h);
+          }
         }
         while(i--)
           _copy_data_to_texture2d_ex( g_video.active_texture[i], src, &last, i );

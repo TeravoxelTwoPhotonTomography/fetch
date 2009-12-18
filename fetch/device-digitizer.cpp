@@ -7,8 +7,8 @@
 #include "frame-interface-digitizer.h"
 
 // Operational options
-#if 1
-#define DIGITIZER_REGISTER_WITH_MICROSCOPE
+#if 0
+#define DIGITIZER_NO_REGISTER_WITH_MICROSCOPE
 #endif
 
 // debug defines
@@ -66,7 +66,8 @@ void Digitizer_Init(void)
   Register_New_Shutdown_Callback( &Digitizer_Destroy );
   Register_New_Shutdown_Callback( &Digitizer_Detach );
 
-#ifdef DIGITIZER_REGISTER_WITH_MICROSCOPE  
+
+#ifndef DIGITIZER_NO_REGISTER_WITH_MICROSCOPE  
   // Register Microscope state functions
   Register_New_Microscope_Attach_Callback( &Digitizer_Attach );
   Register_New_Microscope_Detach_Callback( &Digitizer_Detach );
