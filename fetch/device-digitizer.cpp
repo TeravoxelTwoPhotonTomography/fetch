@@ -291,7 +291,7 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
     } while(ttl!=nelem);
     
     // Handle the full buffer
-    { double dt;
+    { //double dt;
 #ifdef DIGITIZER_DEBUG_FAIL_WHEN_FULL
       if(  !Asynq_Push_Try( qdata,(void**) &frm )) //   Push buffer and reset total samples count
 #elif defined( DIGITIZER_DEBUG_SPIN_WHEN_FULL )

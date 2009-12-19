@@ -137,6 +137,7 @@ void debug  (const char* fmt, ...);
 // ------
 void *Guarded_Malloc( size_t nelem, const char *msg );
 void *Guarded_Calloc( size_t nelem, size_t bytes_per_elem, const char *msg );
+void  Guarded_Realloc( void **item, size_t nelem, const char *msg );
 
 // Expands array using chunk sizes that linearly increase in size
 void RequestStorage( void** array,           // Pointer to array

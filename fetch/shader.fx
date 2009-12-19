@@ -7,9 +7,9 @@
 //--------------------------------------------------------------------------------------
 // Constant Buffer Variables
 //--------------------------------------------------------------------------------------
-Texture2D<unorm float> tx0;
-Texture2D<unorm float> tx1;
-Texture2D<unorm float> tx2;
+Texture2D<snorm float> tx0;
+Texture2D<snorm float> tx1;
+Texture2D<snorm float> tx2;
 
 Texture1D<unorm float4> cmap0;
 Texture1D<unorm float4> cmap1;
@@ -59,9 +59,21 @@ float4 PS( PS_INPUT input) : SV_Target
     float i = tx0.Sample( samLinear, input.Tex ).x,
           j = tx1.Sample( samLinear, gtex ).x,
           k = tx2.Sample( samLinear, btex ).x;
-    float4 c0 = cmap0.Sample( samLinear, i ),
-           c1 = cmap1.Sample( samLinear, j ),
-           c2 = cmap2.Sample( samLinear, k );
+
+    return float4(i,j,k,1.0);
+}
+
+float4 PS_w_cmap( PS_INPUT input) : SV_Target
+{   float  s =  sin(3.14159/4),
+           c =  cos(3.14159/4);
+    float2 gtex = float2( input.Tex.y, input.Tex.x ),
+           btex = float2( s*input.Tex.x + c*input.Tex.y, s*input.Tex.x - c*input.Tex.y );
+    float i = tx0.Sample( samLinear, input.Tex ).x,
+          j = tx1.Sample( samLinear, gtex ).x,
+          k = tx2.Sample( samLinear, btex ).x;
+    float4 c0 = cmap0.Sample( samLinear, (i+1.0)/2.0 ),
+           c1 = cmap1.Sample( samLinear, (j+1.0)/2.0 ),
+           c2 = cmap2.Sample( samLinear, (k+1.0)/2.0 );
 
     return c0+c1+c2; //additive mixing
 }

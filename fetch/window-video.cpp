@@ -5,6 +5,7 @@
 #include <stdlib.h> // for rand - for testing - remove when done
 #include "asynq.h"
 #include "frame.h"
+#include "render-colormap.h"
 
 #define VIDEO_WINDOW_TEXTURE_RESOURCE_NAME "tx"
 #define VIDEO_WINDOW_PATH_TO_SHADER        "shader.fx"
@@ -31,6 +32,8 @@ struct t_video_display
   ID3D10Texture2D                    *active_texture[3];
   ID3D10EffectShaderResourceVariable *active_texture_shader_resource[3];
   
+  Colormap_Resource                  *cmaps[3];
+  
   asynq                              *frame_source;
   
   float                               aspect;
@@ -49,6 +52,7 @@ struct t_video_display
                               {NULL, NULL, NULL},\
                               {NULL, NULL, NULL},\
                               {NULL, NULL, NULL},\
+                              EMPTY_COLORMAP_RESOURCE,\
                               NULL,\
                               1.0f}
 
@@ -255,6 +259,18 @@ _setup_geometry(void)
   g_video.device->IASetPrimitiveTopology( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP );
 }
 
+inline void _load_colormaps(void)
+{ int i=3, nrows = 1<<16;
+  const char* varnames[] = {"cmap0","cmap1","cmap2"};
+  while(i--)
+  { g_video.cmaps[i] = Colormap_Resource_Alloc();
+    Colormap_Resource_Attach( g_video.cmaps[i], nrows, g_video.effect, "cmap0" );
+  }  
+  Colormap_Gray   ( g_video.cmaps[0], 0.0f, (f32) nrows, nrows );
+  Colormap_HSV_Hue( g_video.cmaps[1], 1.0, 1.0, 1.0, 0.0f, (f32) nrows, nrows );
+  Colormap_Red    ( g_video.cmaps[2], 0.0f, (f32) nrows, nrows );
+}
+
 inline void
 _load_shader(const char* path, const char* technique)
 { HRESULT hr = S_OK;
@@ -279,9 +295,9 @@ _load_shader(const char* path, const char* technique)
 
   // Obtain the technique ang get references to variables
   g_video.technique                         = g_video.effect->GetTechniqueByName( technique );
-  g_video.active_texture_shader_resource[0] = g_video.effect->GetVariableByName( "txR" )->AsShaderResource();
-  g_video.active_texture_shader_resource[1] = g_video.effect->GetVariableByName( "txG" )->AsShaderResource();
-  g_video.active_texture_shader_resource[2] = g_video.effect->GetVariableByName( "txB" )->AsShaderResource();  
+  g_video.active_texture_shader_resource[0] = g_video.effect->GetVariableByName( "tx0" )->AsShaderResource();
+  g_video.active_texture_shader_resource[1] = g_video.effect->GetVariableByName( "tx1" )->AsShaderResource();
+  g_video.active_texture_shader_resource[2] = g_video.effect->GetVariableByName( "tx2" )->AsShaderResource();  
   Guarded_Assert( g_video.technique );
   Guarded_Assert( g_video.active_texture_shader_resource[0] );
   Guarded_Assert( g_video.active_texture_shader_resource[1] );
@@ -376,6 +392,10 @@ HRESULT _InitDevice()
   }                                          
   if( FAILED( hr ) )
       return hr;
+
+  _load_colormaps();
+    
+    
   return S_OK;
 }
 
@@ -394,7 +414,12 @@ void _CleanupDevice()
     while(i--)
     {
       if( g_video.texture_resource_view[i] ) g_video.texture_resource_view[i]->Release();
-      if( g_video.active_texture[i] )        g_video.active_texture[i]->Release();      
+      if( g_video.active_texture[i] )        g_video.active_texture[i]->Release();
+      if( g_video.cmaps[i] )
+      { Colormap_Resource_Detach( g_video.cmaps[i] );
+        Colormap_Resource_Free  ( g_video.cmaps[i] );
+      }
+      
     }
     
     if( g_video.effect )                g_video.effect->Release();
@@ -422,6 +447,7 @@ void _refresh_objects(UINT width, UINT height)
   _load_shader(VIDEO_WINDOW_PATH_TO_SHADER, VIDEO_WINDOW_SHADER_TECHNIQUE_NAME);
   _create_texture_i16( g_video.active_texture, width, height );               
   _refresh_active_texture_shader_resource_view();
+  
 }
 
 //--------------------------------------------------------------------------------------
@@ -433,9 +459,9 @@ void _invalidate_objects(void)
     cnt = g_video.render_target_view->Release();    
     cnt = g_video.effect->Release();
     while(i--)
-    {
+    { Colormap_Resource_Detach  ( g_video.cmaps[i] );
       cnt = g_video.texture_resource_view[i]->Release();
-      cnt = g_video.active_texture[i]->Release();
+      cnt = g_video.active_texture[i]->Release();      
     }
 }
 
@@ -624,7 +650,6 @@ void Video_Display_Render_One_Frame()
       
       if( Asynq_Peek_Timed(q, frm, (DWORD) wait_time_ms ) )
       { int i=3;
-        ULONG cnt;
         Frame_From_Bytes( frm, &src, &desc );
         if( desc->is_change )
         { RECT *rect = NULL;
@@ -681,14 +706,14 @@ void Video_Display_Render_One_Frame()
     g_video.technique->GetDesc( &techDesc );
     for( UINT p = 0; p < techDesc.Passes; ++p )
     {
-        g_video.technique->GetPassByIndex( p )->Apply( 0 );
+        Guarded_Assert(SUCCEEDED(  g_video.technique->GetPassByIndex( p )->Apply( 0 ) ));
         g_video.device->DrawIndexed( 4, 0, 0 );
     }
 
     //
     // Present our back buffer to our front buffer
     //
-    g_video.swap_chain->Present( 0, 0 );
+    Guarded_Assert(SUCCEEDED(  g_video.swap_chain->Present( 0, 0 ) ));
     //// XXX: dx10 swap chain has it's own performance metrics
     //double dt = toc(&clock);
     //debug("FPS: %5.1f Efficiency: %g\r\n",1.0/dt, efficiency_accumulator/efficiency_count);

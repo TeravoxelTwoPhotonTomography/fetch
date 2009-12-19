@@ -224,6 +224,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\render-colormap.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\ring-fifo.cpp"
 				>
 			</File>
@@ -315,6 +319,10 @@
 			</File>
 			<File
 				RelativePath=".\microscope.h"
+				>
+			</File>
+			<File
+				RelativePath=".\render-colormap.h"
 				>
 			</File>
 			<File
