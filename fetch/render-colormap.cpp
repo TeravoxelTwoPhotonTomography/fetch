@@ -60,7 +60,7 @@ _bind_texture_to_shader_variable(ID3D10Device *device, Colormap_Resource *cmap )
 void
 Colormap_Resource_Attach (Colormap_Resource *cmap, UINT width, ID3D10Effect *effect, const char* name)
 { ID3D10Device *device = NULL;
-  Guarded_Assert( effect->GetDevice(&device) );
+  Guarded_Assert(SUCCEEDED( effect->GetDevice(&device) ));
   
   cmap->resource_variable = effect->GetVariableByName(name)->AsShaderResource();
   _create_texture( device, &cmap->texture, width );
@@ -70,17 +70,24 @@ Colormap_Resource_Attach (Colormap_Resource *cmap, UINT width, ID3D10Effect *eff
 
 void
 Colormap_Resource_Detach (Colormap_Resource *cmap)
-{ cmap->resource_view->Release();
-  cmap->texture->Release();
+{ if( cmap->resource_view) cmap->resource_view->Release();
+  if( cmap->texture) cmap->texture->Release();
   cmap->resource_view = NULL;
   cmap->texture       = NULL;
+}
+
+UINT
+Colormap_Resource_Get_Element_Count(Colormap_Resource *cmap)
+{ D3D10_TEXTURE1D_DESC    desc;
+  cmap->texture->GetDesc(&desc);
+  return desc.Width;
 }
 
 void
 Colormap_Resource_Fill (Colormap_Resource *cmap, f32 *bytes, size_t nbytes)
 { void *data;
   ID3D10Texture1D       *dst = cmap->texture;
-  Guarded_Assert( !FAILED( 
+  Guarded_Assert(SUCCEEDED( 
       dst->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &data ) ));  
   memcpy(data, bytes, nbytes);
   dst->Unmap( D3D10CalcSubresource(0, 0, 1) );        
@@ -88,8 +95,8 @@ Colormap_Resource_Fill (Colormap_Resource *cmap, f32 *bytes, size_t nbytes)
 
 f32 *_linear_colormap_get_params( float x0, float x1, float sign, size_t nrows, float *slope, float *intercept, size_t *nbytes )
 // Sizes static colormap buffer and computes slope and intercept
-{ float m   =  sign/(x1-x0),
-        b   = -m*x0;
+{ float m   =  sign/(x1*nrows-x0*nrows),
+        b   = -m*x0*nrows;
   static f32 *rgba = NULL;
   static size_t n  = 0, sz;
   
@@ -100,19 +107,29 @@ f32 *_linear_colormap_get_params( float x0, float x1, float sign, size_t nrows, 
   { sz = nrows*4*sizeof(f32);
     Guarded_Realloc( (void**) &rgba, sz , "_linear_colormap_params" );
   }
-  *nbytes = sz;
-  *slope = m;
+  *nbytes    = sz;
+  *slope     = m;
   *intercept = b;
   return rgba;
 }
 
+void Colormap_Black( Colormap_Resource *cmap )
+{ void *data = NULL;
+  UINT width = Colormap_Resource_Get_Element_Count(cmap);
+  Guarded_Assert( !FAILED( 
+      cmap->texture->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &data ) ));  
+  memset(data, 0, 4*width*sizeof(f32) );
+  cmap->texture->Unmap( D3D10CalcSubresource(0, 0, 1) );
+}
+
 void
-Colormap_Gray( Colormap_Resource *cmap, float min, float max, size_t nrows )
+Colormap_Gray( Colormap_Resource *cmap, float min, float max )
 { size_t nbytes;
+  UINT nrows = Colormap_Resource_Get_Element_Count(cmap);
   float m,b,
        *rgba = _linear_colormap_get_params( min, max, 1.0f, nrows, &m, &b, &nbytes );
   while(nrows--)
-  { f32 *row = rgba + nrows;
+  { f32 *row = rgba + nrows*4;
     f32    v = m*nrows + b;    
     row[0] = row[1] = row[2] = CLAMP(v,0.0f,1.0f);
     row[3] = 1.0f;
@@ -120,12 +137,13 @@ Colormap_Gray( Colormap_Resource *cmap, float min, float max, size_t nrows )
   Colormap_Resource_Fill( cmap, rgba, nbytes );      
 }
 
-void Colormap_Inverse_Gray( Colormap_Resource *cmap, float min, float max, size_t nrows )
+void Colormap_Inverse_Gray( Colormap_Resource *cmap, float min, float max )
 { size_t nbytes;
+  UINT nrows = Colormap_Resource_Get_Element_Count(cmap);
   float m,b,
-       *rgba = _linear_colormap_get_params( min, max, -1.0f, nrows, &m, &b, &nbytes );
+       *rgba = _linear_colormap_get_params( max, min, 1.0f, nrows, &m, &b, &nbytes );
   while(nrows--)
-  { f32 *row = rgba + nrows;
+  { f32 *row = rgba + 4*nrows;
     f32    v = m*nrows + b;
     row[0] = row[1] = row[2] = CLAMP(v,0.0f,1.0f);
     row[3] = 1.0f;
@@ -134,13 +152,14 @@ void Colormap_Inverse_Gray( Colormap_Resource *cmap, float min, float max, size_
 }
 
 inline void 
-_colormap_single_channel( Colormap_Resource *cmap, float min, float max, size_t nrows, int channel )
+_colormap_single_channel( Colormap_Resource *cmap, float min, float max, int channel )
 { size_t nbytes;
+  UINT nrows = Colormap_Resource_Get_Element_Count(cmap);
   float m,b,
-       *rgba = _linear_colormap_get_params( min, max, -1.0f, nrows, &m, &b, &nbytes );
+       *rgba = _linear_colormap_get_params( min, max, 1.0f, nrows, &m, &b, &nbytes );
   memset(rgba,0,nbytes);
   while(nrows--)
-  { f32 *row = rgba + nrows;
+  { f32 *row = rgba + nrows*4;
     f32    v = m*nrows + b;    
     row[channel] = CLAMP(v,0.0f,1.0f);
     row[3] = 1.0f;
@@ -149,29 +168,29 @@ _colormap_single_channel( Colormap_Resource *cmap, float min, float max, size_t 
 }
 
 void
-Colormap_Red ( Colormap_Resource *cmap, float min, float max, size_t nrows )
-{ _colormap_single_channel( cmap, min, max, nrows, 0 );
+Colormap_Red ( Colormap_Resource *cmap, float min, float max )
+{ _colormap_single_channel( cmap, min, max, 0 );
 }
 
 void
-Colormap_Blue ( Colormap_Resource *cmap, float min, float max, size_t nrows )
-{ _colormap_single_channel( cmap, min, max, nrows, 1 );
+Colormap_Green ( Colormap_Resource *cmap, float min, float max )
+{ _colormap_single_channel( cmap, min, max, 1 );
 }
 
 void
-Colormap_Green ( Colormap_Resource *cmap, float min, float max, size_t nrows )
-{ _colormap_single_channel( cmap, min, max, nrows, 2 );
+Colormap_Blue ( Colormap_Resource *cmap, float min, float max )
+{ _colormap_single_channel( cmap, min, max, 2 );
 }
 
 void
-Colormap_Alpha ( Colormap_Resource *cmap, float min, float max, size_t nrows )
-{ _colormap_single_channel( cmap, min, max, nrows, 3 );
+Colormap_Alpha ( Colormap_Resource *cmap, float min, float max )
+{ _colormap_single_channel( cmap, min, max, 3 );
 }
 
 inline 
 void _convert_single_hsva_to_rgba( f32 *hsva, f32* rgba)
 { f32 H = 6.0f* hsva[0], V = hsva[2],
-      S = hsva[1]      , A = hsva[3];
+      S = hsva[1]          , A = hsva[3];
   f32 f,p,ih;
                          // v  t/q  p
   static int idx[][3] = { { 0 , 1 , 2 }, // 0 - t
@@ -179,9 +198,10 @@ void _convert_single_hsva_to_rgba( f32 *hsva, f32* rgba)
                           { 1 , 2 , 0 }, // 2 - t
                           { 2 , 1 , 0 }, // 3 - q
                           { 2 , 0 , 1 }, // 4 - t
-                          { 1 , 2 , 1 }};// 5 - q
+                          { 0 , 2 , 1 }, // 5 - q
+                          { 0 , 1 , 2 }}; // 6==0 - t
   static f32 q,t,
-            *qt[] = {&q, &t};
+            *qt[] = {&t, &q};
   
   ih = floorf(H);
   f  = H - ih;
@@ -193,26 +213,27 @@ void _convert_single_hsva_to_rgba( f32 *hsva, f32* rgba)
     rgba[ idx[i][0] ] = V;
     rgba[ idx[i][1] ] = *qt[i&1];
     rgba[ idx[i][2] ] = p;
-    rgba[ 3         ] = hsva[3];
+    rgba[ 3         ] = A;
   }
 }
 
 inline 
 void _convert_array_hsva_to_rgba( f32 *hsva, f32* rgba, size_t nrows )
 // all hsva and rbga values are in [0,1]
-{ typedef struct {f32 h; f32 s; f32 v; f32 a;} T;
-  T   *sb = (T*)hsva,
-      *s  = sb + nrows,
-      *db = (T*)rgba,
-      *d  = db + nrows;
-  while( s-- > sb )
-    _convert_single_hsva_to_rgba((f32*)s,(f32*)--d);
+{ f32 *sb = hsva,
+      *s  = sb + 4*nrows,
+      *db = rgba,
+      *d  = db + 4*nrows;
+  while( (s-=4) >= sb )
+  { d-=4;
+    _convert_single_hsva_to_rgba(s,d);
+  }
 }
 
 inline void
 _set_channel_to_constant( f32 *rgba, size_t nrows, int channel, f32 v )
 { f32 *beg = rgba, *cur = rgba + 4*nrows;
-  while((cur-=4) > beg)
+  while((cur-=4) >= beg)
     cur[channel] = v;
 }
 
@@ -224,8 +245,9 @@ _set_channel_linear_ramp( f32 *rgba, size_t nrows, int channel, f32 m, f32 b )
   }
 } 
 
-void Colormap_HSV_Hue( Colormap_Resource *cmap, float S, float V, float A, float min, float max, size_t nrows )
+void Colormap_HSV_Hue( Colormap_Resource *cmap, float S, float V, float A, float min, float max )
 { size_t nbytes;
+  UINT nrows = Colormap_Resource_Get_Element_Count(cmap);
   float m,b,
        *hsva = _linear_colormap_get_params( min, max, 1.0f, nrows, &m, &b, &nbytes );
   _set_channel_linear_ramp( hsva, nrows, 0, m, b );
@@ -237,8 +259,23 @@ void Colormap_HSV_Hue( Colormap_Resource *cmap, float S, float V, float A, float
   Colormap_Resource_Fill( cmap, hsva, nbytes );
 }
 
-void Colormap_HSV_Saturation( Colormap_Resource *cmap, float H, float V, float A, float min, float max, size_t nrows )
+void Colormap_HSV_Hue_Value( Colormap_Resource *cmap, float S, float A, float min, float max )
 { size_t nbytes;
+  UINT nrows = Colormap_Resource_Get_Element_Count(cmap);
+  float m,b,
+       *hsva = _linear_colormap_get_params( min, max, 1.0f, nrows, &m, &b, &nbytes );
+  _set_channel_linear_ramp( hsva, nrows, 0, m, b );
+  _set_channel_to_constant( hsva, nrows, 1, S );
+  _set_channel_linear_ramp( hsva, nrows, 2, m, b );  
+  _set_channel_to_constant( hsva, nrows, 3, A );
+  
+  _convert_array_hsva_to_rgba(hsva,hsva,nrows);
+  Colormap_Resource_Fill( cmap, hsva, nbytes );
+}
+
+void Colormap_HSV_Saturation( Colormap_Resource *cmap, float H, float V, float A, float min, float max )
+{ size_t nbytes;
+  UINT nrows = Colormap_Resource_Get_Element_Count(cmap);
   float m,b,
        *hsva = _linear_colormap_get_params( min, max, 1.0f, nrows, &m, &b, &nbytes );  
   _set_channel_to_constant( hsva, nrows, 0, H );
@@ -250,8 +287,9 @@ void Colormap_HSV_Saturation( Colormap_Resource *cmap, float H, float V, float A
   Colormap_Resource_Fill( cmap, hsva, nbytes );
 }
 
-void Colormap_HSV_Value( Colormap_Resource *cmap, float H, float S, float A, float min, float max, size_t nrows )
+void Colormap_HSV_Value( Colormap_Resource *cmap, float H, float S, float A, float min, float max )
 { size_t nbytes;
+  UINT nrows = Colormap_Resource_Get_Element_Count(cmap);
   float m,b,
        *hsva = _linear_colormap_get_params( min, max, 1.0f, nrows, &m, &b, &nbytes );
   _set_channel_to_constant( hsva, nrows, 0, H );
@@ -263,8 +301,9 @@ void Colormap_HSV_Value( Colormap_Resource *cmap, float H, float S, float A, flo
   Colormap_Resource_Fill( cmap, hsva, nbytes );
 }
 
-void Colormap_HSV_Alpha( Colormap_Resource *cmap, float H, float S, float V, float min, float max, size_t nrows )
+void Colormap_HSV_Alpha( Colormap_Resource *cmap, float H, float S, float V, float min, float max )
 { size_t nbytes;
+  UINT nrows = Colormap_Resource_Get_Element_Count(cmap);
   float m,b,
        *hsva = _linear_colormap_get_params( min, max, 1.0f, nrows, &m, &b, &nbytes );
   _set_channel_to_constant( hsva, nrows, 0, H );

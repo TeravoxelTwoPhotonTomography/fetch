@@ -13,6 +13,12 @@
 //     expanding vector for the index of source.
 //
 
+#if 0
+#define disk_stream_debug(...) debug(__VA_ARGS__)
+#else
+#define disk_stream_debug(...)
+#endif
+
 #define DISK_STREAM_DEFAULT_TIMEOUT                    INFINITE
 #define DISK_STREAM_DEFAULT_INDEX_CAPACITY             4
 
@@ -354,7 +360,7 @@ _Disk_Stream_Task_Write_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   do
   { while( Asynq_Pop(q, &buf) )
     { double dt = toc(&t);
-      debug("FPS: %3.1f Frame time: %5.4f            MB/s: %3.1f Q: %3d Write %8d bytes to %s\r\n",
+      disk_stream_debug("FPS: %3.1f Frame time: %5.4f            MB/s: %3.1f Q: %3d Write %8d bytes to %s\r\n",
               1.0/dt, dt,                      nbytes/1000000.0/dt, 
               q->q->head - q->q->tail,nbytes, stream->path );
       Guarded_Assert_WinErr( WriteFile( stream->hfile, buf, nbytes, &written, NULL ));

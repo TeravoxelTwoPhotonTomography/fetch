@@ -19,6 +19,12 @@
 #define DIGITIZER_DEBUG_SPIN_WHEN_FULL
 #endif
 
+#if 1
+#define digitizer_debug(...) debug(__VA_ARGS__)
+#else
+#define digitizer_debug(...)
+#endif
+
 #define CheckWarn( expression )  (niscope_chk( g_digitizer.vi, expression, #expression, &warning ))
 #define CheckPanic( expression ) (niscope_chk( g_digitizer.vi, expression, #expression, &error   ))
 #define ViErrChk( expression )    goto_if( CheckWarn(expression), Error )
@@ -305,7 +311,7 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
       ++nframes;
       { ViReal64 pts = 0;
         CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_BACKLOG, &pts ));
-        debug("Digitizer Backlog: %4.1f MS\r\n",pts/1024.0/1024.0);
+        digitizer_debug("Digitizer Backlog: %4.1f MS\r\n",pts/1024.0/1024.0);
       }  
       Frame_From_Bytes(frm, (void**)&buf, &desc ); //get addresses 
       desc->is_change = 0; // Mark future frame descriptors as unchanged from the last.

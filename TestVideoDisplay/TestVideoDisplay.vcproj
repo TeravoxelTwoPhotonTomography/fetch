@@ -188,6 +188,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\fetch\render-colormap.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\fetch\ring-fifo.cpp"
 				>
 			</File>
@@ -243,6 +247,10 @@
 			</File>
 			<File
 				RelativePath="..\fetch\frame.h"
+				>
+			</File>
+			<File
+				RelativePath="..\fetch\render-colormap.h"
 				>
 			</File>
 			<File

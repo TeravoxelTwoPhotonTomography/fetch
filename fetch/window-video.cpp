@@ -81,7 +81,7 @@ HRESULT _InitWindow( HINSTANCE hInstance, int nCmdShow )
         return E_FAIL;
 
     // Create window    
-    RECT rc = { 0, 0, 1024, 1024 };
+    RECT rc = { 0, 0, 256, 256 };
     AdjustWindowRect( &rc, WS_OVERLAPPEDWINDOW, FALSE );
     g_video.hwnd = CreateWindow(  "VideoDisplayClass", 
                                   "Fetch: Video Display",
@@ -193,7 +193,7 @@ _copy_data_to_texture2d_ex( ID3D10Texture2D *dst, void* src, Frame_Descriptor *d
 { D3D10_MAPPED_TEXTURE2D mappedTex;
   Frame_Interface *f = Frame_Descriptor_Get_Interface( desc );
   
-  Guarded_Assert( !FAILED( 
+  Guarded_Assert( SUCCEEDED( 
       dst->Map( D3D10CalcSubresource(0, 0, 1),
                 D3D10_MAP_WRITE_DISCARD,
                 0,                               // wait for the gpu 
@@ -260,15 +260,20 @@ _setup_geometry(void)
 }
 
 inline void _load_colormaps(void)
-{ int i=3, nrows = 1<<16;
+{ int i=3, nrows = 1<<10;
   const char* varnames[] = {"cmap0","cmap1","cmap2"};
   while(i--)
-  { g_video.cmaps[i] = Colormap_Resource_Alloc();
-    Colormap_Resource_Attach( g_video.cmaps[i], nrows, g_video.effect, "cmap0" );
+  { 
+    Colormap_Resource_Attach( g_video.cmaps[i], nrows, g_video.effect, varnames[i] );
   }  
-  Colormap_Gray   ( g_video.cmaps[0], 0.0f, (f32) nrows, nrows );
-  Colormap_HSV_Hue( g_video.cmaps[1], 1.0, 1.0, 1.0, 0.0f, (f32) nrows, nrows );
-  Colormap_Red    ( g_video.cmaps[2], 0.0f, (f32) nrows, nrows );
+  //Colormap_Inverse_Gray   ( g_video.cmaps[2], 0.0f, 1.0f );
+  //Colormap_HSV_Hue( g_video.cmaps[0], 1.0, 1.0, 1.0, 0.0f, 1.0f );
+  //Colormap_HSV_Hue_Value( g_video.cmaps[0], 1.0, 1.0, 0.0f, 1.0f );
+  Colormap_Red    ( g_video.cmaps[0], 0.0f, 1.0f );
+  Colormap_Green  ( g_video.cmaps[1], 0.0f, 1.0f );
+  Colormap_Blue   ( g_video.cmaps[2], 0.0f, 1.0f );
+  //Colormap_Black( g_video.cmaps[1] );
+  //Colormap_Black( g_video.cmaps[2] );
 }
 
 inline void
@@ -379,11 +384,11 @@ HRESULT _InitDevice()
     // Initialize the texture with test data
     { typedef i16 T;
       size_t src_nelem = width*height;      // create the source buffer
-      u16 *src = (u16*)calloc(src_nelem,sizeof(T));
+      T *src = (T*)calloc(src_nelem,sizeof(T));
       unsigned int i,j;
       for(i=0;i<height;i++)
         for(j=0;j<width;j++)
-          src[j + width * i] = (T) j + width * i + rand()/(1<<16);
+          src[j + width * i] = (T) j + width * i + rand()/(1<<4);
       _copy_data_to_texture2d( g_video.active_texture[0], src, src_nelem*sizeof(T) );
       _copy_data_to_texture2d( g_video.active_texture[1], src, src_nelem*sizeof(T) );
       _copy_data_to_texture2d( g_video.active_texture[2], src, src_nelem*sizeof(T) );
@@ -393,6 +398,9 @@ HRESULT _InitDevice()
   if( FAILED( hr ) )
       return hr;
 
+  { int i=3;
+    while(i--) g_video.cmaps[i] = Colormap_Resource_Alloc();
+  }
   _load_colormaps();
     
     
@@ -447,7 +455,7 @@ void _refresh_objects(UINT width, UINT height)
   _load_shader(VIDEO_WINDOW_PATH_TO_SHADER, VIDEO_WINDOW_SHADER_TECHNIQUE_NAME);
   _create_texture_i16( g_video.active_texture, width, height );               
   _refresh_active_texture_shader_resource_view();
-  
+  _load_colormaps();
 }
 
 //--------------------------------------------------------------------------------------
@@ -628,7 +636,7 @@ void Video_Display_Render_One_Frame()
 {   TicTocTimer clock = tic();
     static Frame                  *frm = NULL;
     static Frame_Descriptor       last;
-    static float          wait_time_ms = 50.0,//1000.0/1.0,
+    static float          wait_time_ms = 1000.0/60.0,
                 efficiency_accumulator = 0.0, 
                       efficiency_count = 0.0,
                         efficiency_hit = 0.0;
