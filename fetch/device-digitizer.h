@@ -95,15 +95,10 @@ unsigned int Digitizer_Attach              (void);     // opens device context
 //
 // Utilities
 //
-Device *Digitizer_Get_Device(void);
+extern inline Digitizer*  Digitizer_Get                 (void);
+extern inline Device*     Digitizer_Get_Device          (void);
+extern inline DeviceTask* Digitizer_Get_Default_Task    (void);
 
-//
-// Tasks
-//
-DeviceTask* Digitizer_Create_Task_Stream_All_Channels_Immediate_Trigger(void);
-
-
-DeviceTask* Digitizer_Get_Default_Task(void);
 //
 // Windows
 //    UI utilities

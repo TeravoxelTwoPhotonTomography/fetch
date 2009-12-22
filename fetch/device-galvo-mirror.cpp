@@ -226,14 +226,14 @@ _Galvo_Mirror_Task_Continuous_Scan_Immediate_Trigger_Proc( Device *d, vector_PAS
 
   OnErrPanic (DAQmxStartTask(dc));
   // Wait for stop event is triggered
-  debug("Galvo_Mirror Stream_All_Channels_Immediate_Trigger - Running -\r\n");
+  debug("Galvo_Mirror Fetch_Forever - Running -\r\n");
   
   if( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, INFINITE) )
     warning("Wait for continuous scan stopped prematurely\r\n");     
   OnErrPanic( DAQmxStopTask(dc) );
   //OnErrPanic( DAQmxWriteAnalogScalarF64(dc,0,0,0.0,NULL) );
 
-  debug("Galvo_Mirror Stream_All_Channels_Immediate_Trigger - Running done-\r\n"
+  debug("Galvo_Mirror Fetch_Forever - Running done-\r\n"
         "Task done: normal exit\r\n");
         
   ret = 0; //success
