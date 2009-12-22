@@ -239,7 +239,8 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
   u32    last_max_fetch = 0;  
   Frame                  *frm  = (Frame*)            Asynq_Token_Buffer_Alloc(qdata);
   struct niScope_wfmInfo *wfm  = (niScope_wfmInfo*)  Asynq_Token_Buffer_Alloc(qwfm);
-  Frame_Descriptor       *desc;
+  Frame_Descriptor       *desc, ref;
+  int change_token;
   TPixel                 *buf;
   unsigned int ret = 1;
 
@@ -252,6 +253,8 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
   { Digitizer_Frame_Metadata *meta = 
       _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Frame_Metadata( nelem, nwfm );
     Frame_Descriptor_Change( desc, FRAME_INTEFACE_DIGITIZER__INTERFACE_ID, meta, sizeof(Digitizer_Frame_Metadata) );
+    change_token = desc->change_token;
+    ref = *desc;
   }
       
   
@@ -313,8 +316,9 @@ _Digitizer_Task_Stream_All_Channels_Immediate_Trigger_Proc( Device *d, vector_PA
         CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_BACKLOG, &pts ));
         digitizer_debug("Digitizer Backlog: %4.1f MS\r\n",pts/1024.0/1024.0);
       }  
-      Frame_From_Bytes(frm, (void**)&buf, &desc ); //get addresses 
-      desc->is_change = 0; // Mark future frame descriptors as unchanged from the last.
+      Frame_From_Bytes(frm, (void**)&buf, &desc ); //get addresses
+      
+      memcpy(desc,&ref,sizeof(Frame_Descriptor));
       
       //dt = toc(&t);
       //if( !MOD_UNSIGNED_POW2(nframes+1,every) )

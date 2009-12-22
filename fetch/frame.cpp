@@ -37,7 +37,7 @@ Frame_Descriptor_Get_Interface( Frame_Descriptor *self )
 //----------------------------------------------------------------------------
 void
 Frame_Descriptor_Change( Frame_Descriptor *self, u8 interface_id, void *metadata, size_t nbytes )
-{ self->is_change = 1;
+{ self->change_token += 1;
   self->interface_id = interface_id;
   
   Guarded_Assert( nbytes < FRAME_DESCRIPTOR_MAX_METADATA_BYTES );
@@ -62,7 +62,7 @@ Frame_Descriptor_To_File( FILE *fp, Frame_Descriptor *self )
   size_t item_bytes = sizeof( self->interface_id ) 
                     + sizeof( count )
                     + self->metadata_nbytes;
-  if( self->is_change )                 // add new record
+  if( self->change_token )                 // add new record
   { _frame_descriptor_write(fp, self, 1 );
   } else
   { Frame_Descriptor last;              // update last record (read and overwrite)

@@ -660,9 +660,10 @@ void Video_Display_Render_One_Frame()
       if( Asynq_Peek_Timed(q, frm, (DWORD) wait_time_ms ) )
       { int i=3;
         Frame_From_Bytes( frm, &src, &desc );
-        if( desc->is_change )
+        if( desc->change_token != last_change_token)
         { RECT *rect = NULL;
-          Guarded_Assert( desc->is_change == 1 );
+          last_change_token = desc->change_token;
+          //Guarded_Assert( desc->change_token == 1 );
           memcpy(&last,desc,sizeof(Frame_Descriptor));
           //Resize window and buffers
           fint = Frame_Descriptor_Get_Interface(desc);

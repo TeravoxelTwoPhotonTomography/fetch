@@ -18,7 +18,7 @@
 typedef void Frame;
 
 typedef struct _t_frame_descriptor
-{ u8                       is_change;        // Used to signal the frame format is a change.  When false the rest of the structure should be ignored.
+{ u8                       change_token;        // Used to signal the frame format is a change.  When false the rest of the structure should be ignored.
   u8                       interface_id;  
   u8                       metadata[ FRAME_DESCRIPTOR_MAX_METADATA_BYTES ];
   u32                      metadata_nbytes;
