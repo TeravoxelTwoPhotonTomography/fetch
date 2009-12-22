@@ -38,6 +38,8 @@ typedef double             f64;
 #define MAX(a,b) __max(a,b)
 #define MIN(a,b) __min(a,b)
 
+#define SIGN(a) (((a)>0) - ((a)<0))
+
 inline u8     _next_pow2_u8    (u8  v);
 inline u32    _next_pow2_u32   (u32 v);
 inline u64    _next_pow2_u64   (u64 v);

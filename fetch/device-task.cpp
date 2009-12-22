@@ -3,6 +3,10 @@
 
 TYPE_VECTOR_DEFINE( PASYNQ );
 
+//
+// Device_Task_Thread_Proc is the main function of a 
+// task's thread.
+//
 DWORD WINAPI Device_Task_Thread_Proc( LPVOID lpParam )
 { DWORD result;
   Device        *d = (Device*) lpParam;
@@ -75,13 +79,13 @@ DeviceTask_Alloc_Outputs( DeviceTask* self,
 }
 
 DeviceTask*
-DeviceTask_Alloc( fp_device_task_cfg_proc cfg, 
-                  fp_device_task_run_proc run )
+DeviceTask_Alloc( fp_device_task_cfg_proc  cfg, 
+                  fp_device_task_run_proc  run )
 { DeviceTask* self = (DeviceTask*)Guarded_Calloc(1, sizeof(DeviceTask),"DeviceTask_Alloc");
   
   self->in = self->out = NULL;
-  self->cfg_proc = cfg;
-  self->run_proc = run;
+  self->cfg_proc  = cfg;
+  self->run_proc  = run;
   self->main     = &Device_Task_Thread_Proc;
   
   return self;

@@ -101,6 +101,9 @@ void Microscope_Application_Start(void)
               Digitizer_Get_Default_Task(),
               INFINITE );
 
+  Device_Arm( Galvo_Mirror_Get_Device(), 
+              Galvo_Mirror_Get_Default_Task(),
+              INFINITE );
 
   Guarded_Assert(
     Device_Run( Disk_Stream_Attach_And_Arm("digitizer-frames",             // alias

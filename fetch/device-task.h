@@ -43,8 +43,8 @@ typedef struct _device_task
   LPTHREAD_START_ROUTINE   main;       // thread procedure (wraps run_proc)
 } DeviceTask;
 
-DeviceTask *DeviceTask_Alloc( fp_device_task_cfg_proc cfg,        // Configuration procedure (run when Device is armed)
-                              fp_device_task_run_proc run );      // Run procedure (run when Device is run)
+DeviceTask *DeviceTask_Alloc( fp_device_task_cfg_proc  cfg,        // Configuration procedure (run when Device is armed)
+                              fp_device_task_run_proc  run);       // Run procedure (run when Device is run)
 void        DeviceTask_Free( DeviceTask *self );
 void        DeviceTask_Free_Outputs( DeviceTask *self );
 void        DeviceTask_Free_Outputs( DeviceTask *self );

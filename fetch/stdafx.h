@@ -18,6 +18,9 @@
 #include <memory.h>
 #include <tchar.h>
 #include <assert.h>
+#define _USE_MATH_DEFINES
+#include <math.h>
+#include <string.h>
 
 // TODO: reference additional headers your program requires here
 #include "common.h"

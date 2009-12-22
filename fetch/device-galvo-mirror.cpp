@@ -106,12 +106,22 @@ Galvo_Mirror_Attach(void)
 }
 
 //
+// Utiltites
+//
+
+extern inline Device*
+Galvo_Mirror_Get_Device(void)
+{ return gp_galvo_mirror_device;
+}
+
+//
 // TASK - Streaming on all channels
 //
 
 int32 CVICALLBACK
 _Galvo_Mirror_Task_Continuous_Scan_Immediate_Trigger_Done_Callback(TaskHandle taskHandle, int32 status, void *callbackData)
 { OnErrPanic(status);
+
   SetEvent( gp_galvo_mirror_device->notify_stop );
   return 0;
 }
@@ -122,9 +132,20 @@ _Galvo_Mirror_Task_Continuous_Scan_Immediate_Trigger_Cfg( Device *d, vector_PASY
   Galvo_Mirror_Config cfg = g_galvo_mirror.config;  
    
   // Vertical
-  OnErrPanic( DAQmxCreateAOVoltageChan( dc, cfg.physical_channel, cfg.channel_label, cfg.min, cfg.max, cfg.units, NULL ));
+  OnErrPanic( DAQmxCreateAOVoltageChan( dc, 
+                                        cfg.physical_channel,
+                                        cfg.channel_label,
+                                        cfg.min,
+                                        cfg.max,
+                                        cfg.units,
+                                        NULL ));
   // Horizontal
-  OnErrPanic( DAQmxCfgSampClkTiming( dc, cfg.source, cfg.rate, cfg.active_edge, cfg.sample_mode, cfg.samples_per_channel ));
+  OnErrPanic( DAQmxCfgSampClkTiming(    dc,
+                                        cfg.source,
+                                        cfg.rate,
+                                        cfg.active_edge,
+                                        cfg.sample_mode,
+                                        cfg.samples_per_channel ));
   
   // Event callbacks
   OnErrPanic( 
@@ -145,10 +166,42 @@ _Galvo_Mirror_Task_Continuous_Scan_Immediate_Trigger_Cfg( Device *d, vector_PASY
     int32    nout,
              n   = (int32)q->q->buffer_size_bytes / sizeof(float64); // number of samples per data buffer
     float64 *buf = (float64*) Asynq_Token_Buffer_Alloc(q);
-    
-    
-    memset(buf,0,q->q->buffer_size_bytes);
         
+    //memset(buf,0,q->q->buffer_size_bytes);
+    
+    // Make a triangle wave
+    { float64                  A = (cfg.max - cfg.min)/2.0 - 1e-3,
+              resonant_frequency = 8000, // Hz
+                 lines_per_frame = 512,
+                 frame_frequency = 2.0*resonant_frequency/lines_per_frame,   // 1. Line rate is twice resonant frequency                 
+              k = q->q->buffer_size_bytes/sizeof(float64)/frame_frequency/2; // 2. Two frames per full wave
+      size_t i,n = q->q->buffer_size_bytes/sizeof(float64);
+      // first pass - sawtooth - one full rise is 2 frames
+      i=n;
+      while(i--)
+      { float64 t = i/k;
+        buf[i] = t - floor(t);
+      }
+      
+      { FILE* fp = fopen("galvo-wave-first-pass-f64.raw","wb");
+        fwrite(buf,1,q->q->buffer_size_bytes,fp);
+        fclose(fp);
+      }      
+      
+      // second pass - transform sawtooth to triangle with appropriate amplitude
+      //             - t==0 => full amplitude
+      i=n;      
+      while(i--)
+      { float64 v = buf[i] - 0.5;
+        buf[i] = A*(2.0*v*SIGN(v)-0.5);
+      }
+      
+      { FILE* fp = fopen("galvo-wave-second-pass-f64.raw","wb");
+        fwrite(buf,1,q->q->buffer_size_bytes,fp);
+        fclose(fp);
+      }
+    }    
+
     OnErrPanic( DAQmxWriteAnalogF64(dc, /* task handle */
                                     (int32) cfg.samples_per_channel, 
                                     0,  /*autostart*/ 
@@ -176,9 +229,10 @@ _Galvo_Mirror_Task_Continuous_Scan_Immediate_Trigger_Proc( Device *d, vector_PAS
   debug("Galvo_Mirror Stream_All_Channels_Immediate_Trigger - Running -\r\n");
   
   if( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, INFINITE) )
-    warning("Wait for continuous scan stopped prematurely\r\n");
-  
+    warning("Wait for continuous scan stopped prematurely\r\n");     
   OnErrPanic( DAQmxStopTask(dc) );
+  //OnErrPanic( DAQmxWriteAnalogScalarF64(dc,0,0,0.0,NULL) );
+
   debug("Galvo_Mirror Stream_All_Channels_Immediate_Trigger - Running done-\r\n"
         "Task done: normal exit\r\n");
         
@@ -190,6 +244,11 @@ DeviceTask*
 Galvo_Mirror_Create_Task_Continuous_Scan_Immediate_Trigger(void)
 { return DeviceTask_Alloc(_Galvo_Mirror_Task_Continuous_Scan_Immediate_Trigger_Cfg,
                           _Galvo_Mirror_Task_Continuous_Scan_Immediate_Trigger_Proc);
+}
+
+extern inline DeviceTask*
+Galvo_Mirror_Get_Default_Task(void)
+{ return gp_galvo_mirror_tasks[0];
 }
 
 //

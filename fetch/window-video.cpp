@@ -267,13 +267,13 @@ inline void _load_colormaps(void)
     Colormap_Resource_Attach( g_video.cmaps[i], nrows, g_video.effect, varnames[i] );
   }  
   //Colormap_Inverse_Gray   ( g_video.cmaps[2], 0.0f, 1.0f );
-  //Colormap_HSV_Hue( g_video.cmaps[0], 1.0, 1.0, 1.0, 0.0f, 1.0f );
   //Colormap_HSV_Hue_Value( g_video.cmaps[0], 1.0, 1.0, 0.0f, 1.0f );
-  Colormap_Red    ( g_video.cmaps[0], 0.0f, 1.0f );
-  Colormap_Green  ( g_video.cmaps[1], 0.0f, 1.0f );
-  Colormap_Blue   ( g_video.cmaps[2], 0.0f, 1.0f );
-  //Colormap_Black( g_video.cmaps[1] );
-  //Colormap_Black( g_video.cmaps[2] );
+  Colormap_HSV_Hue( g_video.cmaps[0], 1.0, 1.0, 1.0, 0.0f, 1.0f );  
+  Colormap_Black( g_video.cmaps[1] );
+  Colormap_Black( g_video.cmaps[2] );
+  //Colormap_Red    ( g_video.cmaps[0], 0.0f, 1.0f );
+  //Colormap_Green  ( g_video.cmaps[1], 0.0f, 1.0f );
+  //Colormap_Blue   ( g_video.cmaps[2], 0.0f, 1.0f );
 }
 
 inline void
@@ -636,13 +636,14 @@ void Video_Display_Render_One_Frame()
 {   TicTocTimer clock = tic();
     static Frame                  *frm = NULL;
     static Frame_Descriptor       last;
-    static float          wait_time_ms = 1000.0/60.0,
-                efficiency_accumulator = 0.0, 
-                      efficiency_count = 0.0,
-                        efficiency_hit = 0.0;
+    static float          wait_time_ms = 1000.0f/60.0f,
+                efficiency_accumulator = 0.0f,
+                      efficiency_count = 0.0f,
+                        efficiency_hit = 0.0f;
     asynq               *q = g_video.frame_source;
     void              *src = NULL; 
     Frame_Descriptor *desc = NULL;
+    static int last_change_token  = 0;
     static vector_size_t *vdim = NULL;
     Frame_Interface *fint = NULL;
     
