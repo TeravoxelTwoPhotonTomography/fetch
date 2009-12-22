@@ -188,6 +188,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\device-digitizer-task-triggered.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\device-digitizer.cpp"
 				>
 			</File>
@@ -287,6 +291,10 @@
 			</File>
 			<File
 				RelativePath=".\device-digitizer-task-fetch-forever.h"
+				>
+			</File>
+			<File
+				RelativePath=".\device-digitizer-task-triggered.h"
 				>
 			</File>
 			<File

@@ -39,6 +39,7 @@ DECLARE_USER_MESSAGE( IDM_DIGITIZER_LIST_DEVICES, "{5975C4F4-CA28-4d2b-A77C-B4D1
 DECLARE_USER_MESSAGE( IDM_DIGITIZER_TASK_STOP,    "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
 DECLARE_USER_MESSAGE( IDM_DIGITIZER_TASK_RUN,     "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
 DECLARE_USER_MESSAGE( IDM_DIGITIZER_TASK_0,       "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
+DECLARE_USER_MESSAGE( IDM_DIGITIZER_TASK_1,       "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
 
 unsigned int
 _digitizer_free_tasks(void)
@@ -165,7 +166,8 @@ HMENU
 _digitizer_ui_make_menu(void)
 { HMENU submenu = CreatePopupMenu(),
         taskmenu = CreatePopupMenu();
-  Guarded_Assert_WinErr( AppendMenu( taskmenu, MF_STRING, IDM_DIGITIZER_TASK_0, "Continuous &Fetch" ));
+  Guarded_Assert_WinErr( AppendMenu( taskmenu, MF_STRING, IDM_DIGITIZER_TASK_0, "Fetch &Forever" ));
+  Guarded_Assert_WinErr( AppendMenu( taskmenu, MF_STRING, IDM_DIGITIZER_TASK_1, "Fetch &Triggered" ));
   
                                        
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_DIGITIZER_DETACH,  "&Detach"));
@@ -289,6 +291,10 @@ Digitizer_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     } else if( wmId == IDM_DIGITIZER_TASK_0 )
     { debug("IDM_DIGITIZER_TASK_0\r\n");
       Device_Arm_Nonblocking( gp_digitizer_device, gp_digitizer_tasks[0], DIGITIZER_DEFAULT_TIMEOUT );
+      
+    } else if( wmId == IDM_DIGITIZER_TASK_1 )
+    { debug("IDM_DIGITIZER_TASK_1\r\n");
+      Device_Arm_Nonblocking( gp_digitizer_device, gp_digitizer_tasks[1], DIGITIZER_DEFAULT_TIMEOUT );
       
     } else if( wmId == IDM_DIGITIZER_TASK_RUN )
     { debug("IDM_DIGITIZER_RUN\r\n");      
