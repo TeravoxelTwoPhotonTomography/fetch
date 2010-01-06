@@ -27,14 +27,29 @@ typedef ViInt16 TPixel;
 //
 // TASK - Streaming on all channels
 //
+void
+_Digitizer_Task_Triggered_Set_Default_Parameters(void)
+{ Digitizer_Config *cfg = &( Digitizer_Get()->config );
+  double resonant_frequency_Hz = 7920.0;
+  *cfg = (Digitizer_Config) DIGITIZER_CONFIG_DEFAULT;
+  cfg->sample_rate          = 60000000;
+  cfg->record_length        = (ViInt32) cfg->sample_rate / resonant_frequency_Hz;
+  cfg->num_records          = 512; // number of scans
+  cfg->acquisition_channels = "0,1";
+  cfg->channels[0].range    = 2.0;  // Volts peak-to-peak  
+  cfg->channels[1].range    = 20.0; // Volts peak-to-peak
+  cfg->channels[0].enabled  = VI_TRUE;
+  cfg->channels[1].enabled  = VI_TRUE;
+  
+}
 
 Digitizer_Frame_Metadata*
-_Digitizer_Task_Triggered_Frame_Metadata( ViInt32 record_length, ViInt32 nwfm )
+_Digitizer_Task_Triggered_Frame_Metadata( ViInt32 record_length, ViInt32 nrecords, ViInt32 nwfm )
 { static Digitizer_Frame_Metadata meta;    
-  meta.height = 512;
-  meta.width  = (u16) (record_length / meta.height);
-  meta.nchan  = (u8)  nwfm;
-  meta.Bpp    = sizeof(TPixel);
+  meta.height = (u16) nrecords;        // e.g. 512  for 1024 lines with bidirectional scanning
+  meta.width  = (u16) record_length;   // e.g. 7575 for 60MS/s sampling using a 7920 Hz resonant scanner.
+  meta.nchan  = (u8)  (nwfm/nrecords); // e.g. 3    for 3 channels
+  meta.Bpp    = sizeof(TPixel);        // e.g. 2    for 16 bit samples
   return &meta;
 }
 
@@ -45,6 +60,8 @@ _Digitizer_Task_Triggered_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out 
   Digitizer_Config cfg = dig->config;
   ViInt32 i;
   int nchan = 0;
+  
+  _Digitizer_Task_Triggered_Set_Default_Parameters();
    
   // Vertical
   for(i=0; i<cfg.num_channels; i++)
@@ -65,12 +82,15 @@ _Digitizer_Task_Triggered_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out 
                                                 cfg.reference_position,// reference position (% units???)
                                                 cfg.num_records,       // number of records to fetch per acquire
                                                 NISCOPE_VAL_TRUE));    // enforce real time?
-  // Configure software trigger, but never send the trigger.
-  // This starts an infinite acquisition, until you call niScope_Abort
-  // or niScope_close
-  CheckPanic (niScope_ConfigureTriggerSoftware (vi, 
-                                                 0.0,   // hold off (s)
-                                                 0.0)); // delay    (s)
+  // Configure trigger
+  CheckPanic (niScope_ConfigureTriggerEdge( vi, 
+                                            "0",                  // trigger source
+                                            0.0,                  // trigger voltage
+                                            NISCOPE_VAL_POSITIVE, // slope
+                                            NISCOPE_VAL_DC,       // coupling
+                                            0.0,                  // holdoff - seconds
+                                            0.0 ));               // delay
+                                            
 
   { ViInt32 nwfm;
     ViInt32 record_length;
@@ -88,7 +108,6 @@ _Digitizer_Task_Triggered_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out 
                         DIGITIZER_BUFFER_NUM_FRAMES},
                sz[2] = {Frame_Get_Size_Bytes(&desc),             // frame data
                         nwfm*sizeof(struct niScope_wfmInfo)};    // description of each frame
-      // DeviceTask_Free_Outputs( d->task );  // free channels that already exist (FIXME: thrashing)
       // Channels are reference counted so the memory may not be freed till the other side Unrefs.
       if( d->task->out == NULL ) // channels may already be alloced (occurs on a detach->attach cycle)
         DeviceTask_Alloc_Outputs( d->task, 2, nbuf, sz );
@@ -135,14 +154,6 @@ _Digitizer_Task_Triggered_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out
     ref = *desc;
   }
       
-  
-  ViErrChk   (niScope_GetAttributeViInt32 (vi, NULL,   // TODO: reset to default when done
-                                           NISCOPE_ATTR_FETCH_RELATIVE_TO,         //?TODO: push/pop state for niscope?
-                                           &old_state ));    
-  ViErrChk   (niScope_SetAttributeViInt32 (vi, NULL,   // TODO: reset to default when done
-                                           NISCOPE_ATTR_FETCH_RELATIVE_TO,         //?TODO: push/pop state for niscope?
-                                           NISCOPE_VAL_READ_POINTER ));
-
   // Loop until the stop event is triggered
   debug("Digitizer Triggered - Running -\r\n");
   t = tic();

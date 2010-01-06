@@ -652,6 +652,7 @@ void Video_Display_Render_One_Frame()
     
     if( q )
     { // create the source buffer
+    
       if(!frm)
       { frm  = (Frame*) Asynq_Token_Buffer_Alloc( q );
         Frame_From_Bytes( frm, &src, &desc );

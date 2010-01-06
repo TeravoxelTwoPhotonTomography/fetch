@@ -326,7 +326,6 @@ Device_Stop( Device *self, DWORD timeout_ms )
       CloseHandle(self->thread);
       self->thread = INVALID_HANDLE_VALUE;
     }
-    
     self->is_running = 0;
   }
   Device_Unlock(self);

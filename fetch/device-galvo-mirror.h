@@ -30,8 +30,8 @@ typedef struct _galvo_mirror_config
 #define GALVO_MIRROR_CONFIG_DEFAULT {"galvo-mirror\0",\
                                      "Dev1/ao0\0",\
                                      "galvo-mirror\0",\
-                                     -0.1,\
-                                      0.1,\
+                                     -0.5,\
+                                      0.5,\
                                      DAQmx_Val_Volts,\
                                      "OnboardClock\0",\
                                      32000,\

@@ -209,6 +209,9 @@ _Digitizer_Task_Fetch_Forever_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ 
         "Task done: normal exit\r\n");
   ret = 0; //success
 Error:
+  ViErrChk   (niScope_SetAttributeViInt32 (vi, NULL,
+                                           NISCOPE_ATTR_FETCH_RELATIVE_TO,
+                                           old_state ));
   free( frm );
   free( wfm );
   debug("Digitizer: nfetches: %u nframes: %u\r\n"
