@@ -197,10 +197,8 @@ _copy_data_to_texture2d_ex( ID3D10Texture2D *dst, void* src, Frame_Descriptor *d
       dst->Map( D3D10CalcSubresource(0, 0, 1),
                 D3D10_MAP_WRITE_DISCARD,
                 0,                               // wait for the gpu 
-                &mappedTex ) ));  
-  memcpy(mappedTex.pData, 
-         f->get_channel(desc,src,ichan), 
-         f->get_nbytes(desc));
+                &mappedTex ) ));
+  f->copy_channel( desc, mappedTex.pData, src, ichan );  
   dst->Unmap( D3D10CalcSubresource(0, 0, 1) );        
 }
 

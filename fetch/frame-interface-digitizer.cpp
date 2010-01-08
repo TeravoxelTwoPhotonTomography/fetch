@@ -8,6 +8,43 @@
 #endif
 
 //
+// Defaults
+// These functions will probably be resused for different frame formats
+//
+
+size_t
+frame_interface_digitizer__default__get_nchannels (Frame_Descriptor* fd)
+{ Digitizer_Frame_Metadata *meta = (Digitizer_Frame_Metadata*) fd->metadata;
+  return meta->nchan;
+}
+
+size_t
+frame_interface_digitizer__default__get_nbytes (Frame_Descriptor* fd)
+{ DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__CHECK_DESCRIPTOR;
+  Digitizer_Frame_Metadata *meta = (Digitizer_Frame_Metadata*) fd->metadata;
+  return meta->width * meta->height * meta->Bpp;
+}
+
+void
+frame_interface_digitizer__default__copy_channel( Frame_Descriptor* fd, void *dst, void *src, size_t ichan )
+{ DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__CHECK_DESCRIPTOR;
+  Digitizer_Frame_Metadata        *meta = (Digitizer_Frame_Metadata*) fd->metadata;  
+  size_t                    chan_stride = meta->width * meta->height * meta->Bpp;
+  memcpy( dst, (u8*)src + chan_stride * ichan , chan_stride );
+  return;
+}
+
+void
+frame_interface_digitizer__default__get_dimensions ( Frame_Descriptor* fd, vector_size_t *vdim )
+{ DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__CHECK_DESCRIPTOR;
+  Digitizer_Frame_Metadata        *meta = (Digitizer_Frame_Metadata*) fd->metadata;
+  vector_size_t_request( vdim, 2 );
+  vdim->count       = 2;
+  vdim->contents[0] = meta->width;
+  vdim->contents[1] = meta->height;
+}
+
+//
 // Interleaved planes
 // Each channel is in it's own contiguous memory block
 //
@@ -20,36 +57,13 @@
   #define DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__CHECK_DESCRIPTOR
 #endif
 
-size_t
-frame_interface_digitizer_interleaved_planes__get_nchannels (Frame_Descriptor* fd)
-{ DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__CHECK_DESCRIPTOR;
-  Digitizer_Frame_Metadata *meta = (Digitizer_Frame_Metadata*) fd->metadata;
-  return meta->nchan;
-}
-
-size_t
-frame_interface_digitizer_interleaved_planes__get_nbytes (Frame_Descriptor* fd)
-{ DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__CHECK_DESCRIPTOR;
-  Digitizer_Frame_Metadata *meta = (Digitizer_Frame_Metadata*) fd->metadata;
-  return meta->width * meta->height * meta->Bpp;
-}
-
-void*
-frame_interface_digitizer_interleaved_planes__get_channel( Frame_Descriptor* fd, void *data, size_t ichan )
+void
+frame_interface_digitizer_interleaved_planes__copy_channel( Frame_Descriptor* fd, void *dst, void *src, size_t ichan )
 { DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__CHECK_DESCRIPTOR;
   Digitizer_Frame_Metadata        *meta = (Digitizer_Frame_Metadata*) fd->metadata;  
   size_t                    chan_stride = meta->width * meta->height * meta->Bpp;
-  return (u8*)data + chan_stride * ichan;  
-}
-
-void
-frame_interface_digitizer_interleaved_planes__get_dimensions ( Frame_Descriptor* fd, vector_size_t *vdim )
-{ DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__CHECK_DESCRIPTOR;
-  Digitizer_Frame_Metadata        *meta = (Digitizer_Frame_Metadata*) fd->metadata;
-  vector_size_t_request( vdim, 2 );
-  vdim->count       = 2;
-  vdim->contents[0] = meta->width;
-  vdim->contents[1] = meta->height;
+  memcpy( dst, (u8*)src + chan_stride * ichan , chan_stride );
+  return;
 }
 
 //
@@ -57,10 +71,6 @@ frame_interface_digitizer_interleaved_planes__get_dimensions ( Frame_Descriptor*
 // Within a line, each channel is contiguous in memory.
 //
 
-//
-// Interleaved planes
-// Each channel is in it's own contiguous memory block
-//
 #ifdef DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES
 #define DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__CHECK_DESCRIPTOR\
   { Guarded_Assert( fd->interface_id    == FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__INTERFACE_ID );\
@@ -70,43 +80,20 @@ frame_interface_digitizer_interleaved_planes__get_dimensions ( Frame_Descriptor*
   #define DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__CHECK_DESCRIPTOR
 #endif
 
-size_t
-frame_interface_digitizer_interleaved_lines__get_nchannels (Frame_Descriptor* fd)
-{ DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__CHECK_DESCRIPTOR;
-  Digitizer_Frame_Metadata *meta = (Digitizer_Frame_Metadata*) fd->metadata;
-  return meta->nchan;
-}
-
-size_t
-frame_interface_digitizer_interleaved_lines__get_nbytes (Frame_Descriptor* fd)
-{ DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__CHECK_DESCRIPTOR;
-  Digitizer_Frame_Metadata *meta = (Digitizer_Frame_Metadata*) fd->metadata;
-  return meta->width * meta->height * meta->Bpp;
-}
-
-void*
-frame_interface_digitizer_interleaved_lines__get_channel( Frame_Descriptor* fd, void *data, size_t ichan )
+void
+frame_interface_digitizer_interleaved_lines__copy_channel( Frame_Descriptor* fd, void *dst, void *src, size_t ichan )
 { DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__CHECK_DESCRIPTOR;
   Digitizer_Frame_Metadata        *meta = (Digitizer_Frame_Metadata*) fd->metadata;  
-  size_t                         nbytes = meta->width * meta->height * meta->Bpp,
-                                 stride = meta->width * meta->nchan  * meta->Bpp;
-  int                            nlines = meta->height;
-  static vector_u8 *buf = 0;
-  if(!buf)
-    buf = vector_u8_alloc( nbytes );
-  vector_u8_request( buf, nbytes - 1 /*max index*/);
-  { // WIP
-    // TODO
+  size_t                         nlines = meta->height,
+                            line_nbytes = meta->width * meta->Bpp,
+                           plane_nbytes = nlines * line_nbytes,
+                                 stride = line_nbytes * meta->nchan;
+  u8 *src_cur = (u8*)src + stride * nlines,
+     *dst_cur = (u8*)dst + plane_nbytes;
+  while( src_cur > src )
+  { src_cur -= stride;
+    dst_cur -= line_nbytes;
+    memcpy( dst_cur, src_cur, plane_nbytes );
   }
-  return (u8*)data + chan_stride * ichan;
-}
-
-void
-frame_interface_digitizer_interleaved_lines__get_dimensions ( Frame_Descriptor* fd, vector_size_t *vdim )
-{ DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__CHECK_DESCRIPTOR;
-  Digitizer_Frame_Metadata        *meta = (Digitizer_Frame_Metadata*) fd->metadata;
-  vector_size_t_request( vdim, 2 );
-  vdim->count       = 2;
-  vdim->contents[0] = meta->width;
-  vdim->contents[1] = meta->height;
+  return;
 }

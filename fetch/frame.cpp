@@ -11,15 +11,15 @@
 #include "frame-interface-digitizer.h"
 
 Frame_Interface g_interfaces[] = {
-  { frame_interface_digitizer_interleaved_planes__get_nchannels,   // 0 - frame-interface-digitizer-interleaved-planes
-    frame_interface_digitizer_interleaved_planes__get_nbytes,
-    frame_interface_digitizer_interleaved_planes__get_channel,
-    frame_interface_digitizer_interleaved_planes__get_dimensions
+  { frame_interface_digitizer__default__get_nchannels,   // 0 - frame-interface-digitizer-interleaved-planes
+    frame_interface_digitizer__default__get_nbytes,
+    frame_interface_digitizer_interleaved_planes__copy_channel,
+    frame_interface_digitizer__default__get_dimensions
   },  
-  { frame_interface_digitizer_interleaved_planes__get_nchannels,   // 1 - frame-interface-digitizer-interleaved-lines
-    frame_interface_digitizer_interleaved_planes__get_nbytes,
-    frame_interface_digitizer_interleaved_planes__get_channel,
-    frame_interface_digitizer_interleaved_planes__get_dimensions
+  { frame_interface_digitizer__default__get_nchannels,   // 1 - frame-interface-digitizer-interleaved-lines
+    frame_interface_digitizer__default__get_nbytes,
+    frame_interface_digitizer_interleaved_lines__copy_channel,
+    frame_interface_digitizer__default__get_dimensions
   },
 };
 

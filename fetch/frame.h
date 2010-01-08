@@ -26,14 +26,14 @@ typedef struct _t_frame_descriptor
 
 typedef size_t    (*tfp_frame_get_nchannels)  ( Frame_Descriptor* fd);                              // gets channel count
 typedef size_t    (*tfp_frame_get_nbytes)     ( Frame_Descriptor* fd);                              // gets channel count
-typedef void*     (*tfp_frame_get_channel)    ( Frame_Descriptor* fd, void *src, size_t ichan );    // gets a pointer to channel by index - should be treated as a temporary buffer.  Could be invalidated on the next call.
+typedef void      (*tfp_frame_copy_channel)   ( Frame_Descriptor* fd, void *dst, void *src, size_t ichan );    // copies channel data to dst
 typedef void      (*tfp_frame_get_dimensions) ( Frame_Descriptor* fd, vector_size_t *vdim);         // returns the dimensions and number of dimensions of the channel
 
 typedef struct _t_frame_interface
 { tfp_frame_get_nchannels  get_nchannels;       // Abstract interface
   tfp_frame_get_nbytes     get_nbytes;
-  tfp_frame_get_channel    get_channel;
-  tfp_frame_get_dimensions get_dimensions;  
+  tfp_frame_copy_channel   copy_channel;
+  tfp_frame_get_dimensions get_dimensions;
 } Frame_Interface;
 
 //
