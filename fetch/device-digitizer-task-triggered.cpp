@@ -29,18 +29,19 @@ typedef ViInt16 TPixel;
 //
 void
 _Digitizer_Task_Triggered_Set_Default_Parameters(void)
-{ Digitizer_Config *cfg = &( Digitizer_Get()->config );
+{ Digitizer_Config cfg =  DIGITIZER_CONFIG_DEFAULT;
   double resonant_frequency_Hz = 7920.0;
   *cfg = (Digitizer_Config) DIGITIZER_CONFIG_DEFAULT;
-  cfg->sample_rate          = 60000000;
-  cfg->record_length        = (ViInt32) cfg->sample_rate / resonant_frequency_Hz;
-  cfg->num_records          = 512; // number of scans
-  cfg->acquisition_channels = "0,1";
-  cfg->channels[0].range    = 2.0;  // Volts peak-to-peak  
-  cfg->channels[1].range    = 20.0; // Volts peak-to-peak
-  cfg->channels[0].enabled  = VI_TRUE;
-  cfg->channels[1].enabled  = VI_TRUE;
+  cfg.sample_rate          = 60000000;
+  cfg.record_length        = (ViInt32) cfg.sample_rate / resonant_frequency_Hz;
+  cfg.num_records          = 512; // number of scans
+  cfg.acquisition_channels = "0,1";
+  cfg.channels[0].range    = 2.0;  // Volts peak-to-peak  
+  cfg.channels[1].range    = 20.0; // Volts peak-to-peak
+  cfg.channels[0].enabled  = VI_TRUE;
+  cfg.channels[1].enabled  = VI_TRUE;
   
+  Digitizer_Get()->config = cfg;
 }
 
 Digitizer_Frame_Metadata*
@@ -82,7 +83,7 @@ _Digitizer_Task_Triggered_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out 
                                                 cfg.reference_position,// reference position (% units???)
                                                 cfg.num_records,       // number of records to fetch per acquire
                                                 NISCOPE_VAL_TRUE));    // enforce real time?
-  // Configure trigger
+  // Configure reference trigger
   CheckPanic (niScope_ConfigureTriggerEdge( vi, 
                                             "0",                  // trigger source
                                             0.0,                  // trigger voltage
@@ -90,6 +91,12 @@ _Digitizer_Task_Triggered_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out 
                                             NISCOPE_VAL_DC,       // coupling
                                             0.0,                  // holdoff - seconds
                                             0.0 ));               // delay
+  
+  // Set the start trigger to PFI0 (which will accept the frame sync pulse).
+  CheckPanic( niScope_SetAttributeViString( vi,                          // session
+                                            "",                          // channel list not applicable
+                                            NISCOPE_ATTR_ACQ_ARM_SOURCE, // start trigger
+                                            NISCOPE_VAL_PFI_1 ));        // PFI1 is the pfi line on the back of the card
                                             
 
   { ViInt32 nwfm;
@@ -102,7 +109,7 @@ _Digitizer_Task_Triggered_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out 
     // Fill in frame description
     { Digitizer_Frame_Metadata *meta = 
         _Digitizer_Task_Triggered_Frame_Metadata( record_length, nwfm );
-      Frame_Descriptor_Change( &desc, FRAME_INTEFACE_DIGITIZER__INTERFACE_ID, meta, sizeof(Digitizer_Frame_Metadata) );
+      Frame_Descriptor_Change( &desc, FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__INTERFACE_ID, meta, sizeof(Digitizer_Frame_Metadata) );
     }
     { size_t nbuf[2] = {DIGITIZER_BUFFER_NUM_FRAMES,
                         DIGITIZER_BUFFER_NUM_FRAMES},
@@ -125,15 +132,7 @@ _Digitizer_Task_Triggered_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out
   asynq   *qdata = out->contents[0],
           *qwfm  = out->contents[1];
   ViInt32  nelem,
-           nwfm,
-           ttl = 0,ttl2=0,
-           old_state;
-  u32      nfetches = 0,
-           nframes  = 0,
-           every    = 32;  // must be power of two - used for reporting FPS
-  TicTocTimer t, delay_clock;
-  double delay, maxdelay = 0.0, accdelay = 0.0;
-  u32    last_max_fetch = 0;  
+           nwfm;
   Frame                  *frm  = (Frame*)            Asynq_Token_Buffer_Alloc(qdata);
   struct niScope_wfmInfo *wfm  = (niScope_wfmInfo*)  Asynq_Token_Buffer_Alloc(qwfm);
   Frame_Descriptor       *desc, ref;
@@ -149,46 +148,33 @@ _Digitizer_Task_Triggered_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out
   // Fill in frame description
   { Digitizer_Frame_Metadata *meta = 
       _Digitizer_Task_Triggered_Frame_Metadata( nelem, nwfm );
-    Frame_Descriptor_Change( desc, FRAME_INTEFACE_DIGITIZER__INTERFACE_ID, meta, sizeof(Digitizer_Frame_Metadata) );
-    change_token = desc->change_token;
+    Frame_Descriptor_Change( desc, FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__INTERFACE_ID, meta, sizeof(Digitizer_Frame_Metadata) );
+    change_token = desc->change_token;                                                                                   // TODO: figure out an interface for this pattern
     ref = *desc;
   }
       
   // Loop until the stop event is triggered
   debug("Digitizer Triggered - Running -\r\n");
-  t = tic();
   
-  ViErrChk   (niScope_InitiateAcquisition (vi));
-  delay_clock = tic();
-  do 
+  do    // ...while stop event has not been set
   { ttl2 += ttl;
     ttl = 0;
-    do
-    { // Fetch the available data without waiting
-      delay = toc( &delay_clock );
-      delay = toc( &delay_clock );
-      maxdelay = MAX(delay, maxdelay);
-      ViStatus sts = niScope_FetchBinary16 ( vi, 
-                                        chan,          // (acquistion channels)
-                                        0.0,           // Immediate
-                                        nelem - ttl,   // Remaining space in buffer
-                                        buf   + ttl,   // Where to put the data
-                                        wfm);          // metadata for fetch
-      if( delay > maxdelay )
-      { maxdelay = delay;
-        last_max_fetch = nfetches;
-      }
-      accdelay += delay;
+    
+    ViErrChk   (niScope_InitiateAcquisition (vi));
+    { ViStatus sts = niScope_FetchBinary16 (vi,
+                                            chan,          // (acquistion channels)
+                                            0.0,           // Immediate
+                                            nelem - ttl,   // Remaining space in buffer
+                                            buf   + ttl,   // Where to put the data
+                                            wfm);          // metadata for fetch
       if( sts != VI_SUCCESS )
       { niscope_chk(vi,sts, "niScope_FetchBinary16", warning);
         goto Error;
       }
-      ++nfetches;     
-      ttl += wfm->actualSamples;  // add the chunk size to the total samples count     
-      Asynq_Push( qwfm,(void**) &wfm, 0 );    // Push (swap) the info from the last fetch
-    } while(ttl!=nelem);
-    
-    // Handle the full buffer
+    }
+    ttl += wfm->actualSamples;
+    Asynq_Push( qwfm,(void**) &wfm, 0 );    // Push (swap) the info from the last fetch
+        
     { //double dt;
 #ifdef DIGITIZER_DEBUG_FAIL_WHEN_FULL
       if(  !Asynq_Push_Try( qdata,(void**) &frm )) //   Push buffer and reset total samples count
@@ -200,20 +186,8 @@ _Digitizer_Task_Triggered_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out
       { warning("Digitizer output queue overflowed.\r\n\tAborting acquisition task.\r\n");
         goto Error;
       }
-      ++nframes;
-      { ViReal64 pts = 0;
-        CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_BACKLOG, &pts ));
-        digitizer_task_fetch_forever_debug("Digitizer Backlog: %4.1f MS\r\n",pts/1024.0/1024.0);
-      }  
-      Frame_From_Bytes(frm, (void**)&buf, &desc ); //get addresses
-      
-      memcpy(desc,&ref,sizeof(Frame_Descriptor));
-      
-      //dt = toc(&t);
-      //if( !MOD_UNSIGNED_POW2(nframes+1,every) )
-      //  debug("FPS: %3.1f Frame time: %5.4f MS/s: %3.1f  MB/s: %3.1f Q: %3d Digitizer\r\n",
-      //        1.0/dt, dt, nelem/dt/1000000.0, nelem*sizeof(TPixel)*nwfm/1000000.0/dt,
-      //        qdata->q->head - qdata->q->tail );
+      Frame_From_Bytes(frm, (void**)&buf, &desc ); //get address of new frame buffer and descriptor      
+      memcpy(desc,&ref,sizeof(Frame_Descriptor));     
     }    
   } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
   debug("Digitizer Triggered - Running done -\r\n"
@@ -222,41 +196,7 @@ _Digitizer_Task_Triggered_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out
 Error:
   free( frm );
   free( wfm );
-  debug("Digitizer: nfetches: %u nframes: %u\r\n"
-        "\tDelay - max: %g (on fetch %d) mean:%g\r\n"
-        "\tTotal acquired samples %f MS\r\n",nfetches, nframes,maxdelay, last_max_fetch,accdelay/nfetches,ttl2/1024.0/1024.0);
-  { ViReal64 pts = 0;
-    CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_BACKLOG, &pts ));
-    debug("Digitizer Backlog: %4.1f MS\r\n",pts/1024.0/1024.0);
-  }
-  { ViInt32 mem = 0;
-    CheckPanic( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_ONBOARD_MEMORY_SIZE, &mem ));
-    debug("Digitizer                          Buffer size: %4.1f MB\r\n",mem/1024.0/1024.0);
-  }
-  { ViInt32 mem = 0;
-    CheckPanic( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_DATA_TRANSFER_BLOCK_SIZE, &mem ));
-    debug("Digitizer             Data Transfer Block size: %4.1f MB\r\n",mem/1024.0/1024.0);
-  }
-  { ViReal64 mem = 0;
-    CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_DATA_TRANSFER_MAXIMUM_BANDWIDTH, &mem ));
-    debug("Digitizer Data Transfer Maximum Bandwidth size: %4.1f MB\r\n",mem/1024.0/1024.0);
-  }
-  { ViInt32 mem = 0;
-    CheckPanic( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_DATA_TRANSFER_PREFERRED_PACKET_SIZE, &mem ));
-    debug("Digitizer   Data Transfer Prefered Packet size: %4.1f MB\r\n",mem/1024.0/1024.0);
-  }
-  { ViReal64 mem = 0;
-    CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_MAX_REAL_TIME_SAMPLING_RATE, &mem ));
-    debug("Digitizer     Data Max real time sampling rate: %4.1f MHz\r\n",mem/1024.0/1024.0);
-  }
-  { ViReal64 mem = 0;
-    CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_HORZ_SAMPLE_RATE, &mem ));
-    debug("Digitizer                 actual sampling rate: %4.1f MHz\r\n",mem/1024.0/1024.0);
-  }
-  { ViReal64 mem = 0;
-    CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_DEVICE_TEMPERATURE, &mem ));
-    debug("Digitizer                          Temperature: %4.1f C\r\n",mem);
-  }
+  niscope_debug_print_status(vi);
   CheckPanic( niScope_Abort(vi) );
   return ret;
 }

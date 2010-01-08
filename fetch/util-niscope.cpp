@@ -94,3 +94,32 @@ void niscope_debug_list_devices(void)
   }             
   niModInst_CloseInstalledDevicesSession(session);
 }
+
+void niscope_debug_print_status( ViSession vi )
+{ ViReal64 pts = 0;
+  ViInt32 mem = 0;
+
+  CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_BACKLOG, &pts ));
+  debug("Digitizer Backlog: %4.1f MS\r\n",pts/1024.0/1024.0);
+
+  CheckPanic( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_ONBOARD_MEMORY_SIZE, &mem ));
+  debug("Digitizer                          Buffer size: %4.1f MB\r\n",mem/1024.0/1024.0);
+
+  CheckPanic( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_DATA_TRANSFER_BLOCK_SIZE, &mem ));
+  debug("Digitizer             Data Transfer Block size: %4.1f MB\r\n",mem/1024.0/1024.0);
+
+  CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_DATA_TRANSFER_MAXIMUM_BANDWIDTH, &mem ));
+  debug("Digitizer Data Transfer Maximum Bandwidth size: %4.1f MB\r\n",mem/1024.0/1024.0);
+
+  CheckPanic( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_DATA_TRANSFER_PREFERRED_PACKET_SIZE, &mem ));
+  debug("Digitizer   Data Transfer Prefered Packet size: %4.1f MB\r\n",mem/1024.0/1024.0);
+
+  CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_MAX_REAL_TIME_SAMPLING_RATE, &mem ));
+  debug("Digitizer     Data Max real time sampling rate: %4.1f MHz\r\n",mem/1024.0/1024.0);
+
+  CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_HORZ_SAMPLE_RATE, &mem ));
+  debug("Digitizer                 actual sampling rate: %4.1f MHz\r\n",mem/1024.0/1024.0);
+
+  CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_DEVICE_TEMPERATURE, &mem ));
+  debug("Digitizer                          Temperature: %4.1f C\r\n",mem);
+}

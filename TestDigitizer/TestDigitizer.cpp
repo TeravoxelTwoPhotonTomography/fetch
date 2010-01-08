@@ -40,4 +40,3 @@ int _tmain(int argc, _TCHAR* argv[])
   //while(  !_kbhit()  ) Sleep(1);
 	return 0;
 }
-

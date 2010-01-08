@@ -16,3 +16,5 @@ void niscope_log_wfminfo ( pf_reporter      pfOutput,
                            niScope_wfmInfo *info );
 
 void niscope_debug_list_devices(void);
+
+void niscope_debug_print_status( ViSession vi );

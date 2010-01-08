@@ -82,7 +82,7 @@ _Digitizer_Task_Fetch_Forever_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *
     // Fill in frame description
     { Digitizer_Frame_Metadata *meta = 
         _Digitizer_Task_Fetch_Forever_Frame_Metadata( record_length, nwfm );
-      Frame_Descriptor_Change( &desc, FRAME_INTEFACE_DIGITIZER__INTERFACE_ID, meta, sizeof(Digitizer_Frame_Metadata) );
+      Frame_Descriptor_Change( &desc, FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__INTERFACE_ID, meta, sizeof(Digitizer_Frame_Metadata) );
     }
     { size_t nbuf[2] = {DIGITIZER_BUFFER_NUM_FRAMES,
                         DIGITIZER_BUFFER_NUM_FRAMES},
@@ -130,7 +130,7 @@ _Digitizer_Task_Fetch_Forever_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ 
   // Fill in frame description
   { Digitizer_Frame_Metadata *meta = 
       _Digitizer_Task_Fetch_Forever_Frame_Metadata( nelem, nwfm );
-    Frame_Descriptor_Change( desc, FRAME_INTEFACE_DIGITIZER__INTERFACE_ID, meta, sizeof(Digitizer_Frame_Metadata) );
+    Frame_Descriptor_Change( desc, FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__INTERFACE_ID, meta, sizeof(Digitizer_Frame_Metadata) );
     change_token = desc->change_token;
     ref = *desc;
   }
@@ -217,38 +217,7 @@ Error:
   debug("Digitizer: nfetches: %u nframes: %u\r\n"
         "\tDelay - max: %g (on fetch %d) mean:%g\r\n"
         "\tTotal acquired samples %f MS\r\n",nfetches, nframes,maxdelay, last_max_fetch,accdelay/nfetches,ttl2/1024.0/1024.0);
-  { ViReal64 pts = 0;
-    CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_BACKLOG, &pts ));
-    debug("Digitizer Backlog: %4.1f MS\r\n",pts/1024.0/1024.0);
-  }
-  { ViInt32 mem = 0;
-    CheckPanic( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_ONBOARD_MEMORY_SIZE, &mem ));
-    debug("Digitizer                          Buffer size: %4.1f MB\r\n",mem/1024.0/1024.0);
-  }
-  { ViInt32 mem = 0;
-    CheckPanic( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_DATA_TRANSFER_BLOCK_SIZE, &mem ));
-    debug("Digitizer             Data Transfer Block size: %4.1f MB\r\n",mem/1024.0/1024.0);
-  }
-  { ViReal64 mem = 0;
-    CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_DATA_TRANSFER_MAXIMUM_BANDWIDTH, &mem ));
-    debug("Digitizer Data Transfer Maximum Bandwidth size: %4.1f MB\r\n",mem/1024.0/1024.0);
-  }
-  { ViInt32 mem = 0;
-    CheckPanic( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_DATA_TRANSFER_PREFERRED_PACKET_SIZE, &mem ));
-    debug("Digitizer   Data Transfer Prefered Packet size: %4.1f MB\r\n",mem/1024.0/1024.0);
-  }
-  { ViReal64 mem = 0;
-    CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_MAX_REAL_TIME_SAMPLING_RATE, &mem ));
-    debug("Digitizer     Data Max real time sampling rate: %4.1f MHz\r\n",mem/1024.0/1024.0);
-  }
-  { ViReal64 mem = 0;
-    CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_HORZ_SAMPLE_RATE, &mem ));
-    debug("Digitizer                 actual sampling rate: %4.1f MHz\r\n",mem/1024.0/1024.0);
-  }
-  { ViReal64 mem = 0;
-    CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_DEVICE_TEMPERATURE, &mem ));
-    debug("Digitizer                          Temperature: %4.1f C\r\n",mem);
-  }
+  niscope_debug_print_status(vi);
   CheckPanic( niScope_Abort(vi) );
   return ret;
 }
