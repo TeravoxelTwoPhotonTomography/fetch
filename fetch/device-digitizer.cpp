@@ -3,7 +3,8 @@
 #include "microscope.h"
 #include "device-digitizer.h"
 #include "device.h"
-#include "device-digitizer-task-fetch-forever.h"
+#include "device-task-digitizer-fetch-forever.h"
+#include "device-task-digitizer-triggered.h"
 
 // Operational options
 #if 0

@@ -184,14 +184,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\device-digitizer-task-fetch-forever.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\device-digitizer-task-triggered.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\device-digitizer.cpp"
 				>
 			</File>
@@ -201,6 +193,14 @@
 			</File>
 			<File
 				RelativePath=".\device-galvo-mirror.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\device-task-digitizer-fetch-forever.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\device-task-digitizer-triggered.cpp"
 				>
 			</File>
 			<File
@@ -290,14 +290,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\device-digitizer-task-fetch-forever.h"
-				>
-			</File>
-			<File
-				RelativePath=".\device-digitizer-task-triggered.h"
-				>
-			</File>
-			<File
 				RelativePath=".\device-digitizer.h"
 				>
 			</File>
@@ -307,6 +299,14 @@
 			</File>
 			<File
 				RelativePath=".\device-galvo-mirror.h"
+				>
+			</File>
+			<File
+				RelativePath=".\device-task-digitizer-fetch-forever.h"
+				>
+			</File>
+			<File
+				RelativePath=".\device-task-digitizer-triggered.h"
 				>
 			</File>
 			<File
