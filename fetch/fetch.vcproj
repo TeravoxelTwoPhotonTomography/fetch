@@ -204,6 +204,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\device-task-galvo-mirror-cont-triangle-wave.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\device-task.cpp"
 				>
 			</File>
@@ -307,6 +311,10 @@
 			</File>
 			<File
 				RelativePath=".\device-task-digitizer-triggered.h"
+				>
+			</File>
+			<File
+				RelativePath=".\device-task-galvo-mirror-cont-triangle-wave.h"
 				>
 			</File>
 			<File
