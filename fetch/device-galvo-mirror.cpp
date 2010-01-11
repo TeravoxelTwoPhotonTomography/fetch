@@ -115,6 +115,11 @@ Galvo_Mirror_Get_Device(void)
 { return gp_galvo_mirror_device;
 }
 
+extern inline DeviceTask*
+Galvo_Mirror_Get_Default_Task(void)
+{ return gp_galvo_mirror_tasks[0];
+}
+
 //
 // USER INTERFACE (WINDOWS)
 //

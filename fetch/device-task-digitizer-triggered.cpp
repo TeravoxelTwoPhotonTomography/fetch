@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "device-digitizer-task-triggered.h"
+#include "device-task-digitizer-triggered.h"
 #include "util-niscope.h"
 #include "device-digitizer.h"
 #include "device.h"

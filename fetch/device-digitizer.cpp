@@ -14,7 +14,6 @@
 // debug defines
 
 
-
 #if 1
 #define digitizer_debug(...) debug(__VA_ARGS__)
 #else
@@ -30,8 +29,9 @@ typedef ViInt16 TPixel;
 Digitizer             g_digitizer              = DIGITIZER_DEFAULT;
 Device               *gp_digitizer_device      = NULL;
 
-DeviceTask           *gp_digitizer_tasks[1]    = {NULL};
-u32                   g_digitizer_tasks_count  = 1;
+DeviceTask           *gp_digitizer_tasks[2]    = {NULL,
+                                                  NULL};
+u32                   g_digitizer_tasks_count  = 2;
 
 DECLARE_USER_MESSAGE( IDM_DIGITIZER,              "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
 DECLARE_USER_MESSAGE( IDM_DIGITIZER_DETACH,       "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
@@ -78,6 +78,7 @@ void Digitizer_Init(void)
   
   // Create tasks
   gp_digitizer_tasks[0] = Digitizer_Create_Task_Fetch_Forever();
+  gp_digitizer_tasks[1] = Digitizer_Create_Task_Triggered();
 }
 
 unsigned int Digitizer_Detach(void)

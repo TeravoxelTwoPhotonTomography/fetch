@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "device-digitizer-task-fetch-forever.h"
+#include "device-task-digitizer-fetch-forever.h"
 #include "util-niscope.h"
 #include "device-digitizer.h"
 #include "device.h"
