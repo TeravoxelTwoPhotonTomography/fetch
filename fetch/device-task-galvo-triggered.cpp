@@ -22,6 +22,37 @@ _Galvo_Mirror_Task_Triggered_Done_Callback(TaskHandle taskHandle, int32 status, 
   return 0;
 }
 
+TaskHandle
+_Galvo_Mirror_Task_Triggered__Create_Frame_Sync(void)
+{ TaskHandle task;
+  OnErrPanic( DAQmxCreateTask( "",                           // task name
+                              &task ));                      // task handle
+                              
+  OnErrPanic( DAQmxCreateCOPulseChanTime( task,                 // task handle
+                                          "Dev1\co0",           // counter name
+                                          "",                   // asigned name
+                                          DAQmx_Val_Seconds,    // units (time)
+                                          DAQmx_Val_Low,        // idle state
+                                          0.0,                  // initial delay
+                                          0.010,                // low  time (s)
+                                          0.010 ));             // high time (s)
+                                          
+  OnErrPanic( DAQmxCfgDigEdgeStartTrig( task,                   // task handle
+                                        "ao/StartTrigger", // trigger source
+                                        DAQmx_Val_Rising ));    // edge
+ 
+  // Set retriggerable - will repeat frame sync on next resonant velocity zero crossing
+  OnErrPanic( DAQmxSetStartTrigRetriggerable( task, VI_TRUE ));
+  
+  // Use the Arm-Start trigger to gate next frame sync so that it waits till the 
+  //     digitizer is ready.
+  OnErrPanic( DAQmxSetArmStartTrigType        ( task, DAQmx_Val_DigEdge ));
+  OnErrPanic( DAQmxSetDigEdgeArmStartTrigSrc  ( task, "RTSI0" );
+  OnErrPanic( DAQmxSetDigEdgeArmStartTrigEdge ( task, DAQmx_Val_Rising );
+
+                                          
+}
+
 unsigned int
 _Galvo_Mirror_Task_Triggered_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 { TaskHandle           dc = g_galvo_mirror.task_handle;

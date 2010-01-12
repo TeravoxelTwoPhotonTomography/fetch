@@ -208,6 +208,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\device-task-galvo-triggered.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\device-task.cpp"
 				>
 			</File>
@@ -315,6 +319,10 @@
 			</File>
 			<File
 				RelativePath=".\device-task-galvo-mirror-cont-triangle-wave.h"
+				>
+			</File>
+			<File
+				RelativePath=".\device-task-galvo-triggered.h"
 				>
 			</File>
 			<File
