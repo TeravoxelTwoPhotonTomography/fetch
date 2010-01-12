@@ -123,3 +123,16 @@ void niscope_debug_print_status( ViSession vi )
   CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_DEVICE_TEMPERATURE, &mem ));
   debug("Digitizer                          Temperature: %4.1f C\r\n",mem);
 }
+
+
+void niscope_cfg_rtsi_default( ViSession vi )
+{
+  CheckPanic( niScope_ExportSignal( vi, NISCOPE_VAL_START_TRIGGER           , "", NISCOPE_VAL_RTSI_0 ));
+  CheckPanic( niScope_ExportSignal( vi, NISCOPE_VAL_REF_TRIGGER             , "", NISCOPE_VAL_RTSI_1 ));
+  CheckPanic( niScope_ExportSignal( vi, NISCOPE_VAL_READY_FOR_START_EVENT   , "", NISCOPE_VAL_RTSI_2 ));
+  CheckPanic( niScope_ExportSignal( vi, NISCOPE_VAL_READY_FOR_REF_EVENT     , "", NISCOPE_VAL_RTSI_3 ));
+  CheckPanic( niScope_ExportSignal( vi, NISCOPE_VAL_READY_FOR_ADVANCE_EVENT , "", NISCOPE_VAL_RTSI_4 ));
+  CheckPanic( niScope_ExportSignal( vi, NISCOPE_VAL_END_OF_ACQUISITION_EVENT, "", NISCOPE_VAL_RTSI_5 ));
+  CheckPanic( niScope_ExportSignal( vi, NISCOPE_VAL_END_OF_RECORD_EVENT     , "", NISCOPE_VAL_RTSI_6 ));
+  CheckPanic( niScope_ExportSignal( vi, NISCOPE_VAL_REF_CLOCK               , "", NISCOPE_VAL_RTSI_7 ));
+}
