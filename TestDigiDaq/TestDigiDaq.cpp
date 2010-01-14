@@ -6,6 +6,10 @@
 #include "util-nidaqmx.h"
 #include "util-niscope.h"
 
+const       double resfreq = 7920.0; // Hz
+const unsigned int scans   = 512;  // 1024 lines
+
+
 //
 // DIGITIZIER
 //
@@ -21,8 +25,8 @@ void dig_cfg(ViSession *pvi, ViChar *channelName, ViInt32 minRecordLength )
    
    ViChar   resourceName[]        = "Dev3";
    ViReal64 verticalRange         = 0.3;
-   ViReal64 minSampleRate         = 60000000;;
-   ViInt32  numRecords            = 512; //1024 lines
+   ViReal64 minSampleRate         = 60000000;
+   ViInt32  numRecords            = scans; //1024 lines
    
 
    ViReal64   refPosition         = 0.0;
@@ -105,22 +109,30 @@ void dig_free_data(void *data)
 { if(data) free(data);
 }
 
+double dig_get_backlog( ViSession vi )
+{ ViReal64 pts = 0;
+  DIGCHK( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_BACKLOG, &pts ));  
+  return pts;
+}
+
 //
 // DAQ
 //
 
 #define DAQCHK(expr) Guarded_DAQmx( (expr), #expr, error )
-#define N 4000
+#define N 4096
 
 void daq_cfg(TaskHandle *ao_task, TaskHandle *clk_task)
 { TaskHandle  cur_task=0;
-	float64     data[N];	
-	float64     freq = 10000; // Hz	- sample rate
+	float64     data[N];
 	int32       written;
+	
+	float64     frame_time = scans / resfreq; // 512 records / (7920 records/sec)		
+	float64     freq = N/frame_time; // 4096 samples / 64 ms = 63 kS/s
 
   { int i=N;
 	  while(i--)
-		  data[i] = 5.0*(double)i/((double)N);    // linear ramp from 0.0 to 5.0 V
+		  data[i] = 5.0*((double)i/((double)N)-0.5);    // linear ramp from -2.5 to 2.5 V
   }
 
   // set up ao task
@@ -181,7 +193,7 @@ void test1(void)
   niScope_wfmInfo *wfminfo = 0;
   void *data = 0;
   char chan[] = "0";
-  ViInt32 width = 7500; // Samples
+  ViInt32 width = 7000; // Samples
 
   // App init
   Reporting_Setup_Log_To_Stdout();
@@ -196,14 +208,18 @@ void test1(void)
   
   // Main loop
 	{ int i=0;
-	  TicTocTimer clock = tic();
-	  DAQCHK( DAQmxStartTask             ( ao_task));
+	  TicTocTimer outer_clock = tic(),
+	              inner_clock = tic();
+	  double dt_in=0.0, dt_out=0.0;
+	  DAQCHK( DAQmxStartTask               (ao_task));
 	  do
 	  { 
 	    DAQCHK( DAQmxStartTask             (clk_task));
 	    DIGCHK( niScope_InitiateAcquisition(vi));
-	            debug("iter: %d time: %g\r\n",i, toc(&clock) );
-	            //debug(",%g\r\n",toc(&clock) );
+	    
+	    dt_out = toc(&outer_clock);	             
+	    debug("iter: %d\ttime: %5.3g [out] %5.3g [in]\tbacklog: %9.0f Bytes\r\n",i, dt_out, dt_in, sizeof(TPixel)*dig_get_backlog(vi) );
+	    toc(&inner_clock);
 	    DIGCHK( niScope_FetchBinary16 (vi,
 	                                   chan,
 	                                   0.0, //immediate
@@ -211,7 +227,8 @@ void test1(void)
 	                                   (ViInt16*) data,
 	                                   wfminfo));
 	    DAQCHK( DAQmxWaitUntilTaskDone     (clk_task,DAQmx_Val_WaitInfinitely));
-	            toc(&clock);
+	    dt_in  = toc(&inner_clock);
+	             toc(&outer_clock);
 	    DAQCHK( DAQmxStopTask              (clk_task));	    
 	  } while(++i);
 	  
