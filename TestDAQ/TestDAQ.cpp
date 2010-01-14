@@ -11,7 +11,7 @@
 
 void test2(void)
 {
-	TaskHandle  cur_task=0, ao_task=0, clk_task=0;
+	TaskHandle  cur_task=0, ao_task=0, clk_task=0;//, trg_task=0;
 	float64     data[N];	
 	float64     freq = 10000; // Hz	- sample rate
 	int32       written;
@@ -29,7 +29,7 @@ void test2(void)
 	CHK( DAQmxCreateTask            ("galvo",&cur_task));
 	CHK( DAQmxCreateAOVoltageChan   (cur_task,"/Dev1/ao0","",-10.0,10.0,DAQmx_Val_Volts  ,NULL));
 	CHK( DAQmxCfgSampClkTiming      (cur_task,
-	                                "Ctr0InternalOutput",
+	                                "Ctr1InternalOutput",
 	                                 freq,
 	                                 DAQmx_Val_Rising,
 	                                 DAQmx_Val_ContSamps,         // use continuous output so that counter stays in control
@@ -47,8 +47,8 @@ void test2(void)
 
 	// set up counter for sample clock
 	cur_task = 0;
-	CHK( DAQmxCreateTask                  ( "clock",&cur_task));                                        
-	CHK( DAQmxCreateCOPulseChanFreq       ( cur_task, "Dev1/ctr0", "", DAQmx_Val_Hz, DAQmx_Val_Low, 0.0, freq, 0.5 ));
+	CHK( DAQmxCreateTask                  ( "clock",&cur_task));
+	CHK( DAQmxCreateCOPulseChanFreq       ( cur_task, "Dev1/ctr1", "", DAQmx_Val_Hz, DAQmx_Val_Low, 0.0, freq, 0.5 ));
 	CHK( DAQmxCfgImplicitTiming           ( cur_task, DAQmx_Val_FiniteSamps, N ));
 	CHK( DAQmxCfgDigEdgeStartTrig         ( cur_task, "AnalogComparisonEvent", DAQmx_Val_Rising ));
 	CHK( DAQmxSetArmStartTrigType         ( cur_task, DAQmx_Val_DigEdge ));
@@ -56,19 +56,29 @@ void test2(void)
 	CHK( DAQmxSetDigEdgeArmStartTrigEdge  ( cur_task, DAQmx_Val_Rising ));
 	clk_task = cur_task;
 	
+	//// set up retiggerable frame sync pulse
+	//cur_task = 0;
+	//CHK( DAQmxCreateTask                  ( "FrameSync",&cur_task)); // delay and low time can be used to controllably offset the AO start from digitizier start
+	//CHK( DAQmxCreateCOPulseChanTime       ( cur_task, "Dev1/ctr1", "", DAQmx_Val_Seconds, DAQmx_Val_Low, 50e-9, 50e-9, 1e-3 ));
+	//CHK( DAQmxCfgDigEdgeStartTrig         ( cur_task, "AnalogComparisonEvent", DAQmx_Val_Rising ));
+	//trg_task = cur_task;
+	
 	{ int i;
 	  TicTocTimer clock = tic();
-	  CHK( DAQmxStartTask             (ao_task));
-	  for(i=0;i<10; i++ )
+	  CHK( DAQmxStartTask             ( ao_task));
+	  //CHK( DAQmxStartTask             (trg_task));
+	  //for(i=0;i<10; i++ )
+	  while(1)
 	  { 
 	    CHK( DAQmxStartTask             (clk_task));
 	         //debug("iter: %d time: %g\r\n",i, toc(&clock) );
 	         debug(",%g\r\n",toc(&clock) );
-	    CHK( DAQmxWaitUntilTaskDone     (clk_task,100.0));
+	    CHK( DAQmxWaitUntilTaskDone     (clk_task,DAQmx_Val_WaitInfinitely));
 	         toc(&clock);
 	    CHK( DAQmxStopTask              (clk_task));	    
 	  }
 	  DAQmxStopTask(ao_task);
+	  //DAQmxStopTask(trg_task);
 	}
 
 Error:
@@ -81,6 +91,10 @@ Error:
 		DAQmxStopTask(ao_task);
 		DAQmxClearTask(ao_task);
 	}
+	//if( trg_task!=0 ) {
+	//	DAQmxStopTask(trg_task);
+	//	DAQmxClearTask(trg_task);
+	//}
 	printf("End of program, press Enter key to quit\n");
 	getchar();
 	return;
@@ -102,6 +116,8 @@ a = array([8.17151e-005
 
 /* Timings   2010-01-12   (test2) Time for Start/Stop of doubley triggered ctr task
  *                                delay: 472 +- 6 us max: 483 us min: 459 us
+ * in git repository (fetch) see commit 43c1803db7fea66082f772afa6f659ebe586da25
+ **
 a = array([0.000458918
 ,0.000482995
 ,0.000475334
