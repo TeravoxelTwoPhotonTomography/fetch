@@ -3,6 +3,8 @@
 
 #include "niModInst.h"
 
+#define DIGCHK( expr ) (niscope_chk( vi, expr, #expr, error   ))
+
 ViStatus niscope_chk ( ViSession vi, 
                        ViStatus result, 
                        const char *expression,
@@ -99,40 +101,40 @@ void niscope_debug_print_status( ViSession vi )
 { ViReal64 pts = 0;
   ViInt32 mem = 0;
 
-  CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_BACKLOG, &pts ));
+  DIGCHK( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_BACKLOG, &pts ));
   debug("Digitizer Backlog: %4.1f MS\r\n",pts/1024.0/1024.0);
 
-  CheckPanic( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_ONBOARD_MEMORY_SIZE, &mem ));
+  DIGCHK( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_ONBOARD_MEMORY_SIZE, &mem ));
   debug("Digitizer                          Buffer size: %4.1f MB\r\n",mem/1024.0/1024.0);
 
-  CheckPanic( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_DATA_TRANSFER_BLOCK_SIZE, &mem ));
+  DIGCHK( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_DATA_TRANSFER_BLOCK_SIZE, &mem ));
   debug("Digitizer             Data Transfer Block size: %4.1f MB\r\n",mem/1024.0/1024.0);
 
-  CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_DATA_TRANSFER_MAXIMUM_BANDWIDTH, &mem ));
-  debug("Digitizer Data Transfer Maximum Bandwidth size: %4.1f MB\r\n",mem/1024.0/1024.0);
+  DIGCHK( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_DATA_TRANSFER_MAXIMUM_BANDWIDTH, &pts ));
+  debug("Digitizer Data Transfer Maximum Bandwidth size: %4.1f MB\r\n",pts/1024.0/1024.0);
 
-  CheckPanic( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_DATA_TRANSFER_PREFERRED_PACKET_SIZE, &mem ));
+  DIGCHK( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_DATA_TRANSFER_PREFERRED_PACKET_SIZE, &mem ));
   debug("Digitizer   Data Transfer Prefered Packet size: %4.1f MB\r\n",mem/1024.0/1024.0);
 
-  CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_MAX_REAL_TIME_SAMPLING_RATE, &mem ));
-  debug("Digitizer     Data Max real time sampling rate: %4.1f MHz\r\n",mem/1024.0/1024.0);
+  DIGCHK( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_MAX_REAL_TIME_SAMPLING_RATE, &pts ));
+  debug("Digitizer     Data Max real time sampling rate: %4.1f MHz\r\n",pts/1024.0/1024.0);
 
-  CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_HORZ_SAMPLE_RATE, &mem ));
-  debug("Digitizer                 actual sampling rate: %4.1f MHz\r\n",mem/1024.0/1024.0);
+  DIGCHK( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_HORZ_SAMPLE_RATE, &pts ));
+  debug("Digitizer                 actual sampling rate: %4.1f MHz\r\n",pts/1024.0/1024.0);
 
-  CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_DEVICE_TEMPERATURE, &mem ));
-  debug("Digitizer                          Temperature: %4.1f C\r\n",mem);
+  DIGCHK( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_DEVICE_TEMPERATURE, &pts ));
+  debug("Digitizer                          Temperature: %4.1f C\r\n",pts);
 }
 
 
 void niscope_cfg_rtsi_default( ViSession vi )
 {
-  CheckPanic( niScope_ExportSignal( vi, NISCOPE_VAL_START_TRIGGER           , "", NISCOPE_VAL_RTSI_0 ));
-  CheckPanic( niScope_ExportSignal( vi, NISCOPE_VAL_REF_TRIGGER             , "", NISCOPE_VAL_RTSI_1 ));
-  CheckPanic( niScope_ExportSignal( vi, NISCOPE_VAL_READY_FOR_START_EVENT   , "", NISCOPE_VAL_RTSI_2 ));
-  CheckPanic( niScope_ExportSignal( vi, NISCOPE_VAL_READY_FOR_REF_EVENT     , "", NISCOPE_VAL_RTSI_3 ));
-  CheckPanic( niScope_ExportSignal( vi, NISCOPE_VAL_READY_FOR_ADVANCE_EVENT , "", NISCOPE_VAL_RTSI_4 ));
-  CheckPanic( niScope_ExportSignal( vi, NISCOPE_VAL_END_OF_ACQUISITION_EVENT, "", NISCOPE_VAL_RTSI_5 ));
-  CheckPanic( niScope_ExportSignal( vi, NISCOPE_VAL_END_OF_RECORD_EVENT     , "", NISCOPE_VAL_RTSI_6 ));
-  CheckPanic( niScope_ExportSignal( vi, NISCOPE_VAL_REF_CLOCK               , "", NISCOPE_VAL_RTSI_7 ));
+  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_START_TRIGGER           , "", NISCOPE_VAL_RTSI_0 ));
+  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_REF_TRIGGER             , "", NISCOPE_VAL_RTSI_1 ));
+  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_READY_FOR_START_EVENT   , "", NISCOPE_VAL_RTSI_2 ));
+  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_READY_FOR_REF_EVENT     , "", NISCOPE_VAL_RTSI_3 ));
+  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_READY_FOR_ADVANCE_EVENT , "", NISCOPE_VAL_RTSI_4 ));
+  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_END_OF_ACQUISITION_EVENT, "", NISCOPE_VAL_RTSI_5 ));
+  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_END_OF_RECORD_EVENT     , "", NISCOPE_VAL_RTSI_6 ));
+  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_REF_CLOCK               , "", NISCOPE_VAL_RTSI_7 ));
 }
