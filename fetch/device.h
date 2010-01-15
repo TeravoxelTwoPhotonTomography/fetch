@@ -55,7 +55,7 @@ typedef struct _device
   void              *context;            // Resource handle/description
 } Device;
 
-Device *Device_Alloc(void);
+Device *Device_Alloc(void);              // TODO: refactor to take the context as a single argument
 void    Device_Free(Device *self);
 
 // State-change functions
