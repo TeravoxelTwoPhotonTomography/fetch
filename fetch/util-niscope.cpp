@@ -138,3 +138,9 @@ void niscope_cfg_rtsi_default( ViSession vi )
   DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_END_OF_RECORD_EVENT     , "", NISCOPE_VAL_RTSI_6 ));
   DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_REF_CLOCK               , "", NISCOPE_VAL_RTSI_7 ));
 }
+
+double niscope_get_backlog( ViSession vi )
+{ ViReal64 pts = 0;
+  DIGCHK( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_BACKLOG, &pts ));  
+  return pts;
+}

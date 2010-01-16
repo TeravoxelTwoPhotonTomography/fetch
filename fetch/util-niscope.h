@@ -21,3 +21,4 @@ void niscope_debug_print_status( ViSession vi );
 
 void niscope_cfg_rtsi_default( ViSession vi );
 
+double niscope_get_backlog( ViSession vi );
