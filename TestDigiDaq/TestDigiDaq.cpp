@@ -8,7 +8,7 @@
 
 const       double resfreq = 7920.0; // Hz
 const unsigned int scans   = 512;  // 1024 lines
-
+const     ViReal64 minSampleRate         = 60000000;
 
 //
 // DIGITIZIER
@@ -24,8 +24,7 @@ void dig_cfg(ViSession *pvi, ViChar *channelName, ViInt32 minRecordLength )
    ViSession vi = VI_NULL;
    
    ViChar   resourceName[]        = "Dev3";
-   ViReal64 verticalRange         = 0.3;
-   ViReal64 minSampleRate         = 60000000;
+   ViReal64 verticalRange         = 0.3;   
    ViInt32  numRecords            = scans; //1024 lines
    
 
@@ -163,7 +162,8 @@ void daq_cfg(TaskHandle *ao_task, TaskHandle *clk_task)
 	DAQCHK( DAQmxCfgImplicitTiming           ( cur_task, DAQmx_Val_FiniteSamps, N ));
 	DAQCHK( DAQmxCfgDigEdgeStartTrig         ( cur_task, "AnalogComparisonEvent", DAQmx_Val_Rising ));
 	DAQCHK( DAQmxSetArmStartTrigType         ( cur_task, DAQmx_Val_DigEdge ));
-	DAQCHK( DAQmxSetDigEdgeArmStartTrigSrc   ( cur_task, "PFI0" ));
+	//DAQCHK( DAQmxSetDigEdgeArmStartTrigSrc   ( cur_task, "PFI0" ));
+	DAQCHK( DAQmxSetDigEdgeArmStartTrigSrc   ( cur_task, "RTSI2" ));
 	DAQCHK( DAQmxSetDigEdgeArmStartTrigEdge  ( cur_task, DAQmx_Val_Rising ));
 	*clk_task = cur_task;
 	
@@ -193,7 +193,7 @@ void test1(void)
   niScope_wfmInfo *wfminfo = 0;
   void *data = 0;
   char chan[] = "0";
-  ViInt32 width = 7000; // Samples
+  ViInt32 width = 0.95*minSampleRate/resfreq; // Samples per wave
 
   // App init
   Reporting_Setup_Log_To_Stdout();
@@ -222,7 +222,7 @@ void test1(void)
 	    toc(&inner_clock);
 	    DIGCHK( niScope_FetchBinary16 (vi,
 	                                   chan,
-	                                   0.0, //immediate
+	                                   10.0, //(-1=infinite) (0.0=immediate)
 	                                   width,
 	                                   (ViInt16*) data,
 	                                   wfminfo));
