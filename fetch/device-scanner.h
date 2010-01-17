@@ -22,7 +22,7 @@
 #define SCANNER_DEFAULT_GALVO_TRIGGER            "APFI0"  // DAQ terminal: should be connected to resonant velocity output
 #define SCANNER_DEFAULT_GALVO_ARMSTART           "RTSI2"  // DAQ terminal: should be connected to "ReadyForStart" event output from digitizer
 #define SCANNER_DEFAULT_GALVO_CLOCK "Ctr1InternalOutput"  // DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock
-#define SCANNER_DEFAULT_GALVO_CTR           "Dev1/ctr1"   // DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock
+#define SCANNER_DEFAULT_GALVO_CTR            "Dev1/ctr1"  // DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock
 
 #define SCANNER_DEFAULT_TIMEOUT               INFINITE // ms
 #define SCANNER_MAX_CHAN_STRING                     32 // characters

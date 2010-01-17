@@ -7,6 +7,8 @@
 #include "frame.h"
 #include "frame-interface-digitizer.h"
 
+#define SCANNER_VIDEO_TASK_FETCH_TIMEOUT  100.0 //10.0, //(-1=infinite) (0.0=immediate)
+
 #if 1
 #define scanner_debug(...) debug(__VA_ARGS__)
 #else
@@ -27,51 +29,77 @@
 
 typedef ViInt16 TPixel;
 
-void dig_cfg( ViInt32 minRecordLength )
-{ Scanner_Config   *scn_cfg = &(Scanner_Get()->config);
-  Digitizer_Config *dig_cfg = &(Scanner_Get()->digitizer->config);
-  ViSession              vi = Scanner_Get()->digitizer->vi;
+//----------------------------------------------------------------------------
+//
+//  Video frame configuration
+//
+Digitizer_Frame_Metadata*
+_Scanner_Task_Video_Metadata( ViInt32 record_length, ViInt32 nwfm )
+{ static Digitizer_Frame_Metadata meta;    
+  meta.height = Scanner_Get()->config->scans; //512;
+  meta.width  = (u16) (record_length / meta.height);
+  meta.nchan  = (u8)  nwfm;
+  meta.Bpp    = sizeof(TPixel);
+  return &meta;
+}
 
-  Digitizer_Channel_Config line_trigger_cfg = dig_cfg->channela[ scn_cfg->line_trigger_src ];
-  
-  ViReal64 verticalRange         = line_trigger_cfg.range
-  ViInt32  numRecords            = scn_cfg->scans;
+//----------------------------------------------------------------------------
+//
+//  Configuration
+//
+
+ViInt32
+_compute_record_size(void)
+{ Scanner          *scanner = Scanner_Get();
+  Scanner_Config   *scn_cfg = &scanner->config;
+  Digitizer_Config *dig_cfg = &scanner->digitizer->config;
+  return scn_cfg->line_duty_cycle * dig_cfg->sample_rate / scn_cfg->resonant_frequency;
+}
+
+// Acquisition
+void _config_digitizer( void )
+{ Scanner          *scanner = Scanner_Get();
+  Scanner_Config   *scn_cfg = &scanner->config;
+  Digitizer_Config *dig_cfg = &scanner->digitizer->config;
+  ViSession              vi = scanner->digitizer->vi;
+
+  Digitizer_Channel_Config
+           line_trigger_cfg = dig_cfg->channels[ scn_cfg->line_trigger_src ];
 
   ViReal64   refPosition         = 0.0;
   ViReal64   verticalOffset      = 0.0;
-  ViInt32    verticalCoupling    = line_trigger_cfg.coupling;
   ViReal64   probeAttenuation    = 1.0;
   ViBoolean  enforceRealtime     = NISCOPE_VAL_TRUE;
 
-  struct niScope_wfmInfo *wfmInfoPtr = NULL;
-  ViReal64 *waveformPtr = NULL;
-
   Guarded_Assert( dig_cfg->channels[ scn_cfg->line_trigger_src ].enabled );
-  
-  DIGCHK( niScope_init (resourceName, NISCOPE_VAL_FALSE, NISCOPE_VAL_FALSE, &vi));
+
+  DIGCHK( niScope_init (resourceName,
+                        NISCOPE_VAL_FALSE,
+                        NISCOPE_VAL_FALSE,
+                        &vi));
   niscope_cfg_rtsi_default( vi );
-  DIGCHK( niScope_ConfigureVertical(vi, 
+  DIGCHK( niScope_ConfigureVertical(vi,
                                     line_trigger_cfg.name,       // channelName
-                                    verticalRange,
-                                    verticalOffset,
-                                    verticalCoupling,
+                                    line_trigger_cfg.range,
+                                    verticalOffest,
+                                    line_trigger_cfg.coupling,
                                     probeAttenuation,
-                                    NISCOPE_VAL_TRUE));
-  DIGCHK( niScope_ConfigureHorizontalTiming(vi, 
-                                            minSampleRate,
-                                            minRecordLength,
+                                    NISCOPE_VAL_TRUE));          // ?? what's this
+  DIGCHK( niScope_ConfigureHorizontalTiming(vi,
+                                            dig_cfg->sample_rate,
+                                            _compute_record_size(),
                                             refPosition,
-                                            numRecords,
+                                            scn_cfg->scans,
                                             enforceRealtime));
-  
+
   // Analog trigger for bidirectional scans
   DIGCHK( niScope_ConfigureTriggerEdge (vi,
-                                        line_trigger_cfg.name,   // channelName
-                                        0.0,                     // triggerLevel
-                                        NISCOPE_VAL_POSITIVE,    // triggerSlope
-                                        verticalCoupling,        // triggerCoupling
-                                        0.0,                     // triggerHoldoff
-                                        0.0 ));                  // triggerDelay
+                                        line_trigger_cfg.name,     // channelName
+                                        0.0,                       // triggerLevel
+                                        NISCOPE_VAL_POSITIVE,      // triggerSlope
+                                        line_trigger_cfg.coupling, // triggerCoupling
+                                        0.0,                       // triggerHoldoff
+                                        0.0 ));                    // triggerDelay
   // Wait for start trigger (frame sync) on PFI1
   DIGCHK( niScope_SetAttributeViString( vi,
                                         "",
@@ -79,23 +107,21 @@ void dig_cfg( ViInt32 minRecordLength )
                                         NISCOPE_VAL_PFI_1 ));
 }
 
-//
-// DAQ
-//
+// Configure DAQ for the frame program
+// - slow mirror scan
+// - frame sync 
+void _config_daq(void)
+{ Scanner     *scanner = Get_Scanner();
+  Scanner_Config  *cfg = &scanner->config;
+  TaskHandle  cur_task = 0;
+  float64        *data = NULL;
+  int32        written;
 
-#define DAQCHK(expr) Guarded_DAQmx( (expr), #expr, error )
-#define N 4096
+  ViInt32   N          = cfg->samples;
+  float64   frame_time = cfg->scans / cfg->resonant_frequency; //  512 records / (7920 records/sec)
+  float64   freq       = N/frame_time;                         // 4096 samples / 64 ms = 63 kS/s
 
-void daq_cfg(void)
-{ Scanner    *scanner = Get_Scanner();
-  Scanner_Config *cfg = &scanner->config;
-  TaskHandle  cur_task=0;
-  float64     data[N];
-  int32       written;
-  
-  ViInt32     N = cfg->samples;
-  float64     frame_time = cfg->scans / cfg->resonant_frequency; // 512 records / (7920 records/sec)    
-  float64     freq = N/frame_time; // 4096 samples / 64 ms = 63 kS/s
+  data = (float64*) Guarded_Malloc( sizeof(float64) * N );
 
   // sawtooth
   { int i=N;
@@ -119,8 +145,10 @@ void daq_cfg(void)
                                       DAQmx_Val_Rising,
                                       DAQmx_Val_ContSamps,  // use continuous output so that counter stays in control
                                       N));
-  DAQCHK( DAQmxCfgAnlgEdgeStartTrig  (cur_task,"APFI0",DAQmx_Val_Rising, 0.0));
-//HERE XXX
+  DAQCHK( DAQmxCfgAnlgEdgeStartTrig  (cur_task,
+                                      cfg->galvo_trigger,
+                                      DAQmx_Val_Rising,
+                                      0.0));
   DAQCHK( DAQmxWriteAnalogF64        (cur_task,
                                       N,
                                       0,                           // autostart?
@@ -130,11 +158,12 @@ void daq_cfg(void)
                                       &written,
                                       NULL));
   Guarded_Assert( written == N );
+  free(data);
 
   // set up counter for sample clock
-  cur_task = scanner->daq_clk;;
+  cur_task = scanner->daq_clk;
   DAQCHK( DAQmxCreateCOPulseChanFreq       ( cur_task,
-                                            "Dev1/ctr1", 
+                                             cfg->galvo_trigger, // "Dev1/ctr1",
                                              "", 
                                              DAQmx_Val_Hz, 
                                              DAQmx_Val_Low,
@@ -144,83 +173,126 @@ void daq_cfg(void)
   DAQCHK( DAQmxCfgImplicitTiming           ( cur_task, DAQmx_Val_FiniteSamps, N ));
   DAQCHK( DAQmxCfgDigEdgeStartTrig         ( cur_task, "AnalogComparisonEvent", DAQmx_Val_Rising ));
   DAQCHK( DAQmxSetArmStartTrigType         ( cur_task, DAQmx_Val_DigEdge ));
-  //DAQCHK( DAQmxSetDigEdgeArmStartTrigSrc   ( cur_task, "PFI0" ));
-  DAQCHK( DAQmxSetDigEdgeArmStartTrigSrc   ( cur_task, "RTSI2" ));
+  DAQCHK( DAQmxSetDigEdgeArmStartTrigSrc   ( cur_task, cfg->galvo_armstart ));
   DAQCHK( DAQmxSetDigEdgeArmStartTrigEdge  ( cur_task, DAQmx_Val_Rising ));
-  *clk_task = cur_task;
-  
   return;
 }
 
-void daq_clear(TaskHandle *ao_task, TaskHandle *clk_task)
-{
-  if( *clk_task!=0 ) {
-    DAQmxStopTask(*clk_task);
-    DAQmxClearTask(*clk_task);
-  }
-  if( *ao_task!=0 ) {
-    DAQmxStopTask(*ao_task);
-    DAQmxClearTask(*ao_task);
-  }
-  *ao_task = *clk_task = 0;
+void
+_flll_frame_description( Frame_Descriptor *desc )
+{ ViSession                   vi = Scanner_Get()->digitizer->vi;
+  ViInt32                   nwfm;
+  ViInt32          record_length;
+  Digitizer_Frame_Metadata *meta = NULL;
+
+  DIGERR( niScope_ActualNumWfms(vi, cfg.acquisition_channels, &nwfm ) );
+  DIGERR( niScope_ActualRecordLength(vi, &record_length) );
+
+  meta = _Scanner_Task_Video_Metadata( record_length, nwfm );
+  Frame_Descriptor_Change( desc,
+                           FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__INTERFACE_ID,
+                           meta,
+                           sizeof( Digitizer_Frame_Metadata ) );
 }
 
-//
-// MAIN'S
-//
+unsigned int
+_Scanner_Task_Video_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
+{ _config_daq();
+  _config_digitizer();
 
-void test1(void)
-{ TaskHandle ao_task=0, clk_task=0;
-  ViSession  vi;
-  niScope_wfmInfo *wfminfo = 0;
-  void *data = 0;
-  char chan[] = "0";
-  ViInt32 width = 0.95*minSampleRate/resfreq; // Samples per wave
-
-  // App init
-  Reporting_Setup_Log_To_Stdout();
-  Reporting_Setup_Log_To_VSDebugger_Console();
-  
-  // Hardware init
-  daq_cfg(&ao_task, &clk_task);
-  dig_cfg(&vi, chan, width);
-  
-  wfminfo = dig_alloc_wfm_info(vi, chan);  
-  data    = dig_alloc_data(vi, chan);
-  
-  // Main loop
-  { int i=0;
-    TicTocTimer outer_clock = tic(),
-                inner_clock = tic();
-    double dt_in=0.0, dt_out=0.0;
-    DAQCHK( DAQmxStartTask               (ao_task));
-    do
-    { 
-      DAQCHK( DAQmxStartTask             (clk_task));
-      DIGCHK( niScope_InitiateAcquisition(vi));
-      
-      dt_out = toc(&outer_clock);               
-      debug("iter: %d\ttime: %5.3g [out] %5.3g [in]\tbacklog: %9.0f Bytes\r\n",i, dt_out, dt_in, sizeof(TPixel)*dig_get_backlog(vi) );
-      toc(&inner_clock);
-      DIGCHK( niScope_FetchBinary16 (vi,
-                                     chan,
-                                     10.0, //(-1=infinite) (0.0=immediate)
-                                     width,
-                                     (ViInt16*) data,
-                                     wfminfo));
-      DAQCHK( DAQmxWaitUntilTaskDone     (clk_task,DAQmx_Val_WaitInfinitely));
-      dt_in  = toc(&inner_clock);
-               toc(&outer_clock);
-      DAQCHK( DAQmxStopTask              (clk_task));      
-    } while(++i);
-    
-    DAQCHK( DAQmxStopTask(ao_task) );
+  // Allocate output pipes
+  { ViInt32                   nwfm;
+    Frame_Descriptor          desc;
+    ViSession                   vi = Scanner_Get()->digitizer->vi;
+    DIGERR( niScope_ActualNumWfms(vi, cfg.acquisition_channels, &nwfm ) );
+    _fill_frame_description(&desc);
+    { size_t               nbuf[2] = { SCANNER_BUFFER_NUM_FRAMES,
+                                       SCANNER_BUFFER_NUM_FRAMES },
+                             sz[2] = { Frame_Get_Size_Bytes( &desc ),
+                                       nwfm*sizeof(struct niScope_wfmInfo) };
+      if( d->task->out == NULL )
+        DeviceTask_Alloc_Outputs( d->task, 2, nbuf, sz );
+    }
   }
-  
-  // clean up
-  dig_free_data(data);
-  dig_free_wfm_info(wfminfo);
-  dig_close( vi );
-  daq_clear( &ao_task, &clk_task);
+  debug("Scanner configured for Video\r\n");
+}
+
+//----------------------------------------------------------------------------
+//
+//  Proc
+//
+
+unsigned int
+_Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
+{ asynq *qdata = out->contents[0],
+        *qwfm  = out->contents[1];
+  Frame                *frame = (Frame*) Asynq_Token_Buffer_Alloc(qdata);
+  struct niScope_wfmInfo *wfm = (niScope_wfmInfo*) Asynq_Token_Buffer_Alloc(qwfm);
+  TPixel *buf;
+  Frame_Descriptor *desc, ref;
+  int change_token;
+  int width = _compute_record_size();
+  int i=0, status = 1; // status == 0 implies success, error otherwise
+  TicTocTimer outer_clock = tic(),
+              inner_clock = tic();
+  double dt_in=0.0, dt_out=0.0;
+
+  Frame_From_Bytes(frm, (void**)&buf, &desc);
+  _fill_frame_description(desc);
+  ref = *desc;
+
+  DAQERR( DAQmxStartTask (ao_task));
+  do
+  {
+    DAQERR( DAQmxStartTask (clk_task));
+    DIGERR( niScope_InitiateAcquisition(vi));
+
+    dt_out = toc(&outer_clock);
+    debug("iter: %d\ttime: %5.3g [out] %5.3g [in]\tbacklog: %9.0f Bytes\r\n",i, dt_out, dt_in, sizeof(TPixel)*dig_get_backlog(vi) );
+    toc(&inner_clock);
+    DIGERR( niScope_FetchBinary16 (vi,
+                                   chan,
+                                   SCANNER_VIDEO_TASK_FETCH_TIMEOUT,//10.0, //(-1=infinite) (0.0=immediate) 
+                                   width,
+                                   (ViInt16*) buf,
+                                   wfm));
+
+    // Push the acquired data down the output pipes
+    Asynq_Push( qwfm,(void**) &wfm, 0 );
+#ifdef SCANNER_DEBUG_FAIL_WHEN_FULL
+    if(  !Asynq_Push_Try( qdata,(void**) &frm ))
+#elif defined( SCANNER_DEBUG_SPIN_WHEN_FULL )
+    if(  !Asynq_Push( qdata,(void**) &frm, FALSE ))
+#else
+    error("Choose a push behavior for digitizer by compileing with the appropriate define.\r\n");
+#endif
+    { warning("Digitizer output queue overflowed.\r\n\tAborting acquisition task.\r\n");
+      goto Error;
+    }
+    Frame_From_Bytes(frm, (void**)&buf, &desc ); // The push swapped the frame buffer
+    memcpy(desc,&ref,sizeof(Frame_Descriptor));  // ...so update buf and desc
+
+    DAQERR( DAQmxWaitUntilTaskDone (clk_task,DAQmx_Val_WaitInfinitely));
+    dt_in  = toc(&inner_clock);
+              toc(&outer_clock);
+    DAQERR( DAQmxStopTask (clk_task));
+    ++i;
+  } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
+  status = 0;
+  debug("Scanner - Video task completed normally.\r\n");
+Error:
+  free( frm );
+  free( wfm );
+  niscope_debug_print_status(vi);
+  DAQERR( DAQmxStopTask (ao_task) );
+  DIGERR( niScope_Abort(vi) );
+  return status;
+}
+
+//----------------------------------------------------------------------------
+DeviceTask*
+Scanner_Create_Task_Fetch_Forever(void)
+{ return DeviceTask_Alloc(_Scanner_Task_Video_Cfg,
+                          _Scanner_Task_Video_Proc);
 }
 
