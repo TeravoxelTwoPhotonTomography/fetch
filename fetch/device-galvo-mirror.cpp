@@ -110,6 +110,11 @@ Galvo_Mirror_Attach(void)
 // Utiltites
 //
 
+extern inline Galvo_Mirror*
+Galvo_Mirror_Get(void)
+{ return &g_galvo_mirror;
+}
+
 extern inline Device*
 Galvo_Mirror_Get_Device(void)
 { return gp_galvo_mirror_device;

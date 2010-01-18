@@ -20,14 +20,14 @@ frame_interface_digitizer__default__get_nchannels (Frame_Descriptor* fd)
 
 size_t
 frame_interface_digitizer__default__get_nbytes (Frame_Descriptor* fd)
-{ DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__CHECK_DESCRIPTOR;
+{ //DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__CHECK_DESCRIPTOR;
   Digitizer_Frame_Metadata *meta = (Digitizer_Frame_Metadata*) fd->metadata;
   return meta->width * meta->height * meta->Bpp;
 }
 
 void
 frame_interface_digitizer__default__copy_channel( Frame_Descriptor* fd, void *dst, void *src, size_t ichan )
-{ DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__CHECK_DESCRIPTOR;
+{ //DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__CHECK_DESCRIPTOR;
   Digitizer_Frame_Metadata        *meta = (Digitizer_Frame_Metadata*) fd->metadata;  
   size_t                    chan_stride = meta->width * meta->height * meta->Bpp;
   memcpy( dst, (u8*)src + chan_stride * ichan , chan_stride );
@@ -36,7 +36,7 @@ frame_interface_digitizer__default__copy_channel( Frame_Descriptor* fd, void *ds
 
 void
 frame_interface_digitizer__default__get_dimensions ( Frame_Descriptor* fd, vector_size_t *vdim )
-{ DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__CHECK_DESCRIPTOR;
+{ //DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__CHECK_DESCRIPTOR;
   Digitizer_Frame_Metadata        *meta = (Digitizer_Frame_Metadata*) fd->metadata;
   vector_size_t_request( vdim, 2 );
   vdim->count       = 2;

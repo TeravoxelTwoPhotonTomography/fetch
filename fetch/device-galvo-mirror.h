@@ -62,8 +62,8 @@ unsigned int Galvo_Mirror_Attach              (void);     // opens device contex
 //
 // Utilities
 //
-
-extern inline  Device*   Galvo_Mirror_Get_Device     (void);
+extern inline  Galvo_Mirror* Galvo_Mirror_Get            (void);
+extern inline  Device*       Galvo_Mirror_Get_Device     (void);
         
 extern inline  DeviceTask* Galvo_Mirror_Get_Default_Task(void);
 //

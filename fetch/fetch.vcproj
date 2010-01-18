@@ -204,15 +204,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\device-task-digitizer-triggered.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\device-task-galvo-mirror-cont-triangle-wave.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\device-task-galvo-triggered.cpp"
 				>
 			</File>
 			<File
@@ -284,6 +276,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\util-niscope.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\window-video.cpp"
 				>
 			</File>
@@ -322,15 +318,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\device-task-digitizer-triggered.h"
-				>
-			</File>
-			<File
 				RelativePath=".\device-task-galvo-mirror-cont-triangle-wave.h"
-				>
-			</File>
-			<File
-				RelativePath=".\device-task-galvo-triggered.h"
 				>
 			</File>
 			<File

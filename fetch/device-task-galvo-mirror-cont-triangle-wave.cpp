@@ -1,4 +1,11 @@
+#include "stdafx.h"
 #include "device-task-galvo-mirror-cont-triangle-wave.h"
+#include "util-nidaqmx.h"
+#include "device-galvo-mirror.h"
+
+#define OnErrWarn(  expression )  (Guarded_DAQmx( expression, #expression, &warning ))
+#define OnErrPanic( expression )  (Guarded_DAQmx( expression, #expression, &error   ))
+#define OnErrGoto(  expression )   goto_if_fail( 0 == OnErrWarn(expression), Error )
 
 //
 // TASK - Simple Continuous buffer output.  Buffer holds a triangle wave.
@@ -8,14 +15,14 @@ int32 CVICALLBACK
 _Galvo_Mirror_Task_Continuous_Scan_Immediate_Trigger_Done_Callback(TaskHandle taskHandle, int32 status, void *callbackData)
 { OnErrPanic(status);
 
-  SetEvent( gp_galvo_mirror_device->notify_stop );
+  SetEvent( Galvo_Mirror_Get_Device()->notify_stop );
   return 0;
 }
 
 unsigned int
 _Galvo_Mirror_Task_Continuous_Scan_Immediate_Trigger_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
-{ TaskHandle           dc = g_galvo_mirror.task_handle;
-  Galvo_Mirror_Config cfg = g_galvo_mirror.config;  
+{ TaskHandle           dc = Galvo_Mirror_Get()->task_handle;
+  Galvo_Mirror_Config cfg = Galvo_Mirror_Get()->config;  
    
   // Vertical
   OnErrPanic( DAQmxCreateAOVoltageChan( dc, 
@@ -132,7 +139,3 @@ Galvo_Mirror_Create_Task_Continuous_Scan_Immediate_Trigger(void)
                           _Galvo_Mirror_Task_Continuous_Scan_Immediate_Trigger_Proc);
 }
 
-extern inline DeviceTask*
-Galvo_Mirror_Get_Default_Task(void)
-{ return gp_galvo_mirror_tasks[0];
-}

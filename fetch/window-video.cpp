@@ -669,6 +669,7 @@ void Video_Display_Render_One_Frame()
           fint->get_dimensions(desc, vdim);
           { size_t w = vdim->contents[0], 
                    h = vdim->contents[1];
+                   
             DXGI_MODE_DESC mode;
             mode.Width = w;
             mode.Height = h;
@@ -677,6 +678,7 @@ void Video_Display_Render_One_Frame()
             mode.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
             mode.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
             mode.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+            
             g_video.swap_chain->ResizeTarget(&mode);
             _invalidate_objects();
             Guarded_Assert(SUCCEEDED( g_video.swap_chain->ResizeBuffers(2, w, h,

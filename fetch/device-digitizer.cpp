@@ -4,7 +4,6 @@
 #include "device-digitizer.h"
 #include "device.h"
 #include "device-task-digitizer-fetch-forever.h"
-#include "device-task-digitizer-triggered.h"
 
 // Operational options
 #if 0
@@ -29,9 +28,8 @@ typedef ViInt16 TPixel;
 Digitizer             g_digitizer              = DIGITIZER_DEFAULT;
 Device               *gp_digitizer_device      = NULL;
 
-DeviceTask           *gp_digitizer_tasks[2]    = {NULL,
-                                                  NULL};
-u32                   g_digitizer_tasks_count  = 2;
+DeviceTask           *gp_digitizer_tasks[1]    = {NULL};
+u32                   g_digitizer_tasks_count  = 1;
 
 DECLARE_USER_MESSAGE( IDM_DIGITIZER,              "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
 DECLARE_USER_MESSAGE( IDM_DIGITIZER_DETACH,       "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
@@ -78,7 +76,6 @@ void Digitizer_Init(void)
   
   // Create tasks
   gp_digitizer_tasks[0] = Digitizer_Create_Task_Fetch_Forever();
-  gp_digitizer_tasks[1] = Digitizer_Create_Task_Triggered();
 }
 
 unsigned int Digitizer_Detach(void)
@@ -293,10 +290,6 @@ Digitizer_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     } else if( wmId == IDM_DIGITIZER_TASK_0 )
     { debug("IDM_DIGITIZER_TASK_0\r\n");
       Device_Arm_Nonblocking( gp_digitizer_device, gp_digitizer_tasks[0], DIGITIZER_DEFAULT_TIMEOUT );
-      
-    } else if( wmId == IDM_DIGITIZER_TASK_1 )
-    { debug("IDM_DIGITIZER_TASK_1\r\n");
-      Device_Arm_Nonblocking( gp_digitizer_device, gp_digitizer_tasks[1], DIGITIZER_DEFAULT_TIMEOUT );
       
     } else if( wmId == IDM_DIGITIZER_TASK_RUN )
     { debug("IDM_DIGITIZER_RUN\r\n");      

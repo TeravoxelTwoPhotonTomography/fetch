@@ -1,12 +1,15 @@
 #pragma once
 
 #include "device.h"
+#include "device-digitizer.h"
+#include "util-nidaqmx.h"
 
 //
 // Device configuration 
 //    definitions
 //    defaults
 //
+#define SCANNER_QUEUE_NUM_FRAMES                   32
 
 #define SCANNER_DEFAULT_RESONANT_FREQUENCY         7920.0 // Hz
 #define SCANNER_DEFAULT_SCANS                      512    // Number of full resonant periods that make up a frame
@@ -18,11 +21,11 @@
 #define SCANNER_DEFAULT_GALVO_VPP                   5.0   // V - peak-to-peak
 #define SCANNER_DEFAULT_GALVO_V_MAX                10.0   // V - peak-to-peak
 #define SCANNER_DEFAULT_GALVO_V_MIN               -10.0   // V - peak-to-peak
-#define SCANNER_DEFAULT_GALVO_CHANNE          "Dev1/ao0"  // DAQ terminal: should be connected to command input on galvo controller
+#define SCANNER_DEFAULT_GALVO_CHANNEL        "/Dev1/ao0"  // DAQ terminal: should be connected to command input on galvo controller
 #define SCANNER_DEFAULT_GALVO_TRIGGER            "APFI0"  // DAQ terminal: should be connected to resonant velocity output
 #define SCANNER_DEFAULT_GALVO_ARMSTART           "RTSI2"  // DAQ terminal: should be connected to "ReadyForStart" event output from digitizer
 #define SCANNER_DEFAULT_GALVO_CLOCK "Ctr1InternalOutput"  // DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock
-#define SCANNER_DEFAULT_GALVO_CTR            "Dev1/ctr1"  // DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock
+#define SCANNER_DEFAULT_GALVO_CTR           "/Dev1/ctr1"  // DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock
 
 #define SCANNER_DEFAULT_TIMEOUT               INFINITE // ms
 #define SCANNER_MAX_CHAN_STRING                     32 // characters
@@ -44,7 +47,7 @@ typedef struct _scanner_config
   char        galvo_ctr     [SCANNER_MAX_CHAN_STRING];
 } Scanner_Config;
 
-#define SCANNER_CONFIG_EMPTY \
+#define SCANNER_CONFIG_DEFAULT \
                       { SCANNER_DEFAULT_RESONANT_FREQUENCY,\
                         SCANNER_DEFAULT_SCANS,\
                         SCANNER_DEFAULT_LINE_DUTY_CYCLE,\
@@ -56,7 +59,7 @@ typedef struct _scanner_config
                         SCANNER_DEFAULT_GALVO_CHANNEL,\
                         SCANNER_DEFAULT_GALVO_TRIGGER,\
                         SCANNER_DEFAULT_GALVO_ARMSTART,\
-                        SCANNER_DEFAULT_GALVO_CLOCK\
+                        SCANNER_DEFAULT_GALVO_CLOCK,\
                         SCANNER_DEFAULT_GALVO_CTR\
                       }
 
@@ -67,7 +70,6 @@ typedef struct _scanner
   Scanner_Config config;
 } Scanner;
 
-#define SCANNER_EMPTY   {NULL, NULL, NULL, SCANNER_CONFIG_EMPTY};
 #define SCANNER_DEFAULT {NULL, NULL, NULL, SCANNER_CONFIG_DEFAULT};
 
 //

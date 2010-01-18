@@ -1,8 +1,9 @@
 #include "stdafx.h"
 #include "util-niscope.h"
 #include "microscope.h"
-#include "device-scanner.h"
 #include "device.h"
+#include "device-scanner.h"
+#include "device-task-scanner-video.h"
 
 // Operational options
 #if 0
@@ -21,7 +22,7 @@
 #define DIGERR( expression )  (niscope_chk( g_scanner.digitizer->vi, expression, #expression, error   ))
 #define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, warning))
 #define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, error  ))
-#define DAQJMP( expr )        (goto_if_fail( 0==DAQWRN(expr), Error))
+#define DAQJMP( expr )        goto_if_fail( 0==DAQWRN(expr), Error)
 
 
 typedef ViInt16 TPixel;
@@ -51,7 +52,7 @@ _scanner_free_tasks(void)
 }
 
 unsigned int Scanner_Destroy(void)
-{ if( !Device_Disarm( gp_scanner_device, scanner_DEFAULT_TIMEOUT ) )
+{ if( !Device_Disarm( gp_scanner_device, SCANNER_DEFAULT_TIMEOUT ) )
     warning("Could not cleanly release scanner.\r\n");
   Device_Free( gp_scanner_device );
   return 0;
@@ -77,7 +78,7 @@ void Scanner_Init(void)
   gp_scanner_tasks[0] = Scanner_Create_Task_Video(); // FIXME: TODO: Write code for task
 }
 
-unsigned int Digitizer_Detach(void)
+unsigned int Scanner_Detach(void)
 { unsigned int status = 1; // 0 indicates success, otherwise error
   
   if( !Device_Disarm( gp_scanner_device, SCANNER_DEFAULT_TIMEOUT ) )
@@ -105,7 +106,7 @@ unsigned int Digitizer_Detach(void)
 Error:  
   g_scanner.digitizer = NULL;
   g_scanner.daq_ao    = NULL;
-  g_scanner.gaq_clk   = NULL;
+  g_scanner.daq_clk   = NULL;
   gp_scanner_device->is_available = 0;  
   Device_Unlock( gp_scanner_device );
   return status;
@@ -123,13 +124,13 @@ Scanner_Detach_Nonblocking(void)
 
 unsigned int Scanner_Attach(void)
 { unsigned int status = 0; // success 0, error 1
-  Device_Lock( gp_digitizer_device );
+  Device_Lock( gp_scanner_device );
   debug("Scanner: Attach\r\n");
   goto_if( status = Digitizer_Attach(), Error );
   g_scanner.digitizer = Digitizer_Get();
 
-  Guarded_Assert( g_scanner.task_ao  == NULL );
-  Guarded_Assert( g_scanner.task_clk == NULL );
+  Guarded_Assert( g_scanner.daq_ao  == NULL );
+  Guarded_Assert( g_scanner.daq_clk == NULL );
   status = DAQERR( DAQmxCreateTask( "galvo-command", &g_scanner.daq_ao ));
   status = DAQERR( DAQmxCreateTask( "scanner-clock", &g_scanner.daq_clk));
 
@@ -224,10 +225,10 @@ Scanner_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	    if( hmenu == g_scanner_ui_main_menu_state.menu )
 	    { Guarded_Assert_WinErr(-1!=
 	        EnableMenuItem( hmenu, 1 /*Attach*/, MF_BYPOSITION
-	                        | ( (g_scanner.vi==0)?MF_ENABLED:MF_GRAYED) ));
+	                        | ( (g_scanner.digitizer==0)?MF_ENABLED:MF_GRAYED) ));
 	      Guarded_Assert_WinErr(-1!=
 	        EnableMenuItem( hmenu, 2 /*Tasks*/, MF_BYPOSITION
-	                        | ( (g_scanner.vi==0)?MF_GRAYED:MF_ENABLED) ));
+	                        | ( (g_scanner.digitizer==0)?MF_GRAYED:MF_ENABLED) ));
 	      Guarded_Assert_WinErr(-1!=
 	        CheckMenuItem( hmenu, 2 /*Tasks*/, MF_BYPOSITION
 	                        | ( Device_Is_Armed(gp_scanner_device)?MF_CHECKED:MF_UNCHECKED) ));
@@ -243,7 +244,7 @@ Scanner_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 //TODO: update for running and stop
 	      Guarded_Assert(-1!=                                                   // Detect state
 	        CheckMenuRadioItem(g_scanner_ui_main_menu_state.menu,             // Toggle radio button to reflect
-                             0,1,((g_scanner.vi==0)?0/*Off*/:1/*Hold*/), MF_BYPOSITION ) );
+                             0,1,((g_scanner.digitizer==0)?0/*Off*/:1/*Hold*/), MF_BYPOSITION ) );
 	    } else if( hmenu == g_scanner_ui_main_menu_state.taskmenu )
 	    { // - Identify if any tasks are running.
 	      //   If there is one, check that one and gray them all out.

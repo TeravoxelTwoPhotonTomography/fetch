@@ -2,6 +2,7 @@
 #include "microscope.h"
 
 #include "device-digitizer.h"
+#include "device-scanner.h"
 #include "device-galvo-mirror.h"
 #include "device-disk-stream.h"
 
@@ -91,28 +92,29 @@ void Microscope_Application_Start(void)
   //                               state procedures (off and attach),
   //                               and initialize themselves.
   Disk_Stream_Init();  
-  Galvo_Mirror_Init();
-  Digitizer_Init();
+  //Galvo_Mirror_Init();
+  //Digitizer_Init();
+  Scanner_Init();
   
   Microscope_Detach();
   Microscope_Attach();
     
-  Device_Arm( Digitizer_Get_Device(), 
-              Digitizer_Get_Default_Task(),
-              INFINITE );
+  //Device_Arm( Digitizer_Get_Device(), 
+  //            Digitizer_Get_Default_Task(),
+  //            INFINITE );
 
-  Device_Arm( Galvo_Mirror_Get_Device(), 
-              Galvo_Mirror_Get_Default_Task(),
+  Device_Arm( Scanner_Get_Device(), 
+              Scanner_Get_Default_Task(),
               INFINITE );
 
   Guarded_Assert(
     Device_Run( Disk_Stream_Attach_And_Arm("digitizer-frames",             // alias
                                            "frames.raw", 'w',              // filename
-                                            Digitizer_Get_Device(),0) ));  // source
+                                            Scanner_Get_Device(),0) ));  // source
   Guarded_Assert(
     Device_Run( Disk_Stream_Attach_And_Arm("digitizer-wfm",                // alias
                                            "wfm.raw", 'w',                 // filename
-                                            Digitizer_Get_Device(),1) ));  // source
+                                            Scanner_Get_Device(),1) ));  // source
                                             
-   Video_Display_Connect_Device( Digitizer_Get_Device(), 0 );
+   Video_Display_Connect_Device( Scanner_Get_Device(), 0 );
 }
