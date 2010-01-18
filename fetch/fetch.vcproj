@@ -196,6 +196,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\device-scanner.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\device-task-digitizer-fetch-forever.cpp"
 				>
 			</File>
@@ -209,6 +213,10 @@
 			</File>
 			<File
 				RelativePath=".\device-task-galvo-triggered.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\device-task-scanner-video.cpp"
 				>
 			</File>
 			<File
@@ -306,6 +314,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\device-scanner.h"
+				>
+			</File>
+			<File
 				RelativePath=".\device-task-digitizer-fetch-forever.h"
 				>
 			</File>
@@ -319,6 +331,10 @@
 			</File>
 			<File
 				RelativePath=".\device-task-galvo-triggered.h"
+				>
+			</File>
+			<File
+				RelativePath=".\device-task-scanner-video.h"
 				>
 			</File>
 			<File
