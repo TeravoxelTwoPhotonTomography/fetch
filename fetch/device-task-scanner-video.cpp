@@ -146,6 +146,7 @@ void _config_daq(void)
     float64 A = cfg->galvo_vpp;
     while(i--)
       data[i] = A*((double)i/((double)N)-0.5);    // linear ramp from -A/2 to A/2
+    data[N-1] = data[0];
   }
 
   // set up ao task
@@ -310,7 +311,7 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
   status = 0;
   debug("Scanner - Video task completed normally.\r\n");
-Error:
+Error:  
   free( frm );   // <-- HEAP corruption here
   free( wfm );
   niscope_debug_print_status(vi);
