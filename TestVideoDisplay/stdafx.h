@@ -20,3 +20,4 @@
 
 // TODO: reference additional headers your program requires here
 #include "Resource.h"
+#include "../fetch/common.h"

@@ -224,6 +224,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\fetch\util-dx10.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\fetch\window-video.cpp"
 				>
 			</File>
@@ -271,6 +275,10 @@
 			</File>
 			<File
 				RelativePath=".\TestVideoDisplay.h"
+				>
+			</File>
+			<File
+				RelativePath="..\fetch\util-dx10.h"
 				>
 			</File>
 			<File

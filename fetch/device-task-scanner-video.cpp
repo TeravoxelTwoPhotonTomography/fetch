@@ -10,7 +10,7 @@
 #include "device-task-scanner-video.h"
 
 #define SCANNER_VIDEO_TASK_FETCH_TIMEOUT  100.0 //10.0, //(-1=infinite) (0.0=immediate)
-
+                                                // Setting this to infinite can sometimes make the application difficult to quit
 #if 1
 #define scanner_debug(...) debug(__VA_ARGS__)
 #else
@@ -210,7 +210,7 @@ _fill_frame_description( Frame_Descriptor *desc )
 
   meta = _Scanner_Task_Video_Metadata( record_length, nwfm );
   Frame_Descriptor_Change( desc,
-                           FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__INTERFACE_ID,
+                           FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__INTERFACE_ID,
                            meta,
                            sizeof( Digitizer_Frame_Metadata ) );
 }

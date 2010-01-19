@@ -33,12 +33,12 @@ Device               *gp_scanner_device        = NULL;
 DeviceTask           *gp_scanner_tasks[1]      = {NULL};
 u32                   g_scanner_tasks_count    = 1;
 
-DECLARE_USER_MESSAGE( IDM_SCANNER,              "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}"); //!! TODO: FIXME: generate new guid's for these 
-DECLARE_USER_MESSAGE( IDM_SCANNER_DETACH,       "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
-DECLARE_USER_MESSAGE( IDM_SCANNER_ATTACH,       "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
-DECLARE_USER_MESSAGE( IDM_SCANNER_TASK_STOP,    "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
-DECLARE_USER_MESSAGE( IDM_SCANNER_TASK_RUN,     "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
-DECLARE_USER_MESSAGE( IDM_SCANNER_TASK_0,       "{5975C4F4-CA28-4d2b-A77C-B4D1C535BB21}");
+DECLARE_USER_MESSAGE( IDM_SCANNER,              "{BF56ABFD-286B-4FC0-A25F-BFD7C236A13D}");
+DECLARE_USER_MESSAGE( IDM_SCANNER_DETACH,       "{BF56ABFD-286B-4FC0-A25F-BFD7C236A13D}");
+DECLARE_USER_MESSAGE( IDM_SCANNER_ATTACH,       "{BF56ABFD-286B-4FC0-A25F-BFD7C236A13D}");
+DECLARE_USER_MESSAGE( IDM_SCANNER_TASK_STOP,    "{BF56ABFD-286B-4FC0-A25F-BFD7C236A13D}");
+DECLARE_USER_MESSAGE( IDM_SCANNER_TASK_RUN,     "{BF56ABFD-286B-4FC0-A25F-BFD7C236A13D}");
+DECLARE_USER_MESSAGE( IDM_SCANNER_TASK_0,       "{BF56ABFD-286B-4FC0-A25F-BFD7C236A13D}");
 
 unsigned int
 _scanner_free_tasks(void)
@@ -80,6 +80,9 @@ void Scanner_Init(void)
 
 unsigned int Scanner_Detach(void)
 { unsigned int status = 1; // 0 indicates success, otherwise error
+  
+  if( g_scanner.digitizer )
+    niScope_Abort( g_scanner.digitizer->vi ); // Abort any waiting fetches
   
   if( !Device_Disarm( gp_scanner_device, SCANNER_DEFAULT_TIMEOUT ) )
     warning("Could not cleanly disarm scanner.\r\n");
