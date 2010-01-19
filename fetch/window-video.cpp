@@ -7,9 +7,11 @@
 #include "frame.h"
 #include "render-colormap.h"
 
-#define VIDEO_WINDOW_TEXTURE_RESOURCE_NAME "tx"
-#define VIDEO_WINDOW_PATH_TO_SHADER        "shader.fx"
-#define VIDEO_WINDOW_SHADER_TECHNIQUE_NAME "Render"
+#define VIDEO_WINDOW_TEXTURE_RESOURCE_NAME  "tx"
+#define VIDEO_WINDOW_COLORMAP_RESOURCE_NAME "cmap"
+#define VIDEO_WINDOW_NUM_CHAN_RESOURCE_NAME "nchan"
+#define VIDEO_WINDOW_PATH_TO_SHADER         "shader.fx"
+#define VIDEO_WINDOW_SHADER_TECHNIQUE_NAME  "Render"
 
 #if 1
 #define VIDEO_DISPLAY_DEBUG_SHADER
@@ -29,10 +31,10 @@ struct t_video_display
   ID3D10Buffer                       *vertices;
   ID3D10Buffer                       *indices;
   ID3D10ShaderResourceView           *texture_resource_view[3];
-  ID3D10Texture2D                    *active_texture[3];
+  ID3D10Texture2DArray               *active_texture[3];
   ID3D10EffectShaderResourceVariable *active_texture_shader_resource[3];
   
-  Colormap_Resource                  *cmaps[3];
+  Colormap_Resource                  *cmaps;
   
   asynq                              *frame_source;
   
