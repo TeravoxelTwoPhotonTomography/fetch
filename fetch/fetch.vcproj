@@ -386,6 +386,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\util-niscope.h"
+				>
+			</File>
+			<File
 				RelativePath=".\window-video.h"
 				>
 			</File>

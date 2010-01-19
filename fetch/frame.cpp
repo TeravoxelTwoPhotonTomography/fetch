@@ -113,7 +113,7 @@ Frame_Get_Size_Bytes ( Frame_Descriptor *desc )
 void
 Frame_From_Bytes( void *bytes, void **data, Frame_Descriptor **desc )
 { *desc = (Frame_Descriptor*) bytes;
-  *data = (void*) ((u8*)bytes + sizeof( Frame_Descriptor ));      // MSVS makes you do all this casting - sorry
+  *data = (void*) ((u8*)bytes + sizeof( Frame_Descriptor ));      // MSVS makes you do all this casting....
 }
 
 //----------------------------------------------------------------------------

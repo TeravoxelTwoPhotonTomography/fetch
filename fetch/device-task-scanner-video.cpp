@@ -40,7 +40,7 @@ _Scanner_Task_Video_Metadata( ViInt32 record_length, ViInt32 nwfm )
 { static Digitizer_Frame_Metadata meta;    
   meta.height = Scanner_Get()->config.scans; //512;
   meta.nchan  = (u8)  (nwfm / meta.height);
-  meta.width  = (u16) (record_length / meta.nchan);
+  meta.width  = (u16) (record_length);
   meta.Bpp    = sizeof(TPixel);
   Guarded_Assert( meta.nchan  > 0 );
   Guarded_Assert( meta.height > 0 );

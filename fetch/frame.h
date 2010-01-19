@@ -26,7 +26,7 @@ typedef struct _t_frame_descriptor
 
 typedef size_t    (*tfp_frame_get_nchannels)  ( Frame_Descriptor* fd);                              // gets channel count
 typedef size_t    (*tfp_frame_get_nbytes)     ( Frame_Descriptor* fd);                              // gets channel count
-typedef void      (*tfp_frame_copy_channel)   ( Frame_Descriptor* fd, void *dst, void *src, size_t ichan );    // copies channel data to dst
+typedef void      (*tfp_frame_copy_channel)   ( Frame_Descriptor* fd, void *dst, size_t dst_stride, void *src, size_t ichan );    // copies channel data to dst
 typedef void      (*tfp_frame_get_dimensions) ( Frame_Descriptor* fd, vector_size_t *vdim);         // returns the dimensions and number of dimensions of the channel
 
 typedef struct _t_frame_interface

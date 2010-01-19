@@ -4,3 +4,6 @@
 #include <d3dx10.h>
 
 void dx10_effect_variable_set_f32( ID3D10Effect *effect, char *name, f32 val );
+f32  dx10_effect_variable_get_f32( ID3D10Effect *effect, char *name );
+
+void dx10_tex2d_dump( char *filename, ID3D10Texture2D *tex );

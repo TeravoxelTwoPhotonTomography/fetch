@@ -11,6 +11,7 @@ Texture3D<snorm float> tx;    // Single image torage for different channels
 Texture2D<float4>      cmap;  // each channel is interpreted according to the corresponding colormap
 float                  nchan; // the number of channels
                               // ??? [ ] - Who should set nchan?
+
 SamplerState samLinear
 {
     Filter = MIN_MAG_MIP_LINEAR;
@@ -50,32 +51,56 @@ PS_INPUT VS( VS_INPUT input )
 // Pixel Shader
 //--------------------------------------------------------------------------------------
 
-//float4 PS( PS_INPUT input) : SV_Target
-//{   
-//    float i = tx0.Sample( samLinear, input.Tex ).x,
-//          j = tx1.Sample( samLinear, input.Tex ).x,
-//          k = tx2.Sample( samLinear, input.Tex ).x;
-//    float4 c0 = cmap0.Sample( samCmap, (i+1.0)/2.0 ),
-//           c1 = cmap1.Sample( samCmap, (j+1.0)/2.0 ),
-//           c2 = cmap2.Sample( samCmap, (k+1.0)/2.0 );
-//
-//    return (c0+c1+c2); //additive mixing
-//}
-
 float4 PS( PS_INPUT input) : SV_Target
-{ float  v,z;
+{ float  v,z, denom;
   float4 c,
          color = float4(0.0,0.0,0.0,0.0);
+         
+  if( nchan <= 1.5 )
+    denom = nchan;
+  else
+    denom = nchan - 1.0;
+  
   for( float i = 0; i < nchan; i++ )
-  { z = i/nchan;
-    v = tx.Sample( samLinear, float3(input.Tex.x, input.Tex.y, z ) ).x;
-    c = cmap.Sample( samCmap, float2( (v+1.0)/2.0, z ) );
+  { z = i/denom;                                                         // z is in [0.0,1.0]
+    v = tx.Sample( samLinear, float3(input.Tex.x, input.Tex.y, z ) ).x;  // return is in [-1.0,1.0]
+    c = cmap.Sample( samCmap, float2( (v+1.0)/2.0, z ) );                // uv is in ( [0.0,1.0], [0.0,1.0] )
     color += c*c.w;
-  }  
+  }    
+  color.w = 1.0;
+  return color;
+}
+
+float4 PS2( PS_INPUT input) : SV_Target
+{ float  v,z, denom;
+  float4 c,
+         color = float4(0.0,0.0,0.0,0.0);
+         
+  if( nchan <= 1.5 )
+    denom = nchan;
+  else
+    denom = nchan - 1.0;
+  
+  z = 0.0; // 0 / (3-1)
+  v = tx.Sample( samLinear, float3(input.Tex.x, input.Tex.y, z ) ).x;  // return is in [-1.0,1.0]
+  c = cmap.Sample( samCmap, float2( (v+1.0)/2.0, z) );                // uv is in ( [0.0,1.0], [0.0,1.0] )
+  color += c; //*c.w;
+  
+  z = 0.5; // 1 / (3-1)
+  v = tx.Sample( samLinear, float3(input.Tex.x, input.Tex.y, z ) ).x;  // return is in [-1.0,1.0]
+  c = cmap.Sample( samCmap, float2( (v+1.0)/2.0, z ) );                // uv is in ( [0.0,1.0], [0.0,1.0] )
+  color += c;//*c.w;
+
+  z = 1.0; // 2 / (3-1)
+  v = tx.Sample( samLinear, float3(input.Tex.x, input.Tex.y, z ) ).x;  // return is in [-1.0,1.0]
+  c = cmap.Sample( samCmap, float2( (v+1.0)/2.0, z ) );                // uv is in ( [0.0,1.0], [0.0,1.0] )
+  color += c;//*c.w;
+
 
   color.w = 1.0;
   return color;
 }
+
 
 
 //--------------------------------------------------------------------------------------

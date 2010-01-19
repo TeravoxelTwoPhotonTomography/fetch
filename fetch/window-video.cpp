@@ -210,7 +210,8 @@ _copy_data_to_texture( ID3D10Texture3D *dst, int ichan, void* src, size_t nbytes
                 D3D10_MAP_WRITE_DISCARD,
                 0,                               // wait for the gpu 
                 &mappedTex ) ));
-  memcpy(  ((u8*)mappedTex.pData) + ichan*g_video.stride, src, nbytes );  
+  Guarded_Assert( mappedTex.DepthPitch == nbytes );               
+  memcpy(  ((u8*)mappedTex.pData) + ichan*nbytes, src, nbytes );  
   dst->Unmap( D3D10CalcSubresource(0, 0, 1) );        
 }
 
@@ -223,7 +224,7 @@ _copy_data_to_texture_ex( ID3D10Texture3D *dst, int ichan, void* src, Frame_Desc
                 D3D10_MAP_WRITE_DISCARD,
                 0,                               // wait for the gpu 
                 &mappedTex ) ));
-  f->copy_channel( desc, ((u8*)mappedTex.pData) + ichan*g_video.stride, src, ichan );  
+  f->copy_channel( desc, ((u8*)mappedTex.pData) + ichan*mappedTex.DepthPitch, mappedTex.RowPitch, src, ichan );  
   dst->Unmap( D3D10CalcSubresource(0, 0, 1) );        
 }
 
@@ -428,7 +429,9 @@ HRESULT _InitDevice()
   g_video.cmaps = Colormap_Resource_Alloc();  
   
   _load_colormaps(nchan);
-    
+  dx10_effect_variable_set_f32(g_video.effect, VIDEO_WINDOW_NUM_CHAN_RESOURCE_NAME, (f32) nchan);
+  
+  debug("%f\r\n", dx10_effect_variable_get_f32( g_video.effect, "nchan" ));
     
   return S_OK;
 }
@@ -445,8 +448,11 @@ void _CleanupDevice()
     if( g_video.indices )               g_video.indices->Release();
     if( g_video.vertex_layout )         g_video.vertex_layout->Release();
     
-    if( g_video.texture_resource_view ) g_video.texture_resource_view->Release();
-    if( g_video.active_texture )        g_video.active_texture->Release();
+    if( g_video.active_texture )
+    { if( g_video.texture_resource_view ) g_video.texture_resource_view->Release();
+      g_video.active_texture->Release();
+    }
+    
     if( g_video.cmaps )
     { Colormap_Resource_Detach( g_video.cmaps );
       Colormap_Resource_Free  ( g_video.cmaps );
@@ -669,7 +675,7 @@ void Video_Display_Render_One_Frame()
     static int last_change_token  = 0;
     static vector_size_t *vdim = NULL;
     Frame_Interface *fint = NULL;
-    size_t nchan = 0;
+    static size_t nchan = 0;
     
     if( !vdim )
       vdim = vector_size_t_alloc(2);

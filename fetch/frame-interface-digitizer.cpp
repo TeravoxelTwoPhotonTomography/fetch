@@ -4,6 +4,7 @@
 #include "frame-interface-digitizer.h"
 
 #if 0
+#define DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES
 #define DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES
 #endif
 
@@ -26,10 +27,13 @@ frame_interface_digitizer__default__get_nbytes (Frame_Descriptor* fd)
 }
 
 void
-frame_interface_digitizer__default__copy_channel( Frame_Descriptor* fd, void *dst, void *src, size_t ichan )
+frame_interface_digitizer__default__copy_channel( Frame_Descriptor* fd, void *dst, size_t dst_stride, void *src, size_t ichan )
 { //DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__CHECK_DESCRIPTOR;
   Digitizer_Frame_Metadata        *meta = (Digitizer_Frame_Metadata*) fd->metadata;  
   size_t                    chan_stride = meta->width * meta->height * meta->Bpp;
+  
+  Guarded_Assert(0); // TODO: FIX: adapt for copies to desitinations with different line strides.  Do fast copy when strides are the same.
+  
   memcpy( dst, (u8*)src + chan_stride * ichan , chan_stride );
   return;
 }
@@ -58,10 +62,13 @@ frame_interface_digitizer__default__get_dimensions ( Frame_Descriptor* fd, vecto
 #endif
 
 void
-frame_interface_digitizer_interleaved_planes__copy_channel( Frame_Descriptor* fd, void *dst, void *src, size_t ichan )
+frame_interface_digitizer_interleaved_planes__copy_channel( Frame_Descriptor* fd, void *dst, size_t dst_stride, void *src, size_t ichan )
 { DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__CHECK_DESCRIPTOR;
   Digitizer_Frame_Metadata        *meta = (Digitizer_Frame_Metadata*) fd->metadata;  
   size_t                    chan_stride = meta->width * meta->height * meta->Bpp;
+  
+  Guarded_Assert(0); // TODO: FIX: adapt for copies to desitinations with different line strides.  Do fast copy when strides are the same.
+  
   memcpy( dst, (u8*)src + chan_stride * ichan , chan_stride );
   return;
 }
@@ -74,26 +81,39 @@ frame_interface_digitizer_interleaved_planes__copy_channel( Frame_Descriptor* fd
 #ifdef DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES
 #define DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__CHECK_DESCRIPTOR\
   { Guarded_Assert( fd->interface_id    == FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__INTERFACE_ID );\
-    Guarded_Assert( fd->metadata_nbytes == FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__METADATA_BYTES;\
+    Guarded_Assert( fd->metadata_nbytes == FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__METADATA_BYTES );\
   }
 #else
   #define DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__CHECK_DESCRIPTOR
 #endif
 
 void
-frame_interface_digitizer_interleaved_lines__copy_channel( Frame_Descriptor* fd, void *dst, void *src, size_t ichan )
-{ DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__CHECK_DESCRIPTOR;
+frame_interface_digitizer_interleaved_lines__copy_channel( Frame_Descriptor* fd, void *dst, size_t dst_stride, void *src, size_t ichan )
+{ DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__CHECK_DESCRIPTOR
   Digitizer_Frame_Metadata        *meta = (Digitizer_Frame_Metadata*) fd->metadata;  
   size_t                         nlines = meta->height,
                             line_nbytes = meta->width * meta->Bpp,
                            plane_nbytes = nlines * line_nbytes,
                                  stride = line_nbytes * meta->nchan;
-  u8 *src_cur = (u8*)src + stride * nlines,
-     *dst_cur = (u8*)dst + plane_nbytes;
-  while( src_cur > src )
-  { src_cur -= stride;
-    dst_cur -= line_nbytes;
-    memcpy( dst_cur, src_cur, plane_nbytes );
+#ifdef DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES
+  { FILE *fp = fopen("source.raw","wb");    
+    fwrite( src, 1, meta->width * meta->height * meta->nchan * meta->Bpp, fp );
+    fclose(fp); 
   }
+#endif
+  u8 *src_cur = (u8*)src + stride * nlines + ichan * line_nbytes,
+     *src_beg = (u8*)src + ichan * line_nbytes,
+     *dst_cur = (u8*)dst + dst_stride * nlines;
+  while( src_cur > src_beg )
+  { src_cur -= stride;
+    dst_cur -= dst_stride;
+    memcpy( dst_cur, src_cur, line_nbytes );
+  }
+#ifdef DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES
+  { FILE *fp = fopen("dest.raw","wb");    
+    fwrite( dst, 1, dst_stride * meta->height, fp );
+    fclose(fp); 
+  }
+#endif  
   return;
 }

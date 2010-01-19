@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "render-colormap.h"
+#include "util-dx10.h"
 
 #define CLAMP(v,low,high) ((v)<(low))?(low):(((v)>(high))?(high):(v))
 
@@ -98,8 +99,8 @@ Colormap_Resource_Fill (Colormap_Resource *cmap, UINT ichan, f32 *bytes, size_t 
   ID3D10Texture2D        *dst = cmap->texture;
   Guarded_Assert(SUCCEEDED( 
       dst->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &data ) ));  
-  memcpy(((u8*)data.pData) + ichan*(cmap->stride), bytes, nbytes); // assumes nbytes is the stride
-  dst->Unmap( D3D10CalcSubresource(0, 0, 1) );        
+  memcpy(((u8*)data.pData) + ichan*data.RowPitch, bytes, nbytes);
+  dst->Unmap( D3D10CalcSubresource(0, 0, 1) );  
 }
 
 f32 *_linear_colormap_get_params( float x0, float x1, float sign, size_t nrows, float *slope, float *intercept, size_t *nbytes )
@@ -337,8 +338,8 @@ Colormap_Autosetup( Colormap_Resource *cmap, float *min, float *max )
   { Colormap_Gray(cmap,0,min[0],max[0]);    
   } else
   { int ichan = N;
-    while( ichan-- )                       /* hue                val  alpha */
-      Colormap_HSV_Saturation(cmap, ichan, ichan/((float)N), 1.0, 1.0, min[ichan], max[ichan] );
+    while( ichan-- )                       /* hue            sat  alpha */      
+      Colormap_HSV_Value(cmap, ichan, ichan/((float)N), 1.0, 1.0f/(float)N, min[ichan], max[ichan] );
   }
   return;
 }
