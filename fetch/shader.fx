@@ -68,7 +68,7 @@ float4 PS( PS_INPUT input) : SV_Target
          color = float4(0.0,0.0,0.0,0.0);
   for( float i = 0; i < nchan; i++ )
   { z = i/nchan;
-    v = tx.Sample( samLinear, float3(input.Tex.x, input.Tex.y ).x;
+    v = tx.Sample( samLinear, float3(input.Tex.x, input.Tex.y, z ) ).x;
     c = cmap.Sample( samCmap, float2( (v+1.0)/2.0, z ) );
     color += c*c.w;
   }  

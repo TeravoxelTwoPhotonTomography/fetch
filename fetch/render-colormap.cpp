@@ -23,7 +23,7 @@ _create_texture(ID3D10Device *device, ID3D10Texture1D **pptex, UINT width, UINT 
 { D3D10_TEXTURE1D_DESC desc;
   ZeroMemory( &desc, sizeof(desc) );  
   desc.Width                         = width;
-  desc.MipLevels = desc.ArraySize    = 1;
+  desc.MipLevels                     = 1;
   desc.Format                        = DXGI_FORMAT_R32G32B32A32_FLOAT;  
   desc.Usage                         = D3D10_USAGE_DYNAMIC;
   desc.CPUAccessFlags                = D3D10_CPU_ACCESS_WRITE;
@@ -41,7 +41,7 @@ _bind_texture_to_shader_variable(ID3D10Device *device, Colormap_Resource *cmap )
 { D3D10_SHADER_RESOURCE_VIEW_DESC srvDesc;
   D3D10_RESOURCE_DIMENSION        type;
   D3D10_TEXTURE1D_DESC            desc;
-  ID3D10Texture1DArray           *tex = cmap->texture;
+  ID3D10Texture1D                *tex = cmap->texture;
   
   tex->GetDesc( &desc );
   tex->GetType( &type );
@@ -55,11 +55,11 @@ _bind_texture_to_shader_variable(ID3D10Device *device, Colormap_Resource *cmap )
   srvDesc.Texture1DArray.ArraySize       = desc.ArraySize;
 
   Guarded_Assert(SUCCEEDED( 
-    device->CreateShaderResourceView( tex, 
+    device->CreateShaderResourceView( tex,                                   // Make the shader resource view
                                      &srvDesc, 
                                      &cmap->resource_view ) ));                                               
   Guarded_Assert(SUCCEEDED(
-    cmap->resource_variable->SetResource( cmap->resource_view ) ));
+    cmap->resource_variable->SetResource( cmap->resource_view ) ));          // Bind
 }
 
 void
@@ -335,8 +335,8 @@ Colormap_Autosetup( Colormap_Resource *cmap, float *min, float *max )
   { Colormap_Gray(cmap,0,min[0],max[0]);    
   } else
   { int ichan = N;
-    while( ichan-- )
-      Colormap_HSV_Hue(cmap, ichan, 1.0, 1.0, 1.0, min[ichan], max[ichan] );
+    while( ichan-- )                       /* hue                val  alpha */
+      Colormap_HSV_Saturation(cmap, ichan, ichan/((float)N), 1.0, 1.0, min[ichan], max[ichan] );
   }
   return;
 }

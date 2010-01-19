@@ -1,6 +1,21 @@
+//
+// TODO
+// [ ] - set shader scalar function
+// [ ] - automatically change number of channels on a description change
+// [ ] - seperate texture related code similar to colormaps
+// [ ] - make a util-dx10.[ch] and move some code out
+//
+// [ ] - autolevel
+//
+// NOTES
+// -----
+// Texture arrays won't work because dynamic resource can only have a single subresource for some reason.
+//
+
 #include "stdafx.h"
 #include <d3d10.h>
 #include <d3dx10.h>
+#include "util-dx10.h"
 #include "window-video.h"
 #include <stdlib.h> // for rand - for testing - remove when done
 #include "asynq.h"
@@ -30,11 +45,14 @@ struct t_video_display
   ID3D10InputLayout                  *vertex_layout;
   ID3D10Buffer                       *vertices;
   ID3D10Buffer                       *indices;
-  ID3D10ShaderResourceView           *texture_resource_view[3];
-  ID3D10Texture2DArray               *active_texture[3];
-  ID3D10EffectShaderResourceVariable *active_texture_shader_resource[3];
+  
+  ID3D10ShaderResourceView           *texture_resource_view;
+  ID3D10Texture2D                    *active_texture;
+  ID3D10EffectShaderResourceVariable *active_texture_shader_resource;
   
   Colormap_Resource                  *cmaps;
+  float                              *mins;                               // array[nchan]: range from 0.0 to 1.0 - used for colormap gerneation
+  float                              *maxs;                               // array[nchan]: range from 0.0 to 1.0 - used for colormap generation  
   
   asynq                              *frame_source;
   
@@ -51,10 +69,12 @@ struct t_video_display
                               NULL,\
                               NULL,\
                               NULL,\
-                              {NULL, NULL, NULL},\
-                              {NULL, NULL, NULL},\
-                              {NULL, NULL, NULL},\
-                              EMPTY_COLORMAP_RESOURCE,\
+                              NULL,\
+                              NULL,\
+                              NULL,\
+                              NULL,\
+                              NULL,\
+                              NULL,\
                               NULL,\
                               1.0f}
 
@@ -174,34 +194,35 @@ _create_device_and_swap_chain(UINT width,UINT height)
   
   // Create a render target view - binds the swap chain (and hWnd) to the Output Merger stage.
   ID3D10Texture2D* pBuffer;
-  Guarded_Assert(SUCCEEDED( hr = g_video.swap_chain->GetBuffer( 0, __uuidof( ID3D10Texture2D ), ( LPVOID* )&pBuffer ) ));    
-  Guarded_Assert(SUCCEEDED( hr = g_video.device->CreateRenderTargetView( pBuffer, NULL, &g_video.render_target_view )    ));
-  pBuffer->Release();
-
-  g_video.device->OMSetRenderTargets( 1, &g_video.render_target_view, NULL );
+  Guarded_Assert(SUCCEEDED( hr = g_video.swap_chain->GetBuffer( 0, __uuidof( ID3D10Texture2D ), ( LPVOID* )&pBuffer ) )); // get the display buffer   
+  Guarded_Assert(SUCCEEDED( hr = g_video.device->CreateRenderTargetView( pBuffer, NULL, &g_video.render_target_view ) )); // ... get a view to the buffer
+  pBuffer->Release();                                                                                                     // ... (done with the buffer itself)
+  g_video.device->OMSetRenderTargets( 1, &g_video.render_target_view, NULL );                                             // ... and bind to as a render output
 }
 
 inline void 
-_copy_data_to_texture2d( ID3D10Texture2D *dst, void* src, size_t nbytes )
-{ D3D10_MAPPED_TEXTURE2D mappedTex;
-  Guarded_Assert( !FAILED( 
-      dst->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &mappedTex ) ));  
-  memcpy(mappedTex.pData, src, nbytes);
-  dst->Unmap( D3D10CalcSubresource(0, 0, 1) );        
-}
-
-inline void 
-_copy_data_to_texture2d_ex( ID3D10Texture2D *dst, void* src, Frame_Descriptor *desc, int ichan )
-{ D3D10_MAPPED_TEXTURE2D mappedTex;
-  Frame_Interface *f = Frame_Descriptor_Get_Interface( desc );
-  
+_copy_data_to_texture2d( ID3D10Texture2D *dst, int ichan, void* src, size_t nbytes )
+{ D3D10_MAPPED_TEXTURE2D mappedTex;  
   Guarded_Assert( SUCCEEDED( 
-      dst->Map( D3D10CalcSubresource(0, 0, 1),
+      dst->Map( D3D10CalcSubresource(0, ichan, 1),
+                D3D10_MAP_WRITE_DISCARD,
+                0,                               // wait for the gpu 
+                &mappedTex ) ));
+  memcpy( mappedTex.pData, src, nbytes );  
+  dst->Unmap( D3D10CalcSubresource(0, ichan, 1) );        
+}
+
+inline void 
+_copy_data_to_texture2d_ex( ID3D10Texture2D *dst, int ichan, void* src, Frame_Descriptor *desc )
+{ D3D10_MAPPED_TEXTURE2D mappedTex;
+  Frame_Interface *f = Frame_Descriptor_Get_Interface( desc );  
+  Guarded_Assert( SUCCEEDED( 
+      dst->Map( D3D10CalcSubresource(0, ichan, 1),
                 D3D10_MAP_WRITE_DISCARD,
                 0,                               // wait for the gpu 
                 &mappedTex ) ));
   f->copy_channel( desc, mappedTex.pData, src, ichan );  
-  dst->Unmap( D3D10CalcSubresource(0, 0, 1) );        
+  dst->Unmap( D3D10CalcSubresource(0, ichan, 1) );        
 }
 
 inline void
@@ -259,27 +280,21 @@ _setup_geometry(void)
   g_video.device->IASetPrimitiveTopology( D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP );
 }
 
-inline void _load_colormaps(void)
-{ int i=3, nrows = 1<<10;
-  const char* varnames[] = {"cmap0","cmap1","cmap2"};
-  while(i--)
-  { 
-    Colormap_Resource_Attach( g_video.cmaps[i], nrows, g_video.effect, varnames[i] );
-  }  
-  //Colormap_Inverse_Gray   ( g_video.cmaps[2], 0.0f, 1.0f );
-  //Colormap_HSV_Hue_Value( g_video.cmaps[0], 1.0, 1.0, 0.0f, 1.0f );
-  Colormap_HSV_Hue( g_video.cmaps[0], 1.0, 1.0, 1.0, 0.0f, 1.0f );  
-  Colormap_Black( g_video.cmaps[1] );
-  Colormap_Black( g_video.cmaps[2] );
-  //Colormap_Red    ( g_video.cmaps[0], 0.0f, 1.0f );
-  //Colormap_Green  ( g_video.cmaps[1], 0.0f, 1.0f );
-  //Colormap_Blue   ( g_video.cmaps[2], 0.0f, 1.0f );
+inline void _load_colormaps(UINT nchan)
+{ int nrows = 1<<10;
+ 
+  Guarded_Assert(g_video.mins);
+  Guarded_Assert(g_video.maxs);
+
+  Colormap_Resource_Attach( g_video.cmaps, nrows, nchan, g_video.effect, VIDEO_WINDOW_COLORMAP_RESOURCE_NAME );
+  Colormap_Autosetup( g_video.cmaps, g_video.mins, g_video.maxs );
 }
 
 inline void
 _load_shader(const char* path, const char* technique)
 { HRESULT hr = S_OK;
   DWORD dwShaderFlags = D3D10_SHADER_ENABLE_STRICTNESS;
+  ID3D10Blob *shader_errors = NULL;
 #ifdef VIDEO_DISPLAY_DEBUG_SHADER
     dwShaderFlags |= D3D10_SHADER_DEBUG;
 #endif
@@ -293,49 +308,52 @@ _load_shader(const char* path, const char* technique)
                                    NULL,
                                    NULL,
                                    &g_video.effect,
-                                   NULL,
+                                   &shader_errors,
                                    NULL );
   if( FAILED( hr ) )
-    error( "Could not compile the FX file.  Perhaps it could not be located.");   
+  { debug("%s\r\n", (char*)shader_errors->GetBufferPointer() );
+    error( "Could not compile the FX file.  Perhaps it could not be located or there was a compilation error.");
+  }
+  
 
-  // Obtain the technique ang get references to variables
+  // Obtain the technique and get references to variables
   g_video.technique                         = g_video.effect->GetTechniqueByName( technique );
-  g_video.active_texture_shader_resource[0] = g_video.effect->GetVariableByName( "tx0" )->AsShaderResource();
-  g_video.active_texture_shader_resource[1] = g_video.effect->GetVariableByName( "tx1" )->AsShaderResource();
-  g_video.active_texture_shader_resource[2] = g_video.effect->GetVariableByName( "tx2" )->AsShaderResource();  
+  g_video.active_texture_shader_resource    = g_video.effect->GetVariableByName( VIDEO_WINDOW_TEXTURE_RESOURCE_NAME )->AsShaderResource();  
   Guarded_Assert( g_video.technique );
-  Guarded_Assert( g_video.active_texture_shader_resource[0] );
-  Guarded_Assert( g_video.active_texture_shader_resource[1] );
-  Guarded_Assert( g_video.active_texture_shader_resource[2] );
+  Guarded_Assert( g_video.active_texture_shader_resource );
+  if( shader_errors )
+    shader_errors->Release();
 }
 
 inline void 
-_create_texture( ID3D10Texture2D **pptex, DXGI_FORMAT format, UINT width, UINT height )
+_create_texture( ID3D10Texture2D **pptex, DXGI_FORMAT format, UINT width, UINT height, UINT nchan )
 // Based on: ms-help://MS.VSCC.v90/MS.VSIPCC.v90/MS.Windows_Graphics.August.2009.1033/Windows_Graphics/d3d10_graphics_programming_guide_resources_creating_textures.htm#Creating_Empty_Textures
 { D3D10_TEXTURE2D_DESC desc;
   ZeroMemory( &desc, sizeof(desc) );
-  int i = 3;
+
   desc.Width                         = width;
   desc.Height                        = height;
-  desc.MipLevels = desc.ArraySize    = 1;
+  desc.MipLevels                     = 1;
   desc.Format                        = format;
   desc.SampleDesc.Count              = 1;
   desc.Usage                         = D3D10_USAGE_DYNAMIC;
   desc.CPUAccessFlags                = D3D10_CPU_ACCESS_WRITE;
   desc.BindFlags                     = D3D10_BIND_SHADER_RESOURCE;
+  desc.ArraySize                     = nchan;
   
-  while(i--)
-    Guarded_Assert( !FAILED( g_video.device->CreateTexture2D( &desc, NULL, g_video.active_texture+i ) ));
+  Guarded_Assert(SUCCEEDED( 
+    g_video.device->CreateTexture2D( &desc, NULL, pptex ) 
+    ));
 }
 
 inline void 
-_create_texture_u16( ID3D10Texture2D **pptex, UINT width, UINT height )
-{ _create_texture( pptex, DXGI_FORMAT_R16_UNORM, width, height );
+_create_texture_u16( ID3D10Texture2D **pptex, UINT width, UINT height, UINT nchan )
+{ _create_texture( pptex, DXGI_FORMAT_R16_UNORM, width, height, nchan );
 }
 
 inline void 
-_create_texture_i16( ID3D10Texture2D **pptex, UINT width, UINT height )
-{ _create_texture( pptex, DXGI_FORMAT_R16_SNORM, width, height );
+_create_texture_i16( ID3D10Texture2D **pptex, UINT width, UINT height, UINT nchan )
+{ _create_texture( pptex, DXGI_FORMAT_R16_SNORM, width, height, nchan );
 }
 
 void
@@ -344,41 +362,40 @@ _refresh_active_texture_shader_resource_view(void)
 { D3D10_SHADER_RESOURCE_VIEW_DESC srvDesc;
   D3D10_RESOURCE_DIMENSION type;
   D3D10_TEXTURE2D_DESC desc;
-  int i = 3;
   
-  g_video.active_texture[0]->GetType( &type );
+  g_video.active_texture->GetType( &type );
   Guarded_Assert( type == D3D10_RESOURCE_DIMENSION_TEXTURE2D );
-  g_video.active_texture[0]->GetDesc( &desc );
+  g_video.active_texture->GetDesc( &desc );
 
   srvDesc.Format                    = desc.Format;
-  srvDesc.ViewDimension             = D3D10_SRV_DIMENSION_TEXTURE2D;
-  srvDesc.Texture2D.MipLevels       = desc.MipLevels;
-  srvDesc.Texture2D.MostDetailedMip = desc.MipLevels - 1;
+  srvDesc.ViewDimension             = D3D10_SRV_DIMENSION_TEXTURE2DARRAY;
+  srvDesc.Texture2DArray.MipLevels       = desc.MipLevels;
+  srvDesc.Texture2DArray.MostDetailedMip = desc.MipLevels - 1;
+  srvDesc.Texture2DArray.FirstArraySlice = 0;
+  srvDesc.Texture2DArray.ArraySize       = desc.ArraySize;
 
-  while(i--)
-  { 
-    Guarded_Assert(SUCCEEDED( 
-      g_video.device->CreateShaderResourceView( g_video.active_texture[i], 
-                                               &srvDesc, 
-                                               &g_video.texture_resource_view[i] ) ));                                               
-    Guarded_Assert(SUCCEEDED(
-      g_video.active_texture_shader_resource[i]->SetResource( g_video.texture_resource_view[i] ) ));
-  }
+  Guarded_Assert(SUCCEEDED( 
+    g_video.device->CreateShaderResourceView( g_video.active_texture,                         // Create the view
+                                             &srvDesc, 
+                                             &g_video.texture_resource_view ) ));
+  Guarded_Assert(SUCCEEDED(
+    g_video.active_texture_shader_resource->SetResource( g_video.texture_resource_view ) ));  // Bind
 }
       
 HRESULT _InitDevice()
 { HRESULT hr = S_OK;
   RECT rc;
   GetClientRect( g_video.hwnd, &rc );
-  UINT width  = 512; //rc.right - rc.left;
-  UINT height = 512; //rc.bottom - rc.top;  
-    
+  UINT width  = 512; //rc.right - rc.left;               // defaults used for startup
+  UINT height = 512; //rc.bottom - rc.top;
+  UINT nchan  = 3;
+     
   _create_device_and_swap_chain(width, height);
   _setup_viewport( width, height );
   _load_shader(VIDEO_WINDOW_PATH_TO_SHADER, VIDEO_WINDOW_SHADER_TECHNIQUE_NAME);
   _setup_geometry();
   
-  { _create_texture_i16( g_video.active_texture, width, height );               
+  { _create_texture_i16( &g_video.active_texture, width, height, nchan );
     _refresh_active_texture_shader_resource_view();
     
     // Initialize the texture with test data
@@ -389,19 +406,27 @@ HRESULT _InitDevice()
       for(i=0;i<height;i++)
         for(j=0;j<width;j++)
           src[j + width * i] = (T) j + width * i + rand()/(1<<4);
-      _copy_data_to_texture2d( g_video.active_texture[0], src, src_nelem*sizeof(T) );
-      _copy_data_to_texture2d( g_video.active_texture[1], src, src_nelem*sizeof(T) );
-      _copy_data_to_texture2d( g_video.active_texture[2], src, src_nelem*sizeof(T) );
+      _copy_data_to_texture2d( g_video.active_texture, 0, src, src_nelem*sizeof(T) );
+      _copy_data_to_texture2d( g_video.active_texture, 1, src, src_nelem*sizeof(T) );
+      _copy_data_to_texture2d( g_video.active_texture, 2, src, src_nelem*sizeof(T) );
       free(src);        
     }      
   }                                          
   if( FAILED( hr ) )
       return hr;
 
-  { int i=3;
-    while(i--) g_video.cmaps[i] = Colormap_Resource_Alloc();
+  g_video.mins = (float*) Guarded_Malloc( sizeof(float)*nchan, "window-vdeo:_InitDevice():alloc mins" );
+  g_video.maxs = (float*) Guarded_Malloc( sizeof(float)*nchan, "window-vdeo:_InitDevice():alloc maxs" );
+  { UINT i = nchan;
+    while(i--)
+    { g_video.mins[i] = 0.0;
+      g_video.maxs[i] = 1.0;
+    }
   }
-  _load_colormaps();
+  
+  g_video.cmaps = Colormap_Resource_Alloc();  
+  
+  _load_colormaps(nchan);
     
     
   return S_OK;
@@ -419,58 +444,55 @@ void _CleanupDevice()
     if( g_video.indices )               g_video.indices->Release();
     if( g_video.vertex_layout )         g_video.vertex_layout->Release();
     
-    while(i--)
-    {
-      if( g_video.texture_resource_view[i] ) g_video.texture_resource_view[i]->Release();
-      if( g_video.active_texture[i] )        g_video.active_texture[i]->Release();
-      if( g_video.cmaps[i] )
-      { Colormap_Resource_Detach( g_video.cmaps[i] );
-        Colormap_Resource_Free  ( g_video.cmaps[i] );
-      }
-      
+    if( g_video.texture_resource_view ) g_video.texture_resource_view->Release();
+    if( g_video.active_texture )        g_video.active_texture->Release();
+    if( g_video.cmaps )
+    { Colormap_Resource_Detach( g_video.cmaps );
+      Colormap_Resource_Free  ( g_video.cmaps );
     }
     
     if( g_video.effect )                g_video.effect->Release();
     if( g_video.render_target_view )    g_video.render_target_view->Release();
     if( g_video.swap_chain )            g_video.swap_chain->Release();
     if( g_video.device )                g_video.device->Release();
+    
+    if(g_video.mins) free( g_video.mins ); g_video.mins = NULL;
+    if(g_video.maxs) free( g_video.maxs ); g_video.maxs = NULL;
 }
 
 //--------------------------------------------------------------------------------------
 // Set up the device objects (setup after a resize)
 //--------------------------------------------------------------------------------------
-void _refresh_objects(UINT width, UINT height)
+void _refresh_objects(UINT width, UINT height, UINT nchan)
 { int i = 3;
   HRESULT hr;
   // Create a render target view
   { ID3D10Texture2D* pBuffer;
   
     Guarded_Assert(SUCCEEDED( hr = g_video.swap_chain->GetBuffer( 0, __uuidof( ID3D10Texture2D ), ( LPVOID* )&pBuffer ) ));    
-    Guarded_Assert(SUCCEEDED( hr = g_video.device->CreateRenderTargetView( pBuffer, NULL, &g_video.render_target_view )    ));
+    Guarded_Assert(SUCCEEDED( hr = g_video.device->CreateRenderTargetView( pBuffer, NULL, &g_video.render_target_view ) ));
     pBuffer->Release();
-
     g_video.device->OMSetRenderTargets( 1, &g_video.render_target_view, NULL );
   }
   _setup_viewport( width, height );
   _load_shader(VIDEO_WINDOW_PATH_TO_SHADER, VIDEO_WINDOW_SHADER_TECHNIQUE_NAME);
-  _create_texture_i16( g_video.active_texture, width, height );               
+  _create_texture_i16( &g_video.active_texture, width, height, nchan );               
   _refresh_active_texture_shader_resource_view();
-  _load_colormaps();
+  _load_colormaps(nchan);
+  dx10_effect_variable_set_f32(g_video.effect, VIDEO_WINDOW_NUM_CHAN_RESOURCE_NAME, (f32) nchan);
 }
 
 //--------------------------------------------------------------------------------------
 // Clean up the device objects (prep for a resize)
 //--------------------------------------------------------------------------------------
 void _invalidate_objects(void)
-{   int i = 3;
-    int cnt = 0;
-    cnt = g_video.render_target_view->Release();    
-    cnt = g_video.effect->Release();
-    while(i--)
-    { Colormap_Resource_Detach  ( g_video.cmaps[i] );
-      cnt = g_video.texture_resource_view[i]->Release();
-      cnt = g_video.active_texture[i]->Release();      
-    }
+{ int cnt = 0;
+  cnt = g_video.render_target_view->Release();
+  cnt = g_video.effect->Release();
+
+  Colormap_Resource_Detach  ( g_video.cmaps );
+  cnt = g_video.texture_resource_view->Release();
+  cnt = g_video.active_texture->Release();
 }
 
 
@@ -646,6 +668,7 @@ void Video_Display_Render_One_Frame()
     static int last_change_token  = 0;
     static vector_size_t *vdim = NULL;
     Frame_Interface *fint = NULL;
+    size_t nchan = 0;
     
     if( !vdim )
       vdim = vector_size_t_alloc(2);
@@ -659,9 +682,9 @@ void Video_Display_Render_One_Frame()
       }
       
       if( Asynq_Peek_Timed(q, frm, (DWORD) wait_time_ms ) )
-      { int i=3;
+      { int i;
         Frame_From_Bytes( frm, &src, &desc );
-        if( desc->change_token != last_change_token)
+        if( desc->change_token != last_change_token)               // RESIZE!
         { RECT *rect = NULL;
           last_change_token = desc->change_token;
           //Guarded_Assert( desc->change_token == 1 );
@@ -669,8 +692,9 @@ void Video_Display_Render_One_Frame()
           //Resize window and buffers
           fint = Frame_Descriptor_Get_Interface(desc);
           fint->get_dimensions(desc, vdim);
-          { size_t w = vdim->contents[0], 
-                   h = vdim->contents[1];
+          { size_t w     = vdim->contents[0], 
+                   h     = vdim->contents[1];
+            nchan = fint->get_nchannels( desc );
                    
             DXGI_MODE_DESC mode;
             mode.Width = w;
@@ -686,11 +710,12 @@ void Video_Display_Render_One_Frame()
             Guarded_Assert(SUCCEEDED( g_video.swap_chain->ResizeBuffers(2, w, h,
                                               DXGI_FORMAT_R8G8B8A8_UNORM, 
                                               DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH)));
-            _refresh_objects(w,h);
+            _refresh_objects(w,h,nchan);
           }
         }
+        i = nchan;
         while(i--)
-          _copy_data_to_texture2d_ex( g_video.active_texture[i], src, &last, i );
+          _copy_data_to_texture2d_ex( g_video.active_texture, i, src, &last);
           
         efficiency_accumulator++;
         efficiency_hit = 1.0;

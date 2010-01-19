@@ -272,6 +272,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\util-dx10.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\util-nidaqmx.cpp"
 				>
 			</File>
@@ -371,6 +375,10 @@
 			</File>
 			<File
 				RelativePath=".\targetver.h"
+				>
+			</File>
+			<File
+				RelativePath=".\util-dx10.h"
 				>
 			</File>
 			<File
