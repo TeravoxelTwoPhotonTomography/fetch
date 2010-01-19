@@ -19,40 +19,41 @@ Colormap_Resource_Free(Colormap_Resource *cmap)
 }
 
 inline void 
-_create_texture(ID3D10Device *device, ID3D10Texture1D **pptex, UINT width, UINT nchan )
-{ D3D10_TEXTURE1D_DESC desc;
+_create_texture(ID3D10Device *device, ID3D10Texture2D **pptex, UINT width, UINT nchan )
+{ D3D10_TEXTURE2D_DESC desc;
   ZeroMemory( &desc, sizeof(desc) );  
   desc.Width                         = width;
+  desc.Height                        = nchan;
   desc.MipLevels                     = 1;
-  desc.Format                        = DXGI_FORMAT_R32G32B32A32_FLOAT;  
+  desc.ArraySize                     = 1; // Must be 1 for dynamic resource
+  desc.Format                        = DXGI_FORMAT_R32G32B32A32_FLOAT;
+  desc.SampleDesc.Count              = 1;
+  desc.SampleDesc.Quality            = 0;
   desc.Usage                         = D3D10_USAGE_DYNAMIC;
   desc.CPUAccessFlags                = D3D10_CPU_ACCESS_WRITE;
-  desc.BindFlags                     = D3D10_BIND_SHADER_RESOURCE;
-  desc.ArraySize                     = nchan;
+  desc.BindFlags                     = D3D10_BIND_SHADER_RESOURCE;;
   
   Guarded_Assert( width > 0 );
   Guarded_Assert( nchan > 0 );
   Guarded_Assert(SUCCEEDED(
-    device->CreateTexture1D( &desc, NULL, pptex ) ));
+    device->CreateTexture2D( &desc, NULL, pptex ) ));
 }
 
 inline void
 _bind_texture_to_shader_variable(ID3D10Device *device, Colormap_Resource *cmap )
 { D3D10_SHADER_RESOURCE_VIEW_DESC srvDesc;
   D3D10_RESOURCE_DIMENSION        type;
-  D3D10_TEXTURE1D_DESC            desc;
-  ID3D10Texture1D                *tex = cmap->texture;
+  D3D10_TEXTURE2D_DESC            desc;
+  ID3D10Texture2D                *tex = cmap->texture;
   
   tex->GetDesc( &desc );
   tex->GetType( &type );
-  Guarded_Assert( type == D3D10_RESOURCE_DIMENSION_TEXTURE1D );
+  Guarded_Assert( type == D3D10_RESOURCE_DIMENSION_TEXTURE2D );
 
   srvDesc.Format                    = desc.Format;
-  srvDesc.ViewDimension             = D3D10_SRV_DIMENSION_TEXTURE1DARRAY;
-  srvDesc.Texture1DArray.MipLevels       = desc.MipLevels;
-  srvDesc.Texture1DArray.MostDetailedMip = desc.MipLevels - 1;
-  srvDesc.Texture1DArray.FirstArraySlice = 0;
-  srvDesc.Texture1DArray.ArraySize       = desc.ArraySize;
+  srvDesc.ViewDimension             = D3D10_SRV_DIMENSION_TEXTURE2D;
+  srvDesc.Texture2D.MipLevels       = desc.MipLevels;
+  srvDesc.Texture2D.MostDetailedMip = desc.MipLevels - 1;
 
   Guarded_Assert(SUCCEEDED( 
     device->CreateShaderResourceView( tex,                                   // Make the shader resource view
@@ -73,6 +74,7 @@ Colormap_Resource_Attach (Colormap_Resource *cmap, UINT width, UINT nchan, ID3D1
   device->Release();
   
   cmap->nchan = nchan;
+  cmap->stride = 4 * width * sizeof(f32); // each is four floats
 }
 
 void
@@ -84,20 +86,20 @@ Colormap_Resource_Detach (Colormap_Resource *cmap)
 }
 
 UINT
-Colormap_Resource_Get_Element_Count(Colormap_Resource *cmap)
-{ D3D10_TEXTURE1D_DESC    desc;
+Colormap_Resource_Get_Element_Count(Colormap_Resource *cmap)      // obsolete?
+{ D3D10_TEXTURE2D_DESC    desc;
   cmap->texture->GetDesc(&desc);
   return desc.Width;
 }
 
 void
 Colormap_Resource_Fill (Colormap_Resource *cmap, UINT ichan, f32 *bytes, size_t nbytes)
-{ void *data;
-  ID3D10Texture1D       *dst = cmap->texture;
+{ D3D10_MAPPED_TEXTURE2D data;
+  ID3D10Texture2D        *dst = cmap->texture;
   Guarded_Assert(SUCCEEDED( 
-      dst->Map( D3D10CalcSubresource(0, ichan, 1), D3D10_MAP_WRITE_DISCARD, 0, &data ) ));  
-  memcpy(data, bytes, nbytes);
-  dst->Unmap( D3D10CalcSubresource(0, ichan, 1) );        
+      dst->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &data ) ));  
+  memcpy(((u8*)data.pData) + ichan*(cmap->stride), bytes, nbytes); // assumes nbytes is the stride
+  dst->Unmap( D3D10CalcSubresource(0, 0, 1) );        
 }
 
 f32 *_linear_colormap_get_params( float x0, float x1, float sign, size_t nrows, float *slope, float *intercept, size_t *nbytes )
@@ -105,7 +107,7 @@ f32 *_linear_colormap_get_params( float x0, float x1, float sign, size_t nrows, 
 { float m   =  sign/(x1*nrows-x0*nrows),
         b   = -m*x0*nrows;
   static f32 *rgba = NULL;
-  static size_t n  = 0, sz;
+  static size_t n  = 0,sz;
   
   if(!rgba)               // alloc
   { sz = nrows*4*sizeof(f32);
@@ -121,12 +123,12 @@ f32 *_linear_colormap_get_params( float x0, float x1, float sign, size_t nrows, 
 }
 
 void Colormap_Black( Colormap_Resource *cmap, UINT ichan )
-{ void *data = NULL;
-  UINT width = Colormap_Resource_Get_Element_Count(cmap);
+{ D3D10_MAPPED_TEXTURE2D data;
+  size_t stride = cmap->stride;
   Guarded_Assert( !FAILED( 
-      cmap->texture->Map( D3D10CalcSubresource(0, ichan, 1), D3D10_MAP_WRITE_DISCARD, 0, &data ) ));  
-  memset(data, 0, 4*width*sizeof(f32) );
-  cmap->texture->Unmap( D3D10CalcSubresource(0, ichan, 1) );
+      cmap->texture->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &data ) ));  
+  memset(((u8*)data.pData) + ichan*stride, 0, stride*sizeof(f32) );
+  cmap->texture->Unmap( D3D10CalcSubresource(0, 0, 1) );
 }
 
 void

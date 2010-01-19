@@ -64,7 +64,7 @@ typedef struct _digitizer_config
                        0.0,\
                        "0\0",\
                        DIGITIZER_MAX_NUM_CHANNELS,\
-                       {{"0\0",  2.0,NISCOPE_VAL_DC,VI_TRUE},\
+                       {{"0\0",  0.3,NISCOPE_VAL_DC,VI_TRUE},\
                         {"1\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\
                         {"2\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\
                         {"3\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\

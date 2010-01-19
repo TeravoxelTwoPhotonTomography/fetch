@@ -6,12 +6,13 @@
 
 typedef struct _t_colormap_resource
 { ID3D10ShaderResourceView           *resource_view;
-  ID3D10Texture1D                    *texture;
+  ID3D10Texture2D                    *texture;
   ID3D10EffectShaderResourceVariable *resource_variable;
   UINT                                nchan;
+  size_t                              stride;
 } Colormap_Resource;
 
-#define EMPTY_COLORMAP_RESOURCE {NULL,NULL,NULL,0}
+#define EMPTY_COLORMAP_RESOURCE {NULL,NULL,NULL,0,0}
 
 Colormap_Resource *Colormap_Resource_Alloc  (void);
 void               Colormap_Resource_Free   (Colormap_Resource *cmap);

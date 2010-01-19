@@ -47,8 +47,9 @@ struct t_video_display
   ID3D10Buffer                       *indices;
   
   ID3D10ShaderResourceView           *texture_resource_view;
-  ID3D10Texture2D                    *active_texture;
+  ID3D10Texture3D                    *active_texture;
   ID3D10EffectShaderResourceVariable *active_texture_shader_resource;
+  size_t                              stride;                             // stride (bytes) between planes in the 3d texture
   
   Colormap_Resource                  *cmaps;
   float                              *mins;                               // array[nchan]: range from 0.0 to 1.0 - used for colormap gerneation
@@ -72,6 +73,7 @@ struct t_video_display
                               NULL,\
                               NULL,\
                               NULL,\
+                              0,\
                               NULL,\
                               NULL,\
                               NULL,\
@@ -201,28 +203,28 @@ _create_device_and_swap_chain(UINT width,UINT height)
 }
 
 inline void 
-_copy_data_to_texture2d( ID3D10Texture2D *dst, int ichan, void* src, size_t nbytes )
-{ D3D10_MAPPED_TEXTURE2D mappedTex;  
+_copy_data_to_texture( ID3D10Texture3D *dst, int ichan, void* src, size_t nbytes )
+{ D3D10_MAPPED_TEXTURE3D mappedTex;  
   Guarded_Assert( SUCCEEDED( 
-      dst->Map( D3D10CalcSubresource(0, ichan, 1),
+      dst->Map( D3D10CalcSubresource(0, 0, 1),
                 D3D10_MAP_WRITE_DISCARD,
                 0,                               // wait for the gpu 
                 &mappedTex ) ));
-  memcpy( mappedTex.pData, src, nbytes );  
-  dst->Unmap( D3D10CalcSubresource(0, ichan, 1) );        
+  memcpy(  ((u8*)mappedTex.pData) + ichan*g_video.stride, src, nbytes );  
+  dst->Unmap( D3D10CalcSubresource(0, 0, 1) );        
 }
 
 inline void 
-_copy_data_to_texture2d_ex( ID3D10Texture2D *dst, int ichan, void* src, Frame_Descriptor *desc )
-{ D3D10_MAPPED_TEXTURE2D mappedTex;
+_copy_data_to_texture_ex( ID3D10Texture3D *dst, int ichan, void* src, Frame_Descriptor *desc )
+{ D3D10_MAPPED_TEXTURE3D mappedTex;
   Frame_Interface *f = Frame_Descriptor_Get_Interface( desc );  
   Guarded_Assert( SUCCEEDED( 
-      dst->Map( D3D10CalcSubresource(0, ichan, 1),
+      dst->Map( D3D10CalcSubresource(0, 0, 1),
                 D3D10_MAP_WRITE_DISCARD,
                 0,                               // wait for the gpu 
                 &mappedTex ) ));
-  f->copy_channel( desc, mappedTex.pData, src, ichan );  
-  dst->Unmap( D3D10CalcSubresource(0, ichan, 1) );        
+  f->copy_channel( desc, ((u8*)mappedTex.pData) + ichan*g_video.stride, src, ichan );  
+  dst->Unmap( D3D10CalcSubresource(0, 0, 1) );        
 }
 
 inline void
@@ -326,33 +328,34 @@ _load_shader(const char* path, const char* technique)
 }
 
 inline void 
-_create_texture( ID3D10Texture2D **pptex, DXGI_FORMAT format, UINT width, UINT height, UINT nchan )
+_create_texture( ID3D10Texture3D **pptex, DXGI_FORMAT format, UINT width, UINT height, UINT nchan )
 // Based on: ms-help://MS.VSCC.v90/MS.VSIPCC.v90/MS.Windows_Graphics.August.2009.1033/Windows_Graphics/d3d10_graphics_programming_guide_resources_creating_textures.htm#Creating_Empty_Textures
-{ D3D10_TEXTURE2D_DESC desc;
+{ D3D10_TEXTURE3D_DESC desc;
   ZeroMemory( &desc, sizeof(desc) );
 
   desc.Width                         = width;
   desc.Height                        = height;
+  desc.Depth                         = nchan;
+  //desc.ArraySize                     = 1; // must be 1 in a dynamic resource
   desc.MipLevels                     = 1;
   desc.Format                        = format;
-  desc.SampleDesc.Count              = 1;
+  //desc.SampleDesc.Count              = 1;
   desc.Usage                         = D3D10_USAGE_DYNAMIC;
   desc.CPUAccessFlags                = D3D10_CPU_ACCESS_WRITE;
   desc.BindFlags                     = D3D10_BIND_SHADER_RESOURCE;
-  desc.ArraySize                     = nchan;
   
   Guarded_Assert(SUCCEEDED( 
-    g_video.device->CreateTexture2D( &desc, NULL, pptex ) 
+    g_video.device->CreateTexture3D( &desc, NULL, pptex ) 
     ));
 }
 
 inline void 
-_create_texture_u16( ID3D10Texture2D **pptex, UINT width, UINT height, UINT nchan )
+_create_texture_u16( ID3D10Texture3D **pptex, UINT width, UINT height, UINT nchan )
 { _create_texture( pptex, DXGI_FORMAT_R16_UNORM, width, height, nchan );
 }
 
 inline void 
-_create_texture_i16( ID3D10Texture2D **pptex, UINT width, UINT height, UINT nchan )
+_create_texture_i16( ID3D10Texture3D **pptex, UINT width, UINT height, UINT nchan )
 { _create_texture( pptex, DXGI_FORMAT_R16_SNORM, width, height, nchan );
 }
 
@@ -361,18 +364,16 @@ _refresh_active_texture_shader_resource_view(void)
 // Create the resource view for textures and bind it to the shader varable
 { D3D10_SHADER_RESOURCE_VIEW_DESC srvDesc;
   D3D10_RESOURCE_DIMENSION type;
-  D3D10_TEXTURE2D_DESC desc;
+  D3D10_TEXTURE3D_DESC desc;
   
   g_video.active_texture->GetType( &type );
-  Guarded_Assert( type == D3D10_RESOURCE_DIMENSION_TEXTURE2D );
+  Guarded_Assert( type == D3D10_RESOURCE_DIMENSION_TEXTURE3D );
   g_video.active_texture->GetDesc( &desc );
 
   srvDesc.Format                    = desc.Format;
-  srvDesc.ViewDimension             = D3D10_SRV_DIMENSION_TEXTURE2DARRAY;
-  srvDesc.Texture2DArray.MipLevels       = desc.MipLevels;
-  srvDesc.Texture2DArray.MostDetailedMip = desc.MipLevels - 1;
-  srvDesc.Texture2DArray.FirstArraySlice = 0;
-  srvDesc.Texture2DArray.ArraySize       = desc.ArraySize;
+  srvDesc.ViewDimension             = D3D10_SRV_DIMENSION_TEXTURE3D;
+  srvDesc.Texture3D.MipLevels       = desc.MipLevels;
+  srvDesc.Texture3D.MostDetailedMip = desc.MipLevels - 1;
 
   Guarded_Assert(SUCCEEDED( 
     g_video.device->CreateShaderResourceView( g_video.active_texture,                         // Create the view
@@ -406,9 +407,9 @@ HRESULT _InitDevice()
       for(i=0;i<height;i++)
         for(j=0;j<width;j++)
           src[j + width * i] = (T) j + width * i + rand()/(1<<4);
-      _copy_data_to_texture2d( g_video.active_texture, 0, src, src_nelem*sizeof(T) );
-      _copy_data_to_texture2d( g_video.active_texture, 1, src, src_nelem*sizeof(T) );
-      _copy_data_to_texture2d( g_video.active_texture, 2, src, src_nelem*sizeof(T) );
+      _copy_data_to_texture( g_video.active_texture, 0, src, src_nelem*sizeof(T) );
+      _copy_data_to_texture( g_video.active_texture, 1, src, src_nelem*sizeof(T) );
+      _copy_data_to_texture( g_video.active_texture, 2, src, src_nelem*sizeof(T) );
       free(src);        
     }      
   }                                          
@@ -711,11 +712,13 @@ void Video_Display_Render_One_Frame()
                                               DXGI_FORMAT_R8G8B8A8_UNORM, 
                                               DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH)));
             _refresh_objects(w,h,nchan);
+            g_video.stride = w*h*sizeof(i16);
+            g_video.aspect = w/((float)h);
           }
         }
         i = nchan;
         while(i--)
-          _copy_data_to_texture2d_ex( g_video.active_texture, i, src, &last);
+          _copy_data_to_texture_ex( g_video.active_texture, i, src, &last);
           
         efficiency_accumulator++;
         efficiency_hit = 1.0;

@@ -7,10 +7,10 @@
 //--------------------------------------------------------------------------------------
 // Constant Buffer Variables
 //--------------------------------------------------------------------------------------
-Texture2DArray<snorm float> tx;    // Single image torage for different channels
-Texture1DArray<float4>      cmap;  // each channel is interpreted according to the corresponding colormap
-float                       nchan; // the number of channels
-                                   // ??? [ ] - Who should set nchan?
+Texture3D<snorm float> tx;    // Single image torage for different channels
+Texture2D<float4>      cmap;  // each channel is interpreted according to the corresponding colormap
+float                  nchan; // the number of channels
+                              // ??? [ ] - Who should set nchan?
 SamplerState samLinear
 {
     Filter = MIN_MAG_MIP_LINEAR;
