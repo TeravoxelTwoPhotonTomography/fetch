@@ -85,7 +85,24 @@ void _config_digitizer( void )
                                     0.0,
                                     line_trigger_cfg.coupling,
                                     probeAttenuation,
-                                    NISCOPE_VAL_TRUE));          // ?? what's this
+                                    NISCOPE_VAL_TRUE));          // enabled
+  // configure vertical of other channels
+  { int ichan = dig_cfg->num_channels;
+    while( ichan-- )
+    { if( ichan != scn_cfg->line_trigger_src )
+      { Digitizer_Channel_Config *c = dig_cfg->channels + ichan;
+        DIGERR( niScope_ConfigureVertical(vi,
+                                          c->name,       // channelName
+                                          c->range,
+                                          0.0,
+                                          c->coupling,
+                                          probeAttenuation,
+                                          c->enabled));
+      }
+    }
+  }
+  
+  
   DIGERR( niScope_ConfigureHorizontalTiming(vi,
                                             dig_cfg->sample_rate,
                                             _compute_record_size(),
@@ -294,7 +311,7 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   status = 0;
   debug("Scanner - Video task completed normally.\r\n");
 Error:
-  free( frm );
+  free( frm );   // <-- HEAP corruption here
   free( wfm );
   niscope_debug_print_status(vi);
   DAQERR( DAQmxStopTask (ao_task) );

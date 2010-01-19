@@ -22,7 +22,7 @@ size_t
 frame_interface_digitizer__default__get_nbytes (Frame_Descriptor* fd)
 { //DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__CHECK_DESCRIPTOR;
   Digitizer_Frame_Metadata *meta = (Digitizer_Frame_Metadata*) fd->metadata;
-  return meta->width * meta->height * meta->Bpp;
+  return meta->width * meta->height * meta->nchan * meta->Bpp;
 }
 
 void
