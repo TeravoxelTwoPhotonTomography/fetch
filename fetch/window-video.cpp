@@ -20,7 +20,8 @@
 #include <stdlib.h> // for rand - for testing - remove when done
 #include "asynq.h"
 #include "frame.h"
-#include "render-colormap.h"
+#include "renderer-colormap.h"
+#include "renderer-video-frame.h"
 
 #define VIDEO_WINDOW_TEXTURE_RESOURCE_NAME  "tx"
 #define VIDEO_WINDOW_COLORMAP_RESOURCE_NAME "cmap"
@@ -46,10 +47,7 @@ struct t_video_display
   ID3D10Buffer                       *vertices;
   ID3D10Buffer                       *indices;
   
-  ID3D10ShaderResourceView           *texture_resource_view;
-  ID3D10Texture3D                    *active_texture;
-  ID3D10EffectShaderResourceVariable *active_texture_shader_resource;
-  size_t                              stride;                             // stride (bytes) between planes in the 3d texture
+  Video_Frame_Resource               *vframe;
   
   Colormap_Resource                  *cmaps;
   float                              *mins;                               // array[nchan]: range from 0.0 to 1.0 - used for colormap gerneation
@@ -71,9 +69,6 @@ struct t_video_display
                               NULL,\
                               NULL,\
                               NULL,\
-                              NULL,\
-                              NULL,\
-                              0,\
                               NULL,\
                               NULL,\
                               NULL,\
@@ -202,32 +197,6 @@ _create_device_and_swap_chain(UINT width,UINT height)
   g_video.device->OMSetRenderTargets( 1, &g_video.render_target_view, NULL );                                             // ... and bind to as a render output
 }
 
-inline void 
-_copy_data_to_texture( ID3D10Texture3D *dst, int ichan, void* src, size_t nbytes )
-{ D3D10_MAPPED_TEXTURE3D mappedTex;  
-  Guarded_Assert( SUCCEEDED( 
-      dst->Map( D3D10CalcSubresource(0, 0, 1),
-                D3D10_MAP_WRITE_DISCARD,
-                0,                               // wait for the gpu 
-                &mappedTex ) ));
-  Guarded_Assert( mappedTex.DepthPitch == nbytes );               
-  memcpy(  ((u8*)mappedTex.pData) + ichan*nbytes, src, nbytes );  
-  dst->Unmap( D3D10CalcSubresource(0, 0, 1) );        
-}
-
-inline void 
-_copy_data_to_texture_ex( ID3D10Texture3D *dst, int ichan, void* src, Frame_Descriptor *desc )
-{ D3D10_MAPPED_TEXTURE3D mappedTex;
-  Frame_Interface *f = Frame_Descriptor_Get_Interface( desc );  
-  Guarded_Assert( SUCCEEDED( 
-      dst->Map( D3D10CalcSubresource(0, 0, 1),
-                D3D10_MAP_WRITE_DISCARD,
-                0,                               // wait for the gpu 
-                &mappedTex ) ));
-  f->copy_channel( desc, ((u8*)mappedTex.pData) + ichan*mappedTex.DepthPitch, mappedTex.RowPitch, src, ichan );  
-  dst->Unmap( D3D10CalcSubresource(0, 0, 1) );        
-}
-
 inline void
 _setup_viewport(UINT width,UINT height)
 { D3D10_VIEWPORT vp;
@@ -291,6 +260,7 @@ inline void _load_colormaps(UINT nchan)
 
   Colormap_Resource_Attach( g_video.cmaps, nrows, nchan, g_video.effect, VIDEO_WINDOW_COLORMAP_RESOURCE_NAME );
   Colormap_Autosetup( g_video.cmaps, g_video.mins, g_video.maxs );
+  Colormap_Resource_Commit( g_video.cmaps );
 }
 
 inline void
@@ -320,68 +290,10 @@ _load_shader(const char* path, const char* technique)
   
 
   // Obtain the technique and get references to variables
-  g_video.technique                         = g_video.effect->GetTechniqueByName( technique );
-  g_video.active_texture_shader_resource    = g_video.effect->GetVariableByName( VIDEO_WINDOW_TEXTURE_RESOURCE_NAME )->AsShaderResource();  
-  Guarded_Assert( g_video.technique );
-  Guarded_Assert( g_video.active_texture_shader_resource );
+  g_video.technique                         = g_video.effect->GetTechniqueByName( technique );  
+  Guarded_Assert( g_video.technique );  
   if( shader_errors )
     shader_errors->Release();
-}
-
-inline void 
-_create_texture( ID3D10Texture3D **pptex, DXGI_FORMAT format, UINT width, UINT height, UINT nchan )
-// Based on: ms-help://MS.VSCC.v90/MS.VSIPCC.v90/MS.Windows_Graphics.August.2009.1033/Windows_Graphics/d3d10_graphics_programming_guide_resources_creating_textures.htm#Creating_Empty_Textures
-{ D3D10_TEXTURE3D_DESC desc;
-  ZeroMemory( &desc, sizeof(desc) );
-
-  desc.Width                         = width;
-  desc.Height                        = height;
-  desc.Depth                         = nchan;
-  //desc.ArraySize                     = 1; // must be 1 in a dynamic resource
-  desc.MipLevels                     = 1;
-  desc.Format                        = format;
-  //desc.SampleDesc.Count              = 1;
-  desc.Usage                         = D3D10_USAGE_DYNAMIC;
-  desc.CPUAccessFlags                = D3D10_CPU_ACCESS_WRITE;
-  desc.BindFlags                     = D3D10_BIND_SHADER_RESOURCE;
-  
-  Guarded_Assert(SUCCEEDED( 
-    g_video.device->CreateTexture3D( &desc, NULL, pptex ) 
-    ));
-}
-
-inline void 
-_create_texture_u16( ID3D10Texture3D **pptex, UINT width, UINT height, UINT nchan )
-{ _create_texture( pptex, DXGI_FORMAT_R16_UNORM, width, height, nchan );
-}
-
-inline void 
-_create_texture_i16( ID3D10Texture3D **pptex, UINT width, UINT height, UINT nchan )
-{ _create_texture( pptex, DXGI_FORMAT_R16_SNORM, width, height, nchan );
-}
-
-void
-_refresh_active_texture_shader_resource_view(void)
-// Create the resource view for textures and bind it to the shader varable
-{ D3D10_SHADER_RESOURCE_VIEW_DESC srvDesc;
-  D3D10_RESOURCE_DIMENSION type;
-  D3D10_TEXTURE3D_DESC desc;
-  
-  g_video.active_texture->GetType( &type );
-  Guarded_Assert( type == D3D10_RESOURCE_DIMENSION_TEXTURE3D );
-  g_video.active_texture->GetDesc( &desc );
-
-  srvDesc.Format                    = desc.Format;
-  srvDesc.ViewDimension             = D3D10_SRV_DIMENSION_TEXTURE3D;
-  srvDesc.Texture3D.MipLevels       = desc.MipLevels;
-  srvDesc.Texture3D.MostDetailedMip = desc.MipLevels - 1;
-
-  Guarded_Assert(SUCCEEDED( 
-    g_video.device->CreateShaderResourceView( g_video.active_texture,                         // Create the view
-                                             &srvDesc, 
-                                             &g_video.texture_resource_view ) ));
-  Guarded_Assert(SUCCEEDED(
-    g_video.active_texture_shader_resource->SetResource( g_video.texture_resource_view ) ));  // Bind
 }
       
 HRESULT _InitDevice()
@@ -397,28 +309,30 @@ HRESULT _InitDevice()
   _load_shader(VIDEO_WINDOW_PATH_TO_SHADER, VIDEO_WINDOW_SHADER_TECHNIQUE_NAME);
   _setup_geometry();
   
-  { _create_texture_i16( &g_video.active_texture, width, height, nchan );
-    _refresh_active_texture_shader_resource_view();
+  { g_video.vframe = Video_Frame_Resource_Alloc();
+    Video_Frame_Resource_Attach( g_video.vframe,
+                                 width, height, nchan,
+                                 g_video.effect, VIDEO_WINDOW_TEXTURE_RESOURCE_NAME );
     
     // Initialize the texture with test data
     { typedef i16 T;
-      size_t src_nelem = width*height;      // create the source buffer
+      size_t src_nelem = width*height*nchan;      // create the source buffer
       T *src = (T*)calloc(src_nelem,sizeof(T));
-      unsigned int i,j;
-      for(i=0;i<height;i++)
-        for(j=0;j<width;j++)
-          src[j + width * i] = (T) j + width * i + rand()/(1<<4);
-      _copy_data_to_texture( g_video.active_texture, 0, src, src_nelem*sizeof(T) );
-      _copy_data_to_texture( g_video.active_texture, 1, src, src_nelem*sizeof(T) );
-      _copy_data_to_texture( g_video.active_texture, 2, src, src_nelem*sizeof(T) );
+      unsigned int i,j,k;
+      for(k=0;k<nchan;k++)
+        for(i=0;i<height;i++)
+          for(j=0;j<width;j++)
+            src[j + width * i + k * height * width] = (T) j + width * i + rand()/(1<<4);
+      Video_Frame_From_Raw( g_video.vframe, src, width, height, nchan );
       free(src);        
-    }      
+    }
+    Video_Frame_Resource_Commit( g_video.vframe );
   }                                          
   if( FAILED( hr ) )
       return hr;
 
-  g_video.mins = (float*) Guarded_Malloc( sizeof(float)*nchan, "window-vdeo:_InitDevice():alloc mins" );
-  g_video.maxs = (float*) Guarded_Malloc( sizeof(float)*nchan, "window-vdeo:_InitDevice():alloc maxs" );
+  g_video.mins = (float*) Guarded_Malloc( sizeof(float)*nchan, "window-video:_InitDevice():alloc mins" );
+  g_video.maxs = (float*) Guarded_Malloc( sizeof(float)*nchan, "window-video:_InitDevice():alloc maxs" );
   { UINT i = nchan;
     while(i--)
     { g_video.mins[i] = 0.0;
@@ -448,15 +362,9 @@ void _CleanupDevice()
     if( g_video.indices )               g_video.indices->Release();
     if( g_video.vertex_layout )         g_video.vertex_layout->Release();
     
-    if( g_video.active_texture )
-    { if( g_video.texture_resource_view ) g_video.texture_resource_view->Release();
-      g_video.active_texture->Release();
-    }
+    if( g_video.vframe )                Video_Frame_Resource_Free( g_video.vframe );
     
-    if( g_video.cmaps )
-    { Colormap_Resource_Detach( g_video.cmaps );
-      Colormap_Resource_Free  ( g_video.cmaps );
-    }
+    if( g_video.cmaps )                 Colormap_Resource_Free  ( g_video.cmaps );    
     
     if( g_video.effect )                g_video.effect->Release();
     if( g_video.render_target_view )    g_video.render_target_view->Release();
@@ -483,8 +391,7 @@ void _refresh_objects(UINT width, UINT height, UINT nchan)
   }
   _setup_viewport( width, height );
   _load_shader(VIDEO_WINDOW_PATH_TO_SHADER, VIDEO_WINDOW_SHADER_TECHNIQUE_NAME);
-  _create_texture_i16( &g_video.active_texture, width, height, nchan );               
-  _refresh_active_texture_shader_resource_view();
+  Video_Frame_Resource_Attach( g_video.vframe, width, height, nchan, g_video.effect, VIDEO_WINDOW_TEXTURE_RESOURCE_NAME );
   _load_colormaps(nchan);
   dx10_effect_variable_set_f32(g_video.effect, VIDEO_WINDOW_NUM_CHAN_RESOURCE_NAME, (f32) nchan);
 }
@@ -497,9 +404,8 @@ void _invalidate_objects(void)
   cnt = g_video.render_target_view->Release();
   cnt = g_video.effect->Release();
 
-  Colormap_Resource_Detach  ( g_video.cmaps );
-  cnt = g_video.texture_resource_view->Release();
-  cnt = g_video.active_texture->Release();
+  Video_Frame_Resource_Detach( g_video.vframe );
+  Colormap_Resource_Detach   ( g_video.cmaps  );
 }
 
 
@@ -718,13 +624,12 @@ void Video_Display_Render_One_Frame()
                                               DXGI_FORMAT_R8G8B8A8_UNORM, 
                                               DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH)));
             _refresh_objects(w,h,nchan);
-            g_video.stride = w*h*sizeof(i16);
             g_video.aspect = w/((float)h);
           }
         }
         i = nchan;
-        while(i--)
-          _copy_data_to_texture_ex( g_video.active_texture, i, src, &last);
+        Video_Frame_From_Frame_Descriptor( g_video.vframe, src, &last );
+        Video_Frame_Resource_Commit( g_video.vframe );
           
         efficiency_accumulator++;
         efficiency_hit = 1.0;
