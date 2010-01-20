@@ -15,7 +15,7 @@
 #define SCANNER_DEFAULT_SCANS                      512    // Number of full resonant periods that make up a frame
                                                           //        image height = 2 x scans
 #define SCANNER_DEFAULT_LINE_DUTY_CYCLE            0.95   // Fraction of resonant period to acquire (must be less than one)
-#define SCANNER_DEFAULT_LINE_TRIGGER_SRC              0   // Digitizer channel corresponding to resonant velocity input
+#define SCANNER_DEFAULT_LINE_TRIGGER_SRC              1   // Digitizer channel corresponding to resonant velocity input
                                                           // the channel should be appropriately configured in the digitizer config
 #define SCANNER_DEFAULT_GALVO_SAMPLES              4096   // samples per waveform
 #define SCANNER_DEFAULT_GALVO_VPP                   5.0   // V - peak-to-peak
