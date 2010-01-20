@@ -66,6 +66,33 @@ inline size_t _next_pow2_size_t(size_t v)
   return v;
 }
 
+void Copy_Lines( void *dst, size_t dst_stride, void *src, size_t src_stride, size_t nlines )
+{ u8 *dst_cur = (u8*)dst + nlines * dst_stride,
+     *src_cur = (u8*)src + nlines * src_stride;
+  size_t nbytes = MIN(dst_stride,src_stride);
+  while( src_cur > src )
+  { src_cur -= src_stride;
+    dst_cur -= src_stride;
+    memcpy( dst_cur, src_cur, nbytes );
+  }         
+}
+
+void Copy_Planes_By_Lines( void *dst, size_t dst_row_pitch, size_t dst_depth_pitch,
+                           void *src, size_t src_row_pitch, size_t src_depth_pitch,
+                           size_t nlines, size_t nplanes )
+{ while(nplanes--)
+  { u8 *dst_cur = (u8*)dst + nplanes * dst_depth_pitch + nlines * dst_row_pitch,
+       *src_cur = (u8*)src + nplanes * src_depth_pitch + nlines * src_row_pitch;
+    size_t nbytes = MIN(dst_row_pitch,src_row_pitch),
+           iline  = nlines;
+    while( iline-- )
+    { src_cur -= src_row_pitch;
+      dst_cur -= dst_row_pitch;
+      memcpy( dst_cur, src_cur, nbytes );
+    }
+  }    
+}
+
 // ---------
 // Profiling
 // ---------

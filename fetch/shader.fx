@@ -110,7 +110,7 @@ technique10 Render
     {
         SetVertexShader( CompileShader( vs_4_0, VS() ) );
         SetGeometryShader( NULL );
-        SetPixelShader( CompileShader( ps_4_0, PS() ) );
+        SetPixelShader( CompileShader( ps_4_0, PS2() ) );
     }
 }
 

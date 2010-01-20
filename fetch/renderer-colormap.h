@@ -4,15 +4,21 @@
 #include <d3d10.h>
 #include <d3dx10.h>
 
+typedef struct _rgba { f32 r; f32 g; f32 b; f32 a; } rgba;
+typedef struct _hsva { f32 h; f32 s; f32 v; f32 a; } hsva;
+
+TYPE_VECTOR_DECLARE(rgba);
+
 typedef struct _t_colormap_resource
 { ID3D10ShaderResourceView           *resource_view;
   ID3D10Texture2D                    *texture;
   ID3D10EffectShaderResourceVariable *resource_variable;
+  vector_rgba                        *buf;
   UINT                                nchan;
-  size_t                              stride;
+  size_t                              stride;                // line pitch in bytes
 } Colormap_Resource;
 
-#define EMPTY_COLORMAP_RESOURCE {NULL,NULL,NULL,0,0}
+#define EMPTY_COLORMAP_RESOURCE {NULL,NULL,NULL,NULL,0,0}
 
 Colormap_Resource *Colormap_Resource_Alloc  (void);
 void               Colormap_Resource_Free   (Colormap_Resource *cmap);
@@ -23,7 +29,8 @@ void               Colormap_Resource_Attach (Colormap_Resource *cmap,    // self
                                              ID3D10Effect      *effect,  // bind to this effect
                                              const char        *name);   // bind to this variable in the effect
 void               Colormap_Resource_Detach (Colormap_Resource *cmap);
-void               Colormap_Resouce_Fill    (Colormap_Resource *cmap, UINT ichan, f32 *bytes, size_t nbytes);
+void               Colormap_Resource_Fill    (Colormap_Resource *cmap, UINT ichan, f32 *bytes, size_t nbytes);
+void               Colormap_Resource_Commit (Colormap_Resource *cmap);
 
 // Single Channel Colormap functions
 // ---------------------------------
