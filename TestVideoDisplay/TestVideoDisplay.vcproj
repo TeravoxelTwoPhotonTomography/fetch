@@ -188,7 +188,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\fetch\render-colormap.cpp"
+				RelativePath="..\fetch\renderer-colormap.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\fetch\renderer-video-frame.cpp"
 				>
 			</File>
 			<File
@@ -254,7 +258,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\fetch\render-colormap.h"
+				RelativePath="..\fetch\renderer-colormap.h"
+				>
+			</File>
+			<File
+				RelativePath="..\fetch\renderer-video-frame.h"
 				>
 			</File>
 			<File
