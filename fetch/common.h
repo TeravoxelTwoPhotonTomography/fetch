@@ -45,6 +45,13 @@ inline u32    _next_pow2_u32   (u32 v);
 inline u64    _next_pow2_u64   (u64 v);
 inline size_t _next_pow2_size_t(size_t v);
 
+void Copy_Lines          ( void *dst, size_t dst_stride,
+                           void *src, size_t src_stride,
+                           size_t nlines );
+void Copy_Planes_By_Lines( void *dst, size_t dst_row_pitch, size_t dst_depth_pitch,
+                           void *src, size_t src_row_pitch, size_t src_depth_pitch,
+                           size_t nlines, size_t nplanes );
+
 // ---------
 // Profiling
 // ---------

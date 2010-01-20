@@ -1,12 +1,16 @@
 #include "stdafx.h"
-#include "render-colormap.h"
+#include "renderer-colormap.h"
 #include "util-dx10.h"
 
 #define CLAMP(v,low,high) ((v)<(low))?(low):(((v)>(high))?(high):(v))
 
+TYPE_VECTOR_DEFINE(rgba);
+
 Colormap_Resource*
 Colormap_Resource_Alloc (void)
-{ return (Colormap_Resource*) Guarded_Calloc( sizeof(Colormap_Resource), 1, "Colormap_Resource_Alloc");
+{ Colormap_Resource* self = (Colormap_Resource*) Guarded_Calloc( sizeof(Colormap_Resource), 1, "Colormap_Resource_Alloc");
+  self->buf = vector_rgba_alloc(256);
+  return self;
 }
 
 void
@@ -15,6 +19,8 @@ Colormap_Resource_Free(Colormap_Resource *cmap)
   { //ensure detached
     if(cmap->texture) // then the others got attached too
       Colormap_Resource_Detach(cmap);
+    if(cmap->buf)
+      vector_rgba_free( cmap->buf );
     free(cmap);
   }
 }
@@ -75,7 +81,8 @@ Colormap_Resource_Attach (Colormap_Resource *cmap, UINT width, UINT nchan, ID3D1
   device->Release();
   
   cmap->nchan = nchan;
-  cmap->stride = 4 * width * sizeof(f32); // each is four floats
+  cmap->stride = width * sizeof(rgba); // each is four floats
+  vector_rgba_request(cmap->buf, nchan * width  );
 }
 
 void
@@ -95,12 +102,19 @@ Colormap_Resource_Get_Element_Count(Colormap_Resource *cmap)      // obsolete?
 
 void
 Colormap_Resource_Fill (Colormap_Resource *cmap, UINT ichan, f32 *bytes, size_t nbytes)
-{ D3D10_MAPPED_TEXTURE2D data;
-  ID3D10Texture2D        *dst = cmap->texture;
+{ memcpy( ((u8*)cmap->buf->contents) + ichan * cmap->stride, bytes, nbytes );  
+}
+
+void
+Colormap_Resource_Commit(Colormap_Resource *cmap)
+/* Copies internal buffer into texture resource */
+{ D3D10_MAPPED_TEXTURE2D  dst;
+  ID3D10Texture2D        *tex = cmap->texture;
+  void                   *src = cmap->buf->contents;
   Guarded_Assert(SUCCEEDED( 
-      dst->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &data ) ));  
-  memcpy(((u8*)data.pData) + ichan*data.RowPitch, bytes, nbytes);
-  dst->Unmap( D3D10CalcSubresource(0, 0, 1) );  
+      tex->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &dst ) ));  
+  Copy_Lines( dst.pData, dst.RowPitch, src, cmap->stride, cmap->nchan );
+  tex->Unmap( D3D10CalcSubresource(0, 0, 1) );  
 }
 
 f32 *_linear_colormap_get_params( float x0, float x1, float sign, size_t nrows, float *slope, float *intercept, size_t *nbytes )
@@ -124,12 +138,7 @@ f32 *_linear_colormap_get_params( float x0, float x1, float sign, size_t nrows, 
 }
 
 void Colormap_Black( Colormap_Resource *cmap, UINT ichan )
-{ D3D10_MAPPED_TEXTURE2D data;
-  size_t stride = cmap->stride;
-  Guarded_Assert( !FAILED( 
-      cmap->texture->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &data ) ));  
-  memset(((u8*)data.pData) + ichan*stride, 0, stride*sizeof(f32) );
-  cmap->texture->Unmap( D3D10CalcSubresource(0, 0, 1) );
+{ memset( cmap->buf->contents + ichan * cmap->stride, 0, cmap->stride );  
 }
 
 void
