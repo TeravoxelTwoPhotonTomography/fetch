@@ -344,7 +344,8 @@ Colormap_Autosetup( Colormap_Resource *cmap, float *min, float *max )
 { UINT N = cmap->nchan;
   Guarded_Assert( N );
   if( N == 1)
-  { Colormap_Gray(cmap,0,min[0],max[0]);    
+  { Colormap_Gray(cmap,0,min[0],max[0]);
+    //Colormap_HSV_Hue(cmap,0,1.0,1.0,1.0,min[0],max[0]);  
   } else
   { int ichan = N;
     while( ichan-- )                       /* hue            sat  alpha */      

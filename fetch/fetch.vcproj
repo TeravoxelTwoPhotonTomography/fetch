@@ -228,6 +228,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\frame-interface-resonant.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\frame.cpp"
 				>
 			</File>
@@ -347,6 +351,10 @@
 			</File>
 			<File
 				RelativePath=".\frame-interface-digitizer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\frame-interface-resonant.h"
 				>
 			</File>
 			<File

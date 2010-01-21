@@ -4,7 +4,7 @@
 #include "util-nidaqmx.h"
 #include "device-digitizer.h"
 #include "frame.h"
-#include "frame-interface-digitizer.h"
+#include "frame-interface-resonant.h"
 #include "device.h"
 #include "device-scanner.h"
 #include "device-task-scanner-video.h"
@@ -35,17 +35,19 @@ typedef ViInt16 TPixel;
 //
 //  Video frame configuration
 //
-Digitizer_Frame_Metadata*
-_Scanner_Task_Video_Metadata( ViInt32 record_length, ViInt32 nwfm )
-{ static Digitizer_Frame_Metadata meta;    
-  meta.height = Scanner_Get()->config.scans; //512;
-  meta.nchan  = (u8)  (nwfm / meta.height);
-  meta.width  = (u16) (record_length);
-  meta.Bpp    = sizeof(TPixel);
-  Guarded_Assert( meta.nchan  > 0 );
-  Guarded_Assert( meta.height > 0 );
-  Guarded_Assert( meta.width  > 0 );
-  return &meta;
+void*
+_Scanner_Task_Video_Metadata( ViInt32 record_length, ViInt32 nwfm, f32 duty )
+{ static Resonant_Frame_Metadata format;    
+  format.in_height = Scanner_Get()->config.scans; //e.g: 512
+  format.nchan     = (u8)  (nwfm / format.in_height);
+  format.in_width  = (u16) (record_length);
+  format.Bpp       = sizeof(TPixel);
+  format.aspect    = 1.0;                         // [ ] TODO - should measure this somehow
+  format.duty      = duty;
+  Guarded_Assert( format.nchan  > 0 );
+  Guarded_Assert( format.in_height > 0 );
+  Guarded_Assert( format.in_width  > 0 );
+  return &format;
 }
 
 //----------------------------------------------------------------------------
@@ -202,22 +204,22 @@ _fill_frame_description( Frame_Descriptor *desc )
 { ViSession                   vi = Scanner_Get()->digitizer->vi;
   ViInt32                   nwfm;
   ViInt32          record_length;
-  Digitizer_Frame_Metadata *meta = NULL;
+  void                     *meta = NULL;
 
   DIGERR( niScope_ActualNumWfms(vi, 
                                 Scanner_Get()->digitizer->config.acquisition_channels,
                                 &nwfm ) );
   DIGERR( niScope_ActualRecordLength(vi, &record_length) );
 
-  meta = _Scanner_Task_Video_Metadata( record_length, nwfm );
+  meta = _Scanner_Task_Video_Metadata( record_length, nwfm, Scanner_Get()->config.line_duty_cycle );
   Frame_Descriptor_Change( desc,
-                           FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__INTERFACE_ID,
+                           FRAME_INTERFACE_RESONANT_INTERLEAVED_LINES__INTERFACE_ID,
                            meta,
-                           sizeof( Digitizer_Frame_Metadata ) );
+                           sizeof( Resonant_Frame_Metadata ) );
 }
 
 unsigned int
-_Scanner_Task_Video_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )              // this whole thing is super ugly
+_Scanner_Task_Video_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 { _config_daq();
   _config_digitizer();
 
@@ -267,7 +269,7 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   TaskHandle  ao_task = scanner->daq_ao;
   TaskHandle clk_task = scanner->daq_clk;
 
-  Frame_From_Bytes(frm, (void**)&buf, &desc);  
+  Frame_Cast(frm, (void**)&buf, &desc);  
   _fill_frame_description(desc);
   change_token = desc->change_token;
   ref = *desc;
@@ -300,7 +302,7 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
     { warning("Digitizer output queue overflowed.\r\n\tAborting acquisition task.\r\n");
       goto Error;
     }
-    Frame_From_Bytes(frm, (void**)&buf, &desc ); // The push swapped the frame buffer
+    Frame_Cast(frm, (void**)&buf, &desc ); // The push swapped the frame buffer
     memcpy(desc,&ref,sizeof(Frame_Descriptor));  // ...so update buf and desc
 
     DAQERR( DAQmxWaitUntilTaskDone (clk_task,DAQmx_Val_WaitInfinitely));

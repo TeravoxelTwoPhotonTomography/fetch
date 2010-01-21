@@ -477,7 +477,7 @@ Video_Display_On_Sizing (  WPARAM wParam, LPARAM lParam )
         width = (LONG) (aspect*height);
       break;
     default:
-      error("Wierd wParam\r\n");
+      warning("Video_Display_On_Sizing: Wierd wParam\r\n");
   }
   //anchor point - top or bottom
   switch( wParam )
@@ -503,7 +503,7 @@ Video_Display_On_Sizing (  WPARAM wParam, LPARAM lParam )
       rect->top  = rect->bottom - height;
       break;
     default:
-      error("Wierd wParam\r\n");
+      warning("Video_Display_On_Sizing: Wierd wParam\r\n");
   }
   return TRUE;
 }
@@ -591,12 +591,12 @@ void Video_Display_Render_One_Frame()
     
       if(!frm)
       { frm  = (Frame*) Asynq_Token_Buffer_Alloc( q );
-        Frame_From_Bytes( frm, &src, &desc );
+        Frame_Cast( frm, &src, &desc );
       }
       
       if( Asynq_Peek_Timed(q, frm, (DWORD) wait_time_ms ) )
       { int i;
-        Frame_From_Bytes( frm, &src, &desc );
+        Frame_Cast( frm, &src, &desc );
         if( desc->change_token != last_change_token)               // RESIZE!
         { RECT *rect = NULL;
           last_change_token = desc->change_token;
@@ -604,7 +604,7 @@ void Video_Display_Render_One_Frame()
           memcpy(&last,desc,sizeof(Frame_Descriptor));
           //Resize window and buffers
           fint = Frame_Descriptor_Get_Interface(desc);
-          fint->get_dimensions(desc, vdim);
+          fint->get_destination_dimensions(desc, vdim);
           { size_t w     = vdim->contents[0], 
                    h     = vdim->contents[1];
             nchan = fint->get_nchannels( desc );
