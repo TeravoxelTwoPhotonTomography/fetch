@@ -62,11 +62,11 @@ typedef struct _digitizer_config
                        DIGITIZER_DEFAULT_RECORD_LENGTH,\
                        DIGITIZER_DEFAULT_RECORD_NUM,\
                        0.0,\
-                       "0-1\0",\
+                       "0-2\0",\
                        DIGITIZER_MAX_NUM_CHANNELS,\
-                       {{"0\0",  0.2,NISCOPE_VAL_DC,VI_TRUE},\
-                        {"1\0",  5.0,NISCOPE_VAL_DC,VI_TRUE},\
-                        {"2\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\
+                       {{"0\0",  0.03,NISCOPE_VAL_DC,VI_TRUE},\
+                        {"1\0",  0.5,NISCOPE_VAL_DC,VI_TRUE},\
+                        {"2\0",  5.0,NISCOPE_VAL_DC,VI_TRUE},\
                         {"3\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\
                         {"4\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\
                         {"5\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\

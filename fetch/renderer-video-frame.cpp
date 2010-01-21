@@ -124,7 +124,7 @@ Video_Frame_From_Frame_Descriptor ( Video_Frame_Resource *self, void *src,
   
   vector_u8_request( self->buf, f->get_nbytes(desc) );
   for(ichan=0; ichan<self->nchan; ichan++ )
-    f->copy_channel(desc, self->buf->contents, self->stride, src, ichan );
+    f->copy_channel(desc, self->buf->contents + ichan*self->stride*self->nlines, self->stride, src, ichan );
 }
 
 void

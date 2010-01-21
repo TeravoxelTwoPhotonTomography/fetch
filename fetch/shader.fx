@@ -86,15 +86,7 @@ float4 PS2( PS_INPUT input) : SV_Target
   c = cmap.Sample( samCmap, float2( (v+1.0)/2.0, z) );                // uv is in ( [0.0,1.0], [0.0,1.0] )
   color += c; //*c.w;
   
-  z = 0.5; // 1 / (3-1)
-  v = tx.Sample( samLinear, float3(input.Tex.x, input.Tex.y, z ) ).x;  // return is in [-1.0,1.0]
-  c = cmap.Sample( samCmap, float2( (v+1.0)/2.0, z ) );                // uv is in ( [0.0,1.0], [0.0,1.0] )
-  color += c;//*c.w;
 
-  z = 1.0; // 2 / (3-1)
-  v = tx.Sample( samLinear, float3(input.Tex.x, input.Tex.y, z ) ).x;  // return is in [-1.0,1.0]
-  c = cmap.Sample( samCmap, float2( (v+1.0)/2.0, z ) );                // uv is in ( [0.0,1.0], [0.0,1.0] )
-  color += c;//*c.w;
 
 
   color.w = 1.0;
@@ -110,7 +102,7 @@ technique10 Render
     {
         SetVertexShader( CompileShader( vs_4_0, VS() ) );
         SetGeometryShader( NULL );
-        SetPixelShader( CompileShader( ps_4_0, PS2() ) );
+        SetPixelShader( CompileShader( ps_4_0, PS() ) );
     }
 }
 
