@@ -129,14 +129,14 @@ void niscope_debug_print_status( ViSession vi )
 
 void niscope_cfg_rtsi_default( ViSession vi )
 {
-  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_START_TRIGGER           , "", NISCOPE_VAL_RTSI_0 ));
-  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_REF_TRIGGER             , "", NISCOPE_VAL_RTSI_1 ));
-  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_READY_FOR_START_EVENT   , "", NISCOPE_VAL_RTSI_2 ));
-  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_READY_FOR_REF_EVENT     , "", NISCOPE_VAL_RTSI_3 ));
-  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_READY_FOR_ADVANCE_EVENT , "", NISCOPE_VAL_RTSI_4 ));
-  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_END_OF_ACQUISITION_EVENT, "", NISCOPE_VAL_RTSI_5 ));
-  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_END_OF_RECORD_EVENT     , "", NISCOPE_VAL_RTSI_6 ));
-  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_REF_CLOCK               , "", NISCOPE_VAL_RTSI_7 ));
+  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_START_TRIGGER           , "", NISCOPE_VAL_RTSI_0 ));     // d7
+  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_REF_TRIGGER             , "", NISCOPE_VAL_RTSI_1 ));     // d6
+  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_READY_FOR_START_EVENT   , "", NISCOPE_VAL_RTSI_2 ));     // d5
+  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_READY_FOR_REF_EVENT     , "", NISCOPE_VAL_RTSI_3 ));     // d4
+  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_READY_FOR_ADVANCE_EVENT , "", NISCOPE_VAL_RTSI_4 ));     // d3 
+  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_END_OF_ACQUISITION_EVENT, "", NISCOPE_VAL_RTSI_5 ));     // d2 
+  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_END_OF_RECORD_EVENT     , "", NISCOPE_VAL_RTSI_6 ));     // d1
+  DIGCHK( niScope_ExportSignal( vi, NISCOPE_VAL_REF_CLOCK               , "", NISCOPE_VAL_RTSI_7 ));     // d0
 }
 
 double niscope_get_backlog( ViSession vi )

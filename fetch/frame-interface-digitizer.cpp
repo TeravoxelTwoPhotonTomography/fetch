@@ -3,8 +3,8 @@
 #include "frame.h"
 #include "frame-interface-digitizer.h"
 
-#if 0
 #define DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES
+#if 0
 #define DEBUG_FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES
 #endif
 

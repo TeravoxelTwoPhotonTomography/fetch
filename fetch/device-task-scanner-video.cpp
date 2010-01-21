@@ -9,7 +9,7 @@
 #include "device-scanner.h"
 #include "device-task-scanner-video.h"
 
-#define SCANNER_VIDEO_TASK_FETCH_TIMEOUT  100.0 //10.0, //(-1=infinite) (0.0=immediate)
+#define SCANNER_VIDEO_TASK_FETCH_TIMEOUT  10.0 //10.0, //(-1=infinite) (0.0=immediate)
                                                 // Setting this to infinite can sometimes make the application difficult to quit
 #if 1
 #define scanner_debug(...) debug(__VA_ARGS__)
