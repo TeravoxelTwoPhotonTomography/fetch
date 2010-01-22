@@ -610,8 +610,8 @@ void Video_Display_Render_One_Frame()
             nchan = fint->get_nchannels( desc );
                    
             DXGI_MODE_DESC mode;
-            mode.Width = w;
-            mode.Height = h;
+            mode.Width = 2*w;
+            mode.Height = 2*h;
             mode.RefreshRate.Numerator = 60;
             mode.RefreshRate.Denominator = 1;
             mode.Format = DXGI_FORMAT_R8G8B8A8_UNORM;

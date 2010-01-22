@@ -4,7 +4,7 @@
 #include "frame.h"
 #include "frame-interface-resonant.h"
 
-#if 0
+#if 1
 #define DEBUG_FRAME_INTERFACE_RESONANT_INTERLEAVED_LINES
 #endif
 

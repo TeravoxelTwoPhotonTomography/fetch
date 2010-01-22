@@ -5,6 +5,7 @@
 #include "device-digitizer.h"
 #include "frame.h"
 #include "frame-interface-resonant.h"
+#include "frame-interface-digitizer.h"
 #include "device.h"
 #include "device-scanner.h"
 #include "device-task-scanner-video.h"
@@ -29,12 +30,19 @@
 #define SCANNER_DEBUG_SPIN_WHEN_FULL
 #endif
 
+#if 0
+#define SCANNER_SKIP_RESONANT_CORRECTION
+#endif
+
 typedef ViInt16 TPixel;
 
 //----------------------------------------------------------------------------
 //
 //  Video frame configuration
 //
+
+#ifndef SCANNER_SKIP_RESONANT_CORRECTION
+#define SCANNER_FRAME_FORMAT               FRAME_INTERFACE_RESONANT_INTERLEAVED_LINES__INTERFACE_ID
 void*
 _Scanner_Task_Video_Metadata( ViInt32 record_length, ViInt32 nwfm, f32 duty )
 { static Resonant_Frame_Metadata format;    
@@ -49,6 +57,22 @@ _Scanner_Task_Video_Metadata( ViInt32 record_length, ViInt32 nwfm, f32 duty )
   Guarded_Assert( format.in_width  > 0 );
   return &format;
 }
+#else
+#define SCANNER_FRAME_FORMAT               FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__INTERFACE_ID
+
+void*
+_Scanner_Task_Video_Metadata( ViInt32 record_length, ViInt32 nwfm, f32 duty )
+{ static Digitizer_Frame_Metadata format;    
+  format.height = Scanner_Get()->config.scans; //e.g: 512
+  format.nchan  = (u8)  (nwfm / format.height);
+  format.width  = (u16) (record_length);
+  format.Bpp    = sizeof(TPixel);
+  Guarded_Assert( format.nchan  > 0 );
+  Guarded_Assert( format.height > 0 );
+  Guarded_Assert( format.width  > 0 );
+  return &format;
+}
+#endif
 
 //----------------------------------------------------------------------------
 //
@@ -213,7 +237,7 @@ _fill_frame_description( Frame_Descriptor *desc )
 
   meta = _Scanner_Task_Video_Metadata( record_length, nwfm, Scanner_Get()->config.line_duty_cycle );
   Frame_Descriptor_Change( desc,
-                           FRAME_INTERFACE_RESONANT_INTERLEAVED_LINES__INTERFACE_ID,
+                           SCANNER_FRAME_FORMAT,
                            meta,
                            sizeof( Resonant_Frame_Metadata ) );
 }
