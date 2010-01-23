@@ -109,6 +109,9 @@ frame_interface_resonant_interleaved_lines__copy_channel( Frame_Descriptor* fd, 
                                       *vacc = NULL;
   static Resonant_Frame_Metadata      *last = NULL;
   static int                     turnaround = 0;
+#ifdef DEBUG_FRAME_INTERFACE_RESONANT_INTERLEAVED_LINES
+  static int                     iter_count = 0;
+#endif
   size_t out_width, out_height;
   Resonant_Frame_Metadata *fmt = (Resonant_Frame_Metadata*) fd->metadata;   
   DEBUG_FRAME_INTERFACE_RESONANT_INTERLEAVED_LINES__CHECK_DESCRIPTOR
@@ -185,7 +188,10 @@ frame_interface_resonant_interleaved_lines__copy_channel( Frame_Descriptor* fd, 
             *acc = vacc->contents;
       size_t Bpp = fmt->Bpp;
   #ifdef DEBUG_FRAME_INTERFACE_RESONANT_INTERLEAVED_LINES
-      { FILE *fp = fopen("source.raw","wb");    
+      { char filename[128] = "source.raw";
+        FILE *fp;
+        //sprintf(filename, "source%03d.raw", iter_count++);
+        fp = fopen(filename,"wb");    
         fwrite( src, 1, fmt->in_width * fmt->in_height * fmt->nchan * fmt->Bpp, fp );
         fclose(fp); 
       }
