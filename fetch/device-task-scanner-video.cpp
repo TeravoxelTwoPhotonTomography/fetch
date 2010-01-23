@@ -19,9 +19,10 @@
 
 #define DIGWRN( expr )  (niscope_chk( Scanner_Get()->digitizer->vi, expr, #expr, warning ))
 #define DIGERR( expr )  (niscope_chk( Scanner_Get()->digitizer->vi, expr, #expr, error   ))
+#define DIGJMP( expr )  goto_if_fail(VI_SUCCESS == niscope_chk( Scanner_Get()->digitizer->vi, expr, #expr, warning ), Error)
 #define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, warning))
 #define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, error  ))
-#define DAQJMP( expr )  (goto_if_fail( 0==DAQWRN(expr), Error))
+#define DAQJMP( expr )  goto_if_fail( 0==DAQWRN(expr), Error)
 
 #if 1
 #define SCANNER_DEBUG_FAIL_WHEN_FULL
@@ -275,13 +276,13 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   DAQERR( DAQmxStartTask (ao_task));
   do
   {
-    DAQERR( DAQmxStartTask (clk_task));
-    DIGERR( niScope_InitiateAcquisition(vi));
+    DAQJMP( DAQmxStartTask (clk_task));
+    DIGJMP( niScope_InitiateAcquisition(vi));
 
     dt_out = toc(&outer_clock);
     debug("iter: %d\ttime: %5.3g [out] %5.3g [in]\tbacklog: %9.0f Bytes\r\n",i, dt_out, dt_in, sizeof(TPixel)*niscope_get_backlog(vi) );
     toc(&inner_clock);
-    DIGERR( niScope_FetchBinary16 (vi,
+    DIGJMP( niScope_FetchBinary16 (vi,
                                    chan,
                                    SCANNER_VIDEO_TASK_FETCH_TIMEOUT,//10.0, //(-1=infinite) (0.0=immediate) 
                                    width,
@@ -303,19 +304,20 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
     Frame_From_Bytes(frm, (void**)&buf, &desc ); // The push swapped the frame buffer
     memcpy(desc,&ref,sizeof(Frame_Descriptor));  // ...so update buf and desc
 
-    DAQERR( DAQmxWaitUntilTaskDone (clk_task,DAQmx_Val_WaitInfinitely));
+    DAQJMP( DAQmxWaitUntilTaskDone (clk_task,DAQmx_Val_WaitInfinitely));
     dt_in  = toc(&inner_clock);
               toc(&outer_clock);
-    DAQERR( DAQmxStopTask (clk_task));
+    DAQJMP( DAQmxStopTask (clk_task));
     ++i;
   } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
   status = 0;
   debug("Scanner - Video task completed normally.\r\n");
 Error:  
-  free( frm );   // <-- HEAP corruption here
+  free( frm );
   free( wfm );
   niscope_debug_print_status(vi);
   DAQERR( DAQmxStopTask (ao_task) );
+  DAQERR( DAQmxStopTask (clk_task) );
   DIGERR( niScope_Abort(vi) );
   return status;
 }
