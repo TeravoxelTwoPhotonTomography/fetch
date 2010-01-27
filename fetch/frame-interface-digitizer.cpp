@@ -16,7 +16,6 @@
 size_t
 frame_interface_digitizer__default__get_nchannels (Frame_Descriptor* fd)
 { Digitizer_Frame_Metadata *meta = (Digitizer_Frame_Metadata*) fd->metadata;
-
   return meta->nchan;
 }
 

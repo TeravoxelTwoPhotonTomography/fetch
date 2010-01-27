@@ -122,7 +122,7 @@ _Digitizer_Task_Fetch_Forever_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ 
   TPixel                 *buf;
   unsigned int ret = 1;
 
-  Frame_From_Bytes(frm, (void**)&buf, &desc );
+  Frame_Cast(frm, (void**)&buf, &desc );
     
   CheckPanic( niScope_ActualNumWfms(vi, chan, &nwfm ) );
   CheckPanic( niScope_ActualRecordLength(vi, &nelem) );
@@ -194,7 +194,7 @@ _Digitizer_Task_Fetch_Forever_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ 
         CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_BACKLOG, &pts ));
         digitizer_task_fetch_forever_debug("Digitizer Backlog: %4.1f MS\r\n",pts/1024.0/1024.0);
       }  
-      Frame_From_Bytes(frm, (void**)&buf, &desc ); //get addresses
+      Frame_Cast(frm, (void**)&buf, &desc ); //get addresses
       
       memcpy(desc,&ref,sizeof(Frame_Descriptor));
       

@@ -12,13 +12,13 @@
 #define SCANNER_QUEUE_NUM_FRAMES                   32
 
 #define SCANNER_DEFAULT_RESONANT_FREQUENCY         7920.0 // Hz
-#define SCANNER_DEFAULT_SCANS                      512    // Number of full resonant periods that make up a frame
+#define SCANNER_DEFAULT_SCANS                      256    // Number of full resonant periods that make up a frame
                                                           //        image height = 2 x scans
-#define SCANNER_DEFAULT_LINE_DUTY_CYCLE            0.95   // Fraction of resonant period to acquire (must be less than one)
+#define SCANNER_DEFAULT_LINE_DUTY_CYCLE           0.95f   // Fraction of resonant period to acquire (must be less than one)
 #define SCANNER_DEFAULT_LINE_TRIGGER_SRC              1   // Digitizer channel corresponding to resonant velocity input
                                                           // the channel should be appropriately configured in the digitizer config
 #define SCANNER_DEFAULT_GALVO_SAMPLES              4096   // samples per waveform
-#define SCANNER_DEFAULT_GALVO_VPP                   5.0   // V - peak-to-peak
+#define SCANNER_DEFAULT_GALVO_VPP                  10.0   // V - peak-to-peak
 #define SCANNER_DEFAULT_GALVO_V_MAX                10.0   // V - peak-to-peak
 #define SCANNER_DEFAULT_GALVO_V_MIN               -10.0   // V - peak-to-peak
 #define SCANNER_DEFAULT_GALVO_CHANNEL        "/Dev1/ao0"  // DAQ terminal: should be connected to command input on galvo controller
@@ -34,7 +34,7 @@ typedef struct _scanner_config
 {
   f64         resonant_frequency;
   u32         scans;
-  f64         line_duty_cycle;
+  f32         line_duty_cycle;
   u8          line_trigger_src;
   u32         galvo_samples;
   f64         galvo_vpp;
