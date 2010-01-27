@@ -706,5 +706,5 @@ void Video_Display_Connect_Device( Device *source, size_t data_channel )
     Asynq_Unref( g_video.frame_source );  
   g_video.frame_source = q;
   
-  // TODO: reset texture resources for data format  
+  // TODO: reset texture resources for data format  ( currently this is done in the render function...perhaps there's a reason to move it? )
 }

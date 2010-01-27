@@ -27,8 +27,8 @@ TYPE_VECTOR_DEFINE(Disk_Stream_Index_Item);
 vector_Disk_Stream_Index_Item *gv_streams = NULL;
 
 LPCRITICAL_SECTION    gp_disk_stream_index_lock  = NULL;
-DeviceTask           *gp_disk_stream_tasks[1]    = {NULL};
-u32                   g_disk_stream_tasks_count  = 1;
+DeviceTask           *gp_disk_stream_tasks[1]    = {NULL};    // FIXME: [Obsolete] unused?
+u32                   g_disk_stream_tasks_count  = 1;         // FIXME: [Obsolete] unused?
 
 LPCRITICAL_SECTION
 _disk_stream_get_index_critical_section(void)
@@ -252,7 +252,7 @@ Disk_Stream_Attach (const char* alias,     // look-up name for the stream
   item = gv_streams->contents + gv_streams->count - 1;
   
   // Construct the device and disk stream
-  memcpy(item->alias, alias, sizeof(char)*MIN( strlen(alias), 32 ));
+  memcpy(item->alias, alias, sizeof(char)*MIN( strlen(alias), DISK_STREAM_ALIAS_LENGTH ));
   item->device = Device_Alloc();
   item->device->context = (void*)&item->item;
   memcpy( item->item.path, filename, sizeof(char)*strlen(filename) );
