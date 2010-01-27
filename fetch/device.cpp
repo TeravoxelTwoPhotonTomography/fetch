@@ -50,7 +50,7 @@ Device_Free(Device* self)
 { return_if_fail(self);
   if(self->num_waiting>0)
     warning("Device Free: Device has waiting tasks.\r\n"
-            "             Try calling Device_Release first.\r\n.");
+            "             Try calling Device_Detach first.\r\n.");
   
   _safe_free_handle( &self->thread );
   _safe_free_handle( &self->notify_available );

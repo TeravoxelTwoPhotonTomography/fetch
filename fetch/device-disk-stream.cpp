@@ -134,7 +134,7 @@ _disk_stream_detach_unlocked(Disk_Stream_Index_Item* item)
   Device_Lock( item->device );
   
   // kill the task
-  DeviceTask_Free( item->device->task );
+  DeviceTask_Free( item->device->task );     // FIXME: This looks like a bug.  Device_Disarm sets the task to NULL. 
   item->device->task = NULL;
   
   // Close the file  

@@ -66,6 +66,20 @@ _worker_index_lookup( const char* alias )
   return cur;
 }
 
+Worker*
+Worker_Lookup(const char* alias)
+{ Worker_Index_Item *item = _worker_index_lookup( alias );
+  return (item) ? &item->worker:NULL;
+}
+
+Device*
+Worker_Get_Device(Worker* self)
+{ Worker_Index_Item *item = gv_workers + self->index;
+  Guarded_Assert( self->index <  gv_workers->count );
+  Guarded_Assert( self->alias == item->alias );
+  return item->device;
+}
+
 Worker* Worker_Init(const char* alias)
 { LPCRITICAL_SECTION cs = _worker_get_index_critical_section();
   Worker_Index_Item *item;
@@ -79,12 +93,12 @@ Worker* Worker_Init(const char* alias)
     item = gv_workers->contents + gv_workers->count - 1;
     
     item.worker.index = gv_workers->count - 1;                                                // Construct
-    item.worker.alias = &item.alias;
+    item.worker.alias = item.alias;
     
     memcpy(item->alias, alias, sizeof(char)*MIN( strlen(alias), DISK_STREAM_ALIAS_LENGTH ));
     
     item->device = Device_Alloc();
-    item->device->context = (void*)&item->worker;
+    item->device->context = NULL;
   }
   LeaveCriticalSection(cs);
   
@@ -94,6 +108,7 @@ Worker* Worker_Init(const char* alias)
 unsigned int
 _worker_device_disarm_unlocked(Worker_Index_Item *item)
 { unsigned int sts = 0; //error
+  Device_Task *task = NULL;
   
   debug("Worker: alias - %s\r\n"
         "\tAttempting to disarm.\r\n", item->alias );
@@ -105,28 +120,17 @@ _worker_device_disarm_unlocked(Worker_Index_Item *item)
       Asynq_Flush_Waiting_Consumers( cur[0] );
   }
   
-  Device_Unlock( item->device );
+  task = item->device->task;
+  //Device_Unlock( item->device );
   if( !Device_Disarm( item->device, WORKER_DEFAULT_TIMEOUT ) )
     warning("Could not cleanly disarm worker for alias %s.\r\n",item->alias);
-  Device_Lock( item->device );
+  //Device_Lock( item->device );
   
   // kill the task
-  DeviceTask_Free( item->device->task );     // FIXME: This looks like a bug.  Device_Disarm sets the task to NULL.
-  item->device->task = NULL;
-  
-  // Close the file  
-  { HANDLE *ph = &item->item.hfile;
-    if( *ph != INVALID_HANDLE_VALUE)
-    { if(!CloseHandle( *ph ))
-      { ReportLastWindowsError();
-        goto Error;
-      }
-      *ph = NULL;
-    }
-  }
+  DeviceTask_Free( task );
 
   sts = 1;  // success
-  debug("Disk Stream: Detached alias %s\r\n",item->alias);
+  debug("Worker: Disarmed alias %s\r\n",item->alias);
 Error:  
   return sts;
 }
@@ -134,17 +138,29 @@ Error:
 unsigned int
 Worker_Destroy(Worker *self)
 { LPCRITICAL_SECTION cs = _worker_get_index_critical_section();
+  Worker_Index_Item *item;
+
   EnterCriticalSection(cs);
-  { Worker_Index_Item *item = gv_workers->contents + self->index;
+  { item = gv_workers->contents + self->index;
     goto_if_fail( item->device != NULL, DeviceIsNullError );
     
-    // XXX: HERE
-      
+    //Device_Lock( item->device ); // Don't think I need these bc I'm in a
+                                   // critical section.
+    { goto_if_fail( 1==_worker_device_disarm_unlocked(item), DeviceDisarmError );
+    }
+    //Device_Unlock( item->device );
+    Device_Free( item->device );
+    item->device = NULL;
   }
   LeaveCriticalSection(cs);
   return 0; // success
 DeviceIsNullError:
   LeaveCriticalSection(cs);
   warning("Attempted to destroy a Worker who's device instance didn't exist.\r\n");
+  return 1; // failure
+DeviceIsDisarmError:
+  //Device_Unlock( item->device );
+  LeaveCriticalSection(cs);
+  warning("Failed to disarm a Worker device.\r\n");
   return 1; // failure
 }
