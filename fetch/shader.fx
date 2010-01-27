@@ -14,9 +14,9 @@ float                  nchan; // the number of channels
 
 SamplerState samLinear
 {
-    Filter = MIN_MAG_MIP_LINEAR;
-    AddressU = Wrap;
-    AddressV = Wrap;
+    Filter = MIN_MAG_MIP_POINT;
+    AddressU = Clamp; //Wrap;
+    AddressV = Clamp; //Wrap;
 };
 
 SamplerState samCmap
@@ -62,10 +62,10 @@ float4 PS( PS_INPUT input) : SV_Target
     denom = nchan - 1.0;
   
   for( float i = 0; i < nchan; i++ )
-  { z = i/denom;                                                         // z is in [0.0,1.0]
+  { z = i/nchan; //denom;                                                // z is in [0.0,1.0]
     v = tx.Sample( samLinear, float3(input.Tex.x, input.Tex.y, z ) ).x;  // return is in [-1.0,1.0]
     c = cmap.Sample( samCmap, float2( (v+1.0)/2.0, z ) );                // uv is in ( [0.0,1.0], [0.0,1.0] )
-    color += c*c.w;
+    color += c*c.w/nchan;
   }    
   color.w = 1.0;
   return color;
@@ -81,12 +81,15 @@ float4 PS2( PS_INPUT input) : SV_Target
   else
     denom = nchan - 1.0;
   
-  z = 0.0; // 0 / (3-1)
+  z = 0.5; // 0 / (3-1)
   v = tx.Sample( samLinear, float3(input.Tex.x, input.Tex.y, z ) ).x;  // return is in [-1.0,1.0]
   c = cmap.Sample( samCmap, float2( (v+1.0)/2.0, z) );                // uv is in ( [0.0,1.0], [0.0,1.0] )
   color += c; //*c.w;
   
-
+  //z = 1.0; // 0 / (3-1)
+  //v = tx.Sample( samLinear, float3(input.Tex.x, input.Tex.y, z ) ).x;  // return is in [-1.0,1.0]
+  //c = cmap.Sample( samCmap, float2( (v+1.0)/2.0, z) );                // uv is in ( [0.0,1.0], [0.0,1.0] )
+  //color += c; //*c.w;
 
 
   color.w = 1.0;

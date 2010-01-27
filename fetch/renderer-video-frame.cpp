@@ -113,6 +113,10 @@ Video_Frame_Resource_Commit ( Video_Frame_Resource *self )
   Copy_Planes_By_Lines( dst.pData, dst.RowPitch, dst.DepthPitch,
                         src, self->stride, self->stride*self->nlines,
                         self->nlines, self->nchan );
+  //{ FILE *fp = fopen("tex.raw","wb");
+  //  fwrite(dst.pData, 1, dst.DepthPitch * self->nchan, fp );
+  //  fclose(fp);
+  //}
   tex->Unmap( D3D10CalcSubresource(0, 0, 1) );  
 }
 
@@ -133,4 +137,62 @@ Video_Frame_From_Raw( Video_Frame_Resource *self, void *src,
 { size_t nbytes = width*height*nchan*sizeof(TPixel);
   vector_u8_request(self->buf, nbytes);
   memcpy(self->buf->contents, src, nbytes);
+}
+
+
+void
+Video_Frame_MinMax( Video_Frame_Resource *self, int ichan, float *min, float *max )
+{ size_t channel_stride =  self->stride * self->nlines;
+  TPixel *beg = (TPixel*)(self->buf->contents + ichan * channel_stride),
+         *end = (TPixel*)(self->buf->contents + (ichan+1) * channel_stride);
+  float  norm = 1 << ((8*sizeof(TPixel))-1);
+  end--;
+  *max = *end;
+  *min = *end;
+  while(end-- > beg )
+  { if( *end < *min )
+      *min = *end;
+    else if (*end > *max )
+      *max = *end;
+  }
+  *max /= norm;
+  *min /= norm;
+  return;
+}
+
+void
+Video_Frame_Autolevel( Video_Frame_Resource *self, int ichan, float thresh, float *min, float *max )
+{ u16 hist[65536];
+  int i = 0, low = (1<<15);
+  size_t channel_stride =  self->stride * self->nlines;
+  TPixel *beg = (TPixel*)(self->buf->contents + ichan * channel_stride),
+         *end = (TPixel*)(self->buf->contents + (ichan+1) * channel_stride);
+  float  norm = 1 << 16,
+          acc,
+       counts = (float) (end - beg),
+          lim;
+  
+  memset( hist,0,sizeof(hist) );  // compute histogram
+  while(end-- > beg )
+    hist[ low + *end ]++;
+  
+  lim = thresh * counts; // thresh is a percentage (e.g. 0.05 ).  Find where the integrated histogram has area more than lim.
+  acc = 0.0;
+  while( i++ < 65535 )
+  { acc += hist[i];
+    if( acc > lim )
+      break;
+  }
+  *min = i/norm;
+  
+  lim = (1.0f-thresh) * counts;
+  acc = counts;
+  i = 65536;
+  while( i-- > 0 )
+  { acc -= hist[i];
+    if( acc < lim )
+      break;
+  }
+  *max = i/norm;
+  return;
 }

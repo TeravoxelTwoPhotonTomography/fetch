@@ -30,7 +30,7 @@
 #define SCANNER_DEBUG_SPIN_WHEN_FULL
 #endif
 
-#if 0
+#if 1
 #define SCANNER_SKIP_RESONANT_CORRECTION
 #endif
 
@@ -236,10 +236,18 @@ _fill_frame_description( Frame_Descriptor *desc )
   DIGERR( niScope_ActualRecordLength(vi, &record_length) );
 
   meta = _Scanner_Task_Video_Metadata( record_length, nwfm, Scanner_Get()->config.line_duty_cycle );
+#ifndef SCANNER_SKIP_RESONANT_CORRECTION
   Frame_Descriptor_Change( desc,
                            SCANNER_FRAME_FORMAT,
                            meta,
                            sizeof( Resonant_Frame_Metadata ) );
+#else
+  Frame_Descriptor_Change( desc,
+                           SCANNER_FRAME_FORMAT,
+                           meta,
+                           sizeof( Digitizer_Frame_Metadata ) );
+
+#endif
 }
 
 unsigned int

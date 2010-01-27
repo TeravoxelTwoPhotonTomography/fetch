@@ -537,6 +537,26 @@ LRESULT CALLBACK Video_Display_WndProc( HWND hWnd, UINT message, WPARAM wParam, 
         case WM_SIZING:
             return Video_Display_On_Sizing(wParam, lParam );
             break; 
+
+        case WM_KEYDOWN:
+            if( (lParam & 0xf) == 1 ) // if repeat count is one
+            { switch( wParam )
+              { case 0x30: // "0" key
+                case 0x31: // "1" key
+                case 0x32: // "2" key
+                { size_t ichan = wParam - 0x30;                  
+                  if( ichan < g_video.vframe->nchan )
+                  { Video_Frame_Autolevel( g_video.vframe, ichan, 0.05, g_video.mins+ichan, g_video.maxs+ichan );
+                    debug("Autolevel channel %d - [%4.3f, %4.3f]\r\n", ichan, g_video.mins[ichan], g_video.maxs[ichan]);
+                    Colormap_Autosetup( g_video.cmaps, g_video.mins, g_video.maxs );
+                    Colormap_Resource_Commit( g_video.cmaps );
+                  }
+                  break;
+                }                  
+                default:
+                  break;
+              }            
+            }
             
         case WM_COMMAND:
 		        wmId    = LOWORD(wParam);
