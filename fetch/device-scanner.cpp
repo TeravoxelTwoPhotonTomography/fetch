@@ -30,8 +30,8 @@ typedef ViInt16 TPixel;
 Scanner               g_scanner                = SCANNER_DEFAULT;
 Device               *gp_scanner_device        = NULL;
 
-DeviceTask           *gp_scanner_tasks[1]      = {NULL};
-u32                   g_scanner_tasks_count    = 1;
+DeviceTask           *gp_scanner_tasks[2]      = {NULL};
+u32                   g_scanner_tasks_count    = 2;
 
 DECLARE_USER_MESSAGE( IDM_SCANNER,              "{BF56ABFD-286B-4FC0-A25F-BFD7C236A13D}");
 DECLARE_USER_MESSAGE( IDM_SCANNER_DETACH,       "{BF56ABFD-286B-4FC0-A25F-BFD7C236A13D}");
@@ -39,6 +39,7 @@ DECLARE_USER_MESSAGE( IDM_SCANNER_ATTACH,       "{BF56ABFD-286B-4FC0-A25F-BFD7C2
 DECLARE_USER_MESSAGE( IDM_SCANNER_TASK_STOP,    "{BF56ABFD-286B-4FC0-A25F-BFD7C236A13D}");
 DECLARE_USER_MESSAGE( IDM_SCANNER_TASK_RUN,     "{BF56ABFD-286B-4FC0-A25F-BFD7C236A13D}");
 DECLARE_USER_MESSAGE( IDM_SCANNER_TASK_0,       "{BF56ABFD-286B-4FC0-A25F-BFD7C236A13D}");
+DECLARE_USER_MESSAGE( IDM_SCANNER_TASK_1,       "{BF56ABFD-286B-4FC0-A25F-BFD7C236A13D}");
 
 unsigned int
 _scanner_free_tasks(void)
@@ -75,7 +76,8 @@ void Scanner_Init(void)
   Register_New_Microscope_Detach_Callback( &Scanner_Detach );
 #endif
   // Create tasks
-  gp_scanner_tasks[0] = Scanner_Create_Task_Video(); // FIXME: TODO: Write code for task
+  gp_scanner_tasks[0] = Scanner_Create_Task_Video();
+  gp_scanner_tasks[1] = Scanner_Create_Task_Line_Scan();
 }
 
 unsigned int Scanner_Detach(void)
@@ -178,6 +180,7 @@ _scanner_ui_make_menu(void)
 { HMENU submenu = CreatePopupMenu(),
         taskmenu = CreatePopupMenu();
   Guarded_Assert_WinErr( AppendMenu( taskmenu, MF_STRING, IDM_SCANNER_TASK_0, "&Video" ));
+  Guarded_Assert_WinErr( AppendMenu( taskmenu, MF_STRING, IDM_SCANNER_TASK_1, "&Line Scan" ));
                                        
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_SCANNER_DETACH,  "&Detach"));
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_SCANNER_ATTACH, "&Attach"));
@@ -295,6 +298,10 @@ Scanner_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     } else if( wmId == IDM_SCANNER_TASK_0 )
     { debug("IDM_SCANNER_TASK_0\r\n");
       Device_Arm_Nonblocking( gp_scanner_device, gp_scanner_tasks[0], SCANNER_DEFAULT_TIMEOUT );
+      
+    } else if( wmId == IDM_SCANNER_TASK_1 )
+    { debug("IDM_SCANNER_TASK_1\r\n");
+      Device_Arm_Nonblocking( gp_scanner_device, gp_scanner_tasks[1], SCANNER_DEFAULT_TIMEOUT );
       
     } else if( wmId == IDM_SCANNER_TASK_RUN )
     { debug("IDM_SCANNER_RUN\r\n");      

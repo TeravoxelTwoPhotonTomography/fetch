@@ -151,10 +151,26 @@ void _config_digitizer( void )
                                         NISCOPE_VAL_PFI_1 ));
 }
 
+typedef void (*tfp_compute_gavlo_waveform)( Scanner_Config *cfg, float64 *data, double N );
+
+void
+_compute_galvo_waveform__constant_zero( Scanner_Config *cfg, float64 *data, double N )
+{ memset(data,0, N*sizeof(float64));
+}
+
+void
+_compute_galvo_waveform__sawtooth( Scanner_Config *cfg, float64 *data, double N )
+{ int i=N;
+  float64 A = cfg->galvo_vpp;
+  while(i--)
+    data[i] = A*(i/N)-0.5);    // linear ramp from -A/2 to A/2
+  data[N-1] = data[0];         // at end of wave, head back to the starting position
+}
+
 // Configure DAQ for the frame program
 // - slow mirror scan
 // - frame sync 
-void _config_daq(void)
+void _config_daq(tfp_compute_gavlo_waveform *compute_gavlo_waveform)
 { Scanner     *scanner = Scanner_Get();
   Scanner_Config  *cfg = &scanner->config;
   TaskHandle  cur_task = 0;
@@ -167,13 +183,8 @@ void _config_daq(void)
 
   data = (float64*) Guarded_Malloc( sizeof(float64) * N, "scanner::_config_daq" );
 
-  // sawtooth
-  { int i=N;
-    float64 A = cfg->galvo_vpp;
-    while(i--)
-      data[i] = A*((double)i/((double)N)-0.5);    // linear ramp from -A/2 to A/2
-    data[N-1] = data[0];
-  }
+  // fill in data for galvo waveform
+  compute_gavlo_waveform( cfg, data, N );
 
   // set up ao task
   cur_task = scanner->daq_ao;
@@ -250,28 +261,42 @@ _fill_frame_description( Frame_Descriptor *desc )
 #endif
 }
 
+void
+_config_pipes( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
+// Allocate output pipes
+{ ViInt32                   nwfm;
+  Frame_Descriptor          desc;
+  ViSession                   vi = Scanner_Get()->digitizer->vi;
+  char                     *chan = Scanner_Get()->digitizer->config.acquisition_channels;
+  
+  DIGERR( niScope_ActualNumWfms( vi,chan,&nwfm ) );    
+  _fill_frame_description(&desc);
+  { size_t               nbuf[2] = { SCANNER_QUEUE_NUM_FRAMES,
+                                     SCANNER_QUEUE_NUM_FRAMES },
+                           sz[2] = { Frame_Get_Size_Bytes( &desc ),
+                                     nwfm*sizeof(struct niScope_wfmInfo) };
+    if( d->task->out == NULL )
+      DeviceTask_Alloc_Outputs( d->task, 2, nbuf, sz );
+  }
+}
+
 unsigned int
 _Scanner_Task_Video_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
-{ _config_daq();
+{ _config_daq(_compute_galvo_waveform__sawtooth);
   _config_digitizer();
-
-  // Allocate output pipes
-  { ViInt32                   nwfm;
-    Frame_Descriptor          desc;
-    ViSession                   vi = Scanner_Get()->digitizer->vi;
-    char                     *chan = Scanner_Get()->digitizer->config.acquisition_channels;
-    
-    DIGERR( niScope_ActualNumWfms( vi,chan,&nwfm ) );    
-    _fill_frame_description(&desc);
-    { size_t               nbuf[2] = { SCANNER_QUEUE_NUM_FRAMES,
-                                       SCANNER_QUEUE_NUM_FRAMES },
-                             sz[2] = { Frame_Get_Size_Bytes( &desc ),
-                                       nwfm*sizeof(struct niScope_wfmInfo) };
-      if( d->task->out == NULL )
-        DeviceTask_Alloc_Outputs( d->task, 2, nbuf, sz );
-    }
-  }
+  _config_pipes();
+  
   debug("Scanner configured for Video\r\n");
+  return 1; //success
+}
+
+unsigned int
+_Scanner_Task_Line_Scan_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
+{ _config_daq(_compute_galvo_waveform__constant_zero);
+  _config_digitizer();
+  _config_pipes();
+  
+  debug("Scanner configured for Line Scan\r\n");
   return 1; //success
 }
 
@@ -358,6 +383,12 @@ Error:
 DeviceTask*
 Scanner_Create_Task_Video(void)
 { return DeviceTask_Alloc(_Scanner_Task_Video_Cfg,
+                          _Scanner_Task_Video_Proc);
+}
+
+DeviceTask*
+Scanner_Create_Task_Line_Scan(void)
+{ return DeviceTask_Alloc(_Scanner_Task_Line_Scan_Cfg,
                           _Scanner_Task_Video_Proc);
 }
 
