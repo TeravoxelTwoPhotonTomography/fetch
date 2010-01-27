@@ -344,11 +344,14 @@ Colormap_Autosetup( Colormap_Resource *cmap, float *min, float *max )
 { UINT N = cmap->nchan;
   Guarded_Assert( N );
   if( N == 1)
-  { Colormap_Gray(cmap,0,min[0],max[0]);    
+  { Colormap_Gray(cmap,0,min[0],max[0]);
+    //Colormap_HSV_Hue(cmap,0,1.0,1.0,1.0,min[0],max[0]);  
   } else
   { int ichan = N;
-    while( ichan-- )                       /* hue            sat  alpha */      
-      Colormap_HSV_Value(cmap, ichan, ichan/((float)N), 1.0, 1.0f/(float)N, min[ichan], max[ichan] );
+    //while( ichan-- )                       /* hue         sat  alpha */      
+    //  Colormap_HSV_Value(cmap, ichan, ichan/((float)N+1), 1.0, 1.0f, min[ichan], max[ichan] );
+    Colormap_Gray(cmap,0,min[0],max[0]);
+    Colormap_HSV_Hue(cmap,1,1.0,1.0,1.0,min[1],max[1]);
   }
   return;
 }

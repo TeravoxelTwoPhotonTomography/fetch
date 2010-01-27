@@ -4,6 +4,7 @@
 #include "util-nidaqmx.h"
 #include "device-digitizer.h"
 #include "frame.h"
+#include "frame-interface-resonant.h"
 #include "frame-interface-digitizer.h"
 #include "device.h"
 #include "device-scanner.h"
@@ -30,24 +31,49 @@
 #define SCANNER_DEBUG_SPIN_WHEN_FULL
 #endif
 
+#if 1
+#define SCANNER_SKIP_RESONANT_CORRECTION
+#endif
+
 typedef ViInt16 TPixel;
 
 //----------------------------------------------------------------------------
 //
 //  Video frame configuration
 //
-Digitizer_Frame_Metadata*
-_Scanner_Task_Video_Metadata( ViInt32 record_length, ViInt32 nwfm )
-{ static Digitizer_Frame_Metadata meta;    
-  meta.height = Scanner_Get()->config.scans; //512;
-  meta.nchan  = (u8)  (nwfm / meta.height);
-  meta.width  = (u16) (record_length);
-  meta.Bpp    = sizeof(TPixel);
-  Guarded_Assert( meta.nchan  > 0 );
-  Guarded_Assert( meta.height > 0 );
-  Guarded_Assert( meta.width  > 0 );
-  return &meta;
+
+#ifndef SCANNER_SKIP_RESONANT_CORRECTION
+#define SCANNER_FRAME_FORMAT               FRAME_INTERFACE_RESONANT_INTERLEAVED_LINES__INTERFACE_ID
+void*
+_Scanner_Task_Video_Metadata( ViInt32 record_length, ViInt32 nwfm, f32 duty )
+{ static Resonant_Frame_Metadata format;    
+  format.in_height = Scanner_Get()->config.scans; //e.g: 512
+  format.nchan     = (u8)  (nwfm / format.in_height);
+  format.in_width  = (u16) (record_length);
+  format.Bpp       = sizeof(TPixel);
+  format.aspect    = 1.0;                         // [ ] TODO - should measure this somehow
+  format.duty      = duty;
+  Guarded_Assert( format.nchan  > 0 );
+  Guarded_Assert( format.in_height > 0 );
+  Guarded_Assert( format.in_width  > 0 );
+  return &format;
 }
+#else
+#define SCANNER_FRAME_FORMAT               FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__INTERFACE_ID
+
+void*
+_Scanner_Task_Video_Metadata( ViInt32 record_length, ViInt32 nwfm, f32 duty )
+{ static Digitizer_Frame_Metadata format;    
+  format.height = Scanner_Get()->config.scans; //e.g: 512
+  format.nchan  = (u8)  (nwfm / format.height);
+  format.width  = (u16) (record_length);
+  format.Bpp    = sizeof(TPixel);
+  Guarded_Assert( format.nchan  > 0 );
+  Guarded_Assert( format.height > 0 );
+  Guarded_Assert( format.width  > 0 );
+  return &format;
+}
+#endif
 
 //----------------------------------------------------------------------------
 //
@@ -126,10 +152,26 @@ void _config_digitizer( void )
                                         NISCOPE_VAL_PFI_1 ));
 }
 
+typedef void (*tfp_compute_gavlo_waveform)( Scanner_Config *cfg, float64 *data, double N );
+
+void
+_compute_galvo_waveform__constant_zero( Scanner_Config *cfg, float64 *data, double N )
+{ memset(data,0, ((size_t)N*sizeof(float64)));
+}
+
+void
+_compute_galvo_waveform__sawtooth( Scanner_Config *cfg, float64 *data, double N )
+{ int i=(int)N;
+  float64 A = cfg->galvo_vpp;
+  while(i--)
+    data[i] = A*((i/N)-0.5);    // linear ramp from -A/2 to A/2
+  data[(int)N-1] = data[0];         // at end of wave, head back to the starting position
+}
+
 // Configure DAQ for the frame program
 // - slow mirror scan
 // - frame sync 
-void _config_daq(void)
+void _config_daq(tfp_compute_gavlo_waveform compute_gavlo_waveform)
 { Scanner     *scanner = Scanner_Get();
   Scanner_Config  *cfg = &scanner->config;
   TaskHandle  cur_task = 0;
@@ -142,13 +184,8 @@ void _config_daq(void)
 
   data = (float64*) Guarded_Malloc( sizeof(float64) * N, "scanner::_config_daq" );
 
-  // sawtooth
-  { int i=N;
-    float64 A = cfg->galvo_vpp;
-    while(i--)
-      data[i] = A*((double)i/((double)N)-0.5);    // linear ramp from -A/2 to A/2
-    data[N-1] = data[0];
-  }
+  // fill in data for galvo waveform
+  compute_gavlo_waveform( cfg, data, N );
 
   // set up ao task
   cur_task = scanner->daq_ao;
@@ -203,42 +240,64 @@ _fill_frame_description( Frame_Descriptor *desc )
 { ViSession                   vi = Scanner_Get()->digitizer->vi;
   ViInt32                   nwfm;
   ViInt32          record_length;
-  Digitizer_Frame_Metadata *meta = NULL;
+  void                     *meta = NULL;
 
   DIGERR( niScope_ActualNumWfms(vi, 
                                 Scanner_Get()->digitizer->config.acquisition_channels,
                                 &nwfm ) );
   DIGERR( niScope_ActualRecordLength(vi, &record_length) );
 
-  meta = _Scanner_Task_Video_Metadata( record_length, nwfm );
+  meta = _Scanner_Task_Video_Metadata( record_length, nwfm, Scanner_Get()->config.line_duty_cycle );
+#ifndef SCANNER_SKIP_RESONANT_CORRECTION
   Frame_Descriptor_Change( desc,
-                           FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__INTERFACE_ID,
+                           SCANNER_FRAME_FORMAT,
+                           meta,
+                           sizeof( Resonant_Frame_Metadata ) );
+#else
+  Frame_Descriptor_Change( desc,
+                           SCANNER_FRAME_FORMAT,
                            meta,
                            sizeof( Digitizer_Frame_Metadata ) );
+
+#endif
+}
+
+void
+_config_pipes( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
+// Allocate output pipes
+{ ViInt32                   nwfm;
+  Frame_Descriptor          desc;
+  ViSession                   vi = Scanner_Get()->digitizer->vi;
+  char                     *chan = Scanner_Get()->digitizer->config.acquisition_channels;
+  
+  DIGERR( niScope_ActualNumWfms( vi,chan,&nwfm ) );    
+  _fill_frame_description(&desc);
+  { size_t               nbuf[2] = { SCANNER_QUEUE_NUM_FRAMES,
+                                     SCANNER_QUEUE_NUM_FRAMES },
+                           sz[2] = { Frame_Get_Size_Bytes( &desc ),
+                                     nwfm*sizeof(struct niScope_wfmInfo) };
+    if( d->task->out == NULL )
+      DeviceTask_Alloc_Outputs( d->task, 2, nbuf, sz );
+  }
 }
 
 unsigned int
-_Scanner_Task_Video_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )              // this whole thing is super ugly
-{ _config_daq();
+_Scanner_Task_Video_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
+{ _config_daq(_compute_galvo_waveform__sawtooth);
   _config_digitizer();
-
-  // Allocate output pipes
-  { ViInt32                   nwfm;
-    Frame_Descriptor          desc;
-    ViSession                   vi = Scanner_Get()->digitizer->vi;
-    char                     *chan = Scanner_Get()->digitizer->config.acquisition_channels;
-    
-    DIGERR( niScope_ActualNumWfms( vi,chan,&nwfm ) );    
-    _fill_frame_description(&desc);
-    { size_t               nbuf[2] = { SCANNER_QUEUE_NUM_FRAMES,
-                                       SCANNER_QUEUE_NUM_FRAMES },
-                             sz[2] = { Frame_Get_Size_Bytes( &desc ),
-                                       nwfm*sizeof(struct niScope_wfmInfo) };
-      if( d->task->out == NULL )
-        DeviceTask_Alloc_Outputs( d->task, 2, nbuf, sz );
-    }
-  }
+  _config_pipes(d,in,out);
+  
   debug("Scanner configured for Video\r\n");
+  return 1; //success
+}
+
+unsigned int
+_Scanner_Task_Line_Scan_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
+{ _config_daq(_compute_galvo_waveform__constant_zero);
+  _config_digitizer();
+  _config_pipes(d,in,out);
+  
+  debug("Scanner configured for Line Scan\r\n");
   return 1; //success
 }
 
@@ -268,7 +327,7 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   TaskHandle  ao_task = scanner->daq_ao;
   TaskHandle clk_task = scanner->daq_clk;
 
-  Frame_From_Bytes(frm, (void**)&buf, &desc);  
+  Frame_Cast(frm, (void**)&buf, &desc);  
   _fill_frame_description(desc);
   change_token = desc->change_token;
   ref = *desc;
@@ -301,7 +360,7 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
     { warning("Digitizer output queue overflowed.\r\n\tAborting acquisition task.\r\n");
       goto Error;
     }
-    Frame_From_Bytes(frm, (void**)&buf, &desc ); // The push swapped the frame buffer
+    Frame_Cast(frm, (void**)&buf, &desc ); // The push swapped the frame buffer
     memcpy(desc,&ref,sizeof(Frame_Descriptor));  // ...so update buf and desc
 
     DAQJMP( DAQmxWaitUntilTaskDone (clk_task,DAQmx_Val_WaitInfinitely));
@@ -326,6 +385,12 @@ Error:
 DeviceTask*
 Scanner_Create_Task_Video(void)
 { return DeviceTask_Alloc(_Scanner_Task_Video_Cfg,
+                          _Scanner_Task_Video_Proc);
+}
+
+DeviceTask*
+Scanner_Create_Task_Line_Scan(void)
+{ return DeviceTask_Alloc(_Scanner_Task_Line_Scan_Cfg,
                           _Scanner_Task_Video_Proc);
 }
 

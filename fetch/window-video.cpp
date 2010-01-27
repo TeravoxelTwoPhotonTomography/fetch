@@ -477,7 +477,7 @@ Video_Display_On_Sizing (  WPARAM wParam, LPARAM lParam )
         width = (LONG) (aspect*height);
       break;
     default:
-      error("Wierd wParam\r\n");
+      warning("Video_Display_On_Sizing: Wierd wParam\r\n");
   }
   //anchor point - top or bottom
   switch( wParam )
@@ -503,7 +503,7 @@ Video_Display_On_Sizing (  WPARAM wParam, LPARAM lParam )
       rect->top  = rect->bottom - height;
       break;
     default:
-      error("Wierd wParam\r\n");
+      warning("Video_Display_On_Sizing: Wierd wParam\r\n");
   }
   return TRUE;
 }
@@ -537,6 +537,26 @@ LRESULT CALLBACK Video_Display_WndProc( HWND hWnd, UINT message, WPARAM wParam, 
         case WM_SIZING:
             return Video_Display_On_Sizing(wParam, lParam );
             break; 
+
+        case WM_KEYDOWN:
+            if( (lParam & 0xf) == 1 ) // if repeat count is one
+            { switch( wParam )
+              { case 0x30: // "0" key
+                case 0x31: // "1" key
+                case 0x32: // "2" key
+                { size_t ichan = wParam - 0x30;                  
+                  if( ichan < g_video.vframe->nchan )
+                  { Video_Frame_Autolevel( g_video.vframe, ichan, 0.05, g_video.mins+ichan, g_video.maxs+ichan );
+                    debug("Autolevel channel %d - [%4.3f, %4.3f]\r\n", ichan, g_video.mins[ichan], g_video.maxs[ichan]);
+                    Colormap_Autosetup( g_video.cmaps, g_video.mins, g_video.maxs );
+                    Colormap_Resource_Commit( g_video.cmaps );
+                  }
+                  break;
+                }                  
+                default:
+                  break;
+              }            
+            }
             
         case WM_COMMAND:
 		        wmId    = LOWORD(wParam);
@@ -591,12 +611,12 @@ void Video_Display_Render_One_Frame()
     
       if(!frm)
       { frm  = (Frame*) Asynq_Token_Buffer_Alloc( q );
-        Frame_From_Bytes( frm, &src, &desc );
+        Frame_Cast( frm, &src, &desc );
       }
       
       if( Asynq_Peek_Timed(q, frm, (DWORD) wait_time_ms ) )
       { int i;
-        Frame_From_Bytes( frm, &src, &desc );
+        Frame_Cast( frm, &src, &desc );
         if( desc->change_token != last_change_token)               // RESIZE!
         { RECT *rect = NULL;
           last_change_token = desc->change_token;
@@ -604,14 +624,14 @@ void Video_Display_Render_One_Frame()
           memcpy(&last,desc,sizeof(Frame_Descriptor));
           //Resize window and buffers
           fint = Frame_Descriptor_Get_Interface(desc);
-          fint->get_dimensions(desc, vdim);
+          fint->get_destination_dimensions(desc, vdim);
           { size_t w     = vdim->contents[0], 
                    h     = vdim->contents[1];
             nchan = fint->get_nchannels( desc );
                    
             DXGI_MODE_DESC mode;
-            mode.Width = w;
-            mode.Height = h;
+            mode.Width = 2*w;
+            mode.Height = 2*h;
             mode.RefreshRate.Numerator = 60;
             mode.RefreshRate.Denominator = 1;
             mode.Format = DXGI_FORMAT_R8G8B8A8_UNORM;

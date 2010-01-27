@@ -9,18 +9,30 @@
 //----------------------------------------------------------------------------
 
 #include "frame-interface-digitizer.h"
+#include "frame-interface-resonant.h"
 
 Frame_Interface g_interfaces[] = {
   { frame_interface_digitizer__default__get_nchannels,   // 0 - frame-interface-digitizer-interleaved-planes
     frame_interface_digitizer__default__get_nbytes,
+    frame_interface_digitizer__default__get_nbytes,
     frame_interface_digitizer_interleaved_planes__copy_channel,
-    frame_interface_digitizer__default__get_dimensions
+    frame_interface_digitizer__default__get_dimensions,
+    frame_interface_digitizer__default__get_dimensions    
   },  
   { frame_interface_digitizer__default__get_nchannels,   // 1 - frame-interface-digitizer-interleaved-lines
     frame_interface_digitizer__default__get_nbytes,
+    frame_interface_digitizer__default__get_nbytes,
     frame_interface_digitizer_interleaved_lines__copy_channel,
+    frame_interface_digitizer__default__get_dimensions,
     frame_interface_digitizer__default__get_dimensions
   },
+  { frame_interface_resonant__default__get_nchannels,    // 2 - frame-interface-resonant-interleaved-lines
+    frame_interface_resonant__default__get_src_nbytes,
+    frame_interface_resonant__default__get_dst_nbytes,
+    frame_interface_resonant_interleaved_lines__copy_channel,
+    frame_interface_resonant__default__get_src_dimensions,
+    frame_interface_resonant__default__get_dst_dimensions
+  },  
 };
 
 
@@ -102,16 +114,15 @@ err:
 size_t
 Frame_Get_Size_Bytes ( Frame_Descriptor *desc )
 { Frame_Interface *face = Frame_Descriptor_Get_Interface(desc);
-  size_t nchan  = face->get_nchannels(desc),
-         nbytes = face->get_nbytes(desc);
-  return nchan*nbytes + sizeof(Frame_Descriptor);
+  size_t nbytes = face->get_source_nbytes(desc);
+  return nbytes + sizeof(Frame_Descriptor);
 }
 
 //----------------------------------------------------------------------------
-// Frame_From_Bytes
+// Frame_Cast
 //----------------------------------------------------------------------------
 void
-Frame_From_Bytes( void *bytes, void **data, Frame_Descriptor **desc )
+Frame_Cast( void *bytes, void **data, Frame_Descriptor **desc )
 { *desc = (Frame_Descriptor*) bytes;
   *data = (void*) ((u8*)bytes + sizeof( Frame_Descriptor ));      // MSVS makes you do all this casting....
 }
@@ -125,7 +136,7 @@ Frame_Alloc( Frame_Descriptor *desc )
   Frame_Descriptor *target;
   void *data, 
        *frame = Guarded_Malloc( nbytes, "Frame_Alloc" );  
-  Frame_From_Bytes( frame, &data, &target);
+  Frame_Cast( frame, &data, &target);
   memcpy(target, desc, sizeof(Frame_Descriptor) );
   return frame;
 }
