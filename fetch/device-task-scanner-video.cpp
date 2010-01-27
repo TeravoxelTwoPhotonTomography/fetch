@@ -155,22 +155,22 @@ typedef void (*tfp_compute_gavlo_waveform)( Scanner_Config *cfg, float64 *data, 
 
 void
 _compute_galvo_waveform__constant_zero( Scanner_Config *cfg, float64 *data, double N )
-{ memset(data,0, N*sizeof(float64));
+{ memset(data,0, ((size_t)N*sizeof(float64)));
 }
 
 void
 _compute_galvo_waveform__sawtooth( Scanner_Config *cfg, float64 *data, double N )
-{ int i=N;
+{ int i=(int)N;
   float64 A = cfg->galvo_vpp;
   while(i--)
-    data[i] = A*(i/N)-0.5);    // linear ramp from -A/2 to A/2
-  data[N-1] = data[0];         // at end of wave, head back to the starting position
+    data[i] = A*((i/N)-0.5);    // linear ramp from -A/2 to A/2
+  data[(int)N-1] = data[0];         // at end of wave, head back to the starting position
 }
 
 // Configure DAQ for the frame program
 // - slow mirror scan
 // - frame sync 
-void _config_daq(tfp_compute_gavlo_waveform *compute_gavlo_waveform)
+void _config_daq(tfp_compute_gavlo_waveform compute_gavlo_waveform)
 { Scanner     *scanner = Scanner_Get();
   Scanner_Config  *cfg = &scanner->config;
   TaskHandle  cur_task = 0;
@@ -284,7 +284,7 @@ unsigned int
 _Scanner_Task_Video_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 { _config_daq(_compute_galvo_waveform__sawtooth);
   _config_digitizer();
-  _config_pipes();
+  _config_pipes(d,in,out);
   
   debug("Scanner configured for Video\r\n");
   return 1; //success
@@ -294,7 +294,7 @@ unsigned int
 _Scanner_Task_Line_Scan_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 { _config_daq(_compute_galvo_waveform__constant_zero);
   _config_digitizer();
-  _config_pipes();
+  _config_pipes(d,in,out);
   
   debug("Scanner configured for Line Scan\r\n");
   return 1; //success

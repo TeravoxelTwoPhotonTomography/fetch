@@ -110,11 +110,11 @@ void Microscope_Application_Start(void)
   Guarded_Assert(
     Device_Run( Disk_Stream_Attach_And_Arm("digitizer-frames",             // alias
                                            "frames.raw", 'w',              // filename
-                                            Scanner_Get_Device(),0) ));  // source
+                                            Scanner_Get_Device(),0) ));    // source
   Guarded_Assert(
     Device_Run( Disk_Stream_Attach_And_Arm("digitizer-wfm",                // alias
                                            "wfm.raw", 'w',                 // filename
-                                            Scanner_Get_Device(),1) ));  // source
+                                            Scanner_Get_Device(),1) ));    // source
                                             
    Video_Display_Connect_Device( Scanner_Get_Device(), 0 );
 }
