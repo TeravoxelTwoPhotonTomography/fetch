@@ -212,6 +212,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\device-task-worker.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\device-task.cpp"
 				>
 			</File>
@@ -339,6 +343,10 @@
 			</File>
 			<File
 				RelativePath=".\device-task-scanner-video.h"
+				>
+			</File>
+			<File
+				RelativePath=".\device-task-worker.h"
 				>
 			</File>
 			<File
