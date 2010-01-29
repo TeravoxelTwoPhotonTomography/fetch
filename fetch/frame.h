@@ -56,18 +56,20 @@ typedef struct _t_frame_descriptor
 { u8                       change_token;        // Used to signal the frame format is a change.  When false the rest of the structure should be ignored.
   u8                       interface_id;
   u32                      metadata_nbytes;
-  u8                       metadata[ FRAME_DESCRIPTOR_MAX_METADATA_BYTES ];       // TODO - refactor - should use a union here.  requires api change (for the better)  
+  u8                       metadata[ FRAME_DESCRIPTOR_MAX_METADATA_BYTES ];       // TODO - refactor? - should use a union here.  requires api change
 } Frame_Descriptor;
 
-typedef size_t    (*tfp_frame_get_nchannels)               ( Frame_Descriptor* fd);                              // gets channel count
-typedef size_t    (*tfp_frame_get_source_nbytes)           ( Frame_Descriptor* fd);                              // gets size of internal buffer in bytes (covers all channels)
-typedef size_t    (*tfp_frame_get_destination_nbytes)      ( Frame_Descriptor* fd);                              // gets size needed for destination buffer (one channel)
-typedef void      (*tfp_frame_copy_channel)                ( Frame_Descriptor* fd, void *dst, size_t dst_stride, void *src, size_t ichan );    // copies channel data to dst
-typedef void      (*tfp_frame_get_source_dimensions)       ( Frame_Descriptor* fd, vector_size_t *vdim);         // returns the dimensions and number of dimensions of the channel
-typedef void      (*tfp_frame_get_destination_dimensions)  ( Frame_Descriptor* fd, vector_size_t *vdim);         // returns the dimensions and number of dimensions of the channel
+typedef Basic_Type_ID (*tfp_frame_get_type)                    ( Frame_Descriptor* fd);                              // get pixel type
+typedef size_t        (*tfp_frame_get_nchannels)               ( Frame_Descriptor* fd);                              // gets channel count
+typedef size_t        (*tfp_frame_get_source_nbytes)           ( Frame_Descriptor* fd);                              // gets size of internal buffer in bytes (covers all channels)
+typedef size_t        (*tfp_frame_get_destination_nbytes)      ( Frame_Descriptor* fd);                              // gets size needed for destination buffer (one channel)
+typedef void          (*tfp_frame_copy_channel)                ( Frame_Descriptor* fd, void *dst, size_t dst_stride, void *src, size_t ichan );    // copies channel data to dst
+typedef void          (*tfp_frame_get_source_dimensions)       ( Frame_Descriptor* fd, vector_size_t *vdim);         // returns the dimensions and number of dimensions of the channel
+typedef void          (*tfp_frame_get_destination_dimensions)  ( Frame_Descriptor* fd, vector_size_t *vdim);         // returns the dimensions and number of dimensions of the channel
 
 typedef struct _t_frame_interface
-{ tfp_frame_get_nchannels              get_nchannels;              // Abstract interface
+{ tfp_frame_get_type                   get_type;                  // Abstract interface
+  tfp_frame_get_nchannels              get_nchannels;
   tfp_frame_get_source_nbytes          get_source_nbytes;
   tfp_frame_get_destination_nbytes     get_destination_nbytes;
   tfp_frame_copy_channel               copy_channel;
@@ -92,14 +94,14 @@ u8                Frame_Descriptor_From_File_Read_Next  ( FILE *fp, Frame_Descri
 // To create a frame:
 //
 // 1. allocate a buffer of size Frame_Get_Size_Bytes with malloc
-// 2. Use Frame_Cast to get access to the data and the frame description.
+// 2. Use Frame_Set to get access to the data and the frame description.
 // 3. Set the descriptor
 // - or -
 // 1. Use Frame_Alloc
-// 2. Use Frame_Cast to get access to the data and the frame description.
+// 2. Use Frame_Set to get access to the data and the frame description.
 // 
 
 size_t            Frame_Get_Size_Bytes ( Frame_Descriptor *desc );                             // Returns size of frame in bytes (descriptor + internal buffer)
 Frame*            Frame_Alloc          ( Frame_Descriptor *desc );
 void              Frame_Free           ( void );
-void              Frame_Cast     ( Frame *bytes, void **data, Frame_Descriptor **desc );
+void              Frame_Set           ( Frame *bytes, void **data, Frame_Descriptor **desc );

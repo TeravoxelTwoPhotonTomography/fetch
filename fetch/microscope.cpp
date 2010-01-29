@@ -95,6 +95,7 @@ void Microscope_Application_Start(void)
   //Galvo_Mirror_Init();
   //Digitizer_Init();
   Scanner_Init();
+  // Worker *worker = Worker_Init("scanner/average");
   
   Microscope_Detach();
   Microscope_Attach();
@@ -106,6 +107,11 @@ void Microscope_Application_Start(void)
   Device_Arm( Scanner_Get_Device(), 
               Scanner_Get_Default_Task(),
               INFINITE );
+
+  //Device_Arm( Worker_Get_Device(averager),
+  //            Device_Task_Worker_Create_Averager(),
+  //            INFINITE );
+  //Device_Run( Worker_Get_Device(averager) );
 
   Guarded_Assert(
     Device_Run( Disk_Stream_Attach_And_Arm("digitizer-frames",             // alias

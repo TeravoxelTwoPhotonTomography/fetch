@@ -22,7 +22,12 @@
 #define DIGITIZER_DEBUG_SPIN_WHEN_FULL
 #endif
 
-typedef ViInt16 TPixel;
+//
+// Acquisition type setup
+//
+typedef ViInt16     TPixel;
+#define TPixel_ID   id_i16
+#define FETCHFUN    (niScope_FetchBinary16)
 
 //
 // TASK - Streaming on all channels
@@ -35,6 +40,7 @@ _Digitizer_Task_Fetch_Forever_Frame_Metadata( ViInt32 record_length, ViInt32 nwf
   meta.width  = (u16) (record_length / meta.height);
   meta.nchan  = (u8)  nwfm;
   meta.Bpp    = sizeof(TPixel);
+  meta.rtti   = TPixel_ID;
   return &meta;
 }
 
@@ -122,7 +128,7 @@ _Digitizer_Task_Fetch_Forever_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ 
   TPixel                 *buf;
   unsigned int ret = 1;
 
-  Frame_Cast(frm, (void**)&buf, &desc );
+  Frame_Set(frm, (void**)&buf, &desc );
     
   CheckPanic( niScope_ActualNumWfms(vi, chan, &nwfm ) );
   CheckPanic( niScope_ActualRecordLength(vi, &nelem) );
@@ -157,12 +163,12 @@ _Digitizer_Task_Fetch_Forever_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ 
       delay = toc( &delay_clock );
       delay = toc( &delay_clock );
       maxdelay = MAX(delay, maxdelay);
-      ViStatus sts = niScope_FetchBinary16 ( vi, 
-                                        chan,          // (acquistion channels)
-                                        0.0,           // Immediate
-                                        nelem - ttl,   // Remaining space in buffer
-                                        buf   + ttl,   // Where to put the data
-                                        wfm);          // metadata for fetch
+      ViStatus sts = FETCHFUN ( vi, 
+                                chan,          // (acquistion channels)
+                                0.0,           // Immediate
+                                nelem - ttl,   // Remaining space in buffer
+                                buf   + ttl,   // Where to put the data
+                                wfm);          // metadata for fetch
       if( delay > maxdelay )
       { maxdelay = delay;
         last_max_fetch = nfetches;
@@ -194,7 +200,7 @@ _Digitizer_Task_Fetch_Forever_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ 
         CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_BACKLOG, &pts ));
         digitizer_task_fetch_forever_debug("Digitizer Backlog: %4.1f MS\r\n",pts/1024.0/1024.0);
       }  
-      Frame_Cast(frm, (void**)&buf, &desc ); //get addresses
+      Frame_Set(frm, (void**)&buf, &desc ); //get addresses
       
       memcpy(desc,&ref,sizeof(Frame_Descriptor));
       

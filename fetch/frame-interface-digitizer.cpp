@@ -13,6 +13,12 @@
 // These functions will probably be resused for different frame formats
 //
 
+Basic_Type_ID
+frame_interface_digitizer__default__get_type (Frame_Descriptor* fd)
+{ Digitizer_Frame_Metadata *meta = (Digitizer_Frame_Metadata*) fd->metadata;
+  return meta->rtti;
+}
+
 size_t
 frame_interface_digitizer__default__get_nchannels (Frame_Descriptor* fd)
 { Digitizer_Frame_Metadata *meta = (Digitizer_Frame_Metadata*) fd->metadata;

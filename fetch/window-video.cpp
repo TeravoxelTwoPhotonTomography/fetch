@@ -302,8 +302,9 @@ HRESULT _InitDevice()
   GetClientRect( g_video.hwnd, &rc );
   UINT width  = 512; //rc.right - rc.left;               // defaults used for startup
   UINT height = 512; //rc.bottom - rc.top;
-  UINT nchan  = 3;
-     
+  UINT nchan  = 3;             
+  Basic_Type_ID type = id_i16;
+       
   _create_device_and_swap_chain(width, height);
   _setup_viewport( width, height );
   _load_shader(VIDEO_WINDOW_PATH_TO_SHADER, VIDEO_WINDOW_SHADER_TECHNIQUE_NAME);
@@ -311,7 +312,7 @@ HRESULT _InitDevice()
   
   { g_video.vframe = Video_Frame_Resource_Alloc();
     Video_Frame_Resource_Attach( g_video.vframe,
-                                 width, height, nchan,
+                                 type, width, height, nchan,
                                  g_video.effect, VIDEO_WINDOW_TEXTURE_RESOURCE_NAME );
     
     // Initialize the texture with test data
@@ -323,7 +324,7 @@ HRESULT _InitDevice()
         for(i=0;i<height;i++)
           for(j=0;j<width;j++)
             src[j + width * i + k * height * width] = (T) j + width * i + rand()/(1<<4);
-      Video_Frame_From_Raw( g_video.vframe, src, width, height, nchan );
+      Video_Frame_From_Raw( g_video.vframe, sizeof(T), src, width, height, nchan );
       free(src);        
     }
     Video_Frame_Resource_Commit( g_video.vframe );
@@ -378,7 +379,7 @@ void _CleanupDevice()
 //--------------------------------------------------------------------------------------
 // Set up the device objects (setup after a resize)
 //--------------------------------------------------------------------------------------
-void _refresh_objects(UINT width, UINT height, UINT nchan)
+void _refresh_objects(Basic_Type_ID type, UINT width, UINT height, UINT nchan)
 { int i = 3;
   HRESULT hr;
   // Create a render target view
@@ -391,7 +392,7 @@ void _refresh_objects(UINT width, UINT height, UINT nchan)
   }
   _setup_viewport( width, height );
   _load_shader(VIDEO_WINDOW_PATH_TO_SHADER, VIDEO_WINDOW_SHADER_TECHNIQUE_NAME);
-  Video_Frame_Resource_Attach( g_video.vframe, width, height, nchan, g_video.effect, VIDEO_WINDOW_TEXTURE_RESOURCE_NAME );
+  Video_Frame_Resource_Attach( g_video.vframe, type, width, height, nchan, g_video.effect, VIDEO_WINDOW_TEXTURE_RESOURCE_NAME );
   _load_colormaps(nchan);
   dx10_effect_variable_set_f32(g_video.effect, VIDEO_WINDOW_NUM_CHAN_RESOURCE_NAME, (f32) nchan);
 }
@@ -611,12 +612,12 @@ void Video_Display_Render_One_Frame()
     
       if(!frm)
       { frm  = (Frame*) Asynq_Token_Buffer_Alloc( q );
-        Frame_Cast( frm, &src, &desc );
+        Frame_Set( frm, &src, &desc );
       }
       
       if( Asynq_Peek_Timed(q, frm, (DWORD) wait_time_ms ) )
       { int i;
-        Frame_Cast( frm, &src, &desc );
+        Frame_Set( frm, &src, &desc );
         if( desc->change_token != last_change_token)               // RESIZE!
         { RECT *rect = NULL;
           last_change_token = desc->change_token;
@@ -625,8 +626,9 @@ void Video_Display_Render_One_Frame()
           //Resize window and buffers
           fint = Frame_Descriptor_Get_Interface(desc);
           fint->get_destination_dimensions(desc, vdim);
-          { size_t w     = vdim->contents[0], 
-                   h     = vdim->contents[1];
+          { size_t           w = vdim->contents[0], 
+                             h = vdim->contents[1];
+            Basic_Type_ID type = fint->get_type(desc);
             nchan = fint->get_nchannels( desc );
                    
             DXGI_MODE_DESC mode;
@@ -643,7 +645,7 @@ void Video_Display_Render_One_Frame()
             Guarded_Assert(SUCCEEDED( g_video.swap_chain->ResizeBuffers(2, w, h,
                                               DXGI_FORMAT_R8G8B8A8_UNORM, 
                                               DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH)));
-            _refresh_objects(w,h,nchan);
+            _refresh_objects(type,w,h,nchan);
             g_video.aspect = w/((float)h);
           }
         }

@@ -43,6 +43,7 @@ _is_format_lut_changed( Resonant_Frame_Metadata *a, Resonant_Frame_Metadata *b)
 { return (a->in_width  != b->in_width ) ||
          (a->in_height != b->in_height) ||
          (a->Bpp       != b->Bpp      ) ||
+         (a->rtti      != b->rtti     ) ||
          (a->aspect    != b->aspect   );        
 }
 
@@ -59,6 +60,13 @@ compute_out_height( Resonant_Frame_Metadata *format )
 //
 // Implimentation
 //
+
+Basic_Type_ID
+frame_interface_resonant__default__get_type (Frame_Descriptor* fd)
+{ DEBUG_FRAME_INTERFACE_RESONANT_INTERLEAVED_LINES__CHECK_DESCRIPTOR 
+  Resonant_Frame_Metadata *fmt = (Resonant_Frame_Metadata*) fd->metadata;
+  return fmt->nchan;
+}
 
 size_t
 frame_interface_resonant__default__get_nchannels (Frame_Descriptor* fd)

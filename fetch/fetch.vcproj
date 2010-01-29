@@ -410,6 +410,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\types.h"
+				>
+			</File>
+			<File
 				RelativePath=".\util-dx10.h"
 				>
 			</File>

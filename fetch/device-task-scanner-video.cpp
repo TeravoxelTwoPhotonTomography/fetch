@@ -35,7 +35,12 @@
 #define SCANNER_SKIP_RESONANT_CORRECTION
 #endif
 
-typedef ViInt16 TPixel;
+//
+// Acquisition type setup
+//
+typedef ViInt16     TPixel;
+#define TPixel_ID   id_i16
+#define FETCHFUN    (niScope_FetchBinary16)
 
 //----------------------------------------------------------------------------
 //
@@ -52,7 +57,8 @@ _Scanner_Task_Video_Metadata( ViInt32 record_length, ViInt32 nwfm, f32 duty )
   format.in_width  = (u16) (record_length);
   format.Bpp       = sizeof(TPixel);
   format.aspect    = 1.0;                         // [ ] TODO - should measure this somehow
-  format.duty      = duty;
+  format.duty      = duty;  
+  format.rtti      = TPixel_ID;
   Guarded_Assert( format.nchan  > 0 );
   Guarded_Assert( format.in_height > 0 );
   Guarded_Assert( format.in_width  > 0 );
@@ -67,7 +73,8 @@ _Scanner_Task_Video_Metadata( ViInt32 record_length, ViInt32 nwfm, f32 duty )
   format.height = Scanner_Get()->config.scans; //e.g: 512
   format.nchan  = (u8)  (nwfm / format.height);
   format.width  = (u16) (record_length);
-  format.Bpp    = sizeof(TPixel);
+  format.Bpp    = sizeof(TPixel);  
+  format.rtti   = TPixel_ID;
   Guarded_Assert( format.nchan  > 0 );
   Guarded_Assert( format.height > 0 );
   Guarded_Assert( format.width  > 0 );
@@ -327,7 +334,7 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   TaskHandle  ao_task = scanner->daq_ao;
   TaskHandle clk_task = scanner->daq_clk;
 
-  Frame_Cast(frm, (void**)&buf, &desc);  
+  Frame_Set(frm, (void**)&buf, &desc);  
   _fill_frame_description(desc);
   change_token = desc->change_token;
   ref = *desc;
@@ -341,12 +348,12 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
     dt_out = toc(&outer_clock);
     debug("iter: %d\ttime: %5.3g [out] %5.3g [in]\tbacklog: %9.0f Bytes\r\n",i, dt_out, dt_in, sizeof(TPixel)*niscope_get_backlog(vi) );
     toc(&inner_clock);
-    DIGJMP( niScope_FetchBinary16 (vi,
-                                   chan,
-                                   SCANNER_VIDEO_TASK_FETCH_TIMEOUT,//10.0, //(-1=infinite) (0.0=immediate) 
-                                   width,
-                                   (ViInt16*) buf,
-                                   wfm));
+    DIGJMP( FETCHFUN (vi,
+                      chan,
+                      SCANNER_VIDEO_TASK_FETCH_TIMEOUT,//10.0, //(-1=infinite) (0.0=immediate) 
+                      width,
+                      buf,
+                      wfm));
 
     // Push the acquired data down the output pipes
     Asynq_Push( qwfm,(void**) &wfm, 0 );
@@ -360,7 +367,7 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
     { warning("Digitizer output queue overflowed.\r\n\tAborting acquisition task.\r\n");
       goto Error;
     }
-    Frame_Cast(frm, (void**)&buf, &desc ); // The push swapped the frame buffer
+    Frame_Set(frm, (void**)&buf, &desc ); // The push swapped the frame buffer
     memcpy(desc,&ref,sizeof(Frame_Descriptor));  // ...so update buf and desc
 
     DAQJMP( DAQmxWaitUntilTaskDone (clk_task,DAQmx_Val_WaitInfinitely));
