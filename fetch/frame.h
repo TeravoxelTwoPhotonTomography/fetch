@@ -42,7 +42,8 @@
 //
 
 #pragma once
-#include "stdafx.h" 
+#include "stdafx.h"
+#include "types.h"
 
 #define FRAME_DESCRIPTOR_MAX_METADATA_BYTES 256
 
@@ -104,4 +105,4 @@ u8                Frame_Descriptor_From_File_Read_Next  ( FILE *fp, Frame_Descri
 size_t            Frame_Get_Size_Bytes ( Frame_Descriptor *desc );                             // Returns size of frame in bytes (descriptor + internal buffer)
 Frame*            Frame_Alloc          ( Frame_Descriptor *desc );
 void              Frame_Free           ( void );
-void              Frame_Set           ( Frame *bytes, void **data, Frame_Descriptor **desc );
+void              Frame_Set            ( Frame *bytes, void **data, Frame_Descriptor **desc );

@@ -43,6 +43,6 @@ void                  Video_Frame_Resource_Commit ( Video_Frame_Resource *self )
 void                  Video_Frame_From_Frame_Descriptor ( Video_Frame_Resource *self, void *buf,
                                                           Frame_Descriptor *desc );
 void                  Video_Frame_From_Raw              ( Video_Frame_Resource *self, void *buf, 
-                                                          size_t width, size_t height, size_t nchan );
+                                                          size_t Bpp, size_t width, size_t height, size_t nchan );
                                                           
 void                  Video_Frame_Autolevel( Video_Frame_Resource *self, int ichan, float thresh, float *min, float *max ); // Computes min and max for colormapping using last stored frame.

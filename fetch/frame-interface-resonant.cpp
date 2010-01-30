@@ -4,7 +4,7 @@
 #include "frame.h"
 #include "frame-interface-resonant.h"
 
-#if 1
+#if 0
 #define DEBUG_FRAME_INTERFACE_RESONANT_INTERLEAVED_LINES
 #endif
 
@@ -65,7 +65,7 @@ Basic_Type_ID
 frame_interface_resonant__default__get_type (Frame_Descriptor* fd)
 { DEBUG_FRAME_INTERFACE_RESONANT_INTERLEAVED_LINES__CHECK_DESCRIPTOR 
   Resonant_Frame_Metadata *fmt = (Resonant_Frame_Metadata*) fd->metadata;
-  return fmt->nchan;
+  return fmt->rtti;
 }
 
 size_t

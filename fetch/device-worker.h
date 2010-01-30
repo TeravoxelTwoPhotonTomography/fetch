@@ -3,6 +3,7 @@
 #include "device.h"
 #include "device-task-worker.h"
 
+#define WORKER_ALIAS_LENGTH 256
 //
 // Intended to act as "softare devices" that transforms data.
 //
@@ -14,9 +15,9 @@ typedef struct _worker
 
 #define WORKER_EMPTY {-1,NULL}
 
-#define WORKER_ALIAS_LENGTH 256
+
 typedef struct _worker_index_item
-  { char         alias[DISK_STREAM_ALIAS_LENGTH];
+  { char         alias[WORKER_ALIAS_LENGTH];
     Worker       worker;
     Device      *device;
   } Worker_Index_Item;
@@ -41,4 +42,4 @@ unsigned int Workers_Destroy_All             (void);                  // Frees a
 //
 Device* Worker_Compose_Averager_f32( const char *alias, Device *source, int ichan, int ntimes );
 //TODO: Device* Worker_Compose_Progressive_Averager_f32( const char *alias, Device *source, int ichan );
-Device* Worker_Compose_Caster( const char *alias, Device *source, Basic_Type_ID source_type, Basic_Type_ID dest_type );
+Device* Worker_Compose_Caster( const char *alias, Device *source, int ichan, Basic_Type_ID source_type, Basic_Type_ID dest_type );

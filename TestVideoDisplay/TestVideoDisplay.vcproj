@@ -184,6 +184,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\fetch\frame-interface-resonant.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\fetch\frame.cpp"
 				>
 			</File>
@@ -228,6 +232,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\fetch\types.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\fetch\util-dx10.cpp"
 				>
 			</File>
@@ -251,6 +259,10 @@
 			</File>
 			<File
 				RelativePath="..\fetch\frame-interface-digitizer.h"
+				>
+			</File>
+			<File
+				RelativePath="..\fetch\frame-interface-resonant.h"
 				>
 			</File>
 			<File
@@ -283,6 +295,10 @@
 			</File>
 			<File
 				RelativePath=".\TestVideoDisplay.h"
+				>
+			</File>
+			<File
+				RelativePath="..\fetch\types.h"
 				>
 			</File>
 			<File

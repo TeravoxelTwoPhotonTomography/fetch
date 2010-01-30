@@ -2,6 +2,7 @@
 #include "renderer-video-frame.h"
 #include <d3d10.h>
 #include <d3dx10.h>
+#include "util-dx10.h"
 
 Video_Frame_Resource*
 Video_Frame_Resource_Alloc(void)
@@ -139,26 +140,43 @@ Video_Frame_From_Raw( Video_Frame_Resource *self, void *src,
   memcpy(self->buf->contents, src, nbytes);
 }
 
+#define _AUTOLEVEL_HIST(TPixel) {\
+    TPixel *beg = (TPixel*)(self->buf->contents + ichan * channel_stride),\
+           *end = (TPixel*)(self->buf->contents + (ichan+1) * channel_stride);\
+    counts = (float) (end - beg);\
+    while(end-- > beg )\
+      hist[ (int)((*end - low)*scale) ]++;\
+  } break
+  
 void
 Video_Frame_Autolevel( Video_Frame_Resource *self, int ichan, float thresh, float *min, float *max )                                // WARNING: FIXME: assumes internal buffer has a specific type (i16)
 { int bits      = g_type_attributes[ self->type ].bits; // eg: 16
   int issigned  = g_type_attributes[ self->type ].is_signed;
   u16 hist[256];
   int i = 0;
-  size_t channel_stride =  self->stride * self->nlines;
-  TPixel *beg = (TPixel*)(self->buf->contents + ichan * channel_stride),
-         *end = (TPixel*)(self->buf->contents + (ichan+1) * channel_stride);
-  float  norm = 1 << bits,
-        scale = 256./norm,
-          low = issigned ? -(1<<(bits-1)) : 0;
+  size_t channel_stride =  self->stride * self->nlines;  
+  float  norm = (float) (1 << bits),
+        scale = 256.f/norm,
+          low = (float) (issigned ? -(1<<(bits-1)) : 0),
           acc,
-       counts = (float) (end - beg),
+       counts,
           lim;
   
   memset( hist,0,sizeof(hist) );  // compute histogram
-  while(end-- > beg )
-    hist[ (int)((*end - low)*scale) ]++;
-  
+  switch( self->type )
+  { case id_u8:  _AUTOLEVEL_HIST(u8 );
+    case id_u16: _AUTOLEVEL_HIST(u16);
+    case id_u32: _AUTOLEVEL_HIST(u32);
+    case id_u64: _AUTOLEVEL_HIST(u64);
+    case id_i8:  _AUTOLEVEL_HIST(i8 );
+    case id_i16: _AUTOLEVEL_HIST(i16);
+    case id_i32: _AUTOLEVEL_HIST(i32);
+    case id_i64: _AUTOLEVEL_HIST(i64);
+    case id_f32: _AUTOLEVEL_HIST(f32);
+    case id_f64: _AUTOLEVEL_HIST(f64);
+    default:
+      error("Unrecognized pixel type in Video_Frame_Autolevel.\r\n");
+  }
   lim = thresh * counts; // thresh is a percentage (e.g. 0.05 ).  Find where the integrated histogram has area more than lim.
   acc = 0.0;
   while( i++ < 256 )     // integrate till limit exceeded
@@ -166,7 +184,7 @@ Video_Frame_Autolevel( Video_Frame_Resource *self, int ichan, float thresh, floa
     if( acc > lim )
       break;
   }
-  *min = i/256.0f
+  *min = i/256.0f;
   
   lim = (1.0f-thresh) * counts;
   acc = counts;

@@ -1,12 +1,12 @@
 #include "stdafx.h"
 #include "microscope.h"
-
 #include "device-digitizer.h"
 #include "device-scanner.h"
+#include "device-worker.h"
 #include "device-galvo-mirror.h"
 #include "device-disk-stream.h"
-
 #include "window-video.h"
+#include "types.h"
 
 TYPE_VECTOR_DEFINE( pf_microscope_attach_callback );
 TYPE_VECTOR_DEFINE( pf_microscope_detach_callback );
@@ -107,10 +107,12 @@ void Microscope_Application_Start(void)
   Device_Arm( Scanner_Get_Device(), 
               Scanner_Get_Default_Task(),
               INFINITE );
-  cur = Scanner_Get_Device();
-  cur = Caster_Compose             ( "scanner/cast/f32", cur, 0, /*source type*/, id_f32 );
+  cur = Scanner_Get_Device();                                    // FIXME - types
+  cur = Worker_Compose_Caster      ( "scanner/cast/f32", 
+                                      cur, 0,
+                                      id_i16/*source type*/, id_f32 );
   cur = Worker_Compose_Averager_f32( "scanner/averager", cur, 0, 10 /*times*/ );
-  cur = Caster_Compose             ( "scanner/cast/u8" , cur, 0, /*source type*/, id_u8 );
+  cur = Worker_Compose_Caster      ( "scanner/cast/u8" , cur, 0, id_f32/*source type*/, id_u8 );
 
   Guarded_Assert(
     Device_Run( Disk_Stream_Attach_And_Arm("digitizer-frames",             // alias

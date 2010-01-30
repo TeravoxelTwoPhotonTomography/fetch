@@ -2,6 +2,18 @@
 #include <d3d10.h>
 #include <d3dx10.h>
 
+extern const DXGI_FORMAT g_dx10_tex_type_map[] = {
+                            DXGI_FORMAT_R8_UNORM, //  id_u8,
+                            DXGI_FORMAT_R16_UNORM,//  id_u16,
+                            DXGI_FORMAT_UNKNOWN,  //  id_u32,  x
+                            DXGI_FORMAT_UNKNOWN,  //  id_u64,  x
+                            DXGI_FORMAT_R8_SNORM, //  id_i8,
+                            DXGI_FORMAT_R16_SNORM,//  id_i16,
+                            DXGI_FORMAT_UNKNOWN,  //  id_i32,  x
+                            DXGI_FORMAT_UNKNOWN,  //  id_i64,  x
+                            DXGI_FORMAT_R32_FLOAT,//  id_f32,
+                            DXGI_FORMAT_UNKNOWN}; //  id_f64   x
+
 void
 dx10_effect_variable_set_f32( ID3D10Effect *effect, char *name, f32 val )
 { Guarded_Assert( SUCCEEDED(

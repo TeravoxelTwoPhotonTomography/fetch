@@ -288,6 +288,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\types.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\util-dx10.cpp"
 				>
 			</File>

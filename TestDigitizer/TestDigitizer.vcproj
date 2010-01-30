@@ -203,6 +203,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\fetch\frame-interface-resonant.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\fetch\frame.cpp"
 				>
 			</File>
@@ -270,6 +274,10 @@
 			</File>
 			<File
 				RelativePath="..\fetch\frame-interface-digitizer.h"
+				>
+			</File>
+			<File
+				RelativePath="..\fetch\frame-interface-resonant.h"
 				>
 			</File>
 			<File

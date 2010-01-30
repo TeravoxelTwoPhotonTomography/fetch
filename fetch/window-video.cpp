@@ -324,7 +324,7 @@ HRESULT _InitDevice()
         for(i=0;i<height;i++)
           for(j=0;j<width;j++)
             src[j + width * i + k * height * width] = (T) j + width * i + rand()/(1<<4);
-      Video_Frame_From_Raw( g_video.vframe, sizeof(T), src, width, height, nchan );
+      Video_Frame_From_Raw( g_video.vframe, src, sizeof(T), width, height, nchan );
       free(src);        
     }
     Video_Frame_Resource_Commit( g_video.vframe );
@@ -547,7 +547,7 @@ LRESULT CALLBACK Video_Display_WndProc( HWND hWnd, UINT message, WPARAM wParam, 
                 case 0x32: // "2" key
                 { size_t ichan = wParam - 0x30;                  
                   if( ichan < g_video.vframe->nchan )
-                  { Video_Frame_Autolevel( g_video.vframe, ichan, 0.05, g_video.mins+ichan, g_video.maxs+ichan );
+                  { Video_Frame_Autolevel( g_video.vframe, ichan, 0.05f, g_video.mins+ichan, g_video.maxs+ichan );
                     debug("Autolevel channel %d - [%4.3f, %4.3f]\r\n", ichan, g_video.mins[ichan], g_video.maxs[ichan]);
                     Colormap_Autosetup( g_video.cmaps, g_video.mins, g_video.maxs );
                     Colormap_Resource_Commit( g_video.cmaps );

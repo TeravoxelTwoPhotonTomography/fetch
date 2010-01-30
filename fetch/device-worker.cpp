@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "microscope.h"
 #include "device-worker.h"
+#include "device-task.h"
 #include "device-task-worker.h"
 
 #define WORKER_DEFAULT_TIMEOUT                    INFINITE
@@ -41,7 +42,8 @@ unsigned int Workers_Destroy_All(void)
 void 
 _worker_module_safe_init(void)
 { if( !gv_workers ) // index not initialized yet so neither is anything else.
-  { Guarded_Assert( gv_worker = vector_Worker_Index_Item_alloc( WORKER_DEFAULT_INDEX_CAPACITY ) );
+  { Guarded_Assert( 
+      gv_workers = vector_Worker_Index_Item_alloc( WORKER_DEFAULT_INDEX_CAPACITY ) );
 
     // Register Shutdown functions - these get called in reverse order
     Register_New_Shutdown_Callback( &Workers_Destroy_All );
@@ -75,7 +77,7 @@ Worker_Lookup(const char* alias)
 
 Device*
 Worker_Get_Device(Worker* self)
-{ Worker_Index_Item *item = gv_workers + self->index;
+{ Worker_Index_Item *item = gv_workers->contents + self->index;
   Guarded_Assert( self->index <  gv_workers->count );
   Guarded_Assert( self->alias == item->alias );
   return item->device;
@@ -93,23 +95,24 @@ Worker* Worker_Init(const char* alias)
   { vector_Worker_Index_Item_request( gv_workers, ++gv_workers->count );                      // Alloc (append to end)
     item = gv_workers->contents + gv_workers->count - 1;
     
-    item.worker.index = gv_workers->count - 1;                                                // Construct
-    item.worker.alias = item.alias;
+    item->worker.index = gv_workers->count - 1;                                                // Construct
+    item->worker.alias = item->alias;
     
-    memcpy(item->alias, alias, sizeof(char)*MIN( strlen(alias), DISK_STREAM_ALIAS_LENGTH ));
+    memcpy(item->alias, alias, sizeof(char)*MIN( strlen(alias), WORKER_ALIAS_LENGTH ));
     
     item->device = Device_Alloc();
     item->device->context = NULL;
   }
   LeaveCriticalSection(cs);
   
+  Device_Set_Available( item->device );
   return &item->worker;
 }
 
 unsigned int
 _worker_device_disarm_unlocked(Worker_Index_Item *item)
 { unsigned int sts = 0; //error
-  Device_Task *task = NULL;
+  DeviceTask *task = NULL;
   
   debug("Worker: alias - %s\r\n"
         "\tAttempting to disarm.\r\n", item->alias );
@@ -132,7 +135,7 @@ _worker_device_disarm_unlocked(Worker_Index_Item *item)
 
   sts = 1;  // success
   debug("Worker: Disarmed alias %s\r\n",item->alias);
-Error:  
+//Error:  
   return sts;
 }
 
@@ -159,7 +162,7 @@ DeviceIsNullError:
   LeaveCriticalSection(cs);
   warning("Attempted to destroy a Worker who's device instance didn't exist.\r\n");
   return 1; // failure
-DeviceIsDisarmError:
+DeviceDisarmError:
   //Device_Unlock( item->device );
   LeaveCriticalSection(cs);
   warning("Failed to disarm a Worker device.\r\n");
@@ -172,29 +175,23 @@ DeviceIsDisarmError:
 //
 
 Device*
-Averager_f32_Compose( const char *alias, Device *source, int ichan, int ntimes )
-{ Worker *worker = Worker_Init(alias);
-  Device *dest   = Worker_Get_Device(worker);
-
-  Device_Arm( dest,
-              Worker_Create_Task_Averager_f32(source,ntimes),
-              INFINITE );
-  DeviceTask_Connect( source->task, ichan,
-                      dest->task, 0 );
+Worker_Compose_Averager_f32( const char *alias, Device *source, int ichan, int ntimes )
+{ Worker   *worker = Worker_Init(alias);
+  Device     *dest = Worker_Get_Device(worker);
+  DeviceTask *task = Worker_Create_Task_Averager_f32(dest,ntimes);
+  DeviceTask_Connect( task, 0, source->task, ichan);
+  Device_Arm( dest, task, INFINITE );
   Device_Run( dest );
   return dest;
 }
 
 Device*
-Caster_Compose( const char *alias, Device *source, int ichan, Basic_Type_ID source_type, Basic_Type_ID dest_type)
-{ Worker *worker = Worker_Init(alias);
-  Device *dest   = Worker_Get_Device(worker);
-
-  Device_Arm( dest,
-              Worker_Create_Task_Caster(source,source_type,dest_type),
-              INFINITE );
-  DeviceTask_Connect( source->task, ichan,
-                      dest->task, 0 );
-  Device_Run( dest );
+Worker_Compose_Caster( const char *alias, Device *source, int ichan, Basic_Type_ID source_type, Basic_Type_ID dest_type)
+{ Worker   *worker = Worker_Init(alias);
+  Device     *dest = Worker_Get_Device(worker);
+  DeviceTask *task = Worker_Create_Task_Caster(dest,source_type,dest_type);
+  DeviceTask_Connect( task, 0, source->task, ichan );
+  Guarded_Assert( Device_Arm( dest, task,INFINITE ));
+  Guarded_Assert( Device_Run( dest ));
   return dest;
 }
