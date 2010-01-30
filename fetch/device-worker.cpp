@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "microscope.h"
 #include "device-worker.h"
+#include "device-task-worker.h"
 
 #define WORKER_DEFAULT_TIMEOUT                    INFINITE
 #define WORKER_DEFAULT_INDEX_CAPACITY             4
@@ -163,4 +164,37 @@ DeviceIsDisarmError:
   LeaveCriticalSection(cs);
   warning("Failed to disarm a Worker device.\r\n");
   return 1; // failure
+}
+
+
+//
+// Workers
+//
+
+Device*
+Averager_f32_Compose( const char *alias, Device *source, int ichan, int ntimes )
+{ Worker *worker = Worker_Init(alias);
+  Device *dest   = Worker_Get_Device(worker);
+
+  Device_Arm( dest,
+              Worker_Create_Task_Averager_f32(source,ntimes),
+              INFINITE );
+  DeviceTask_Connect( source->task, ichan,
+                      dest->task, 0 );
+  Device_Run( dest );
+  return dest;
+}
+
+Device*
+Caster_Compose( const char *alias, Device *source, int ichan, Basic_Type_ID source_type, Basic_Type_ID dest_type)
+{ Worker *worker = Worker_Init(alias);
+  Device *dest   = Worker_Get_Device(worker);
+
+  Device_Arm( dest,
+              Worker_Create_Task_Caster(source,source_type,dest_type),
+              INFINITE );
+  DeviceTask_Connect( source->task, ichan,
+                      dest->task, 0 );
+  Device_Run( dest );
+  return dest;
 }

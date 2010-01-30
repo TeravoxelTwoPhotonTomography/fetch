@@ -157,7 +157,7 @@ LPCRITICAL_SECTION g_p_shutdown_critical_section = NULL;
 static LPCRITICAL_SECTION _get_shutdown_critical_section(void)
 { static CRITICAL_SECTION gcs;
   if(!g_p_shutdown_critical_section)
-  { InitializeCriticalSectionAndSpinCount( &gcs, 0x80000400 ); // don't assert - Release builds will optimize this out.
+  { InitializeCriticalSectionAndSpinCount( &gcs, 0x80000400 );
     g_p_shutdown_critical_section = &gcs;
   }
   

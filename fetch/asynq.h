@@ -40,6 +40,12 @@
  Notes to self:
  ..............
  - This seems very similar in intention to the SwapChain in DirectX10.
+
+ Return values:
+ -------------
+ Where applicable:
+  1 indicates Success
+  0 indicates Failure
  
 */
 
@@ -63,12 +69,12 @@ asynq *Asynq_Alloc   ( size_t buffer_count, size_t buffer_size_bytes );
 asynq *Asynq_Ref     ( asynq *self );
 int    Asynq_Unref   ( asynq *self );
 
-unsigned int Asynq_Push       ( asynq *self, void **pbuf, int expand_on_full );
-unsigned int Asynq_Push_Copy  ( asynq *self, void  *buf,  int expand_on_full );
-unsigned int Asynq_Push_Try   ( asynq *self, void **pbuf );
-unsigned int Asynq_Push_Timed ( asynq *self, void **pbuf, DWORD timeout_ms );
+unsigned int Asynq_Push       ( asynq *self, void **pbuf, int expand_on_full ); // on overflow, may overwrite or expand
+unsigned int Asynq_Push_Copy  ( asynq *self, void  *buf,  int expand_on_full ); // on overflow, same as push
+unsigned int Asynq_Push_Try   ( asynq *self, void **pbuf );                     // on overflow, fails immediatly
+unsigned int Asynq_Push_Timed ( asynq *self, void **pbuf, DWORD timeout_ms );   // on overflow, waits.  Fails after timeout.
 
-unsigned int Asynq_Pop          ( asynq *self, void **pbuf );
+unsigned int Asynq_Pop          ( asynq *self, void **pbuf );                   // on onderflow, waits forever.
 unsigned int Asynq_Pop_Try      ( asynq *self, void **pbuf );
 unsigned int Asynq_Pop_Copy_Try ( asynq *self, void  *buf  );
 unsigned int Asynq_Pop_Timed    ( asynq *self, void **pbuf, DWORD timeout_ms );

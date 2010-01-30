@@ -84,7 +84,8 @@ unsigned int Microscope_Attach( void )
 }
 
 void Microscope_Application_Start(void)
-{ Microscope_Register_Application_Shutdown_Procs();
+{ Device *cur;
+  Microscope_Register_Application_Shutdown_Procs();
 
   debug("Microscope application start\r\n");
   // TODO: Register devices here
@@ -95,7 +96,6 @@ void Microscope_Application_Start(void)
   //Galvo_Mirror_Init();
   //Digitizer_Init();
   Scanner_Init();
-  // Worker *worker = Worker_Init("scanner/average");
   
   Microscope_Detach();
   Microscope_Attach();
@@ -107,20 +107,19 @@ void Microscope_Application_Start(void)
   Device_Arm( Scanner_Get_Device(), 
               Scanner_Get_Default_Task(),
               INFINITE );
-
-  //Device_Arm( Worker_Get_Device(averager),
-  //            Device_Task_Worker_Create_Averager(),
-  //            INFINITE );
-  //Device_Run( Worker_Get_Device(averager) );
+  cur = Scanner_Get_Device();
+  cur = Caster_Compose             ( "scanner/cast/f32", cur, 0, /*source type*/, id_f32 );
+  cur = Worker_Compose_Averager_f32( "scanner/averager", cur, 0, 10 /*times*/ );
+  cur = Caster_Compose             ( "scanner/cast/u8" , cur, 0, /*source type*/, id_u8 );
 
   Guarded_Assert(
     Device_Run( Disk_Stream_Attach_And_Arm("digitizer-frames",             // alias
                                            "frames.raw", 'w',              // filename
-                                            Scanner_Get_Device(),0) ));    // source
+                                            cur,0) ));                     // source
   Guarded_Assert(
     Device_Run( Disk_Stream_Attach_And_Arm("digitizer-wfm",                // alias
                                            "wfm.raw", 'w',                 // filename
                                             Scanner_Get_Device(),1) ));    // source
                                             
-   Video_Display_Connect_Device( Scanner_Get_Device(), 0 );
+   Video_Display_Connect_Device( cur, 0 );
 }

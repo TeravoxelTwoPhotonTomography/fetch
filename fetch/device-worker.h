@@ -1,6 +1,7 @@
 #pragma once
 #include "stdafx.h"
 #include "device.h"
+#include "device-task-worker.h"
 
 //
 // Intended to act as "softare devices" that transforms data.
@@ -34,3 +35,10 @@ Worker*      Worker_Lookup                   (const char* alias);     // Lookup 
 Device*      Worker_Get_Device               (Worker* self);          // Returns the device for the worker.
 
 unsigned int Workers_Destroy_All             (void);                  // Frees all worker instances.
+
+//
+// Workers
+//
+Device* Worker_Compose_Averager_f32( const char *alias, Device *source, int ichan, int ntimes );
+//TODO: Device* Worker_Compose_Progressive_Averager_f32( const char *alias, Device *source, int ichan );
+Device* Worker_Compose_Caster( const char *alias, Device *source, Basic_Type_ID source_type, Basic_Type_ID dest_type );
