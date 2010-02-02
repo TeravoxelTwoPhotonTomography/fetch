@@ -48,6 +48,7 @@
 #define FRAME_DESCRIPTOR_MAX_METADATA_BYTES 256
 
 #define FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__INTERFACE_ID   0
+#define FRAME_INTERFACE_COMMON                                       0
 #define FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__INTERFACE_ID    1
 #define FRAME_INTERFACE_RESONANT_INTERLEAVED_LINES__INTERFACE_ID     2
 
@@ -106,3 +107,14 @@ size_t            Frame_Get_Size_Bytes ( Frame_Descriptor *desc );              
 Frame*            Frame_Alloc          ( Frame_Descriptor *desc );
 void              Frame_Free           ( void );
 void              Frame_Set            ( Frame *bytes, void **data, Frame_Descriptor **desc );
+
+//
+// Common frame interface 
+//
+#include "frame-interface-digitizer.h"
+
+typedef Digitizer_Frame_Metadata Common_Frame_Metadata;
+
+size_t  Frame_Get_Common_Size_Bytes( Frame *frm );
+void    Frame_Copy_To_Common( Frame *dst, Frame *src );
+int     Frame_Is_Common( Frame *self );
