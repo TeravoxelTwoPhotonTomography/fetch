@@ -133,6 +133,18 @@ Frame_Get( void *bytes, void **data, Frame_Descriptor **desc )
   *data = (void*) ((u8*)bytes + sizeof( Frame_Descriptor ));
 }
 
+
+//----------------------------------------------------------------------------
+// Frame_Get_Interface
+//----------------------------------------------------------------------------
+Frame_Interface*
+Frame_Get_Interface( Frame *self )
+{ Frame_Descriptor *desc;
+  void *data;
+  Frame_Get(self,&data,&desc);
+  return Frame_Descriptor_Get_Interface(desc);
+}
+
 //----------------------------------------------------------------------------
 // Frame_Alloc
 //----------------------------------------------------------------------------

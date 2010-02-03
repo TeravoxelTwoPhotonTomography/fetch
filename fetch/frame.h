@@ -109,6 +109,7 @@ size_t            Frame_Get_Size_Bytes ( Frame_Descriptor *desc );              
 Frame*            Frame_Alloc          ( Frame_Descriptor *desc );
 void              Frame_Free           ( void );
 void              Frame_Get            ( Frame *bytes, void **data, Frame_Descriptor **desc );
+Frame_Interface  *Frame_Get_Interface  ( Frame *self );
 
 //
 // Common frame interface 

@@ -390,7 +390,8 @@ _Frame_Caster_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
       dst_cur = dst + nelem;\
       while( src_cur >= src )\
         *(--dst_cur) = (TO) *(--src_cur);\
-      memcpy(dst_desc,src_desc,sizeof(Frame_Descriptor)); // FIXME: need to set to destination pixel type
+      memcpy(dst_desc,src_desc,sizeof(Frame_Descriptor));\
+      f->set_type( dst_desc, ctx->dest_type );\
       goto_if_fail(\
         Asynq_Push_Timed( qdst, &fdst, WORKER_DEFAULT_TIMEOUT ),\
         OutputQueueTimeoutError);\
@@ -411,6 +412,7 @@ _Frame_Caster_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
          
   Frame *fsrc =  (Frame*)Asynq_Token_Buffer_Alloc(qsrc),
         *fdst =  (Frame*)Asynq_Token_Buffer_Alloc(qdst);
+  Frame_Interface *f = Frame_Get_Interface(fdst);
 
   switch( ctx->source_type )
   { case id_u8:
@@ -644,51 +646,64 @@ _Frame_Averager_f32_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 
   asynq *qsrc =  in->contents[ 0 ],
         *qdst = out->contents[ 0 ];
-//XXX: HERE
-  Frame *buf = (Frame*) Asynq_Token_Buffer_Alloc(qsrc),
-        *acc = (Frame*) Asynq_Token_Buffer_Alloc(qdst);
-  size_t nbytes = qdst->q->buffer_size_bytes,
-         nelem  = nbytes / sizeof(f32);
 
-  int count=0,
-      every = ((struct _averager_context*) d->context)->ntimes;
-  _free_context(d); // at this point we're done with the context which is basically just used to pass parameters
+  Frame *fsrc = (Frame*) Asynq_Token_Buffer_Alloc(qsrc),
+        *fdst = (Frame*) Asynq_Token_Buffer_Alloc(qdst);
+  Frame_Descriptor *src_desc, *dst_desc;
+  f32 *buf, *acc;
 
-  memset( acc, 0, nbytes ); 
-  do
-  { while( Asynq_Pop(qsrc, (void**)&buf) )
-    { f32 *src_cur = buf + nelem,
-          *acc_cur = acc + nelem;
-      while( src_cur >= buf )            // accumulate
-        *(--acc_cur) += *(--src_cur);
-      if( count % every == 0 )           // emit and reset every so often
-      { acc_cur = acc + nelem;
-        while( acc_cur-- > acc )         //   average
-          *acc_cur /= (float)count;
-        goto_if_fail(                    //   push - wait till successful
-          Asynq_Push_Timed( qdst, (void**)&acc, WORKER_DEFAULT_TIMEOUT ),
-          OutputQueueTimeoutError);
-        memset( acc, 0, nbytes );        //   clear the recieved buffer
+  Frame_Get(fsrc, (void**)&buf, &src_desc);
+  Frame_Get(fdst, (void**)&acc, &dst_desc);
+  Guarded_Assert( src_desc->interface_id == dst_desc->interface_id );
+
+  { Frame_Interface *fint = Frame_Descriptor_Get_Interface( src_desc ); // source and dest have same interface
+    size_t nbytes = f->get_source_nbytes( dst_desc ), //bytes in acc
+            nelem = nbytes / sizeof(f32);
+
+    int count=0,
+        every = ctx->ntimes;
+    _free_context(d); // at this point we're done with the context which is basically just used to pass parameters
+
+    memset( acc, 0, nbytes ); 
+    do
+    { while( Asynq_Pop(qsrc, (void**)&fsrc) )
+      { 
+        f32 *src_cur,*acc_cur;
+        Frame_Get(fsrc, (void**)&buf, &src_desc);
+        *src_cur = buf + nelem;
+        *acc_cur = acc + nelem;
+        while( src_cur >= buf )            // accumulate
+          *(--acc_cur) += *(--src_cur);
+        if( count % every == 0 )           // emit and reset every so often
+        { acc_cur = acc + nelem;
+          while( acc_cur-- > acc )         //   average
+            *acc_cur /= (float)count;
+          goto_if_fail(                    //   push - wait till successful
+            Asynq_Push_Timed( qdst, (void**)&fdst, WORKER_DEFAULT_TIMEOUT ),
+            OutputQueueTimeoutError);
+          Frame_Get(fdst, (void**)&acc, &dst_desc);
+          memset( acc, 0, nbytes );        //   clear the recieved buffer
+        }
       }
-    }
-  } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
-  Asynq_Token_Buffer_Free(buf);
-  Asynq_Token_Buffer_Free(acc);
+    } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
+  }
+  Asynq_Token_Buffer_Free(fsrc);
+  Asynq_Token_Buffer_Free(fdst);
   return 0;
 OutputQueueTimeoutError:
   warning("Pushing to output queue timedout\r\n.");
-  Asynq_Token_Buffer_Free(buf);
-  Asynq_Token_Buffer_Free(acc);
+  Asynq_Token_Buffer_Free(fsrc);
+  Asynq_Token_Buffer_Free(fdst);
   return 1; // failure
 }
 
 DeviceTask*
-Worker_Create_Task_Averager_f32(Device *d, unsigned int ntimes)
+Worker_Create_Task_Frame_Averager_f32(Device *d, unsigned int ntimes)
 { // 1. setup context
-  d->context = Guarded_Malloc( sizeof(struct _averager_context), "Worker_Create_Task_Averager" );
-  ((struct _averager_context*)d->context)->ntimes = ntimes; // Boy, do I feel awkward.
+  d->context = Guarded_Malloc( sizeof(FAC), "Worker_Create_Task_Frame_Averager" );
+  ((FAC*)d->context)->ntimes         = ntimes;
   
   // 2. make task
-  return DeviceTask_Alloc(_Averager_f32_Cfg,
-                          _Averager_f32_Proc);          
+  return DeviceTask_Alloc(_Frame_Averager_f32_Cfg,
+                          _Frame_Averager_f32_Proc);          
 }

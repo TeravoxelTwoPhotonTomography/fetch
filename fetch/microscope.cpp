@@ -107,12 +107,12 @@ void Microscope_Application_Start(void)
   Device_Arm( Scanner_Get_Device(), 
               Scanner_Get_Default_Task(),
               INFINITE );
-  cur = Scanner_Get_Device();                                    // FIXME - types
-  cur = Worker_Compose_Caster      ( "scanner/cast/f32", 
-                                      cur, 0,
-                                      id_i16/*source type*/, id_f32 );
-  cur = Worker_Compose_Averager_f32( "scanner/averager", cur, 0, 10 /*times*/ );
-  cur = Worker_Compose_Caster      ( "scanner/cast/u8" , cur, 0, id_f32/*source type*/, id_u8 );
+  cur = Scanner_Get_Device();
+  cur = Worker_Compose_Frame_Caster      ( "scanner/cast/f32", 
+                                           cur, 0,
+                                           id_i16/*source type*/, id_f32 );
+  cur = Worker_Compose_Frame_Averager_f32( "scanner/averager", cur, 0, 10 /*times*/ );
+  cur = Worker_Compose_Frame_Caster      ( "scanner/cast/u8" , cur, 0, id_f32/*source type*/, id_u8 );
 
   Guarded_Assert(
     Device_Run( Disk_Stream_Attach_And_Arm("digitizer-frames",             // alias
