@@ -13,6 +13,7 @@
 
 Frame_Interface g_interfaces[] = {
   { frame_interface_digitizer__default__get_type,        // 0 - digitizer-interleaved-planes
+    frame_interface_digitizer__default__set_type,
     frame_interface_digitizer__default__get_nchannels,
     frame_interface_digitizer__default__get_nbytes,
     frame_interface_digitizer__default__get_nbytes,
@@ -21,6 +22,7 @@ Frame_Interface g_interfaces[] = {
     frame_interface_digitizer__default__get_dimensions    
   },  
   { frame_interface_digitizer__default__get_type,        // 1 - digitizer-interleaved-lines
+    frame_interface_digitizer__default__set_type,
     frame_interface_digitizer__default__get_nchannels,
     frame_interface_digitizer__default__get_nbytes,
     frame_interface_digitizer__default__get_nbytes,
@@ -29,6 +31,7 @@ Frame_Interface g_interfaces[] = {
     frame_interface_digitizer__default__get_dimensions
   },
   { frame_interface_resonant__default__get_type,         // 2 - resonant-interleaved-lines
+    frame_interface_resonant__default__set_type,
     frame_interface_resonant__default__get_nchannels,
     frame_interface_resonant__default__get_src_nbytes,
     frame_interface_resonant__default__get_dst_nbytes,
@@ -122,10 +125,10 @@ Frame_Get_Size_Bytes ( Frame_Descriptor *desc )
 }
 
 //----------------------------------------------------------------------------
-// Frame_Set
+// Frame_Get
 //----------------------------------------------------------------------------
 void
-Frame_Set( void *bytes, void **data, Frame_Descriptor **desc )
+Frame_Get( void *bytes, void **data, Frame_Descriptor **desc )
 { *desc = (Frame_Descriptor*) bytes;
   *data = (void*) ((u8*)bytes + sizeof( Frame_Descriptor ));
 }
@@ -139,7 +142,7 @@ Frame_Alloc( Frame_Descriptor *desc )
   Frame_Descriptor *target;
   void *data, 
        *frame = Guarded_Malloc( nbytes, "Frame_Alloc" );  
-  Frame_Set( frame, &data, &target);
+  Frame_Get( frame, &data, &target);
   memcpy(target, desc, sizeof(Frame_Descriptor) );
   return frame;
 }
@@ -163,7 +166,7 @@ size_t  Frame_Get_Common_Size_Bytes( Frame *frm )
   void *data;
   Frame_Interface *f;
   size_t nchan;
-  Frame_Set(frm,&data, &desc);
+  Frame_Get(frm,&data, &desc);
   f = Frame_Descriptor_Get_Interface(desc);
   nchan = f->get_nchannels(desc);
   return g->get_destination_nbytes(desc) * nchan + sizeof(Frame_Descriptor);
@@ -175,8 +178,8 @@ void    Frame_Copy_To_Common( Frame *dst, Frame *src )
   Common_Frame_Metadata *fmt;
   Frame_Interface *f;
 
-  Frame_Set(dst,&dst_buf,&dst_desc);
-  Frame_Set(src,&src_buf,&src_desc);
+  Frame_Get(dst,&dst_buf,&dst_desc);
+  Frame_Get(src,&src_buf,&src_desc);
   f = Frame_Descriptor_Get_Interface(src_desc);
   fmt = (Common_Frame_Metadata*) dst_desc->metadata;
 
@@ -195,6 +198,6 @@ int
 Frame_Is_Common(Frame *self)
 { Frame_Descriptor *desc;
   void *buf;
-  Frame_Set(self,&buf,&desc);
+  Frame_Get(self,&buf,&desc);
   return desk->interface_id == FRAME_INTERFACE_COMMON;
 }

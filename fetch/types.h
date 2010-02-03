@@ -22,5 +22,4 @@ typedef struct _basic_type_attribute
   int is_floating;
 } Basic_Type_Attribute;
 
-extern const
-Basic_Type_Attribute g_type_attributes[];
+extern const Basic_Type_Attribute g_type_attributes[];

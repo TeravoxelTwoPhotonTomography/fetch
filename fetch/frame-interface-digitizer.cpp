@@ -19,6 +19,13 @@ frame_interface_digitizer__default__get_type (Frame_Descriptor* fd)
   return meta->rtti;
 }
 
+void
+frame_interface_digitizer__default__set_type( Frame_Descriptor* fd, Basic_Type_ID type)
+{ Digitizer_Frame_Metadata *meta = (Digitizer_Frame_Metadata*) fd->metadata;
+  meta->rtti = type;
+  meta->Bpp = g_type_attributes[ type ].bytes;
+}
+
 size_t
 frame_interface_digitizer__default__get_nchannels (Frame_Descriptor* fd)
 { Digitizer_Frame_Metadata *meta = (Digitizer_Frame_Metadata*) fd->metadata;

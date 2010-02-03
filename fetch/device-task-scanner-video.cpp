@@ -334,7 +334,7 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   TaskHandle  ao_task = scanner->daq_ao;
   TaskHandle clk_task = scanner->daq_clk;
 
-  Frame_Set(frm, (void**)&buf, &desc);  
+  Frame_Get(frm, (void**)&buf, &desc);  
   _fill_frame_description(desc);
   change_token = desc->change_token;
   ref = *desc;
@@ -367,7 +367,7 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
     { warning("Digitizer output queue overflowed.\r\n\tAborting acquisition task.\r\n");
       goto Error;
     }
-    Frame_Set(frm, (void**)&buf, &desc ); // The push swapped the frame buffer
+    Frame_Get(frm, (void**)&buf, &desc ); // The push swapped the frame buffer
     memcpy(desc,&ref,sizeof(Frame_Descriptor));  // ...so update buf and desc
 
     DAQJMP( DAQmxWaitUntilTaskDone (clk_task,DAQmx_Val_WaitInfinitely));

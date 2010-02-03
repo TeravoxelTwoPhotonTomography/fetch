@@ -18,6 +18,7 @@ typedef struct _t_resonant_frame_metadata
 
 
 Basic_Type_ID frame_interface_resonant__default__get_type                 ( Frame_Descriptor* fd);
+void          frame_interface_resonant__default__set_type                 ( Frame_Descriptor* fd, Basic_Type_ID type);
 size_t        frame_interface_resonant__default__get_nchannels            ( Frame_Descriptor* fd);                          // get number of channels
 size_t        frame_interface_resonant__default__get_src_nbytes           ( Frame_Descriptor* fd);                          // get size of internal buffer (bytes)
 size_t        frame_interface_resonant__default__get_dst_nbytes           ( Frame_Descriptor* fd);                          // get size of destination buffer (single channel) in bytes

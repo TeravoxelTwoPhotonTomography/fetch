@@ -68,6 +68,13 @@ frame_interface_resonant__default__get_type (Frame_Descriptor* fd)
   return fmt->rtti;
 }
 
+void
+frame_interface_digitizer__default__set_type( Frame_Descriptor* fd, Basic_Type_ID type)
+{ Resonant_Frame_Metadata *meta = (Resonant_Frame_Metadata*) fd->metadata;
+  meta->rtti = type;
+  meta->Bpp = g_type_attributes[ type ].bytes;
+}
+
 size_t
 frame_interface_resonant__default__get_nchannels (Frame_Descriptor* fd)
 { DEBUG_FRAME_INTERFACE_RESONANT_INTERLEAVED_LINES__CHECK_DESCRIPTOR 

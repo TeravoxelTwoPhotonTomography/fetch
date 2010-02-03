@@ -62,6 +62,7 @@ typedef struct _t_frame_descriptor
 } Frame_Descriptor;
 
 typedef Basic_Type_ID (*tfp_frame_get_type)                    ( Frame_Descriptor* fd);                              // get pixel type
+typedef void          (*tfp_frame_set_type)                    ( Frame_Descriptor* fd, Basic_Type_ID type);          // set pixel type (change descriptor)
 typedef size_t        (*tfp_frame_get_nchannels)               ( Frame_Descriptor* fd);                              // gets channel count
 typedef size_t        (*tfp_frame_get_source_nbytes)           ( Frame_Descriptor* fd);                              // gets size of internal buffer in bytes (covers all channels)
 typedef size_t        (*tfp_frame_get_destination_nbytes)      ( Frame_Descriptor* fd);                              // gets size needed for destination buffer (one channel)
@@ -71,6 +72,7 @@ typedef void          (*tfp_frame_get_destination_dimensions)  ( Frame_Descripto
 
 typedef struct _t_frame_interface
 { tfp_frame_get_type                   get_type;                  // Abstract interface
+  tfp_frame_set_type                   set_type;
   tfp_frame_get_nchannels              get_nchannels;
   tfp_frame_get_source_nbytes          get_source_nbytes;
   tfp_frame_get_destination_nbytes     get_destination_nbytes;
@@ -96,17 +98,17 @@ u8                Frame_Descriptor_From_File_Read_Next  ( FILE *fp, Frame_Descri
 // To create a frame:
 //
 // 1. allocate a buffer of size Frame_Get_Size_Bytes with malloc
-// 2. Use Frame_Set to get access to the data and the frame description.
+// 2. Use Frame_Get to get access to the data and the frame description.
 // 3. Set the descriptor
 // - or -
 // 1. Use Frame_Alloc
-// 2. Use Frame_Set to get access to the data and the frame description.
+// 2. Use Frame_Get to get access to the data and the frame description.
 // 
 
 size_t            Frame_Get_Size_Bytes ( Frame_Descriptor *desc );                             // Returns size of frame in bytes (descriptor + internal buffer)
 Frame*            Frame_Alloc          ( Frame_Descriptor *desc );
 void              Frame_Free           ( void );
-void              Frame_Set            ( Frame *bytes, void **data, Frame_Descriptor **desc );
+void              Frame_Get            ( Frame *bytes, void **data, Frame_Descriptor **desc );
 
 //
 // Common frame interface 
@@ -115,6 +117,6 @@ void              Frame_Set            ( Frame *bytes, void **data, Frame_Descri
 
 typedef Digitizer_Frame_Metadata Common_Frame_Metadata;
 
-size_t  Frame_Get_Common_Size_Bytes( Frame *frm );
-void    Frame_Copy_To_Common( Frame *dst, Frame *src );
-int     Frame_Is_Common( Frame *self );
+size_t  Frame_Get_Common_Size_Bytes ( Frame *frm );
+void    Frame_Copy_To_Common        ( Frame *dst, Frame *src );
+int     Frame_Is_Common             ( Frame *self );

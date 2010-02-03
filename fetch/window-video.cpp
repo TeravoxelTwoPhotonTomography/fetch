@@ -612,12 +612,12 @@ void Video_Display_Render_One_Frame()
     
       if(!frm)
       { frm  = (Frame*) Asynq_Token_Buffer_Alloc( q );
-        Frame_Set( frm, &src, &desc );
+        Frame_Get( frm, &src, &desc );
       }
       
       if( Asynq_Peek_Timed(q, frm, (DWORD) wait_time_ms ) )
       { int i;
-        Frame_Set( frm, &src, &desc );
+        Frame_Get( frm, &src, &desc );
         if( desc->change_token != last_change_token)               // RESIZE!
         { RECT *rect = NULL;
           last_change_token = desc->change_token;

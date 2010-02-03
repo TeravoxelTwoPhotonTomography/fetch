@@ -16,6 +16,7 @@ typedef struct _t_digitizer_frame_metadata
 } Digitizer_Frame_Metadata;
 
 Basic_Type_ID frame_interface_digitizer__default__get_type                 ( Frame_Descriptor* fd);
+void          frame_interface_digitizer__default__set_type                 ( Frame_Descriptor* fd, Basic_Type_ID type);
 size_t        frame_interface_digitizer__default__get_nchannels            ( Frame_Descriptor* fd);                              // gets channel count
 size_t        frame_interface_digitizer__default__get_nbytes               ( Frame_Descriptor* fd);                              // gets bytes per channel
 void          frame_interface_digitizer__default__get_dimensions           ( Frame_Descriptor* fd, vector_size_t *vdim );        // returns the dimensions and number of dimensions of the channel
