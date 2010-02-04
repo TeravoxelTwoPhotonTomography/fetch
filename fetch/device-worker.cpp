@@ -217,3 +217,14 @@ Worker_Compose_Frame_Caster( const char *alias, Device *source, int ichan, Basic
   Guarded_Assert( Device_Run( dest ));
   return dest;
 }
+
+Device*
+Worker_Compose_Terminator( const char *alias, Device *source, int ichan )
+{ Worker   *worker = Worker_Init(alias);
+  Device     *dest = Worker_Get_Device(worker);
+  DeviceTask *task = Worker_Create_Task_Terminator();
+  DeviceTask_Connect( task, 0, source->task, ichan );
+  Guarded_Assert( Device_Arm( dest, task,INFINITE ));
+  Guarded_Assert( Device_Run( dest ));
+  return dest;
+}

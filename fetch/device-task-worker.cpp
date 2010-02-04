@@ -708,3 +708,51 @@ Worker_Create_Task_Frame_Averager_f32(Device *d, unsigned int ntimes)
   return DeviceTask_Alloc(_Frame_Averager_f32_Cfg,
                           _Frame_Averager_f32_Proc);          
 }
+
+
+//----------------------------------------------------------------------------
+//
+//  Terminator
+//  - will continuously pop every attached input queue
+//
+
+#define TERMINATOR_DEFAULT_WAIT_TIME_MS 10
+
+unsigned int
+_Terminator_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
+{ return 1; // success
+}
+
+unsigned int
+_Terminator_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
+{ FAC *ctx = (FAC*) d->context;
+
+  asynq **q =  in->contents,
+        **c =  q + in->nelem;
+  void *buf;
+    
+  // alloc the trash buffer
+  { size_t max=0;
+    while(c-- > q)
+      max = MAX(max, c[0]->q->buffer_size_bytes);
+    goto_if_fail( buf = malloc(max), OutOfMemoryError );
+  }
+  
+  // main loop  
+  do {
+    c =  q + in->nelem;
+    while(c-- > q)
+      Asynq_Pop_Try(*c,&buf);
+  } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, TERMINATOR_DEFAULT_WAIT_TIME_MS) );
+  free(buf);
+  return 0; // success
+OutOfMemoryError:
+  warning("Could not allocate trash buffer\r\n");
+  return 1; // failure
+}
+
+DeviceTask*
+Worker_Create_Task_Terminator(void)
+{  return DeviceTask_Alloc(_Terminator_Cfg,
+                           _Terminator_Proc);          
+}

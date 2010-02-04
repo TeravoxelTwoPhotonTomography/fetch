@@ -44,3 +44,4 @@ Device* Worker_Compose_Averager_f32       ( const char *alias, Device *source, i
 Device* Worker_Compose_Caster             ( const char *alias, Device *source, int ichan, Basic_Type_ID source_type, Basic_Type_ID dest_type );
 Device* Worker_Compose_Frame_Averager_f32 ( const char *alias, Device *source, int ichan, int ntimes );
 Device* Worker_Compose_Frame_Caster       ( const char *alias, Device *source, int ichan, Basic_Type_ID source_type, Basic_Type_ID dest_type);
+Device* Worker_Compose_Terminator         ( const char *alias, Device *source, int ichan );
