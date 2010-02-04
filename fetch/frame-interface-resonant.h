@@ -4,7 +4,7 @@
 #include "frame.h"
 #include "types.h"
 
-#define FRAME_INTERFACE_RESONANT_INTERLEAVED_LINES__METADATA_BYTES  16 //sizeof(t_resonant_frame_metadata);
+#define FRAME_INTERFACE_RESONANT_INTERLEAVED_LINES__METADATA_BYTES  20 //sizeof(t_resonant_frame_metadata);
 
 typedef struct _t_resonant_frame_metadata
 { u16           in_width;

@@ -4,8 +4,8 @@
 #include "frame.h"
 #include "types.h"
 
-#define FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__METADATA_BYTES 6 // sizeof(t_digitizer_frame_metadata);
-#define FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__METADATA_BYTES  6 // sizeof(t_digitizer_frame_metadata);
+#define FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__METADATA_BYTES 12 // sizeof(t_digitizer_frame_metadata);
+#define FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__METADATA_BYTES  12 // sizeof(t_digitizer_frame_metadata);
 
 typedef struct _t_digitizer_frame_metadata
 { u16 width;

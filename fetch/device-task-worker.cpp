@@ -102,7 +102,7 @@ Worker_Create_Task_Averager_f32(Device *d, unsigned int ntimes)
 //  - one channel in, one channel out
 //
 
-struct _caster_context
+typedef struct _caster_context
 { Basic_Type_ID source_type,
                 dest_type;
 } CC;
@@ -384,13 +384,15 @@ _Frame_Caster_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
     { TI *src, *src_cur;\
       TO *dst, *dst_cur;\
       Frame_Descriptor *src_desc, *dst_desc;\
-      Frame_Get(fsrc, &src, &src_desc);\
-      Frame_Get(fdst, &dst, &dst_desc);\
+      Frame_Get(fsrc, (void**)&src, &src_desc);\
+      Frame_Get(fdst, (void**)&dst, &dst_desc);\
       src_cur = src + nelem;\
       dst_cur = dst + nelem;\
       while( src_cur >= src )\
         *(--dst_cur) = (TO) *(--src_cur);\
       memcpy(dst_desc,src_desc,sizeof(Frame_Descriptor));\
+      if(!f)\
+        f = Frame_Get_Interface(fsrc);\
       f->set_type( dst_desc, ctx->dest_type );\
       goto_if_fail(\
         Asynq_Push_Timed( qdst, &fdst, WORKER_DEFAULT_TIMEOUT ),\
@@ -406,14 +408,14 @@ _Frame_Caster_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   asynq *qsrc = in->contents[0],
         *qdst = out->contents[0];
 
-  size_t nbytes_in = qdst->q->buffer_size_bytes,
+  size_t nbytes_in = qsrc->q->buffer_size_bytes - sizeof(Frame_Descriptor),
          Bpp_in    = g_type_attributes[ ctx->source_type ].bytes,
          nelem     = nbytes_in / Bpp_in;
          
   Frame *fsrc =  (Frame*)Asynq_Token_Buffer_Alloc(qsrc),
         *fdst =  (Frame*)Asynq_Token_Buffer_Alloc(qdst);
-  Frame_Interface *f = Frame_Get_Interface(fdst);
-
+  Frame_Interface *f = NULL;//Frame_Get_Interface(fdst); // source and destination must have same interface
+                                                         // thought pixel type may differ
   switch( ctx->source_type )
   { case id_u8:
     { switch( ctx->dest_type )
@@ -652,12 +654,9 @@ _Frame_Averager_f32_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   Frame_Descriptor *src_desc, *dst_desc;
   f32 *buf, *acc;
 
-  Frame_Get(fsrc, (void**)&buf, &src_desc);
-  Frame_Get(fdst, (void**)&acc, &dst_desc);
-  Guarded_Assert( src_desc->interface_id == dst_desc->interface_id );
+  Frame_Get(fdst, (void**)&acc, &dst_desc); // descriptor not valid yet.
 
-  { Frame_Interface *fint = Frame_Descriptor_Get_Interface( src_desc ); // source and dest have same interface
-    size_t nbytes = f->get_source_nbytes( dst_desc ), //bytes in acc
+  { size_t nbytes = in->contents[ 0 ]->q->buffer_size_bytes - sizeof(Frame_Descriptor), //bytes in acc
             nelem = nbytes / sizeof(f32);
 
     int count=0,
@@ -670,14 +669,16 @@ _Frame_Averager_f32_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
       { 
         f32 *src_cur,*acc_cur;
         Frame_Get(fsrc, (void**)&buf, &src_desc);
-        *src_cur = buf + nelem;
-        *acc_cur = acc + nelem;
+        
+        src_cur = buf + nelem;
+        acc_cur = acc + nelem;
         while( src_cur >= buf )            // accumulate
           *(--acc_cur) += *(--src_cur);
         if( count % every == 0 )           // emit and reset every so often
         { acc_cur = acc + nelem;
           while( acc_cur-- > acc )         //   average
             *acc_cur /= (float)count;
+          memcpy( dst_desc, src_desc, sizeof(Frame_Descriptor) );  
           goto_if_fail(                    //   push - wait till successful
             Asynq_Push_Timed( qdst, (void**)&fdst, WORKER_DEFAULT_TIMEOUT ),
             OutputQueueTimeoutError);

@@ -9,20 +9,19 @@
 //
 
 typedef struct _worker
-  { u32   index;                                  // index into the instance array
-    char *alias;                                  // points to alias stored in indexed item
-  } Worker;
+{ u32   index;                                  // index into the instance array
+  char *alias;                                  // points to alias stored in indexed item
+} Worker;
 
 #define WORKER_EMPTY {-1,NULL}
 
-
 typedef struct _worker_index_item
-  { char         alias[WORKER_ALIAS_LENGTH];
-    Worker       worker;
-    Device      *device;
-  } Worker_Index_Item;
+{ char         alias[WORKER_ALIAS_LENGTH];
+  Worker       worker;
+  Device      *device;
+} Worker_Index_Item;
 
-#define WORKER_INDEX_ITEM_EMPTY = {"\0",WORKER_EMPTY,NULL};
+#define WORKER_INDEX_ITEM_EMPTY  {"\0",WORKER_EMPTY,NULL}
 
 TYPE_VECTOR_DECLARE(Worker_Index_Item);
 
@@ -44,4 +43,4 @@ Device* Worker_Compose_Averager_f32       ( const char *alias, Device *source, i
 //TODO: Device* Worker_Compose_Progressive_Averager_f32( const char *alias, Device *source, int ichan );
 Device* Worker_Compose_Caster             ( const char *alias, Device *source, int ichan, Basic_Type_ID source_type, Basic_Type_ID dest_type );
 Device* Worker_Compose_Frame_Averager_f32 ( const char *alias, Device *source, int ichan, int ntimes );
-Device* Worker_Compose_Frame_Caster       ( const char *alias, Device *source, int ichan, Basic_Type_ID source_type, Basic_Type_ID dest_type)
+Device* Worker_Compose_Frame_Caster       ( const char *alias, Device *source, int ichan, Basic_Type_ID source_type, Basic_Type_ID dest_type);

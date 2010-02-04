@@ -181,7 +181,7 @@ size_t  Frame_Get_Common_Size_Bytes( Frame *frm )
   Frame_Get(frm,&data, &desc);
   f = Frame_Descriptor_Get_Interface(desc);
   nchan = f->get_nchannels(desc);
-  return g->get_destination_nbytes(desc) * nchan + sizeof(Frame_Descriptor);
+  return f->get_destination_nbytes(desc) * nchan + sizeof(Frame_Descriptor);
 }
 
 void    Frame_Copy_To_Common( Frame *dst, Frame *src )
@@ -196,11 +196,11 @@ void    Frame_Copy_To_Common( Frame *dst, Frame *src )
   fmt = (Common_Frame_Metadata*) dst_desc->metadata;
 
   if( src_desc->interface_id != FRAME_INTERFACE_COMMON )
-  { int i;
+  { size_t i;
     size_t line_stride = fmt->width * fmt->Bpp,
            chan_stride = fmt->height * line_stride;
-    for(i=0;i<f->get_nchan(src_desc),i++)
-      f->copy_channel(src_desc, dst_buf + chan_stride * i, line_stride, src_buf, i);
+    for(i=0; i<f->get_nchannels(src_desc); i++)
+      f->copy_channel(src_desc, (u8*)dst_buf + chan_stride * i, line_stride, src_buf, i);
   } else
   { memcpy( dst_buf, src_buf, f->get_source_nbytes(src_desc) );
   }
@@ -211,5 +211,5 @@ Frame_Is_Common(Frame *self)
 { Frame_Descriptor *desc;
   void *buf;
   Frame_Get(self,&buf,&desc);
-  return desk->interface_id == FRAME_INTERFACE_COMMON;
+  return desc->interface_id == FRAME_INTERFACE_COMMON;
 }
