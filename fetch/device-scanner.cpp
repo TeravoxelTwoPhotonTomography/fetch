@@ -63,13 +63,13 @@ void Scanner_Init(void)
 { Guarded_Assert( gp_scanner_device = Device_Alloc() );
   gp_scanner_device->context = (void*) &g_scanner;
 
-  Digitizer_Init();
-
-  // Register Shutdown functions - these get called in reverse order
-  Register_New_Shutdown_Callback( &_scanner_free_tasks );
-  Register_New_Shutdown_Callback( &Scanner_Destroy );
+  // Register Shutdown functions - these get called in order
   Register_New_Shutdown_Callback( &Scanner_Detach );
-
+  Register_New_Shutdown_Callback( &Scanner_Destroy );
+  Register_New_Shutdown_Callback( &_scanner_free_tasks );
+  
+  Digitizer_Init();  // this registers it's own shutdown functions so must follow the scanner shutdown functions.
+  
 #ifndef DIGITIZER_NO_REGISTER_WITH_MICROSCOPE  
   // Register Microscope state functions
   Register_New_Microscope_Attach_Callback( &Scanner_Attach );

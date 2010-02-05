@@ -71,10 +71,10 @@ void Disk_Stream_Init(void)
 { Guarded_Assert(
     gv_streams = vector_Disk_Stream_Index_Item_alloc( DISK_STREAM_DEFAULT_INDEX_CAPACITY ) );
 
-  // Register Shutdown functions - these get called in reverse order
-  //Register_New_Shutdown_Callback( &_disk_stream_free_tasks );
-  Register_New_Shutdown_Callback( &Disk_Stream_Destroy );
+  // Register Shutdown functions - these get called in order
   Register_New_Shutdown_Callback( &Disk_Stream_Detach_All );
+  Register_New_Shutdown_Callback( &Disk_Stream_Destroy );
+  //Register_New_Shutdown_Callback( &_disk_stream_free_tasks );
   
   // Register Microscope state functions
   //XXX Register_New_Microscope_Attach_Callback( &Disk_Stream_Attach );

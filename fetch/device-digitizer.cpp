@@ -62,11 +62,10 @@ void Digitizer_Init(void)
 { Guarded_Assert( gp_digitizer_device = Device_Alloc() );
   gp_digitizer_device->context = (void*) &g_digitizer;
 
-  // Register Shutdown functions - these get called in reverse order
-  Register_New_Shutdown_Callback( &_digitizer_free_tasks );
-  Register_New_Shutdown_Callback( &Digitizer_Destroy );
+  // Register Shutdown functions - these get called in order
   Register_New_Shutdown_Callback( &Digitizer_Detach );
-
+  Register_New_Shutdown_Callback( &Digitizer_Destroy );
+  Register_New_Shutdown_Callback( &_digitizer_free_tasks );
 
 #ifndef DIGITIZER_NO_REGISTER_WITH_MICROSCOPE  
   // Register Microscope state functions

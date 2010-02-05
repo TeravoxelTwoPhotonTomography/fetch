@@ -186,13 +186,15 @@ unsigned int Shutdown_Soft(void)
   { size_t cnt = g_shutdown_callbacks.count;
     
     pf_shutdown_callback *beg = g_shutdown_callbacks.contents,
-                         *cur = beg+cnt;
+                         *end = beg+cnt,
+                         *cur;
 
     static int lock = 0;// Avoid recursion
     assert( lock == 0 ); 
     lock = 1;
 
-    while( cur-- > beg )          // shutdown functions must be called in a defined order
+    //swhile( cur-- > beg )          
+    for( cur = beg; cur < end; cur++ ) // shutdown functions must be called in a defined order
       if(cur)
         err |= (*cur)();        
     lock = 0;

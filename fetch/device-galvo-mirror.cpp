@@ -45,14 +45,14 @@ void Galvo_Mirror_Init(void)
 { Guarded_Assert( gp_galvo_mirror_device = Device_Alloc() );
   gp_galvo_mirror_device->context = (void*) &g_galvo_mirror;
 
-  // Register Shutdown functions - these get called in reverse order
-  Register_New_Shutdown_Callback( &_galvo_mirror_free_tasks );
-  Register_New_Shutdown_Callback( &Galvo_Mirror_Destroy );
+  // Register Shutdown functions - these get called in order
   Register_New_Shutdown_Callback( &Galvo_Mirror_Detach );
+  Register_New_Shutdown_Callback( &Galvo_Mirror_Destroy );
+  Register_New_Shutdown_Callback( &_galvo_mirror_free_tasks );
   
   // Register Microscope state functions
   Register_New_Microscope_Attach_Callback( &Galvo_Mirror_Attach );
-  Register_New_Microscope_Detach_Callback   ( &Galvo_Mirror_Detach );
+  Register_New_Microscope_Detach_Callback( &Galvo_Mirror_Detach );
   
   // Create tasks
   gp_galvo_mirror_tasks[0] = Galvo_Mirror_Create_Task_Continuous_Scan_Immediate_Trigger();
