@@ -192,9 +192,9 @@ unsigned int Shutdown_Soft(void)
     assert( lock == 0 ); 
     lock = 1;
 
-    while( cur-- > beg )
+    while( cur-- > beg )          // shutdown functions must be called in a defined order
       if(cur)
-        err |= (*cur)();
+        err |= (*cur)();        
     lock = 0;
 
     vector_pf_shutdown_callback_free_contents( &g_shutdown_callbacks );

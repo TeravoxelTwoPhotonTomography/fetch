@@ -380,7 +380,7 @@ _Frame_Caster_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 
 #define _FRAME_CASTER_LOOP(TI,TO) {\
   do\
-  { while( Asynq_Pop(qsrc, &fsrc) )\
+  { while( Asynq_Pop_Try(qsrc, &fsrc) )\
     { TI *src, *src_cur;\
       TO *dst, *dst_cur;\
       Frame_Descriptor *src_desc, *dst_desc;\
@@ -665,20 +665,22 @@ _Frame_Averager_f32_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 
     memset( acc, 0, nbytes ); 
     do
-    { while( Asynq_Pop(qsrc, (void**)&fsrc) )
+    { while( Asynq_Pop_Try(qsrc, (void**)&fsrc) )
       { 
         f32 *src_cur,*acc_cur;
         Frame_Get(fsrc, (void**)&buf, &src_desc);
-        
+        //Frame_Dump( fsrc, "frame-averager-source.f32" );
         src_cur = buf + nelem;
         acc_cur = acc + nelem;
         while( src_cur >= buf )            // accumulate
           *(--acc_cur) += *(--src_cur);
+        ++count;
         if( count % every == 0 )           // emit and reset every so often
         { acc_cur = acc + nelem;
           while( acc_cur-- > acc )         //   average
-            *acc_cur /= (float)count;
+            *acc_cur /= (float)every;
           memcpy( dst_desc, src_desc, sizeof(Frame_Descriptor) );  
+          //Frame_Dump( fdst, "frame-averager-dest.f32" );
           goto_if_fail(                    //   push - wait till successful
             Asynq_Push_Timed( qdst, (void**)&fdst, WORKER_DEFAULT_TIMEOUT ),
             OutputQueueTimeoutError);
@@ -716,7 +718,7 @@ Worker_Create_Task_Frame_Averager_f32(Device *d, unsigned int ntimes)
 //  - will continuously pop every attached input queue
 //
 
-#define TERMINATOR_DEFAULT_WAIT_TIME_MS 10
+#define TERMINATOR_DEFAULT_WAIT_TIME_MS 1
 
 unsigned int
 _Terminator_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )

@@ -38,9 +38,13 @@
 //
 // Acquisition type setup
 //
-typedef ViInt16     TPixel;
-#define TPixel_ID   id_i16
-#define FETCHFUN    (niScope_FetchBinary16)
+//typedef ViInt16     TPixel;
+//#define TPixel_ID   id_i16
+//#define FETCHFUN    (niScope_FetchBinary16)
+
+typedef ViInt8      TPixel;
+#define TPixel_ID   id_i8
+#define FETCHFUN    (niScope_FetchBinary8)
 
 //----------------------------------------------------------------------------
 //
@@ -216,7 +220,7 @@ void _config_daq(tfp_compute_gavlo_waveform compute_gavlo_waveform)
   DAQERR( DAQmxWriteAnalogF64        (cur_task,
                                       N,
                                       0,                           // autostart?
-                                      10.0,                        // timeout (s) - to write?
+                                      0.0,                         // timeout (s) - to write - 0 causes write to fail if blocked at all
                                       DAQmx_Val_GroupByChannel,
                                       data,
                                       &written,
@@ -229,7 +233,7 @@ void _config_daq(tfp_compute_gavlo_waveform compute_gavlo_waveform)
   DAQERR( DAQmxCreateCOPulseChanFreq       ( cur_task,
                                              cfg->galvo_ctr, // "Dev1/ctr1",
                                              "sample-clock", 
-                                             DAQmx_Val_Hz, 
+                                             DAQmx_Val_Hz,
                                              DAQmx_Val_Low,
                                              0.0,
                                              freq,
@@ -364,16 +368,16 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 #else
     error("Choose a push behavior for digitizer by compileing with the appropriate define.\r\n");
 #endif
-    { warning("Digitizer output queue overflowed.\r\n\tAborting acquisition task.\r\n");
+    { warning("Scanner output frame queue overflowed.\r\n\tAborting acquisition task.\r\n");
       goto Error;
     }
     Frame_Get(frm, (void**)&buf, &desc ); // The push swapped the frame buffer
     memcpy(desc,&ref,sizeof(Frame_Descriptor));  // ...so update buf and desc
-
-    DAQJMP( DAQmxWaitUntilTaskDone (clk_task,DAQmx_Val_WaitInfinitely));
     dt_in  = toc(&inner_clock);
-              toc(&outer_clock);
-    DAQJMP( DAQmxStopTask (clk_task));
+             toc(&outer_clock);
+    DAQJMP( DAQmxWaitUntilTaskDone (clk_task,DAQmx_Val_WaitInfinitely));
+    
+    DAQJMP(DAQmxStopTask(clk_task));
     ++i;
   } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
   status = 0;

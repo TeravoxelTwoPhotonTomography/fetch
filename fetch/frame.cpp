@@ -168,48 +168,67 @@ Frame_Free( Frame* frame )
 }
 
 //----------------------------------------------------------------------------
-//
-// Common frame interface
-//
+// Frame_To_File
 //----------------------------------------------------------------------------
-
-size_t  Frame_Get_Common_Size_Bytes( Frame *frm )
-{ Frame_Descriptor *desc;
-  void *data;
-  Frame_Interface *f;
-  size_t nchan;
-  Frame_Get(frm,&data, &desc);
-  f = Frame_Descriptor_Get_Interface(desc);
-  nchan = f->get_nchannels(desc);
-  return f->get_destination_nbytes(desc) * nchan + sizeof(Frame_Descriptor);
+void
+Frame_Dump(Frame *self, const char* filename)
+{ FILE* fp = fopen(filename,"wb");
+  Frame_Descriptor *desc;
+  Frame_Interface  *f;
+  void *buf;  
+  
+  Frame_Get( self, &buf, &desc );
+  f = Frame_Descriptor_Get_Interface( desc );
+  Guarded_Assert(fp);
+  fwrite(buf,1,f->get_source_nbytes(desc),fp);
+  fclose(fp);
 }
 
-void    Frame_Copy_To_Common( Frame *dst, Frame *src )
-{ void *dst_buf,*src_buf;
-  Frame_Descriptor *dst_desc, *src_desc;
-  Common_Frame_Metadata *fmt;
-  Frame_Interface *f;
-
-  Frame_Get(dst,&dst_buf,&dst_desc);
-  Frame_Get(src,&src_buf,&src_desc);
-  f = Frame_Descriptor_Get_Interface(src_desc);
-  fmt = (Common_Frame_Metadata*) dst_desc->metadata;
-
-  if( src_desc->interface_id != FRAME_INTERFACE_COMMON )
-  { size_t i;
-    size_t line_stride = fmt->width * fmt->Bpp,
-           chan_stride = fmt->height * line_stride;
-    for(i=0; i<f->get_nchannels(src_desc); i++)
-      f->copy_channel(src_desc, (u8*)dst_buf + chan_stride * i, line_stride, src_buf, i);
-  } else
-  { memcpy( dst_buf, src_buf, f->get_source_nbytes(src_desc) );
-  }
-}
-
-int
-Frame_Is_Common(Frame *self)
-{ Frame_Descriptor *desc;
-  void *buf;
-  Frame_Get(self,&buf,&desc);
-  return desc->interface_id == FRAME_INTERFACE_COMMON;
-}
+// Never used
+////----------------------------------------------------------------------------
+////
+//// Common frame interface
+////
+////----------------------------------------------------------------------------
+//
+//size_t  Frame_Get_Common_Size_Bytes( Frame *frm )
+//{ Frame_Descriptor *desc;
+//  void *data;
+//  Frame_Interface *f;
+//  size_t nchan;
+//  Frame_Get(frm,&data, &desc);
+//  f = Frame_Descriptor_Get_Interface(desc);
+//  nchan = f->get_nchannels(desc);
+//  return f->get_destination_nbytes(desc) * nchan + sizeof(Frame_Descriptor);
+//}
+//
+//void    Frame_Copy_To_Common( Frame *dst, Frame *src )
+//{ void *dst_buf,*src_buf;
+//  Frame_Descriptor *dst_desc, *src_desc;
+//  Common_Frame_Metadata *fmt;
+//  Frame_Interface *f;
+//
+//  Frame_Get(dst,&dst_buf,&dst_desc);
+//  Frame_Get(src,&src_buf,&src_desc);
+//  f = Frame_Descriptor_Get_Interface(src_desc);
+//  fmt = (Common_Frame_Metadata*) dst_desc->metadata;
+//
+//  if( src_desc->interface_id != FRAME_INTERFACE_COMMON )
+//  { size_t i;
+//    size_t line_stride = fmt->width * fmt->Bpp,
+//           chan_stride = fmt->height * line_stride;
+//    for(i=0; i<f->get_nchannels(src_desc); i++)
+//      f->copy_channel(src_desc, (u8*)dst_buf + chan_stride * i, line_stride, src_buf, i);
+//  } else
+//  { memcpy( dst_buf, src_buf, f->get_source_nbytes(src_desc) );
+//  }
+//}
+//
+//int
+//Frame_Is_Common(Frame *self)
+//{ Frame_Descriptor *desc;
+//  void *buf;
+//  Frame_Get(self,&buf,&desc);
+//  return desc->interface_id == FRAME_INTERFACE_COMMON;
+//}
+//

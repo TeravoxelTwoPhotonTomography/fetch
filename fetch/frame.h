@@ -111,6 +111,8 @@ void              Frame_Free           ( void );
 void              Frame_Get            ( Frame *bytes, void **data, Frame_Descriptor **desc );
 Frame_Interface  *Frame_Get_Interface  ( Frame *self );
 
+void              Frame_Dump        ( Frame *self, const char* filename );
+
 //
 // Common frame interface 
 //
