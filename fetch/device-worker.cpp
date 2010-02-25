@@ -175,28 +175,6 @@ DeviceDisarmError:
 //
 
 Device*
-Worker_Compose_Averager_f32( const char *alias, Device *source, int ichan, int ntimes )
-{ Worker   *worker = Worker_Init(alias);
-  Device     *dest = Worker_Get_Device(worker);
-  DeviceTask *task = Worker_Create_Task_Averager_f32(dest,ntimes);
-  DeviceTask_Connect( task, 0, source->task, ichan);
-  Device_Arm( dest, task, INFINITE );
-  Device_Run( dest );
-  return dest;
-}
-
-Device*
-Worker_Compose_Caster( const char *alias, Device *source, int ichan, Basic_Type_ID source_type, Basic_Type_ID dest_type)
-{ Worker   *worker = Worker_Init(alias);
-  Device     *dest = Worker_Get_Device(worker);
-  DeviceTask *task = Worker_Create_Task_Caster(dest,source_type,dest_type);
-  DeviceTask_Connect( task, 0, source->task, ichan );
-  Guarded_Assert( Device_Arm( dest, task,INFINITE ));
-  Guarded_Assert( Device_Run( dest ));
-  return dest;
-}
-
-Device*
 Worker_Compose_Frame_Averager_f32( const char *alias, Device *source, int ichan, int ntimes )
 { Worker   *worker = Worker_Init(alias);
   Device     *dest = Worker_Get_Device(worker);

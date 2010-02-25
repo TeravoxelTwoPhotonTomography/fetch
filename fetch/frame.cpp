@@ -1,234 +1,363 @@
 #include "stdafx.h"
 #include "frame.h"
+#include "util-file.h"
+#include "util-image.h"
 
-#define DEBUG_FRAME_DESCRIPTOR_TO_FILE
-#define DEBUG_FRAME_DESCRIPTOR_GET_INTERFACE
+/*
+ * MESSAGE
+ */
 
-//----------------------------------------------------------------------------
-// PROTOCOL TABLE
-//----------------------------------------------------------------------------
-
-#include "frame-interface-digitizer.h"
-#include "frame-interface-resonant.h"
-
-Frame_Interface g_interfaces[] = {
-  { frame_interface_digitizer__default__get_type,        // 0 - digitizer-interleaved-planes
-    frame_interface_digitizer__default__set_type,
-    frame_interface_digitizer__default__get_nchannels,
-    frame_interface_digitizer__default__get_nbytes,
-    frame_interface_digitizer__default__get_nbytes,
-    frame_interface_digitizer_interleaved_planes__copy_channel,
-    frame_interface_digitizer__default__get_dimensions,
-    frame_interface_digitizer__default__get_dimensions    
-  },  
-  { frame_interface_digitizer__default__get_type,        // 1 - digitizer-interleaved-lines
-    frame_interface_digitizer__default__set_type,
-    frame_interface_digitizer__default__get_nchannels,
-    frame_interface_digitizer__default__get_nbytes,
-    frame_interface_digitizer__default__get_nbytes,
-    frame_interface_digitizer_interleaved_lines__copy_channel,
-    frame_interface_digitizer__default__get_dimensions,
-    frame_interface_digitizer__default__get_dimensions
-  },
-  { frame_interface_resonant__default__get_type,         // 2 - resonant-interleaved-lines
-    frame_interface_resonant__default__set_type,
-    frame_interface_resonant__default__get_nchannels,
-    frame_interface_resonant__default__get_src_nbytes,
-    frame_interface_resonant__default__get_dst_nbytes,
-    frame_interface_resonant_interleaved_lines__copy_channel,
-    frame_interface_resonant__default__get_src_dimensions,
-    frame_interface_resonant__default__get_dst_dimensions
-  },  
-};
-
-
-//----------------------------------------------------------------------------
-// Frame_Descriptor_Get_Interface
-//----------------------------------------------------------------------------
-extern inline Frame_Interface*
-Frame_Descriptor_Get_Interface( Frame_Descriptor *self )
-{ int n = sizeof(g_interfaces)/sizeof(Frame_Interface);
-#ifdef DEBUG_FRAME_DESCRIPTOR_GET_INTERFACE
-  Guarded_Assert( self->interface_id < n );
-#endif  
-  
-  return g_interfaces + self->interface_id;
-}
-
-//----------------------------------------------------------------------------
-// Frame_Descriptor_Initialize
-//----------------------------------------------------------------------------
 void
-Frame_Descriptor_Change( Frame_Descriptor *self, u8 interface_id, void *metadata, size_t nbytes )
-{ self->change_token += 1;
-  self->interface_id = interface_id;
-  
-  Guarded_Assert( nbytes < FRAME_DESCRIPTOR_MAX_METADATA_BYTES );
-  memcpy( self->metadata, metadata, nbytes );
-  self->metadata_nbytes = nbytes;
-}
-
-//----------------------------------------------------------------------------
-// Frame_Descriptor_To_File
-//----------------------------------------------------------------------------
-void
-_frame_descriptor_write( FILE *fp, Frame_Descriptor *self, u64 count )
-{ Guarded_Assert(1== fwrite( (void*) &self->interface_id,    sizeof( self->interface_id ), 1, fp ) );
-  Guarded_Assert(1== fwrite( (void*) &count,                 sizeof( u64 ),                1, fp ) );
-  Guarded_Assert(1== fwrite( (void*) &self->metadata_nbytes, sizeof( u32 ),                1, fp ) );
-  Guarded_Assert(1== fwrite( (void*) &self->metadata,        self->metadata_nbytes,        1, fp ) );
+Message::to_file(FILE *fp)                                     // Writing to a file/byte stream                                           
+{ size_t sz  = this->size_bytes(),                             // -----------------------------                                           
+         off = (u8*)this->data - (u8*)this;                    // 0. Compute the size of the formating data
+  Guarded_Assert( 1 == fwrite( &sz,  sizeof(size_t), 1, fp )); // 1. The size (in bytes) is written to the stream.
+  Guarded_Assert( 1 == fwrite( &off, sizeof(size_t), 1, fp )); // 2. Write out the size of the formating data.
+  Guarded_Assert( 1 == fwrite( this, 1, sz, fp ));             // 3. A block of data from <this> to <this+size> is written to the stream. 
 }
 
 void
-Frame_Descriptor_To_File( FILE *fp, Frame_Descriptor *self )
-{ size_t count = 1;
-  size_t item_bytes = sizeof( self->interface_id ) 
-                    + sizeof( count )
-                    + self->metadata_nbytes;
-  if( self->change_token )                 // add new record
-  { _frame_descriptor_write(fp, self, 1 );
-  } else
-  { Frame_Descriptor last;              // update last record (read and overwrite)
-    Guarded_Assert(0== fseek( fp, -(long)item_bytes, SEEK_CUR ) );    
-    Guarded_Assert(    Frame_Descriptor_From_File_Read_Next( fp, &last, &count) );
-#ifdef DEBUG_FRAME_DESCRIPTOR_TO_FILE
-    Guarded_Assert( last.interface_id == self->interface_id );
-#endif
-    Guarded_Assert(0== fseek( fp, -(long)item_bytes, SEEK_CUR ) );
-    _frame_descriptor_write(fp, &last, count+1 );
-  }
+Message::to_file(HANDLE hfile)
+{ size_t sz  = this->size_bytes(),
+         off = (u8*)this->data - (u8*)this;
+  DWORD  written;
+  Guarded_Assert_WinErr( WriteFile( hfile, &sz,  sizeof(size_t), &written, NULL ));
+  Guarded_Assert_WinErr( WriteFile( hfile, &off, sizeof(size_t), &written, NULL ));
+  Guarded_Assert_WinErr( WriteFile( hfile, this,             sz, &written, NULL ));
 }
 
-//----------------------------------------------------------------------------
-// Frame_Descriptor_From_File_Read_Next
-//----------------------------------------------------------------------------
-u8
-Frame_Descriptor_From_File_Read_Next( FILE *fp, Frame_Descriptor *dst, size_t *repeat_count )
-{ if( 1!= fread( &dst->interface_id,    sizeof( dst->interface_id ), 1, fp ) ) goto err;
-  if( 1!= fread( repeat_count,          sizeof( u64 ),               1, fp ) ) goto err;
-  if( 1!= fread( &dst->metadata_nbytes, sizeof( u32 ),               1, fp ) ) goto err;
-  if( 1!= fread( &dst->metadata,        dst->metadata_nbytes,        1, fp ) ) goto err;
-  return 1; // success
-err:
-  Guarded_Assert( feof(fp) );  
-  return 0; // failed to read (eof)   
-}
-
-//----------------------------------------------------------------------------
-// Frame_Get_Size_Bytes
-//----------------------------------------------------------------------------
 size_t
-Frame_Get_Size_Bytes ( Frame_Descriptor *desc )
-{ Frame_Interface *face = Frame_Descriptor_Get_Interface(desc);
-  size_t nbytes = face->get_source_nbytes(desc);
-  return nbytes + sizeof(Frame_Descriptor);
+Message::from_file(FILE *fp, Message* workspace, size_t size_workspace)
+{ size_t sz,off;
+  fpos_t bookmark;
+  Guarded_Assert( 0 == fgetpos( fp, &bookmark ) );
+  Guarded_Assert( 1 == fread( &sz,  sizeof(size_t), 1, fp ));
+
+  if( !workspace || size_workspace >= sz )
+  { Guarded_Assert( 0 == fsetpos( fp, &bookmark ) ); // reset the stream position
+    return sz;                                       // failure.  Indicates the required storage size.
+  }
+
+  Guarded_Assert( 1 == fread( &off, sizeof(size_t), 1, fp ));
+  Guarded_Assert( sz == fread( workspace, 1, sz, fp ) );
+  workspace->data = (u8*)workspace + off;
+  return 0; // Success.
 }
 
-//----------------------------------------------------------------------------
-// Frame_Get
-//----------------------------------------------------------------------------
-void
-Frame_Get( void *bytes, void **data, Frame_Descriptor **desc )
-{ *desc = (Frame_Descriptor*) bytes;
-  *data = (void*) ((u8*)bytes + sizeof( Frame_Descriptor ));
+size_t
+Message::from_file(HANDLE hfile, Message* workspace, size_t size_workspace)
+{ size_t sz,off;
+  DWORD  bytes_read;
+  int64  bookmark = w32file::getpos(hfile);
+  Guarded_Assert_WinErr(    ReadFile( hfile,      &sz, sizeof(size_t), &bytes_read, NULL ));  
+
+  if( !workspace ||  size_workspace >= sz )
+  { w32file::setpos(hfile,bookmark,FILE_BEGIN);
+    return sz;                                       // failure.  Indicates the required storage size.
+  }
+
+  Guarded_Assert_WinErr(    ReadFile( hfile,     &off, sizeof(size_t), &bytes_read, NULL ));  
+  Guarded_Assert_WinErr(    ReadFile( hfile, worspace,             sz, &bytes_read, NULL ));  
+  workspace->data = (u8*)workspace + off;
+  return 0; // Success.
 }
 
-
-//----------------------------------------------------------------------------
-// Frame_Get_Interface
-//----------------------------------------------------------------------------
-Frame_Interface*
-Frame_Get_Interface( Frame *self )
-{ Frame_Descriptor *desc;
-  void *data;
-  Frame_Get(self,&data,&desc);
-  return Frame_Descriptor_Get_Interface(desc);
+size_t
+Message::translate( Message *dst, Message *src )
+{ size_t sz = src->size_bytes();
+  if(dst) memcpy(dst,src,sz);
+  return sz;
 }
-
-//----------------------------------------------------------------------------
-// Frame_Alloc
-//----------------------------------------------------------------------------
-Frame*
-Frame_Alloc( Frame_Descriptor *desc )
-{ size_t nbytes = Frame_Get_Size_Bytes( desc );
-  Frame_Descriptor *target;
-  void *data, 
-       *frame = Guarded_Malloc( nbytes, "Frame_Alloc" );  
-  Frame_Get( frame, &data, &target);
-  memcpy(target, desc, sizeof(Frame_Descriptor) );
-  return frame;
-}
-
-//----------------------------------------------------------------------------
-// Frame_Free
-//----------------------------------------------------------------------------
-void
-Frame_Free( Frame* frame )
-{ if( frame ) free(frame);
-}
-
-//----------------------------------------------------------------------------
-// Frame_To_File
-//----------------------------------------------------------------------------
-void
-Frame_Dump(Frame *self, const char* filename)
-{ FILE* fp = fopen(filename,"wb");
-  Frame_Descriptor *desc;
-  Frame_Interface  *f;
-  void *buf;  
   
-  Frame_Get( self, &buf, &desc );
-  f = Frame_Descriptor_Get_Interface( desc );
-  Guarded_Assert(fp);
-  fwrite(buf,1,f->get_source_nbytes(desc),fp);
+/*
+ * FRAME
+ */
+
+Frame::Frame()
+      : width(0),
+        height(0),
+        nchan(0),
+        type(id_unspecified),
+        Bpp(0),
+        self_size(sizeof(Frame))
+{}
+
+Frame::Frame(u16 width, u16 height, u8 nchan, Basic_Type_ID type)
+      : width(width),
+        height(height),
+        nchan(nchan),
+        type(type),
+        Bpp( g_type_attributes[type].bytes ),
+        self_size(sizeof(Frame))
+{}
+
+unsigned int
+Frame::is_equivalent( Frame *ref )
+{ if( (ref->id     != this->id      ) ||
+      (ref->width  != this->width   ) ||
+      (ref->height != this->height  ) ||
+      (ref->nchan  != this->nchan   ) ||
+      (ref->rtti   != this->rtti    ) ) return 1;
+  return 0;
+}
+    
+void dump( const char *filename )
+{ size_t  n = this->width * 
+              this->height*
+              this->nchan;
+  FILE *fp = fopen(filename,"wb");
+  fwrite(this->data, this->Bpp, n, fp );
   fclose(fp);
 }
 
-// Never used
-////----------------------------------------------------------------------------
-////
-//// Common frame interface
-////
-////----------------------------------------------------------------------------
-//
-//size_t  Frame_Get_Common_Size_Bytes( Frame *frm )
-//{ Frame_Descriptor *desc;
-//  void *data;
-//  Frame_Interface *f;
-//  size_t nchan;
-//  Frame_Get(frm,&data, &desc);
-//  f = Frame_Descriptor_Get_Interface(desc);
-//  nchan = f->get_nchannels(desc);
-//  return f->get_destination_nbytes(desc) * nchan + sizeof(Frame_Descriptor);
-//}
-//
-//void    Frame_Copy_To_Common( Frame *dst, Frame *src )
-//{ void *dst_buf,*src_buf;
-//  Frame_Descriptor *dst_desc, *src_desc;
-//  Common_Frame_Metadata *fmt;
-//  Frame_Interface *f;
-//
-//  Frame_Get(dst,&dst_buf,&dst_desc);
-//  Frame_Get(src,&src_buf,&src_desc);
-//  f = Frame_Descriptor_Get_Interface(src_desc);
-//  fmt = (Common_Frame_Metadata*) dst_desc->metadata;
-//
-//  if( src_desc->interface_id != FRAME_INTERFACE_COMMON )
-//  { size_t i;
-//    size_t line_stride = fmt->width * fmt->Bpp,
-//           chan_stride = fmt->height * line_stride;
-//    for(i=0; i<f->get_nchannels(src_desc); i++)
-//      f->copy_channel(src_desc, (u8*)dst_buf + chan_stride * i, line_stride, src_buf, i);
-//  } else
-//  { memcpy( dst_buf, src_buf, f->get_source_nbytes(src_desc) );
-//  }
-//}
-//
-//int
-//Frame_Is_Common(Frame *self)
-//{ Frame_Descriptor *desc;
-//  void *buf;
-//  Frame_Get(self,&buf,&desc);
-//  return desc->interface_id == FRAME_INTERFACE_COMMON;
-//}
-//
+size_t
+Frame::size_bytes(void)
+{ return this->self_size + this->width * 
+                           this->height*
+                           this->nchan *
+                           this->Bpp;
+}
+
+void
+Frame::format(Message* unformatted)
+{ memcpy( unformatted, this, this->self_size );      // Copy the format header
+  unformatted->data = unformatted + this->self_size; // Set the data section
+}
+
+/*
+ * Frame_With_Interleaved_Pixels
+ *
+ */
+
+Frame_With_Interleaved_Pixels::
+  Frame_With_Interleaved_Pixels(u16 width, u16 height, u8 nchan, Basic_Type_ID type)
+                              : width(width),
+                                height(height),
+                                nchan(nchan),
+                                type(type),
+                                Bpp( g_type_attributes[type].bytes ),
+                                self_size(sizeof(Frame_With_Interleaved_Pixels)),
+                                id( FRAME_INTERLEAVED_PIXELS )
+{}
+
+void 
+Frame_With_Interleaved_Pixels::
+  copy_channel( void *dst, size_t rowpitch, size_t ichan )
+{ size_t pp = this->Bpp,
+         dstw = rowpitch/pp,
+         shape[] = {1,
+                    MIN( this->width, dstw ),
+                    this->height},
+         dst_pitch[4], src_pitch[4];
+  Compute_Pitch( dst_pitch, pp,           1,        dstw, this->height );
+  Compute_Pitch( src_pitch, pp, this->nchan, this->width, this->height );
+  imCopy<u8,u8>(dst,                        dst_pitch,
+                src + ichan * src_pitch[3], src_pitch,
+                shape);
+}
+
+size_t
+Frame_With_Interleaved_Pixels::
+  translate( Message *dst, Message *src )
+{ size_t sz = src->size_bytes();
+
+  switch( src->id )
+  { case FRAME_INTERLEAVED_PIXELS:
+      return Message::translate(dst,src);
+      break;
+    case FRAME_INTERLEAVED_LINES:
+      if(!dst) return sz;
+      src->format(dst);                   // Format metadata is the same so just copy it in
+      dst->id = FRAME_INTERLEAVED_PIXELS; // Set the format tag properly
+      { size_t pp = src->Bpp,
+               shape[] = { src->width, src->nchan, src->height },
+               dst_pitch[4],
+               src_pitch[4];
+        Compute_Pitch( dst_pitch, pp, src->nchan, src->width, src->height );
+        Compute_Pitch( src_pitch, pp, src->width, src->nchan, src->height );
+        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
+                                src->data, src_pitch, shape, 0, 1 ); 
+        
+      }
+      break;
+    case FRAME_INTERLEAVED_PLANES:
+      if(!dst) return sz;
+      src->format(dst);                   // Format metadata is the same so just copy it in
+      dst->id = FRAME_INTERLEAVED_PIXELS; // Set the format tag properly
+      { size_t pp = src->Bpp,
+               shape[] = { src->width, src->height, src->nchan },
+               dst_pitch[4],
+               src_pitch[4];
+        // This ends up apparently transposing width and height.
+        // Really, doing this properly requires two transposes.
+        Compute_Pitch( dst_pitch, pp, src->nchan, src->height, src->width );
+        Compute_Pitch( src_pitch, pp, src->width, src->height, src->nchan  );
+        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
+                                src->data, src_pitch, shape, 0, 2 ); 
+        
+      }
+      break;
+    default:
+      warning("Failed attempt to translate a message.");
+      return 0; // no translation
+  }
+  return sz;
+}
+
+/*
+ * Frame_With_Interleaved_Planes
+ *
+ */
+
+Frame_With_Interleaved_Lines::
+  Frame_With_Interleaved_Liness(u16 width, u16 height, u8 nchan, Basic_Type_ID type)
+                              : width(width),
+                                height(height),
+                                nchan(nchan),
+                                type(type),
+                                Bpp( g_type_attributes[type].bytes ),
+                                self_size(sizeof(Frame_With_Interleaved_Lines)),
+                                id( FRAME_INTERLEAVED_LINES )
+{}
+
+void Frame_With_Interleaved_Lines::
+copy_channel( void *dst, size_t rowpitch, size_t ichan )
+{ size_t pp = this->Bpp,
+         dstw = rowpitch/pp,
+         shape[] = {1,
+                    MIN( this->width, dstw ),
+                    this->height},
+         dst_pitch[],
+         src_pitch[];
+  Compute_Pitch( dst_pitch, pp,        dstw,           1, this->height );
+  Compute_Pitch( src_pitch, pp, this->width, this->nchan, this->height );
+  imCopy<u8,u8>(dst,                       dst_pitch,
+                src + ichan * src_pitch[2],src_pitch,
+                shape);
+}
+
+size_t
+Frame_With_Interleaved_Lines::
+  translate( Message *dst, Message *src )
+{ size_t sz = src->size_bytes();
+
+  switch( src->id )
+  { case FRAME_INTERLEAVED_LINES:
+      return Message::translate(dst,src);
+      break;
+    case FRAME_INTERLEAVED_PIXELS:
+      if(!dst) return sz;
+      src->format(dst);                   // Format metadata is the same so just copy it in
+      dst->id = FRAME_INTERLEAVED_LINES;  // Set the format tag properly 
+      { size_t pp = src->Bpp,
+               shape[] = { src->nchan, src->width, src->height },
+               dst_pitch[4],
+               src_pitch[4];
+        Compute_Pitch( dst_pitch, pp, src->width, src->nchan, src->height );
+        Compute_Pitch( src_pitch, pp, src->nchan, src->width, src->height );
+        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
+                                src->data, src_pitch, shape, 0, 1 ); 
+        
+      }
+      break;
+    case FRAME_INTERLEAVED_PLANES:
+      if(!dst) return sz;
+      src->format(dst);                   // Format metadata is the same so just copy it in
+      dst->id = FRAME_INTERLEAVED_LINES;  // Set the format tag properly
+      { size_t pp = src->Bpp,
+               shape[] = { src->width, src->height, src->nchan },
+               dst_pitch[4],
+               src_pitch[4];
+        Compute_Pitch( dst_pitch, pp, src->width, src->nchan, src->height );
+        Compute_Pitch( src_pitch, pp, src->width, src->height, src->nchan  );
+        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
+                                src->data, src_pitch, shape, 1, 2 ); 
+        
+      }
+      break;
+    default:
+      warning("Failed attempt to translate a message.");
+      return 0; // no translation
+  }
+  return sz;
+}
+
+/*
+ * Frame_With_Interleaved_Planes
+ *
+ */
+
+Frame_With_Interleaved_Planes::
+  Frame_With_Interleaved_Planes(u16 width, u16 height, u8 nchan, Basic_Type_ID type)
+                              : width(width),
+                                height(height),
+                                nchan(nchan),
+                                type(type),
+                                Bpp( g_type_attributes[type].bytes ),
+                                self_size(sizeof(Frame_With_Interleaved_Lines)),
+                                id( FRAME_INTERLEAVED_PLANES )
+{}
+
+void Frame_With_Interleaved_Planes::
+copy_channel( void *dst, size_t rowpitch, size_t ichan )
+{ size_t pp = this->Bpp,
+         dstw = rowpitch/pp,
+         shape[] = {1,
+                    MIN( this->width, dstw ),
+                    this->height},
+         dst_pitch[],
+         src_pitch[];
+  Compute_Pitch( dst_pitch, pp,        dstw, this->height, 1 );
+  Compute_Pitch( src_pitch, pp, this->width, this->height, this->nchan );
+  imCopy<u8,u8>(dst,                       dst_pitch,
+                src + ichan * src_pitch[1],src_pitch,
+                shape);
+}
+
+size_t
+Frame_With_Interleaved_Planes::
+  translate( Message *dst, Message *src )
+{ size_t sz = src->size_bytes();
+
+  switch( src->id )
+  { case FRAME_INTERLEAVED_PLANES:
+      return Message::translate(dst,src);
+      break;
+    case FRAME_INTERLEAVED_PIXELS:
+      if(!dst) return sz;
+      src->format(dst);                   // Format metadata is the same so just copy it in
+      dst->id = FRAME_INTERLEAVED_PLANES; // Set the format tag properly 
+      { size_t pp = src->Bpp,
+               shape[] = { src->nchan, src->width, src->height },
+               dst_pitch[4],
+               src_pitch[4];
+        // This ends up apparently transposing width and height.
+        // Really, doing this properly requires two transposes.
+        Compute_Pitch( dst_pitch, pp, src->height, src->width, src->nchan );
+        Compute_Pitch( src_pitch, pp, src->nchan, src->width,  src->height );
+        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
+                                src->data, src_pitch, shape, 0, 2 ); 
+        
+      }
+      break;
+    case FRAME_INTERLEAVED_LINES:
+      if(!dst) return sz;
+      src->format(dst);                   // Format metadata is the same so just copy it in
+      dst->id = FRAME_INTERLEAVED_PLANES; // Set the format tag properly
+      { size_t pp = src->Bpp,
+               shape[] = { src->width, src->nchan, src->height },
+               dst_pitch[4],
+               src_pitch[4];
+        Compute_Pitch( dst_pitch, pp, src->width, src->height, src->nchan );
+        Compute_Pitch( src_pitch, pp, src->width, src->nchan,  src->height);
+        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
+                                src->data, src_pitch, shape, 1, 2 ); 
+        
+      }
+      break;
+    default:
+      warning("Failed attempt to translate a message.");
+      return 0; // no translation
+  }
+  return sz;
+}

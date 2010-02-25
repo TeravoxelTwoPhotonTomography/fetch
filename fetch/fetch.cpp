@@ -6,7 +6,6 @@
 #include "logger.h"
 #include "microscope.h"
 #include "device-digitizer.h"
-#include "device-galvo-mirror.h"
 #include "device-scanner.h"
 #include "window-video.h"
 
@@ -183,9 +182,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
   //if( !Digitizer_UI_Handler(hWnd, message, wParam, lParam) )
   //   return 0; // message was handled so return
 
-  //if( !Galvo_Mirror_UI_Handler(hWnd, message, wParam, lParam) )
-  //   return 0; // message was handled so return
-     
   // Top level handler    
 	switch (message)
 	{
@@ -194,7 +190,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       Guarded_Assert_WinErr( menu );
       Scanner_UI_Insert_Menu( menu, GetMenuItemCount(menu)-1, MF_BYPOSITION );
       //Digitizer_UI_Insert_Menu( menu, GetMenuItemCount(menu)-1, MF_BYPOSITION );
-      //Galvo_Mirror_UI_Insert_Menu( menu, GetMenuItemCount(menu)-1, MF_BYPOSITION );
     }
     break;
 	case WM_INITMENU:

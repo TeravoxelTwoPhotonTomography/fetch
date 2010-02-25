@@ -591,54 +591,42 @@ LRESULT CALLBACK Video_Display_WndProc( HWND hWnd, UINT message, WPARAM wParam, 
 void Video_Display_Render_One_Frame()
 {   TicTocTimer clock = tic();
     static Frame                  *frm = NULL;
-    static Frame_Descriptor       last;
+    static Frame               lastfmt;
     static float          wait_time_ms = 1000.0f/60.0f,
                 efficiency_accumulator = 0.0f,
                       efficiency_count = 0.0f,
                         efficiency_hit = 0.0f;
-    asynq               *q = g_video.frame_source;
-    void              *src = NULL; 
-    Frame_Descriptor *desc = NULL;
-    static int last_change_token  = 0;
-    static vector_size_t *vdim = NULL;
-    Frame_Interface *fint = NULL;
-    static size_t nchan = 0;
-    
-    if( !vdim )
-      vdim = vector_size_t_alloc(2);
+
+    asynq                      *q = g_video.frame_source;
+    static int  last_change_token = 0;
+    static size_t           nchan = 0;
     
     if( q )
     { // create the source buffer
     
       if(!frm)
       { frm  = (Frame*) Asynq_Token_Buffer_Alloc( q );
-        Frame_Get( frm, &src, &desc );
       }
       
       if( Asynq_Peek_Timed(q, frm, (DWORD) wait_time_ms ) )
-      { int i;
-        Frame_Get( frm, &src, &desc );
-        if( desc->change_token != last_change_token)               // RESIZE!
+      { int i;   
+        if( !frm->is_equivalent(lastfmt) )               // RESIZE!
         { RECT *rect = NULL;
-          last_change_token = desc->change_token;
-          //Guarded_Assert( desc->change_token == 1 );
-          memcpy(&last,desc,sizeof(Frame_Descriptor));
+          frm->format(lastfmt);
           //Resize window and buffers
-          fint = Frame_Descriptor_Get_Interface(desc);
-          fint->get_destination_dimensions(desc, vdim);
-          { size_t           w = vdim->contents[0], 
-                             h = vdim->contents[1];
-            Basic_Type_ID type = fint->get_type(desc);
-            nchan = fint->get_nchannels( desc );
+          { size_t           w = frm->width,
+                             h = frm->height;
+            Basic_Type_ID type = frm->rtti;
+            nchan = frm->nchan;
                    
             DXGI_MODE_DESC mode;
-            mode.Width = 2*w;
-            mode.Height = 2*h;
-            mode.RefreshRate.Numerator = 60;
+            mode.Width                   = 2*w;
+            mode.Height                  = 2*h;
+            mode.RefreshRate.Numerator   = 60;
             mode.RefreshRate.Denominator = 1;
-            mode.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-            mode.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-            mode.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+            mode.Format                  = DXGI_FORMAT_R8G8B8A8_UNORM;
+            mode.ScanlineOrdering        = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+            mode.Scaling                 = DXGI_MODE_SCALING_UNSPECIFIED;
             
             g_video.swap_chain->ResizeTarget(&mode);
             _invalidate_objects();
@@ -650,7 +638,7 @@ void Video_Display_Render_One_Frame()
           }
         }
         i = nchan;
-        Video_Frame_From_Frame_Descriptor( g_video.vframe, src, &last );
+        Video_Frame_From_Frame( g_video.vframe, frm);
         Video_Frame_Resource_Commit( g_video.vframe );
           
         efficiency_accumulator++;

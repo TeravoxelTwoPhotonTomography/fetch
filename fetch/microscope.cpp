@@ -3,7 +3,6 @@
 #include "device-digitizer.h"
 #include "device-scanner.h"
 #include "device-worker.h"
-#include "device-galvo-mirror.h"
 #include "device-disk-stream.h"
 #include "window-video.h"
 #include "types.h"
@@ -93,7 +92,6 @@ void Microscope_Application_Start(void)
   //                               state procedures (off and attach),
   //                               and initialize themselves.
   Disk_Stream_Init();  
-  //Galvo_Mirror_Init();
   //Digitizer_Init();
   Scanner_Init();
   

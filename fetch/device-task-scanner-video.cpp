@@ -4,8 +4,6 @@
 #include "util-nidaqmx.h"
 #include "device-digitizer.h"
 #include "frame.h"
-#include "frame-interface-resonant.h"
-#include "frame-interface-digitizer.h"
 #include "device.h"
 #include "device-scanner.h"
 #include "device-task-scanner-video.h"
@@ -31,10 +29,6 @@
 #define SCANNER_DEBUG_SPIN_WHEN_FULL
 #endif
 
-#if 1
-#define SCANNER_SKIP_RESONANT_CORRECTION
-#endif
-
 //
 // Acquisition type setup
 //
@@ -51,40 +45,17 @@ typedef ViInt8      TPixel;
 //  Video frame configuration
 //
 
-#ifndef SCANNER_SKIP_RESONANT_CORRECTION
-#define SCANNER_FRAME_FORMAT               FRAME_INTERFACE_RESONANT_INTERLEAVED_LINES__INTERFACE_ID
-void*
-_Scanner_Task_Video_Metadata( ViInt32 record_length, ViInt32 nwfm, f32 duty )
-{ static Resonant_Frame_Metadata format;    
-  format.in_height = Scanner_Get()->config.scans; //e.g: 512
-  format.nchan     = (u8)  (nwfm / format.in_height);
-  format.in_width  = (u16) (record_length);
-  format.Bpp       = sizeof(TPixel);
-  format.aspect    = 1.0;                         // [ ] TODO - should measure this somehow
-  format.duty      = duty;  
-  format.rtti      = TPixel_ID;
-  Guarded_Assert( format.nchan  > 0 );
-  Guarded_Assert( format.in_height > 0 );
-  Guarded_Assert( format.in_width  > 0 );
-  return &format;
-}
-#else
-#define SCANNER_FRAME_FORMAT               FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__INTERFACE_ID
-
-void*
-_Scanner_Task_Video_Metadata( ViInt32 record_length, ViInt32 nwfm, f32 duty )
-{ static Digitizer_Frame_Metadata format;    
-  format.height = Scanner_Get()->config.scans; //e.g: 512
-  format.nchan  = (u8)  (nwfm / format.height);
-  format.width  = (u16) (record_length);
-  format.Bpp    = sizeof(TPixel);  
-  format.rtti   = TPixel_ID;
+inline Frame
+_format_frame( ViInt32 record_length, ViInt32 nwfm, f32 duty )
+{ Frame_With_Interleaved_Lines format( record_length,              // width
+                                       Scanner_Get()->config.scans,// height
+                                       nwfm/record_length,         // number of channels
+                                       TPixel_ID );                // pixel type
   Guarded_Assert( format.nchan  > 0 );
   Guarded_Assert( format.height > 0 );
   Guarded_Assert( format.width  > 0 );
-  return &format;
+  return format;
 }
-#endif
 
 //----------------------------------------------------------------------------
 //
@@ -246,8 +217,8 @@ void _config_daq(tfp_compute_gavlo_waveform compute_gavlo_waveform)
   return;
 }
 
-void
-_fill_frame_description( Frame_Descriptor *desc )
+Frame
+_describe_frame()
 { ViSession                   vi = Scanner_Get()->digitizer->vi;
   ViInt32                   nwfm;
   ViInt32          record_length;
@@ -258,34 +229,20 @@ _fill_frame_description( Frame_Descriptor *desc )
                                 &nwfm ) );
   DIGERR( niScope_ActualRecordLength(vi, &record_length) );
 
-  meta = _Scanner_Task_Video_Metadata( record_length, nwfm, Scanner_Get()->config.line_duty_cycle );
-#ifndef SCANNER_SKIP_RESONANT_CORRECTION
-  Frame_Descriptor_Change( desc,
-                           SCANNER_FRAME_FORMAT,
-                           meta,
-                           sizeof( Resonant_Frame_Metadata ) );
-#else
-  Frame_Descriptor_Change( desc,
-                           SCANNER_FRAME_FORMAT,
-                           meta,
-                           sizeof( Digitizer_Frame_Metadata ) );
-
-#endif
+  return _format_frame( record_length, nwfm, Scanner_Get()->config.line_duty_cycle );
 }
 
 void
 _config_pipes( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 // Allocate output pipes
 { ViInt32                   nwfm;
-  Frame_Descriptor          desc;
   ViSession                   vi = Scanner_Get()->digitizer->vi;
   char                     *chan = Scanner_Get()->digitizer->config.acquisition_channels;
   
   DIGERR( niScope_ActualNumWfms( vi,chan,&nwfm ) );    
-  _fill_frame_description(&desc);
   { size_t               nbuf[2] = { SCANNER_QUEUE_NUM_FRAMES,
                                      SCANNER_QUEUE_NUM_FRAMES },
-                           sz[2] = { Frame_Get_Size_Bytes( &desc ),
+                           sz[2] = { _describe_frame().size_bytes(),
                                      nwfm*sizeof(struct niScope_wfmInfo) };
     if( d->task->out == NULL )
       DeviceTask_Alloc_Outputs( d->task, 2, nbuf, sz );
@@ -321,11 +278,9 @@ unsigned int
 _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 { asynq *qdata = out->contents[0],
         *qwfm  = out->contents[1];
-  Frame                  *frm = (Frame*) Asynq_Token_Buffer_Alloc(qdata);
+  Frame                  *frm = (Frame*) Asynq_Token_Buffer_Alloc(qdata),
+                          ref;
   struct niScope_wfmInfo *wfm = (niScope_wfmInfo*) Asynq_Token_Buffer_Alloc(qwfm);
-  TPixel *buf;
-  Frame_Descriptor *desc, ref;
-  int change_token;
   int width = _compute_record_size();
   int i=0, status = 1; // status == 0 implies success, error otherwise
   TicTocTimer outer_clock = tic(),
@@ -338,10 +293,8 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   TaskHandle  ao_task = scanner->daq_ao;
   TaskHandle clk_task = scanner->daq_clk;
 
-  Frame_Get(frm, (void**)&buf, &desc);  
-  _fill_frame_description(desc);
-  change_token = desc->change_token;
-  ref = *desc;
+  ref = _describe_frame();
+  ref.format(frm);
 
   DAQERR( DAQmxStartTask (ao_task));
   do
@@ -356,7 +309,7 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
                       chan,
                       SCANNER_VIDEO_TASK_FETCH_TIMEOUT,//10.0, //(-1=infinite) (0.0=immediate) 
                       width,
-                      buf,
+                      frm->data,
                       wfm));
 
     // Push the acquired data down the output pipes
@@ -371,8 +324,7 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
     { warning("Scanner output frame queue overflowed.\r\n\tAborting acquisition task.\r\n");
       goto Error;
     }
-    Frame_Get(frm, (void**)&buf, &desc ); // The push swapped the frame buffer
-    memcpy(desc,&ref,sizeof(Frame_Descriptor));  // ...so update buf and desc
+    ref.format(frm);
     dt_in  = toc(&inner_clock);
              toc(&outer_clock);
     DAQJMP( DAQmxWaitUntilTaskDone (clk_task,DAQmx_Val_WaitInfinitely));

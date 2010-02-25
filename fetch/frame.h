@@ -1,125 +1,210 @@
-// A Frame_Interface is an abstract interface for defining how to interpret frame data.
-// Frame data is distinguished from a big bag of bytes by having:
-// - channels
-// - dimensions
-//
-// Each interface defines what these mean.  An interface is identified by a 
-// unique interger and is an index into a function table that is defined in 
-// frame.cpp.
-//
-// This interface is used in streaming data to video and to file.
-//
-// This interface is centered around a single operation: "Copy Channel."
-// There is a facility for discovering storing source data, and for 
-// inquiring about what kind of destination storage is required for the
-// copy.
-//
-
-
-//
-// TODO/NOTES
-// ==========
-//
-// Refactor to use a union for frame format data
-// ---------------------------------------------
-// A "frame" is a header describing the format followed by raw data.
-// The header can have various formats but is always identified by an
-// integer (the interface id) that names the format.  This allows the
-// header to by identified.  There are some common elements in the header
-// (such as the change_token) that relate to the application and not
-// the formating of the image.
-//
-// When I initially wrote this, it came together in a piecmeal fashion.
-// Now it's clear to me that the pattern I want is a union for the
-// metadata field rather than a fixed-width buffer.
-//
-// I think this would simplify the API around using a Frame object.
-// 
-// A possible disadvantage is that it might complicate compatibility with
-// files written with this framework (something not implemented at present).
-// Specifically, it might make backwards compatibility break when new 
-// frame formats are added.
-//
-
 #pragma once
+/*
+ * TODO - change tokens
+ * TODO - on implimentation side, use rtti field to call proper templated copy
+ *        functions.
+ */
+
+/*
+ * Messages are meant to describe formated data passing through a queue that
+ * mediates communication between two threads.
+ *
+ * ## USAGE ##
+ *
+ * The assumed usage pattern goes something like this:
+ *
+ *  0. Memory is managed by the queue.  It's assumed that the queue provides an
+ *     allocated storage space for the entire Message.
+ *
+ *     Importantly, this means **storage is allocated outside this object.**
+ *
+ *     However, the formating of the buffer is up to the Message object.
+ *     Typically data will be organized as:
+ *
+ *     buffer:
+ *     [ message object | data .......................... ]
+ *     ^                ^
+ *     0                sizeof( message object )
+ *
+ *     The message object acts as a head with the appropriate formatting data.
+ *
+ *
+ *  Producer side
+ *  -------------
+ *  The producer knows how to format the data.  It's job is to compute the
+ *  sizes of things, allocate the queue and fill it up.
+ *
+ *  1. Compute the required size for the queue buffer, and alloc the queue.
+ *      a. Compute format parameters (e.g. width, height, etc...)
+ *      b. Create a "dummy" instance (i.e. an instance with correct format
+ *         metadata but with this->data == NULL)
+ *      c. Call size_bytes()
+ *  2. Initialize the data buffer.
+ *      a. Cast the buffer pointer to the appropriate Message type.
+ *      b. Call format( ... ) with the appropriate arguments.
+ *         This will fill in the parameter fields and set the data pointer.
+ *  3. Fill in the data.
+ *
+ *  Consumer side
+ *  -------------
+ *  The consumer knows what format it wants the data in.  It's job is to
+ *  take a formated buffer off a queue, translate/cast it to the appropriate
+ *  Message subclass, and use the data.
+ *
+ *  1. Cast the raw data pointer to a Message pointer.
+ *  2. Call translate() using the appropriate format id.
+ *  3. Cast the returned pointer to a pointer for the desired Message subclass.
+ *  4. ...
+ *  5. profit
+ *
+ * ## SERIALIZING ##
+ *
+ *  Any instance of a class deriving from Message can be written to file.  The
+ *  file assumed to consist of a series of messages seperated by a few bytes
+ *  describing the size of each chunk.
+ *
+ *  Reading from a file/byte stream
+ *  -------------------------------
+ *  There are a couple different methods.  Both revolve around how memory is
+ *  allocated for the buffer meant to recieve the loaded message.
+ *
+ *  A. Determine required buffer size, allocate and read.
+ *     0. Get the required size with: sz = Message::from_file(file,NULL,0);
+ *     1. Allocate the buffer.
+ *     2. Call from_file a second time.  This time it should return 0.
+ *        Message::from_file( file, buffer, sz );
+ *
+ *  B. Determine max buffer size on first pass through file and push onto a
+ *     queue.
+ *     0. with maxsize = 0
+ *        while not end of file
+ *           sz = Message::from_file(file,NULL,0); // get size of this message
+ *           fseek(file, sz, SEEK_CUR);            // jump to next message
+ *           maxsize = max( maxsize, sz );         // update the max size
+ *     1. Rewind the file
+ *     2. Allocate a queue with buffers of size "maxsize"
+ *     3. Allocate a token buffer for the queue
+ *     4. Call Message::from_file(file, buffer, buffersize ).
+ *        It should return zero this time.
+ *     5. Push token buffer onto the queue.
+ *     6. repeat 4-5 till end of file.
+ *
+ *
+ *  Now it can be shipped off (pushed on a queue, for example) and translated
+ *  by a consumer.
+ *
+ *  Writing to a file/byte stream
+ *  -----------------------------
+ *  With a Message*, m, and a FILE*, fp, call:
+ *
+ *    m->to_file(fp);
+ *
+ *  That's it!
+ *
+ *  Compatibility Issues
+ *  --------------------
+ *
+ *  I think most of these issues could be accounted for with an appropriate
+ *  file-level header that specifies endianess, whether the system is 32 or
+ *  64 bits, and an overall version identifier.
+ *
+ *  - endianness is not accounted for.
+ *
+ *  - Pointers are written to disk.
+ *
+ *    On 64 bit systems these pointers will have a different size than on 32
+ *    bit systems.  The Message should get read in entirely, but translation
+ *    will likely fail since, effectively, the format will be inaccurate.
+ *
+ *    However, with a mechanism to detect 32 vs. 64 bit compatibility, a
+ *    translation mechanism could probably be put into place.
+ *
+ *  - If a format's identifier changes, messages written beforehand will be
+ *    incompatible.
+ *
+ *  Translate
+ *  ---------
+ *  
+ *  Compatible messages are transformed into the calling Message sub-type.
+ *  Minimally, this is a copy operation.
+ *
+ *  Returns the size required of the destination message buffer.
+ *
+ *  If the pointer to the destination buffer is NULL, the function will 
+ *  restrict itself to just computing the size.
+ */
+
+
 #include "stdafx.h"
-#include "types.h"
 
-#define FRAME_DESCRIPTOR_MAX_METADATA_BYTES 256
+enum _id_message_format
+{ FORMAT_INVALID           = 0,
+  FRAME_INTERLEAVED_PLANES = 1,
+  FRAME_INTERLEAVED_LINES,
+  FRAME_INTERLEAVED_PIXELS,
+} MessageFormatID;
 
-#define FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__INTERFACE_ID   0
-#define FRAME_INTERFACE_COMMON                                       0
-#define FRAME_INTERFACE_DIGITIZER_INTERLEAVED_LINES__INTERFACE_ID    1
-#define FRAME_INTERFACE_RESONANT_INTERLEAVED_LINES__INTERFACE_ID     2
+class Message
+{ public:
+    MessageFormatID id;
+    size_t          self_size;
+    void           *data;
 
-typedef void Frame;
+    Message(void) : id(FORMAT_INVALID), self_size(sizeof(Message)), data(NULL) {}
 
-typedef struct _t_frame_descriptor
-{ u8                       change_token;        // Used to signal the frame format is a change.  When false the rest of the structure should be ignored.
-  u8                       interface_id;
-  u32                      metadata_nbytes;
-  u8                       metadata[ FRAME_DESCRIPTOR_MAX_METADATA_BYTES ];       // TODO - refactor? - should use a union here.  requires api change
-} Frame_Descriptor;
+           void      to_file    ( FILE *fp );
+           void      to_file    ( HANDLE hfile );
+    static size_t    from_file  ( FILE *fp,     Message* workspace, size_t size_workspace);
+    static size_t    from_file  ( HANDLE hfile, Message* workspace, size_t size_workspace);
 
-typedef Basic_Type_ID (*tfp_frame_get_type)                    ( Frame_Descriptor* fd);                              // get pixel type
-typedef void          (*tfp_frame_set_type)                    ( Frame_Descriptor* fd, Basic_Type_ID type);          // set pixel type (change descriptor)
-typedef size_t        (*tfp_frame_get_nchannels)               ( Frame_Descriptor* fd);                              // gets channel count
-typedef size_t        (*tfp_frame_get_source_nbytes)           ( Frame_Descriptor* fd);                              // gets size of internal buffer in bytes (covers all channels)
-typedef size_t        (*tfp_frame_get_destination_nbytes)      ( Frame_Descriptor* fd);                              // gets size needed for destination buffer (one channel)
-typedef void          (*tfp_frame_copy_channel)                ( Frame_Descriptor* fd, void *dst, size_t dst_stride, void *src, size_t ichan );    // copies channel data to dst
-typedef void          (*tfp_frame_get_source_dimensions)       ( Frame_Descriptor* fd, vector_size_t *vdim);         // returns the dimensions and number of dimensions of the channel
-typedef void          (*tfp_frame_get_destination_dimensions)  ( Frame_Descriptor* fd, vector_size_t *vdim);         // returns the dimensions and number of dimensions of the channel
+    // Override these in implimenting classes.
+    virtual size_t   size_bytes ( void ) = 0;
+    virtual void     format     ( Message *unformatted ) = 0;           // This should simply copy the format metadata from "this" to "unformatted."
+    static  size_t   translate  ( Message *dst, Message *src );         // The sub-class determines the destination.
+};                                                                 
 
-typedef struct _t_frame_interface
-{ tfp_frame_get_type                   get_type;                  // Abstract interface
-  tfp_frame_set_type                   set_type;
-  tfp_frame_get_nchannels              get_nchannels;
-  tfp_frame_get_source_nbytes          get_source_nbytes;
-  tfp_frame_get_destination_nbytes     get_destination_nbytes;
-  tfp_frame_copy_channel               copy_channel;
-  tfp_frame_get_source_dimensions      get_source_dimensions;
-  tfp_frame_get_destination_dimensions get_destination_dimensions;
-} Frame_Interface;
+class Frame : public Message
+{ public:
+    u16           width;
+    u16           height;
+    u8            nchan;
+    u8            Bpp;
+    Basic_Type_ID rtti;
 
-//
-// Frame Descriptor
-//
+    Frame(void);
+    Frame(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
 
-inline Frame_Interface  *Frame_Descriptor_Get_Interface ( Frame_Descriptor *self );
-       void              Frame_Descriptor_Change        ( Frame_Descriptor *self, u8 interface_id, void *metadata, size_t nbytes );
+    unsigned int   is_equivalent( Frame *ref );
+    void           dump( const char *filename );
 
-// TODO: Finish file i/o interface
-void              Frame_Descriptor_To_File              ( FILE *fp, Frame_Descriptor *self );
-u8                Frame_Descriptor_From_File_Read_Next  ( FILE *fp, Frame_Descriptor *self, size_t *repeat_count );
+    virtual size_t size_bytes  ( void );
+    virtual void   format      ( Message *unformatted );
+    virtual void   copy_channel( void *dst, size_t rowpitch, size_t ichan ) = 0;
+    // Children also need to impliment (left over from Message):
+    //             translate()
+    //             format()    - but only if formatting data is added
+};
 
-//
-// Frame
-//
-// To create a frame:
-//
-// 1. allocate a buffer of size Frame_Get_Size_Bytes with malloc
-// 2. Use Frame_Get to get access to the data and the frame description.
-// 3. Set the descriptor
-// - or -
-// 1. Use Frame_Alloc
-// 2. Use Frame_Get to get access to the data and the frame description.
-// 
+class Frame_With_Interleaved_Pixels : public Frame
+{ public:
+    Frame_With_Interleaved_Pixels(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
 
-size_t            Frame_Get_Size_Bytes ( Frame_Descriptor *desc );                             // Returns size of frame in bytes (descriptor + internal buffer)
-Frame*            Frame_Alloc          ( Frame_Descriptor *desc );
-void              Frame_Free           ( void );
-void              Frame_Get            ( Frame *bytes, void **data, Frame_Descriptor **desc );
-Frame_Interface  *Frame_Get_Interface  ( Frame *self );
+    virtual void     copy_channel ( void *dst, size_t rowpitch, size_t ichan );
+    static  size_t   translate    ( Message *dst, Message *src );
+};
 
-void              Frame_Dump        ( Frame *self, const char* filename );
+class Frame_With_Interleaved_Lines : public Frame
+{ public:
+    Frame_With_Interleaved_Lines(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
 
-//
-// Common frame interface 
-//
-#include "frame-interface-digitizer.h"
+    virtual void     copy_channel ( void *dst, size_t rowpitch, size_t ichan );
+    static  size_t   translate    ( Message *dst, Message *src );
+};
 
-typedef Digitizer_Frame_Metadata Common_Frame_Metadata;
+class Frame_With_Interleaved_Planes : public Frame
+{ public:
+    Frame_With_Interleaved_Planes(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
 
-size_t  Frame_Get_Common_Size_Bytes ( Frame *frm );
-void    Frame_Copy_To_Common        ( Frame *dst, Frame *src );
-int     Frame_Is_Common             ( Frame *self );
+    virtual void     copy_channel ( void *dst, size_t rowpitch, size_t ichan );
+    static  size_t   translate    ( Message *dst, Message *src );
+};

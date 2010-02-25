@@ -4,7 +4,6 @@
 #include "device-digitizer.h"
 #include "device.h"
 #include "frame.h"
-#include "frame-interface-digitizer.h"
 
 #define CheckWarn( expression )  (niscope_chk( Digitizer_Get()->vi, expression, #expression, &warning ))
 #define CheckPanic( expression ) (niscope_chk( Digitizer_Get()->vi, expression, #expression, &error   ))
@@ -33,16 +32,15 @@ typedef ViInt16     TPixel;
 // TASK - Streaming on all channels
 //
 
-Digitizer_Frame_Metadata*
-_Digitizer_Task_Fetch_Forever_Frame_Metadata( ViInt32 record_length, ViInt32 nwfm )
-{ static Digitizer_Frame_Metadata meta;    
-  meta.height = 512;
-  meta.width  = (u16) (record_length / meta.height);
-  meta.nchan  = (u8)  nwfm;
-  meta.Bpp    = sizeof(TPixel);
-  meta.rtti   = TPixel_ID;
-  return &meta;
+inline Frame
+_format_frame(ViInt32 record_length, ViInt32 nwfm )
+{ Frame_With_Interleaved_Planes fmt( record_length/512, // width
+                                     512,               // height
+                                     nwfm,              // # channels
+                                     TPixel_ID );       // pixel type
+  return fmt;
 }
+
 
 unsigned int
 _Digitizer_Task_Fetch_Forever_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
@@ -78,21 +76,17 @@ _Digitizer_Task_Fetch_Forever_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *
                                                  0.0,   // hold off (s)
                                                  0.0)); // delay    (s)
 
+  // Allocate queue's
   { ViInt32 nwfm;
     ViInt32 record_length;
-    Frame_Descriptor desc;
     
     CheckPanic( niScope_ActualNumWfms(vi, cfg.acquisition_channels, &nwfm ) );
     CheckPanic( niScope_ActualRecordLength(vi, &record_length) );
     
-    // Fill in frame description
-    { Digitizer_Frame_Metadata *meta = 
-        _Digitizer_Task_Fetch_Forever_Frame_Metadata( record_length, nwfm );
-      Frame_Descriptor_Change( &desc, FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__INTERFACE_ID, meta, sizeof(Digitizer_Frame_Metadata) );
-    }
-    { size_t nbuf[2] = {DIGITIZER_BUFFER_NUM_FRAMES,
+    { Frame fmt = _format_frame( record_length, nwfm );
+      size_t nbuf[2] = {DIGITIZER_BUFFER_NUM_FRAMES,
                         DIGITIZER_BUFFER_NUM_FRAMES},
-               sz[2] = {Frame_Get_Size_Bytes(&desc),             // frame data
+               sz[2] = {fmt->size_bytes(),                       // frame data
                         nwfm*sizeof(struct niScope_wfmInfo)};    // description of each frame
       // DeviceTask_Free_Outputs( d->task );  // free channels that already exist (FIXME: thrashing)
       // Channels are reference counted so the memory may not be freed till the other side Unrefs.
@@ -123,24 +117,15 @@ _Digitizer_Task_Fetch_Forever_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ 
   u32    last_max_fetch = 0;  
   Frame                  *frm  = (Frame*)            Asynq_Token_Buffer_Alloc(qdata);
   struct niScope_wfmInfo *wfm  = (niScope_wfmInfo*)  Asynq_Token_Buffer_Alloc(qwfm);
-  Frame_Descriptor       *desc, ref;
+  Frame fmt;
   int change_token;
-  TPixel                 *buf;
   unsigned int ret = 1;
 
-  Frame_Get(frm, (void**)&buf, &desc );
-    
+  // Compute image dimensions
   CheckPanic( niScope_ActualNumWfms(vi, chan, &nwfm ) );
   CheckPanic( niScope_ActualRecordLength(vi, &nelem) );
-
-  // Fill in frame description
-  { Digitizer_Frame_Metadata *meta = 
-      _Digitizer_Task_Fetch_Forever_Frame_Metadata( nelem, nwfm );
-    Frame_Descriptor_Change( desc, FRAME_INTERFACE_DIGITIZER_INTERLEAVED_PLANES__INTERFACE_ID, meta, sizeof(Digitizer_Frame_Metadata) );
-    change_token = desc->change_token;
-    ref = *desc;
-  }
-      
+  ref = __frame( nelem, wfm );
+  ref.format(frm);
   
   ViErrChk   (niScope_GetAttributeViInt32 (vi, NULL,   // TODO: reset to default when done
                                            NISCOPE_ATTR_FETCH_RELATIVE_TO,         //?TODO: push/pop state for niscope?
@@ -167,7 +152,7 @@ _Digitizer_Task_Fetch_Forever_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ 
                                 chan,          // (acquistion channels)
                                 0.0,           // Immediate
                                 nelem - ttl,   // Remaining space in buffer
-                                buf   + ttl,   // Where to put the data
+                                frm->data + ttl,   // Where to put the data
                                 wfm);          // metadata for fetch
       if( delay > maxdelay )
       { maxdelay = delay;
@@ -186,7 +171,7 @@ _Digitizer_Task_Fetch_Forever_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ 
     // Handle the full buffer
     { //double dt;
 #ifdef DIGITIZER_DEBUG_FAIL_WHEN_FULL
-      if(  !Asynq_Push_Try( qdata,(void**) &frm )) //   Push buffer and reset total samples count
+      if(  !Asynq_Push_Try( qdata,(void**) &frm ))    //   Push buffer and reset total samples count
 #elif defined( DIGITIZER_DEBUG_SPIN_WHEN_FULL )
       if(  !Asynq_Push( qdata,(void**) &frm, FALSE )) //   Push buffer and reset total samples count
 #else
@@ -199,10 +184,8 @@ _Digitizer_Task_Fetch_Forever_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ 
       { ViReal64 pts = 0;
         CheckPanic( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_BACKLOG, &pts ));
         digitizer_task_fetch_forever_debug("Digitizer Backlog: %4.1f MS\r\n",pts/1024.0/1024.0);
-      }  
-      Frame_Get(frm, (void**)&buf, &desc ); //get addresses
-      
-      memcpy(desc,&ref,sizeof(Frame_Descriptor));
+      }
+      ref.format(frm); // format the new frame
       
       //dt = toc(&t);
       //if( !MOD_UNSIGNED_POW2(nframes+1,every) )
