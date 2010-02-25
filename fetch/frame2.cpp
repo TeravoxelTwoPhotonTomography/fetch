@@ -32,6 +32,13 @@ Message::from_file(FILE *fp, Message* workspace, size_t size_workspace)
   return 0; // Success.
 }
 
+size_t
+Message::translate( Message *dst, Message *src )
+{ size_t sz = src->size_bytes();
+  if(dst) memcpy(dst,src,sz);
+  return sz;
+}
+  
 /*
  * FRAME
  */
@@ -69,26 +76,63 @@ Frame_With_Interleaved_Pixels::
                                 id( FRAME_INTERLEAVED_PIXELS )
 {}
 
-void Frame_With_Interleaved_Pixels::
-copy_channel( void *dst, size_t rowpitch, size_t ichan )
-{ size_t irow = this->height,
-          Bpp = this->Bpp,
-         step = this->nchan * Bpp,
-            w = this->width * step,
-        nelem = MIN( rowpitch/step, this->width );
-  void   *src = this->data,
-  while(irow--)
-  { size_t n = nelem;
-    void *dstcur = dst + irow * rowpitch + n * step,
-         *srccur = src + irow * w        + n * step;
-    while( n-- )
-    { dstcur -= step;
-      srccur -= step;
-      memcpy( dstcur, srccur, step );
-    }
-  }
+void 
+Frame_With_Interleaved_Pixels::
+  copy_channel( void *dst, size_t rowpitch, size_t ichan )
+{ size_t pp = this->Bpp,
+         dstw = rowpitch/pp,
+         shape[] = {1,
+                    MIN( this->width, dstw ),
+                    this->height},
+         dst_pitch[] = { rowpitch * this->height * pp,
+                                        rowpitch * pp,
+                                                   pp,
+                                                   pp},
+         src_pitch[] = {this->width * this->height * this->nchan * pp,
+                        this->width *                this->nchan * pp,
+                                                     this->nchan * pp,
+                                                                   pp};
+  imCopy<u8,u8>(dst,                       dst_pitch,
+                src + ichan * src_pitch[3],src_pitch,
+                shape);
 }
 
+/*
+ * Frame_With_Interleaved_Planes
+ *
+ * TODO:
+ * [ ] static  Message *translate    ( Message *src );
+ */
+
+Frame_With_Interleaved_Lines::
+  Frame_With_Interleaved_Liness(u16 width, u16 height, u8 nchan, Basic_Type_ID type)
+                              : width(width),
+                                height(height),
+                                nchan(nchan),
+                                type(type),
+                                Bpp( g_type_attributes[type].bytes ),
+                                id( FRAME_INTERLEAVED_LINES )
+{}
+
+void Frame_With_Interleaved_Lines::
+copy_channel( void *dst, size_t rowpitch, size_t ichan )
+{ size_t pp = this->Bpp,
+         dstw = rowpitch/pp,
+         shape[] = {1,
+                    MIN( this->width, dstw ),
+                    this->height},
+         dst_pitch[] = { rowpitch * this->height * pp,
+                                        rowpitch * pp,
+                                                   pp,
+                                                   pp},
+         src_pitch[] = {this->width * this->height * this->nchan * pp,
+                        this->width *                this->nchan * pp,
+                        this->width *                              pp,
+                                                                   pp};
+  imCopy<u8,u8>(dst,                       dst_pitch,
+                src + ichan * src_pitch[2],src_pitch,
+                shape);
+}
 
 /*
  * Frame_With_Interleaved_Planes
@@ -104,14 +148,25 @@ Frame_With_Interleaved_Planes::
                                 nchan(nchan),
                                 type(type),
                                 Bpp( g_type_attributes[type].bytes ),
-                                id( FRAME_INTERLEAVED_PLANES)
+                                id( FRAME_INTERLEAVED_PLANES )
 {}
 
-void Frame_With_Interleaved_Pixels::
+void Frame_With_Interleaved_Planes::
 copy_channel( void *dst, size_t rowpitch, size_t ichan )
-{ size_t irow = this->height,
-            w = this->width * this->Bpp;
-  void   *src = this->data,
-  while(irow--)
-    memcpy( dst + irow * rowpitch, src + irow * w, w );
+{ size_t pp = this->Bpp,
+         dstw = rowpitch/pp,
+         shape[] = {1,
+                    MIN( this->width, dstw ),
+                    this->height},
+         dst_pitch[] = { rowpitch * this->height * pp,
+                                        rowpitch * pp,
+                                                   pp,
+                                                   pp},
+         src_pitch[] = {this->width * this->height * this->nchan * pp,
+                        this->width * this->height *               pp,
+                        this->width *                              pp,
+                                                                   pp};
+  imCopy<u8,u8>(dst,                       dst_pitch,
+                src + ichan * src_pitch[1],src_pitch,
+                shape);
 }

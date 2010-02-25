@@ -117,6 +117,16 @@
  *  - If a format's identifier changes, messages written beforehand will be
  *    incompatible.
  *
+ *  Translate
+ *  ---------
+ *  
+ *  Compatible messages are transformed into the calling Message sub-type.
+ *  Minimally, this is a copy operation.
+ *
+ *  Returns the size required of the destination message buffer.
+ *
+ *  If the pointer to the destination buffer is NULL, the function will 
+ *  restrict itself to just computing the size.
  */
 
 
@@ -141,8 +151,8 @@ class Message
 
     // Override these in implimenting classes.
     virtual size_t   size_bytes ( void ) = 0;
-    virtual void     format     ( Message *unformatted ) = 0;      // This should simply copy the format metadata from "this" to "unformatted."
-    static  Message *translate  ( Message *src ) { return src;  }  // The sub-class determines the destination.  Here this is an identity op.
+    virtual void     format     ( Message *unformatted ) = 0;           // This should simply copy the format metadata from "this" to "unformatted."
+    static  size_t   translate  ( Message *dst, Message *src );         // The sub-class determines the destination.
 };                                                                 
 
 class Frame : public Message
@@ -168,5 +178,23 @@ class Frame_With_Interleaved_Pixels : public Frame
 
     virtual void     copy_channel ( void *dst, size_t rowpitch, size_t ichan );
     virtual void     format       ( Message *unformatted );
-    static  Message *translate    ( Message *src );
+    static  size_t   translate    ( Message *dst, Message *src );
+};
+
+class Frame_With_Interleaved_Lines : public Frame
+{ public:
+    Frame_With_Interleaved_Lines(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
+
+    virtual void     copy_channel ( void *dst, size_t rowpitch, size_t ichan );
+    virtual void     format       ( Message *unformatted );
+    static  size_t   translate    ( Message *dst, Message *src );
+};
+
+class Frame_With_Interleaved_Planes : public Frame
+{ public:
+    Frame_With_Interleaved_Planes(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
+
+    virtual void     copy_channel ( void *dst, size_t rowpitch, size_t ichan );
+    virtual void     format       ( Message *unformatted );
+    static  size_t   translate    ( Message *dst, Message *src );
 };
