@@ -29,6 +29,13 @@
 //   
 //  n[] = { 3, 512, 256 };
 
+void Compute_Pitch( size_t pitch[4], size_t pixel_pitch, size_t d0, size_t d1, size_t d2)
+{ pitch[0] = pixel_pitch;
+  pitch[1] = d0 * pitch[0];
+  pitch[2] = d1 * pitch[1];
+  pitch[3] = d2 * pitch[2];
+}
+
 int _pitch_first_mismatch( size_t dst_pitch[4], size_t src_pitch[4] )
 { int i = 3;
   if( dst_pitch[i] != 1 || src_pitch[i] != 1 )
@@ -74,11 +81,12 @@ template<class Tdst, class Tsrc>
 void
 imCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n[3] )
 { int mismatch = _pitch_first_mismatch(dst_pitch, src_pitch);
-  size_t vols[3] = { n[2]*n[1]*n[0],
-                          n[1]*n[0], 
-                               n[0]};
+  size_t b = sizeof(Tsrc),
+         vols[3] = { n[2]*n[1]*n[0]*b,  // in bytes.  used in block copies
+                          n[1]*n[0]*b, 
+                               n[0]*b};
   if( sizeof(Tdst) != sizeof(Tsrc) )
-    mismatch = 4; //indicating a mismatch on the pixel level will force the pixel by pixel copy
+    mismatch = 4; //a mismatch on the pixel level will force the pixel by pixel copy
 
   switch( mismatch )
   { case -1: // all strides match
@@ -87,7 +95,7 @@ imCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n
       break;
     case  1:                        // "plane" copy
       { size_t i = n[2], 
-               v = vols[1],
+               v = n[1]*n[0]*b,
                dp = dst_pitch[2],
                sp = src_pitch[2];
         while(i--)
@@ -99,7 +107,7 @@ imCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n
       break;
     case  2:                        // "line" copy
       { size_t i = n[2], 
-               v  = vols[2],
+               v   = n[0]*b,
                dp0 = dst_pitch[2],
                dp1 = dst_pitch[1],
                sp0 = src_pitch[2],

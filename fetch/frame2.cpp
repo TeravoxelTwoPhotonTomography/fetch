@@ -59,11 +59,15 @@ Frame::size_bytes(void)
                         this->Bpp;
 }
 
+void
+Frame::format(Message* unformatted)
+{ memcpy( unformatted, this, sizeof(*this) );      // Copy the format header
+  unformatted->data = unformatted + sizeof(*this); // Set the data section
+}
+
 /*
  * Frame_With_Interleaved_Pixels
  *
- * TODO:
- * [ ] static  Message *translate    ( Message *src );
  */
 
 Frame_With_Interleaved_Pixels::
@@ -84,24 +88,65 @@ Frame_With_Interleaved_Pixels::
          shape[] = {1,
                     MIN( this->width, dstw ),
                     this->height},
-         dst_pitch[] = { rowpitch * this->height * pp,
-                                        rowpitch * pp,
-                                                   pp,
-                                                   pp},
-         src_pitch[] = {this->width * this->height * this->nchan * pp,
-                        this->width *                this->nchan * pp,
-                                                     this->nchan * pp,
-                                                                   pp};
-  imCopy<u8,u8>(dst,                       dst_pitch,
-                src + ichan * src_pitch[3],src_pitch,
+         dst_pitch[4], src_pitch[4];
+  Compute_Pitch( dst_pitch, pp,           1,        dstw, this->height );
+  Compute_Pitch( src_pitch, pp, this->nchan, this->width, this->height );
+  imCopy<u8,u8>(dst,                        dst_pitch,
+                src + ichan * src_pitch[3], src_pitch,
                 shape);
+}
+
+size_t
+Frame_With_Interleaved_Pixels::
+  translate( Message *dst, Message *src )
+{ size_t sz = src->size_bytes();
+
+  switch( src->id )
+  { case FRAME_INTERLEAVED_PIXELS:
+      return Message::translate(dst,src);
+      break;
+    case FRAME_INTERLEAVED_LINES:
+      if(!dst) return sz;
+      src->format(dst);                   // Format metadata is the same so just copy it in
+      dst->id = FRAME_INTERLEAVED_PIXELS; // Set the format tag properly
+      { size_t pp = src->Bpp,
+               shape[] = { src->width, src->nchan, src->height },
+               dst_pitch[4],
+               src_pitch[4];
+        Compute_Pitch( dst_pitch, pp, src->nchan, src->width, src->height );
+        Compute_Pitch( src_pitch, pp, src->width, src->nchan, src->height );
+        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
+                                src->data, src_pitch, shape, 0, 1 ); 
+        
+      }
+      break;
+    case FRAME_INTERLEAVED_PLANES:
+      if(!dst) return sz;
+      src->format(dst);                   // Format metadata is the same so just copy it in
+      dst->id = FRAME_INTERLEAVED_PIXELS; // Set the format tag properly
+      { size_t pp = src->Bpp,
+               shape[] = { src->width, src->height, src->nchan },
+               dst_pitch[4],
+               src_pitch[4];
+        // This ends up apparently transposing width and height.
+        // Really, doing this properly requires two transposes.
+        Compute_Pitch( dst_pitch, pp, src->nchan, src->height, src->width );
+        Compute_Pitch( src_pitch, pp, src->width, src->height, src->nchan  );
+        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
+                                src->data, src_pitch, shape, 0, 2 ); 
+        
+      }
+      break;
+    default:
+      warning("Failed attempt to translate a message.");
+      return 0; // no translation
+  }
+  return sz;
 }
 
 /*
  * Frame_With_Interleaved_Planes
  *
- * TODO:
- * [ ] static  Message *translate    ( Message *src );
  */
 
 Frame_With_Interleaved_Lines::
@@ -121,24 +166,64 @@ copy_channel( void *dst, size_t rowpitch, size_t ichan )
          shape[] = {1,
                     MIN( this->width, dstw ),
                     this->height},
-         dst_pitch[] = { rowpitch * this->height * pp,
-                                        rowpitch * pp,
-                                                   pp,
-                                                   pp},
-         src_pitch[] = {this->width * this->height * this->nchan * pp,
-                        this->width *                this->nchan * pp,
-                        this->width *                              pp,
-                                                                   pp};
+         dst_pitch[],
+         src_pitch[];
+  Compute_Pitch( dst_pitch, pp,        dstw,           1, this->height );
+  Compute_Pitch( src_pitch, pp, this->width, this->nchan, this->height );
   imCopy<u8,u8>(dst,                       dst_pitch,
                 src + ichan * src_pitch[2],src_pitch,
                 shape);
 }
 
+size_t
+Frame_With_Interleaved_Lines::
+  translate( Message *dst, Message *src )
+{ size_t sz = src->size_bytes();
+
+  switch( src->id )
+  { case FRAME_INTERLEAVED_LINES:
+      return Message::translate(dst,src);
+      break;
+    case FRAME_INTERLEAVED_PIXELS:
+      if(!dst) return sz;
+      src->format(dst);                   // Format metadata is the same so just copy it in
+      dst->id = FRAME_INTERLEAVED_LINES;  // Set the format tag properly 
+      { size_t pp = src->Bpp,
+               shape[] = { src->nchan, src->width, src->height },
+               dst_pitch[4],
+               src_pitch[4];
+        Compute_Pitch( dst_pitch, pp, src->width, src->nchan, src->height );
+        Compute_Pitch( src_pitch, pp, src->nchan, src->width, src->height );
+        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
+                                src->data, src_pitch, shape, 0, 1 ); 
+        
+      }
+      break;
+    case FRAME_INTERLEAVED_PLANES:
+      if(!dst) return sz;
+      src->format(dst);                   // Format metadata is the same so just copy it in
+      dst->id = FRAME_INTERLEAVED_LINES;  // Set the format tag properly
+      { size_t pp = src->Bpp,
+               shape[] = { src->width, src->height, src->nchan },
+               dst_pitch[4],
+               src_pitch[4];
+        Compute_Pitch( dst_pitch, pp, src->width, src->nchan, src->height );
+        Compute_Pitch( src_pitch, pp, src->width, src->height, src->nchan  );
+        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
+                                src->data, src_pitch, shape, 1, 2 ); 
+        
+      }
+      break;
+    default:
+      warning("Failed attempt to translate a message.");
+      return 0; // no translation
+  }
+  return sz;
+}
+
 /*
  * Frame_With_Interleaved_Planes
  *
- * TODO:
- * [ ] static  Message *translate    ( Message *src );
  */
 
 Frame_With_Interleaved_Planes::
@@ -158,15 +243,59 @@ copy_channel( void *dst, size_t rowpitch, size_t ichan )
          shape[] = {1,
                     MIN( this->width, dstw ),
                     this->height},
-         dst_pitch[] = { rowpitch * this->height * pp,
-                                        rowpitch * pp,
-                                                   pp,
-                                                   pp},
-         src_pitch[] = {this->width * this->height * this->nchan * pp,
-                        this->width * this->height *               pp,
-                        this->width *                              pp,
-                                                                   pp};
+         dst_pitch[],
+         src_pitch[];
+  Compute_Pitch( dst_pitch, pp,        dstw, this->height, 1 );
+  Compute_Pitch( src_pitch, pp, this->width, this->height, this->nchan );
   imCopy<u8,u8>(dst,                       dst_pitch,
                 src + ichan * src_pitch[1],src_pitch,
                 shape);
+}
+
+size_t
+Frame_With_Interleaved_Planes::
+  translate( Message *dst, Message *src )
+{ size_t sz = src->size_bytes();
+
+  switch( src->id )
+  { case FRAME_INTERLEAVED_PLANES:
+      return Message::translate(dst,src);
+      break;
+    case FRAME_INTERLEAVED_PIXELS:
+      if(!dst) return sz;
+      src->format(dst);                   // Format metadata is the same so just copy it in
+      dst->id = FRAME_INTERLEAVED_PLANES; // Set the format tag properly 
+      { size_t pp = src->Bpp,
+               shape[] = { src->nchan, src->width, src->height },
+               dst_pitch[4],
+               src_pitch[4];
+        // This ends up apparently transposing width and height.
+        // Really, doing this properly requires two transposes.
+        Compute_Pitch( dst_pitch, pp, src->height, src->width, src->nchan );
+        Compute_Pitch( src_pitch, pp, src->nchan, src->width,  src->height );
+        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
+                                src->data, src_pitch, shape, 0, 2 ); 
+        
+      }
+      break;
+    case FRAME_INTERLEAVED_LINES:
+      if(!dst) return sz;
+      src->format(dst);                   // Format metadata is the same so just copy it in
+      dst->id = FRAME_INTERLEAVED_PLANES; // Set the format tag properly
+      { size_t pp = src->Bpp,
+               shape[] = { src->width, src->nchan, src->height },
+               dst_pitch[4],
+               src_pitch[4];
+        Compute_Pitch( dst_pitch, pp, src->width, src->height, src->nchan );
+        Compute_Pitch( src_pitch, pp, src->width, src->nchan,  src->height);
+        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
+                                src->data, src_pitch, shape, 1, 2 ); 
+        
+      }
+      break;
+    default:
+      warning("Failed attempt to translate a message.");
+      return 0; // no translation
+  }
+  return sz;
 }

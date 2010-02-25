@@ -1,4 +1,9 @@
 #pragma once
+/*
+ * TODO - change tokens
+ * TODO - on implimentation side, use rtti field to call proper templated copy
+ *        functions.
+ */
 
 /*
  * Messages are meant to describe formated data passing through a queue that
@@ -166,10 +171,11 @@ class Frame : public Message
     Frame(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
 
     virtual size_t size_bytes  ( void );
+    virtual void   format      ( Message *unformatted );
     virtual void   copy_channel( void *dst, size_t rowpitch, size_t ichan ) = 0;
     // Children also need to impliment (left over from Message):
-    //             format()
     //             translate()
+    //             format()    - but only if formatting data is added
 };
 
 class Frame_With_Interleaved_Pixels : public Frame
@@ -177,7 +183,6 @@ class Frame_With_Interleaved_Pixels : public Frame
     Frame_With_Interleaved_Pixels(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
 
     virtual void     copy_channel ( void *dst, size_t rowpitch, size_t ichan );
-    virtual void     format       ( Message *unformatted );
     static  size_t   translate    ( Message *dst, Message *src );
 };
 
@@ -186,7 +191,6 @@ class Frame_With_Interleaved_Lines : public Frame
     Frame_With_Interleaved_Lines(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
 
     virtual void     copy_channel ( void *dst, size_t rowpitch, size_t ichan );
-    virtual void     format       ( Message *unformatted );
     static  size_t   translate    ( Message *dst, Message *src );
 };
 
@@ -195,6 +199,5 @@ class Frame_With_Interleaved_Planes : public Frame
     Frame_With_Interleaved_Planes(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
 
     virtual void     copy_channel ( void *dst, size_t rowpitch, size_t ichan );
-    virtual void     format       ( Message *unformatted );
     static  size_t   translate    ( Message *dst, Message *src );
 };
