@@ -45,12 +45,13 @@ typedef ViInt8      TPixel;
 //  Video frame configuration
 //
 
-inline Frame
+inline Frame_With_Interleaved_Lines
 _format_frame( ViInt32 record_length, ViInt32 nwfm, f32 duty )
-{ Frame_With_Interleaved_Lines format( record_length,              // width
-                                       Scanner_Get()->config.scans,// height
-                                       nwfm/record_length,         // number of channels
-                                       TPixel_ID );                // pixel type
+{ u32 scans = Scanner_Get()->config.scans;
+  Frame_With_Interleaved_Lines format( (u16) record_length,              // width
+                                             scans,                      // height
+                                       (u8) (nwfm/scans),                // number of channels
+                                             TPixel_ID );                // pixel type
   Guarded_Assert( format.nchan  > 0 );
   Guarded_Assert( format.height > 0 );
   Guarded_Assert( format.width  > 0 );
@@ -217,7 +218,7 @@ void _config_daq(tfp_compute_gavlo_waveform compute_gavlo_waveform)
   return;
 }
 
-Frame
+Frame_With_Interleaved_Lines
 _describe_frame()
 { ViSession                   vi = Scanner_Get()->digitizer->vi;
   ViInt32                   nwfm;
@@ -278,8 +279,8 @@ unsigned int
 _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 { asynq *qdata = out->contents[0],
         *qwfm  = out->contents[1];
-  Frame                  *frm = (Frame*) Asynq_Token_Buffer_Alloc(qdata),
-                          ref;
+  Frame                  *frm = (Frame*) Asynq_Token_Buffer_Alloc(qdata);
+  Frame_With_Interleaved_Lines ref;
   struct niScope_wfmInfo *wfm = (niScope_wfmInfo*) Asynq_Token_Buffer_Alloc(qwfm);
   int width = _compute_record_size();
   int i=0, status = 1; // status == 0 implies success, error otherwise
@@ -309,8 +310,9 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
                       chan,
                       SCANNER_VIDEO_TASK_FETCH_TIMEOUT,//10.0, //(-1=infinite) (0.0=immediate) 
                       width,
-                      frm->data,
+                      (TPixel*) frm->data,
                       wfm));
+    //debug("\tGain: %f\r\n",wfm[0].gain);
 
     // Push the acquired data down the output pipes
     Asynq_Push( qwfm,(void**) &wfm, 0 );

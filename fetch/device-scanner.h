@@ -18,7 +18,7 @@
 #define SCANNER_DEFAULT_LINE_TRIGGER_SRC              1   // Digitizer channel corresponding to resonant velocity input
                                                           // the channel should be appropriately configured in the digitizer config
 #define SCANNER_DEFAULT_GALVO_SAMPLES              4096   // samples per waveform
-#define SCANNER_DEFAULT_GALVO_VPP                  10.0   // V - peak-to-peak
+#define SCANNER_DEFAULT_GALVO_VPP                  5.0   // V - peak-to-peak
 #define SCANNER_DEFAULT_GALVO_V_MAX                10.0   // V - peak-to-peak
 #define SCANNER_DEFAULT_GALVO_V_MIN               -10.0   // V - peak-to-peak
 #define SCANNER_DEFAULT_GALVO_CHANNEL        "/Dev1/ao0"  // DAQ terminal: should be connected to command input on galvo controller

@@ -192,19 +192,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\device-galvo-mirror.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\device-scanner.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\device-task-digitizer-fetch-forever.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\device-task-galvo-mirror-cont-triangle-wave.cpp"
 				>
 			</File>
 			<File
@@ -229,14 +221,6 @@
 			</File>
 			<File
 				RelativePath=".\fetch.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\frame-interface-digitizer.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\frame-interface-resonant.cpp"
 				>
 			</File>
 			<File
@@ -296,6 +280,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\util-file.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\util-nidaqmx.cpp"
 				>
 			</File>
@@ -330,19 +318,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\device-galvo-mirror.h"
-				>
-			</File>
-			<File
 				RelativePath=".\device-scanner.h"
 				>
 			</File>
 			<File
 				RelativePath=".\device-task-digitizer-fetch-forever.h"
-				>
-			</File>
-			<File
-				RelativePath=".\device-task-galvo-mirror-cont-triangle-wave.h"
 				>
 			</File>
 			<File
@@ -367,14 +347,6 @@
 			</File>
 			<File
 				RelativePath=".\fetch.h"
-				>
-			</File>
-			<File
-				RelativePath=".\frame-interface-digitizer.h"
-				>
-			</File>
-			<File
-				RelativePath=".\frame-interface-resonant.h"
 				>
 			</File>
 			<File
@@ -419,6 +391,14 @@
 			</File>
 			<File
 				RelativePath=".\util-dx10.h"
+				>
+			</File>
+			<File
+				RelativePath=".\util-file.h"
+				>
+			</File>
+			<File
+				RelativePath=".\util-image.h"
 				>
 			</File>
 			<File

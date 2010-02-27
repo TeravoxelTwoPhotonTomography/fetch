@@ -48,7 +48,7 @@ size_t
 Message::from_file(HANDLE hfile, Message* workspace, size_t size_workspace)
 { size_t sz,off;
   DWORD  bytes_read;
-  int64  bookmark = w32file::getpos(hfile);
+  i64  bookmark = w32file::getpos(hfile);
   Guarded_Assert_WinErr(    ReadFile( hfile,      &sz, sizeof(size_t), &bytes_read, NULL ));  
 
   if( !workspace ||  size_workspace >= sz )
@@ -56,8 +56,8 @@ Message::from_file(HANDLE hfile, Message* workspace, size_t size_workspace)
     return sz;                                       // failure.  Indicates the required storage size.
   }
 
-  Guarded_Assert_WinErr(    ReadFile( hfile,     &off, sizeof(size_t), &bytes_read, NULL ));  
-  Guarded_Assert_WinErr(    ReadFile( hfile, worspace,             sz, &bytes_read, NULL ));  
+  Guarded_Assert_WinErr(    ReadFile( hfile,      &off, sizeof(size_t), &bytes_read, NULL ));  
+  Guarded_Assert_WinErr(    ReadFile( hfile, workspace,             sz, &bytes_read, NULL ));  
   workspace->data = (u8*)workspace + off;
   return 0; // Success.
 }
@@ -70,38 +70,48 @@ Message::translate( Message *dst, Message *src )
 }
   
 /*
- * FRAME
+ * FrmFmt
  */
 
-Frame::Frame()
-      : width(0),
+FrmFmt::FrmFmt()
+      : Message(FORMAT_INVALID, sizeof(Frame)),
+        width(0),
         height(0),
         nchan(0),
-        type(id_unspecified),
-        Bpp(0),
-        self_size(sizeof(Frame))
+        rtti(id_unspecified),
+        Bpp(0)
 {}
 
-Frame::Frame(u16 width, u16 height, u8 nchan, Basic_Type_ID type)
-      : width(width),
+FrmFmt::FrmFmt(u16 width, u16 height, u8 nchan, Basic_Type_ID type)
+      : Message(FORMAT_INVALID, sizeof(Frame)),
+        width(width),
         height(height),
         nchan(nchan),
-        type(type),
-        Bpp( g_type_attributes[type].bytes ),
-        self_size(sizeof(Frame))
+        rtti(type),
+        Bpp( g_type_attributes[type].bytes )
+{}
+
+FrmFmt::FrmFmt(u16 width, u16 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size)
+      : Message(id, self_size),
+        width(width),
+        height(height),
+        nchan(nchan),
+        rtti(type),
+        Bpp( g_type_attributes[type].bytes )
 {}
 
 unsigned int
-Frame::is_equivalent( Frame *ref )
-{ if( (ref->id     != this->id      ) ||
-      (ref->width  != this->width   ) ||
-      (ref->height != this->height  ) ||
-      (ref->nchan  != this->nchan   ) ||
-      (ref->rtti   != this->rtti    ) ) return 1;
+FrmFmt::is_equivalent( FrmFmt *ref )
+{ if( (ref->id     == this->id      ) &&
+      (ref->width  == this->width   ) &&
+      (ref->height == this->height  ) &&
+      (ref->nchan  == this->nchan   ) &&
+      (ref->rtti   == this->rtti    ) ) return 1;
   return 0;
 }
     
-void dump( const char *filename )
+void
+FrmFmt::dump( const char *filename )
 { size_t  n = this->width * 
               this->height*
               this->nchan;
@@ -111,7 +121,7 @@ void dump( const char *filename )
 }
 
 size_t
-Frame::size_bytes(void)
+FrmFmt::size_bytes(void)
 { return this->self_size + this->width * 
                            this->height*
                            this->nchan *
@@ -119,9 +129,9 @@ Frame::size_bytes(void)
 }
 
 void
-Frame::format(Message* unformatted)
-{ memcpy( unformatted, this, this->self_size );      // Copy the format header
-  unformatted->data = unformatted + this->self_size; // Set the data section
+FrmFmt::format(Message* unformatted)
+{ memcpy( unformatted, this, this->self_size );           // Copy the format header
+  unformatted->data = (u8*)unformatted + this->self_size; // Set the data section
 }
 
 /*
@@ -131,13 +141,12 @@ Frame::format(Message* unformatted)
 
 Frame_With_Interleaved_Pixels::
   Frame_With_Interleaved_Pixels(u16 width, u16 height, u8 nchan, Basic_Type_ID type)
-                              : width(width),
-                                height(height),
-                                nchan(nchan),
-                                type(type),
-                                Bpp( g_type_attributes[type].bytes ),
-                                self_size(sizeof(Frame_With_Interleaved_Pixels)),
-                                id( FRAME_INTERLEAVED_PIXELS )
+                              : Frame(width,
+                                      height,
+                                      nchan,
+                                      type,
+                                      FRAME_INTERLEAVED_PIXELS,
+                                      sizeof(Frame_With_Interleaved_Pixels))
 {}
 
 void 
@@ -151,15 +160,17 @@ Frame_With_Interleaved_Pixels::
          dst_pitch[4], src_pitch[4];
   Compute_Pitch( dst_pitch, pp,           1,        dstw, this->height );
   Compute_Pitch( src_pitch, pp, this->nchan, this->width, this->height );
-  imCopy<u8,u8>(dst,                        dst_pitch,
-                src + ichan * src_pitch[3], src_pitch,
+  imCopy<u8,u8>((u8*)dst                               , dst_pitch,
+                (u8*)this->data + ichan * src_pitch[3] , src_pitch,
                 shape);
 }
 
 size_t
 Frame_With_Interleaved_Pixels::
-  translate( Message *dst, Message *src )
-{ size_t sz = src->size_bytes();
+  translate( Message *mdst, Message *msrc )
+{ size_t sz = msrc->size_bytes();
+  Frame *dst = dynamic_cast<Frame*>( mdst ),
+        *src = dynamic_cast<Frame*>( msrc );
 
   switch( src->id )
   { case FRAME_INTERLEAVED_PIXELS:
@@ -175,8 +186,8 @@ Frame_With_Interleaved_Pixels::
                src_pitch[4];
         Compute_Pitch( dst_pitch, pp, src->nchan, src->width, src->height );
         Compute_Pitch( src_pitch, pp, src->width, src->nchan, src->height );
-        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
-                                src->data, src_pitch, shape, 0, 1 ); 
+        imCopyTranspose<u8,u8>( (u8*) dst->data, dst_pitch, 
+                                (u8*) src->data, src_pitch, shape, 0, 1 ); 
         
       }
       break;
@@ -192,8 +203,8 @@ Frame_With_Interleaved_Pixels::
         // Really, doing this properly requires two transposes.
         Compute_Pitch( dst_pitch, pp, src->nchan, src->height, src->width );
         Compute_Pitch( src_pitch, pp, src->width, src->height, src->nchan  );
-        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
-                                src->data, src_pitch, shape, 0, 2 ); 
+        imCopyTranspose<u8,u8>( (u8*) dst->data, dst_pitch, 
+                                (u8*) src->data, src_pitch, shape, 0, 2 ); 
         
       }
       break;
@@ -210,14 +221,13 @@ Frame_With_Interleaved_Pixels::
  */
 
 Frame_With_Interleaved_Lines::
-  Frame_With_Interleaved_Liness(u16 width, u16 height, u8 nchan, Basic_Type_ID type)
-                              : width(width),
-                                height(height),
-                                nchan(nchan),
-                                type(type),
-                                Bpp( g_type_attributes[type].bytes ),
-                                self_size(sizeof(Frame_With_Interleaved_Lines)),
-                                id( FRAME_INTERLEAVED_LINES )
+  Frame_With_Interleaved_Lines(u16 width, u16 height, u8 nchan, Basic_Type_ID type)
+                             : Frame(width,
+                                     height,
+                                     nchan,
+                                     type,
+                                     FRAME_INTERLEAVED_LINES,
+                                     sizeof(Frame_With_Interleaved_Lines))
 {}
 
 void Frame_With_Interleaved_Lines::
@@ -227,19 +237,21 @@ copy_channel( void *dst, size_t rowpitch, size_t ichan )
          shape[] = {1,
                     MIN( this->width, dstw ),
                     this->height},
-         dst_pitch[],
-         src_pitch[];
+         dst_pitch[4],
+         src_pitch[4];
   Compute_Pitch( dst_pitch, pp,        dstw,           1, this->height );
   Compute_Pitch( src_pitch, pp, this->width, this->nchan, this->height );
-  imCopy<u8,u8>(dst,                       dst_pitch,
-                src + ichan * src_pitch[2],src_pitch,
+  imCopy<u8,u8>((u8*) dst,                              dst_pitch,
+                (u8*) this->data + ichan * src_pitch[2],src_pitch,
                 shape);
 }
 
 size_t
 Frame_With_Interleaved_Lines::
-  translate( Message *dst, Message *src )
-{ size_t sz = src->size_bytes();
+  translate( Message *mdst, Message *msrc )
+{ size_t sz = msrc->size_bytes();
+  Frame *dst = dynamic_cast<Frame*>( mdst ),
+        *src = dynamic_cast<Frame*>( msrc );
 
   switch( src->id )
   { case FRAME_INTERLEAVED_LINES:
@@ -255,8 +267,8 @@ Frame_With_Interleaved_Lines::
                src_pitch[4];
         Compute_Pitch( dst_pitch, pp, src->width, src->nchan, src->height );
         Compute_Pitch( src_pitch, pp, src->nchan, src->width, src->height );
-        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
-                                src->data, src_pitch, shape, 0, 1 ); 
+        imCopyTranspose<u8,u8>( (u8*) dst->data, dst_pitch, 
+                                (u8*) src->data, src_pitch, shape, 0, 1 ); 
         
       }
       break;
@@ -270,8 +282,8 @@ Frame_With_Interleaved_Lines::
                src_pitch[4];
         Compute_Pitch( dst_pitch, pp, src->width, src->nchan, src->height );
         Compute_Pitch( src_pitch, pp, src->width, src->height, src->nchan  );
-        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
-                                src->data, src_pitch, shape, 1, 2 ); 
+        imCopyTranspose<u8,u8>( (u8*) dst->data, dst_pitch, 
+                                (u8*) src->data, src_pitch, shape, 1, 2 ); 
         
       }
       break;
@@ -289,13 +301,12 @@ Frame_With_Interleaved_Lines::
 
 Frame_With_Interleaved_Planes::
   Frame_With_Interleaved_Planes(u16 width, u16 height, u8 nchan, Basic_Type_ID type)
-                              : width(width),
-                                height(height),
-                                nchan(nchan),
-                                type(type),
-                                Bpp( g_type_attributes[type].bytes ),
-                                self_size(sizeof(Frame_With_Interleaved_Lines)),
-                                id( FRAME_INTERLEAVED_PLANES )
+                              : Frame(width,
+                                      height,
+                                      nchan,
+                                      type,
+                                      FRAME_INTERLEAVED_PLANES,
+                                      sizeof(Frame_With_Interleaved_Planes))
 {}
 
 void Frame_With_Interleaved_Planes::
@@ -305,19 +316,21 @@ copy_channel( void *dst, size_t rowpitch, size_t ichan )
          shape[] = {1,
                     MIN( this->width, dstw ),
                     this->height},
-         dst_pitch[],
-         src_pitch[];
+         dst_pitch[4],
+         src_pitch[4];
   Compute_Pitch( dst_pitch, pp,        dstw, this->height, 1 );
   Compute_Pitch( src_pitch, pp, this->width, this->height, this->nchan );
-  imCopy<u8,u8>(dst,                       dst_pitch,
-                src + ichan * src_pitch[1],src_pitch,
+  imCopy<u8,u8>((u8*) dst,                              dst_pitch,
+                (u8*) this->data + ichan * src_pitch[1],src_pitch,
                 shape);
 }
 
 size_t
 Frame_With_Interleaved_Planes::
-  translate( Message *dst, Message *src )
-{ size_t sz = src->size_bytes();
+  translate( Message *mdst, Message *msrc )
+{ size_t sz = msrc->size_bytes();
+  Frame *dst = dynamic_cast<Frame*>( mdst ),
+        *src = dynamic_cast<Frame*>( msrc );
 
   switch( src->id )
   { case FRAME_INTERLEAVED_PLANES:
@@ -335,8 +348,8 @@ Frame_With_Interleaved_Planes::
         // Really, doing this properly requires two transposes.
         Compute_Pitch( dst_pitch, pp, src->height, src->width, src->nchan );
         Compute_Pitch( src_pitch, pp, src->nchan, src->width,  src->height );
-        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
-                                src->data, src_pitch, shape, 0, 2 ); 
+        imCopyTranspose<u8,u8>( (u8*) dst->data, dst_pitch, 
+                                (u8*) src->data, src_pitch, shape, 0, 2 ); 
         
       }
       break;
@@ -350,8 +363,8 @@ Frame_With_Interleaved_Planes::
                src_pitch[4];
         Compute_Pitch( dst_pitch, pp, src->width, src->height, src->nchan );
         Compute_Pitch( src_pitch, pp, src->width, src->nchan,  src->height);
-        imCopyTranspose<u8,u8>( dst->data, dst_pitch, 
-                                src->data, src_pitch, shape, 1, 2 ); 
+        imCopyTranspose<u8,u8>( (u8*) dst->data, dst_pitch, 
+                                (u8*) src->data, src_pitch, shape, 1, 2 ); 
         
       }
       break;

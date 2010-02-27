@@ -47,7 +47,7 @@ int _pitch_first_mismatch( size_t dst_pitch[4], size_t src_pitch[4] )
 }
 
 // cast and copy - always uses a slow copy to gaurantee casting
-template<class Tdst, Tsrc>
+template<class Tdst,class Tsrc>
 void
 imCastCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n[3] )
 { size_t i = n[2], 
@@ -171,7 +171,7 @@ imCopyTranspose( Tdst *dst, size_t dst_pitch[4],
                  Tsrc *src, size_t src_pitch[4], 
                  size_t shape[3], int i, int j )
 { int    ii = 2 - i,
-         jj = 2 - j,
+         jj = 2 - j;
   size_t ti = dst_pitch[ii],
          tj = dst_pitch[jj];
 

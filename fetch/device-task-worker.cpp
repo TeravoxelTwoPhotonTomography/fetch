@@ -22,7 +22,7 @@ _free_context(Device *d)
 typedef struct _frame_caster_context
 { Basic_Type_ID source_type,
                 dest_type;
-} FCC;
+} CC;
 
 unsigned int
 _Frame_Caster_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
@@ -42,12 +42,12 @@ _Frame_Caster_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 
 #define _FRAME_CASTER_LOOP(TI,TO) {\
   do\
-  { while( Asynq_Pop_Try(qsrc, &fsrc) )\
+  { while( Asynq_Pop_Try(qsrc, (void**)&fsrc) )\
     { TI *src, *src_cur;\
       TO *dst, *dst_cur;\
-      frsc->format(fdst);\
-      src = fsrc->data;\
-      dst = fdst->data;\
+      fsrc->format(fdst);\
+      src = (TI*) fsrc->data;\
+      dst = (TO*) fdst->data;\
       fdst->rtti = ctx->dest_type;\
       fdst->Bpp  = Bpp_out;\
       src_cur = src + nelem;\
@@ -55,7 +55,7 @@ _Frame_Caster_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
       while( src_cur >= src )\
         *(--dst_cur) = (TO) *(--src_cur);\
       goto_if_fail(\
-        Asynq_Push_Timed( qdst, &fdst, WORKER_DEFAULT_TIMEOUT ),\
+        Asynq_Push_Timed( qdst, (void**)&fdst, WORKER_DEFAULT_TIMEOUT ),\
         OutputQueueTimeoutError);\
     }\
   } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );\
@@ -63,7 +63,7 @@ _Frame_Caster_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   
 unsigned int
 _Frame_Caster_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
-{ struct _caster_context *ctx = (struct _caster_context*) d->context;
+{ CC *ctx = (CC*) d->context;
 
   asynq *qsrc = in->contents[0],
         *qdst = out->contents[0];
@@ -269,7 +269,7 @@ UnknownTypeError:
 DeviceTask*
 Worker_Create_Task_Frame_Caster(Device *d, Basic_Type_ID source_type, Basic_Type_ID dest_type)
 { // 1. setup context
-  FCC *ctx = (FCC *) Guarded_Malloc( sizeof(FCC), "Worker_Create_Task_Frame_Caster" );
+  CC *ctx = (CC *) Guarded_Malloc( sizeof(CC), "Worker_Create_Task_Frame_Caster" );
   ctx->source_type = source_type;
   ctx->dest_type   = dest_type;
   d->context = (void*) ctx;
@@ -324,12 +324,13 @@ _Frame_Averager_f32_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
     do
     { while( Asynq_Pop_Try(qsrc, (void**)&fsrc) )
       { f32 *src_cur,*acc_cur;
-        buf = fsrc->data;
+        buf = (f32*) fsrc->data;
         if( !acc )
         { fsrc->format(fdst);
-          acc = fdst->data;
+          acc = (f32*)fdst->data;
           memset( acc, 0, nbytes ); 
         }
+        fsrc->dump("frame-averager-source.f32");
         //Frame_Dump( fsrc, "frame-averager-source.f32" );
 
         src_cur = buf + nelem;
@@ -347,7 +348,7 @@ _Frame_Averager_f32_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
             Asynq_Push_Timed( qdst, (void**)&fdst, WORKER_DEFAULT_TIMEOUT ),
             OutputQueueTimeoutError);
           fsrc->format(fdst);              // Initialize the accumulatorr
-          acc = fdst->data;
+          acc = (f32*)fdst->data;
           memset( acc, 0, nbytes );          
         }
       }
@@ -391,7 +392,7 @@ _Terminator_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 unsigned int
 _Terminator_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 { asynq **q =  in->contents;
-  void **buf = Guarded_Malloc( in->nelem * sizeof(void*), "Worker device task - Terminator" );
+  void **buf = (void**)Guarded_Malloc( in->nelem * sizeof(void*), "Worker device task - Terminator" );
   unsigned int i,n = in->nelem;
     
   // alloc the trash buffers

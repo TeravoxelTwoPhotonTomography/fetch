@@ -32,12 +32,12 @@ typedef ViInt16     TPixel;
 // TASK - Streaming on all channels
 //
 
-inline Frame
+inline Frame_With_Interleaved_Planes
 _format_frame(ViInt32 record_length, ViInt32 nwfm )
-{ Frame_With_Interleaved_Planes fmt( record_length/512, // width
-                                     512,               // height
-                                     nwfm,              // # channels
-                                     TPixel_ID );       // pixel type
+{ Frame_With_Interleaved_Planes fmt( (u8) (record_length/512), // width
+                                           512,                // height
+                                     (u8)  nwfm,               // # channels
+                                           TPixel_ID );        // pixel type
   return fmt;
 }
 
@@ -83,10 +83,10 @@ _Digitizer_Task_Fetch_Forever_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *
     CheckPanic( niScope_ActualNumWfms(vi, cfg.acquisition_channels, &nwfm ) );
     CheckPanic( niScope_ActualRecordLength(vi, &record_length) );
     
-    { Frame fmt = _format_frame( record_length, nwfm );
+    { Frame_With_Interleaved_Planes fmt = _format_frame( record_length, nwfm );
       size_t nbuf[2] = {DIGITIZER_BUFFER_NUM_FRAMES,
                         DIGITIZER_BUFFER_NUM_FRAMES},
-               sz[2] = {fmt->size_bytes(),                       // frame data
+               sz[2] = {fmt.size_bytes(),                       // frame data
                         nwfm*sizeof(struct niScope_wfmInfo)};    // description of each frame
       // DeviceTask_Free_Outputs( d->task );  // free channels that already exist (FIXME: thrashing)
       // Channels are reference counted so the memory may not be freed till the other side Unrefs.
@@ -117,14 +117,13 @@ _Digitizer_Task_Fetch_Forever_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ 
   u32    last_max_fetch = 0;  
   Frame                  *frm  = (Frame*)            Asynq_Token_Buffer_Alloc(qdata);
   struct niScope_wfmInfo *wfm  = (niScope_wfmInfo*)  Asynq_Token_Buffer_Alloc(qwfm);
-  Frame fmt;
-  int change_token;
+  Frame_With_Interleaved_Planes ref;
   unsigned int ret = 1;
 
   // Compute image dimensions
   CheckPanic( niScope_ActualNumWfms(vi, chan, &nwfm ) );
   CheckPanic( niScope_ActualRecordLength(vi, &nelem) );
-  ref = __frame( nelem, wfm );
+  ref = _format_frame( nelem, nwfm );
   ref.format(frm);
   
   ViErrChk   (niScope_GetAttributeViInt32 (vi, NULL,   // TODO: reset to default when done
@@ -152,7 +151,7 @@ _Digitizer_Task_Fetch_Forever_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ 
                                 chan,          // (acquistion channels)
                                 0.0,           // Immediate
                                 nelem - ttl,   // Remaining space in buffer
-                                frm->data + ttl,   // Where to put the data
+                                (TPixel*)frm->data + ttl,   // Where to put the data
                                 wfm);          // metadata for fetch
       if( delay > maxdelay )
       { maxdelay = delay;

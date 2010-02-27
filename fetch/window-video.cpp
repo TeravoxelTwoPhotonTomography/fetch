@@ -591,7 +591,7 @@ LRESULT CALLBACK Video_Display_WndProc( HWND hWnd, UINT message, WPARAM wParam, 
 void Video_Display_Render_One_Frame()
 {   TicTocTimer clock = tic();
     static Frame                  *frm = NULL;
-    static Frame               lastfmt;
+    static FrmFmt              lastfmt;
     static float          wait_time_ms = 1000.0f/60.0f,
                 efficiency_accumulator = 0.0f,
                       efficiency_count = 0.0f,
@@ -610,9 +610,9 @@ void Video_Display_Render_One_Frame()
       
       if( Asynq_Peek_Timed(q, frm, (DWORD) wait_time_ms ) )
       { int i;   
-        if( !frm->is_equivalent(lastfmt) )               // RESIZE!
+        if( !frm->is_equivalent(&lastfmt) )               // RESIZE!
         { RECT *rect = NULL;
-          frm->format(lastfmt);
+          frm->format(&lastfmt);
           //Resize window and buffers
           { size_t           w = frm->width,
                              h = frm->height;

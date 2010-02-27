@@ -2,9 +2,9 @@
 
 namespace w32file {
 
-  int64 setpos( HANDLE hf, int64 pos, DWORD method )
+  i64 setpos( HANDLE hf, i64 pos, DWORD method )
   { LARGE_INTEGER li;
-    li.QuadPart = distance;
+    li.QuadPart = pos;
     li.LowPart  = SetFilePointer( hf,
                                   li.LowPart,
                                  &li.HighPart,
@@ -14,7 +14,7 @@ namespace w32file {
     return li.QuadPart;
   }
 
-  int64 getpos( HANDLE hf )
-  { return set_pos(hf,0,FILE_BEGIN);
+  i64 getpos( HANDLE hf )
+  { return setpos(hf,0,FILE_BEGIN);
   }
 }

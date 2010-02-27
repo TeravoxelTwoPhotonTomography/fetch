@@ -136,13 +136,15 @@
 
 
 #include "stdafx.h"
+#include "frame.h"
+#include "types.h"
 
-enum _id_message_format
+enum MessageFormatID
 { FORMAT_INVALID           = 0,
   FRAME_INTERLEAVED_PLANES = 1,
   FRAME_INTERLEAVED_LINES,
   FRAME_INTERLEAVED_PIXELS,
-} MessageFormatID;
+};
 
 class Message
 { public:
@@ -151,6 +153,7 @@ class Message
     void           *data;
 
     Message(void) : id(FORMAT_INVALID), self_size(sizeof(Message)), data(NULL) {}
+    Message(MessageFormatID id, size_t self_size) : id(id), self_size(self_size), data(NULL) {}
 
            void      to_file    ( FILE *fp );
            void      to_file    ( HANDLE hfile );
@@ -163,7 +166,7 @@ class Message
     static  size_t   translate  ( Message *dst, Message *src );         // The sub-class determines the destination.
 };                                                                 
 
-class Frame : public Message
+class FrmFmt : public Message
 { public:
     u16           width;
     u16           height;
@@ -171,14 +174,23 @@ class Frame : public Message
     u8            Bpp;
     Basic_Type_ID rtti;
 
-    Frame(void);
-    Frame(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
+    FrmFmt(void);
+    FrmFmt(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
+    FrmFmt(u16 width, u16 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size);
 
-    unsigned int   is_equivalent( Frame *ref );
+    unsigned int   is_equivalent( FrmFmt *ref );
     void           dump( const char *filename );
 
-    virtual size_t size_bytes  ( void );
-    virtual void   format      ( Message *unformatted );
+            size_t size_bytes  ( void );
+            void   format      ( Message *unformatted );
+};
+
+class Frame : public FrmFmt
+{ public:
+    Frame(void)                                                                                      {}
+    Frame(u16 width, u16 height, u8 nchan, Basic_Type_ID type)                                       : FrmFmt(width,height,nchan,type) {}
+    Frame(u16 width, u16 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size) : FrmFmt(width,height,nchan,type,id,self_size) {}
+
     virtual void   copy_channel( void *dst, size_t rowpitch, size_t ichan ) = 0;
     // Children also need to impliment (left over from Message):
     //             translate()
@@ -187,24 +199,27 @@ class Frame : public Message
 
 class Frame_With_Interleaved_Pixels : public Frame
 { public:
+    Frame_With_Interleaved_Pixels(void) {}
     Frame_With_Interleaved_Pixels(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
 
-    virtual void     copy_channel ( void *dst, size_t rowpitch, size_t ichan );
+              void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
     static  size_t   translate    ( Message *dst, Message *src );
 };
 
 class Frame_With_Interleaved_Lines : public Frame
 { public:
+    Frame_With_Interleaved_Lines(void) {}
     Frame_With_Interleaved_Lines(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
 
-    virtual void     copy_channel ( void *dst, size_t rowpitch, size_t ichan );
+              void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
     static  size_t   translate    ( Message *dst, Message *src );
 };
 
 class Frame_With_Interleaved_Planes : public Frame
 { public:
+    Frame_With_Interleaved_Planes(void) {}
     Frame_With_Interleaved_Planes(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
 
-    virtual void     copy_channel ( void *dst, size_t rowpitch, size_t ichan );
+              void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
     static  size_t   translate    ( Message *dst, Message *src );
 };
