@@ -1,5 +1,6 @@
 #pragma once
 #include <string.h>
+#include <stdio.h>
 
 // N-dimensions
 // Optimized copy ops could go N-dimensional using recursion.
@@ -27,7 +28,7 @@
 // n is the number of elements to copy in each dimension.  These dimensions
 // are assumed to fit.  To copy a RGB 256x512 image (row x cols), use:
 //   
-//  n[] = { 3, 512, 256 };
+//  n[] = { 256, 512, 3 };
 
 void Compute_Pitch( size_t pitch[4], size_t pixel_pitch, size_t d0, size_t d1, size_t d2)
 { pitch[0] = pixel_pitch;
@@ -50,25 +51,29 @@ int _pitch_first_mismatch( size_t dst_pitch[4], size_t src_pitch[4] )
 template<class Tdst,class Tsrc>
 void
 imCastCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n[3] )
-{ size_t i = n[2], 
+{ size_t i = n[0], 
+         b = sizeof(Tsrc),
+         vols[3] = { n[2]*n[1]*n[0]*b,  // in bytes.  used in block copies
+                          n[1]*n[0]*b, 
+                               n[0]*b},
           v  = vols[2],
-          dp0 = dst_pitch[2],
-          dp1 = dst_pitch[1],
-          dp2 = dst_pitch[0],
-          sp0 = src_pitch[2],
-          sp1 = src_pitch[1],
-          sp2 = src_pitch[0];
+          dp0 = dst_pitch[1], // the biggest jump
+          dp1 = dst_pitch[2],
+          dp2 = dst_pitch[3], // the smallest jump
+          sp0 = src_pitch[1],
+          sp1 = src_pitch[2],
+          sp2 = src_pitch[3];
     while(i--)
     { size_t j = n[1];
       Tdst *dc0 = dst + dp0 * i;
       Tsrc *sc0 = src + sp0 * i;
       while(j--)
-      { size_t k = n[0]; 
+      { size_t k = n[2]; 
         Tdst *dc1 = dc0 + dp1 * j;
         Tsrc *sc1 = sc0 + sp1 * j;
         while(k--)
-        { Tdst *dc2 = dc0 + dp1 * k;
-          Tsrc *sc2 = sc0 + sp1 * k;
+        { Tdst *dc2 = dc1 + dp2 * k;
+          Tsrc *sc2 = sc1 + sp2 * k;
           *dc2 = (Tdst) (*sc2);       // Cast
         }
       }
@@ -82,9 +87,9 @@ void
 imCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n[3] )
 { int mismatch = _pitch_first_mismatch(dst_pitch, src_pitch);
   size_t b = sizeof(Tsrc),
-         vols[3] = { n[2]*n[1]*n[0]*b,  // in bytes.  used in block copies
-                          n[1]*n[0]*b, 
-                               n[0]*b};
+         vols[3] = { n[0]*n[1]*n[2]*b,  // in bytes.  used in block copies
+                          n[1]*n[2]*b, 
+                               n[2]*b};
   if( sizeof(Tdst) != sizeof(Tsrc) )
     mismatch = 4; //a mismatch on the pixel level will force the pixel by pixel copy
 
@@ -93,11 +98,11 @@ imCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n
     case  0: // all but top level strides match - that is, only the total size differs
       memcpy( dst, src, vols[0] );
       break;
-    case  1:                        // "plane" copy
-      { size_t i = n[2], 
-               v = n[1]*n[0]*b,
-               dp = dst_pitch[2],
-               sp = src_pitch[2];
+    case  1:                        // "planes" as chunks
+      { size_t i = n[0],            // number of planes
+               v = vols[1],         // number of elements in a chunk
+               dp = dst_pitch[1],   // plane pitch
+               sp = src_pitch[1];   //
         while(i--)
         { Tdst *dc = dst + dp * i;
           Tsrc *sc = src + sp * i;
@@ -105,19 +110,19 @@ imCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n
         }
       }
       break;
-    case  2:                        // "line" copy
-      { size_t i = n[2], 
-               v   = n[0]*b,
-               dp0 = dst_pitch[2],
-               dp1 = dst_pitch[1],
-               sp0 = src_pitch[2],
-               sp1 = src_pitch[1];
+    case  2:                        // "line" as chunks
+      { size_t i = n[0],            // number of planes
+               v   = vols[2],       // number of elements in a chunk
+               dp0 = dst_pitch[1],  // plane pitch
+               dp1 = dst_pitch[2],  // line pitch
+               sp0 = src_pitch[1],  // plane pitch
+               sp1 = src_pitch[2];  // line pitch
         while(i--)
-        { size_t j = n[1];
-          Tdst *dc0 = dst + dp0 * i;
+        { size_t j = n[1];          // number of lines
+          Tdst *dc0 = dst + dp0 * i;// plane addresses
           Tsrc *sc0 = src + sp0 * i;
           while(j--)
-          { Tdst *dc1 = dc0 + dp1 * j;
+          { Tdst *dc1 = dc0 + dp1 * j;// line addresses
             Tsrc *sc1 = sc0 + sp1 * j;
             memcpy( dc1, sc1, v );
           }
@@ -126,25 +131,24 @@ imCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n
       break;
     case  3:                        // pixel copy
     default:
-      { size_t i = n[2], 
-               v  = vols[2],
-               dp0 = dst_pitch[2],
-               dp1 = dst_pitch[1],
-               dp2 = dst_pitch[0],
-               sp0 = src_pitch[2],
-               sp1 = src_pitch[1],
-               sp2 = src_pitch[0];
+      { size_t i = n[0],            // number of planes
+               dp0 = dst_pitch[1],  // plane pitch
+               dp1 = dst_pitch[2],  // line  pitch
+               dp2 = dst_pitch[3],  // pixel pitch
+               sp0 = src_pitch[1],
+               sp1 = src_pitch[2],
+               sp2 = src_pitch[3];
         while(i--)
-        { size_t j = n[1];
-          Tdst *dc0 = dst + dp0 * i;
+        { size_t j = n[1];                // number of lines
+          Tdst *dc0 = dst + dp0 * i;      // plane address
           Tsrc *sc0 = src + sp0 * i;
           while(j--)
-          { size_t k = n[0]; 
-            Tdst *dc1 = dc0 + dp1 * j;
+          { size_t k = n[2];              // number of pixels
+            Tdst *dc1 = dc0 + dp1 * j;    // line address
             Tsrc *sc1 = sc0 + sp1 * j;
             while(k--)
-            { Tdst *dc2 = dc0 + dp1 * k;
-              Tsrc *sc2 = sc0 + sp1 * k;
+            { Tdst *dc2 = dc1 + dp2 * k;  // pixel address
+              Tsrc *sc2 = sc1 + sp2 * k;
               *dc2 = (Tdst) (*sc2);       // Cast
             }
           }
@@ -158,7 +162,7 @@ imCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n
 //
 // Transposes dimensions i and j during a copy.
 //
-// <i>,<j> should be 0, 1, or 2 (for row,col,plane)
+// <i>,<j> should be 0, 1, or 2 (for an interlaced rgba image this would be plane,line,pixel)
 //
 // <shape> should be specified as the shape in the source space,
 //         that is, before transposition.  It's returned
@@ -170,8 +174,8 @@ void
 imCopyTranspose( Tdst *dst, size_t dst_pitch[4], 
                  Tsrc *src, size_t src_pitch[4], 
                  size_t shape[3], int i, int j )
-{ int    ii = 2 - i,
-         jj = 2 - j;
+{ int    ii = 1 + i,
+         jj = 1 + j;
   size_t ti = dst_pitch[ii],
          tj = dst_pitch[jj];
 
@@ -187,3 +191,4 @@ imCopyTranspose( Tdst *dst, size_t dst_pitch[4],
   shape[i] = shape[j];
   shape[j] = ti;
 }
+

@@ -1,20 +1,21 @@
 #include "../fetch/util-image.h"
 
+/*
+ * Exposes the following functions:
+ *
+      void imCastCopy_??_??     ( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t shape[3] )
+      void imCopy_??_??         ( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t shape[3] )
+      void imCopyTranspose_??_??( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t shape[3], int i, int j )
+ *
+ * where the ?? are any of the supported pixel types: u8, u16, u32, u64,
+ *                                                    i8, i16, i32, i64,
+ *                                                             f32, f64
+ *
+ */
+
 // -----------------
 // fixed width types
 // -----------------
-#if 0
-typedef unsigned __int8    u8;
-typedef unsigned __int16   u16;
-typedef unsigned __int32   u32;
-typedef unsigned __int64   u64;
-typedef __int8             i8;
-typedef __int16            i16;
-typedef __int32            i32;
-typedef __int64            i64;
-typedef float              f32;
-typedef double             f64;
-#else
 typedef unsigned char       u8;
 typedef unsigned short     u16;
 typedef unsigned int       u32;
@@ -25,7 +26,6 @@ typedef int                i32;
 typedef long long          i64;
 typedef float              f32;
 typedef double             f64;
-#endif
 
 #define STUB(f,t0,t1) f##_##t0##_##t1
 
