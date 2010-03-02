@@ -594,8 +594,7 @@ void Video_Display_Render_One_Frame()
     static FrmFmt              lastfmt;
     static float          wait_time_ms = 1000.0f/60.0f,
                 efficiency_accumulator = 0.0f,
-                      efficiency_count = 0.0f,
-                        efficiency_hit = 0.0f;
+                      efficiency_count = 0.0f;
 
     asynq                      *q = g_video.frame_source;
     static int  last_change_token = 0;
@@ -636,18 +635,21 @@ void Video_Display_Render_One_Frame()
             _refresh_objects(type,w,h,nchan);
             g_video.aspect = w/((float)h);
           }
-        }
+        } // end if change
         i = nchan;
         Video_Frame_From_Frame( g_video.vframe, frm);
         Video_Frame_Resource_Commit( g_video.vframe );
           
         efficiency_accumulator++;
-        efficiency_hit = 1.0;
-      }
-      if( efficiency_hit > 0.5 )
-        efficiency_count++;
-    }
-    // TODO: Frame rate govenor
+      } // end if try peek
+      efficiency_count++;
+    } // end if q (if anything is connected)
+    // Frame rate govenor
+    if( efficiency_accumulator < 0.5*efficiency_count )
+      wait_time_ms += 1;
+    else
+      wait_time_ms -= 1;
+    
     
     //
     // Clear the back buffer

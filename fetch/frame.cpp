@@ -154,12 +154,12 @@ Frame_With_Interleaved_Pixels::
   copy_channel( void *dst, size_t rowpitch, size_t ichan )
 { size_t pp = this->Bpp,
          dstw = rowpitch/pp,
-         shape[] = {1,
+         shape[] = {this->height,
                     MIN( this->width, dstw ),
-                    this->height},
+                    1},
          dst_pitch[4], src_pitch[4];
-  Compute_Pitch( dst_pitch, pp,           1,        dstw, this->height );
-  Compute_Pitch( src_pitch, pp, this->nchan, this->width, this->height );
+  Compute_Pitch( dst_pitch, this->height,        dstw,           1, pp );
+  Compute_Pitch( src_pitch, this->height, this->width, this->nchan, pp );
   imCopy<u8,u8>((u8*)dst                               , dst_pitch,
                 (u8*)this->data + ichan * src_pitch[3] , src_pitch,
                 shape);
@@ -181,13 +181,13 @@ Frame_With_Interleaved_Pixels::
       src->format(dst);                   // Format metadata is the same so just copy it in
       dst->id = FRAME_INTERLEAVED_PIXELS; // Set the format tag properly
       { size_t pp = src->Bpp,
-               shape[] = { src->width, src->nchan, src->height },
+               shape[] = {  src->height, src->nchan, src->width},
                dst_pitch[4],
                src_pitch[4];
-        Compute_Pitch( dst_pitch, pp, src->nchan, src->width, src->height );
-        Compute_Pitch( src_pitch, pp, src->width, src->nchan, src->height );
+        Compute_Pitch( dst_pitch, src->height, src->width, src->nchan, pp );
+        Compute_Pitch( src_pitch, src->height, src->nchan, src->width, pp );
         imCopyTranspose<u8,u8>( (u8*) dst->data, dst_pitch, 
-                                (u8*) src->data, src_pitch, shape, 0, 1 ); 
+                                (u8*) src->data, src_pitch, shape, 1, 2 ); 
         
       }
       break;
@@ -196,13 +196,13 @@ Frame_With_Interleaved_Pixels::
       src->format(dst);                   // Format metadata is the same so just copy it in
       dst->id = FRAME_INTERLEAVED_PIXELS; // Set the format tag properly
       { size_t pp = src->Bpp,
-               shape[] = { src->width, src->height, src->nchan },
+               shape[] = {  src->width, src->height, src->nchan},
                dst_pitch[4],
                src_pitch[4];
         // This ends up apparently transposing width and height.
         // Really, doing this properly requires two transposes.
-        Compute_Pitch( dst_pitch, pp, src->nchan, src->height, src->width );
-        Compute_Pitch( src_pitch, pp, src->width, src->height, src->nchan  );
+        Compute_Pitch( dst_pitch, src->width, src->height, src->nchan, pp );
+        Compute_Pitch( src_pitch, src->nchan, src->height, src->width, pp  );
         imCopyTranspose<u8,u8>( (u8*) dst->data, dst_pitch, 
                                 (u8*) src->data, src_pitch, shape, 0, 2 ); 
         
@@ -234,13 +234,13 @@ void Frame_With_Interleaved_Lines::
 copy_channel( void *dst, size_t rowpitch, size_t ichan )
 { size_t pp = this->Bpp,
          dstw = rowpitch/pp,
-         shape[] = {1,
-                    MIN( this->width, dstw ),
-                    this->height},
+         shape[] = {this->height,
+                    1,
+                    MIN( this->width, dstw )},
          dst_pitch[4],
          src_pitch[4];
-  Compute_Pitch( dst_pitch, pp,        dstw,           1, this->height );
-  Compute_Pitch( src_pitch, pp, this->width, this->nchan, this->height );
+  Compute_Pitch( dst_pitch, this->height,           1,        dstw, pp );
+  Compute_Pitch( src_pitch, this->height, this->nchan, this->width, pp );
   imCopy<u8,u8>((u8*) dst,                              dst_pitch,
                 (u8*) this->data + ichan * src_pitch[2],src_pitch,
                 shape);
@@ -262,13 +262,13 @@ Frame_With_Interleaved_Lines::
       src->format(dst);                   // Format metadata is the same so just copy it in
       dst->id = FRAME_INTERLEAVED_LINES;  // Set the format tag properly 
       { size_t pp = src->Bpp,
-               shape[] = { src->nchan, src->width, src->height },
+               shape[] = { src->height, src->width, src->nchan },
                dst_pitch[4],
                src_pitch[4];
-        Compute_Pitch( dst_pitch, pp, src->width, src->nchan, src->height );
-        Compute_Pitch( src_pitch, pp, src->nchan, src->width, src->height );
+        Compute_Pitch( dst_pitch, src->height, src->nchan, src->width, pp );
+        Compute_Pitch( src_pitch, src->height, src->width, src->nchan, pp );
         imCopyTranspose<u8,u8>( (u8*) dst->data, dst_pitch, 
-                                (u8*) src->data, src_pitch, shape, 0, 1 ); 
+                                (u8*) src->data, src_pitch, shape, 1, 2 ); 
         
       }
       break;
@@ -277,13 +277,13 @@ Frame_With_Interleaved_Lines::
       src->format(dst);                   // Format metadata is the same so just copy it in
       dst->id = FRAME_INTERLEAVED_LINES;  // Set the format tag properly
       { size_t pp = src->Bpp,
-               shape[] = { src->width, src->height, src->nchan },
+               shape[] = { src->nchan, src->height, src->width },
                dst_pitch[4],
                src_pitch[4];
-        Compute_Pitch( dst_pitch, pp, src->width, src->nchan, src->height );
-        Compute_Pitch( src_pitch, pp, src->width, src->height, src->nchan  );
+        Compute_Pitch( dst_pitch, src->height,  src->nchan, src->width, pp );
+        Compute_Pitch( src_pitch,  src->nchan, src->height, src->width, pp  );
         imCopyTranspose<u8,u8>( (u8*) dst->data, dst_pitch, 
-                                (u8*) src->data, src_pitch, shape, 1, 2 ); 
+                                (u8*) src->data, src_pitch, shape, 0, 1 ); 
         
       }
       break;
@@ -318,8 +318,8 @@ copy_channel( void *dst, size_t rowpitch, size_t ichan )
                     this->height},
          dst_pitch[4],
          src_pitch[4];
-  Compute_Pitch( dst_pitch, pp,        dstw, this->height, 1 );
-  Compute_Pitch( src_pitch, pp, this->width, this->height, this->nchan );
+  Compute_Pitch( dst_pitch,           1, this->height,        dstw, pp );
+  Compute_Pitch( src_pitch, this->nchan, this->height, this->width, pp );
   imCopy<u8,u8>((u8*) dst,                              dst_pitch,
                 (u8*) this->data + ichan * src_pitch[1],src_pitch,
                 shape);
@@ -341,13 +341,13 @@ Frame_With_Interleaved_Planes::
       src->format(dst);                   // Format metadata is the same so just copy it in
       dst->id = FRAME_INTERLEAVED_PLANES; // Set the format tag properly 
       { size_t pp = src->Bpp,
-               shape[] = { src->nchan, src->width, src->height },
+               shape[] = { src->height , src->width, src->nchan},
                dst_pitch[4],
                src_pitch[4];
         // This ends up apparently transposing width and height.
         // Really, doing this properly requires two transposes.
-        Compute_Pitch( dst_pitch, pp, src->height, src->width, src->nchan );
-        Compute_Pitch( src_pitch, pp, src->nchan, src->width,  src->height );
+        Compute_Pitch( dst_pitch,  src->nchan, src->width, src->height, pp );
+        Compute_Pitch( src_pitch, src->height, src->width,  src->nchan, pp );
         imCopyTranspose<u8,u8>( (u8*) dst->data, dst_pitch, 
                                 (u8*) src->data, src_pitch, shape, 0, 2 ); 
         
@@ -358,13 +358,13 @@ Frame_With_Interleaved_Planes::
       src->format(dst);                   // Format metadata is the same so just copy it in
       dst->id = FRAME_INTERLEAVED_PLANES; // Set the format tag properly
       { size_t pp = src->Bpp,
-               shape[] = { src->width, src->nchan, src->height },
+               shape[] = { src->height, src->nchan, src->width },
                dst_pitch[4],
                src_pitch[4];
-        Compute_Pitch( dst_pitch, pp, src->width, src->height, src->nchan );
-        Compute_Pitch( src_pitch, pp, src->width, src->nchan,  src->height);
+        Compute_Pitch( dst_pitch,  src->nchan, src->height, src->width, pp );
+        Compute_Pitch( src_pitch, src->height,  src->nchan, src->width, pp );
         imCopyTranspose<u8,u8>( (u8*) dst->data, dst_pitch, 
-                                (u8*) src->data, src_pitch, shape, 1, 2 ); 
+                                (u8*) src->data, src_pitch, shape, 0, 1); 
         
       }
       break;

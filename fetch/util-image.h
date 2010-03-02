@@ -30,22 +30,22 @@
 //   
 //  n[] = { 256, 512, 3 };
 
-void Compute_Pitch( size_t pitch[4], size_t pixel_pitch, size_t d0, size_t d1, size_t d2)
-{ pitch[0] = pixel_pitch;
-  pitch[1] = d0 * pitch[0];
-  pitch[2] = d1 * pitch[1];
-  pitch[3] = d2 * pitch[2];
+void Compute_Pitch( size_t pitch[4], size_t d2, size_t d1, size_t d0, size_t pixel_pitch)
+{ pitch[3] = pixel_pitch;
+  pitch[2] = d0 * pitch[3];
+  pitch[1] = d1 * pitch[2];
+  pitch[0] = d2 * pitch[1];
 }
 
 int _pitch_first_mismatch( size_t dst_pitch[4], size_t src_pitch[4] )
 { int i = 3;
-  if( dst_pitch[i] != 1 || src_pitch[i] != 1 )
-    return 3;
-  while(i--)
-    if( dst_pitch[i] != src_pitch[i] )
-      return i;
-  return i; // no mismatch...returns -1
-}
+  //if( dst_pitch[i] != 1 || src_pitch[i] != 1 ) // There are two ways to interpret the lowest pitch, x
+  //  return 3;                                  // 1. A pixel is x elements wide, copy all
+  while(i--)                                     // 2. The smallest element is 1 element wide, and x tells you how many things to skip
+    if( dst_pitch[i] != src_pitch[i] )           // The ambiguity is there because the <shape> argument doesn't say how many elements to copy
+      return i;                                  // However, most of the time this can be taken care of by bluring how channels are defined.
+  return i; // no mismatch...returns -1          // I think #1 is the more common default, so I'll stick with that.  The commented out region
+}                                                //   is for #2.
 
 // cast and copy - always uses a slow copy to gaurantee casting
 template<class Tdst,class Tsrc>
@@ -91,7 +91,7 @@ imCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n
                           n[1]*n[2]*b, 
                                n[2]*b};
   if( sizeof(Tdst) != sizeof(Tsrc) )
-    mismatch = 4; //a mismatch on the pixel level will force the pixel by pixel copy
+    mismatch = 3; //a mismatch on the pixel level will force the pixel by pixel copy
 
   switch( mismatch )
   { case -1: // all strides match
@@ -163,7 +163,7 @@ imCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n
 // Transposes dimensions i and j during a copy.
 //
 // <i>,<j> should be 0, 1, or 2 (for an interlaced rgba image this would be plane,line,pixel)
-//
+//                              ( or for depth, row, column )
 // <shape> should be specified as the shape in the source space,
 //         that is, before transposition.  It's returned
 //         in the destination (transposed) space.
