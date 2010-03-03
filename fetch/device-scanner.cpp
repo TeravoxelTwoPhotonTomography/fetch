@@ -101,6 +101,11 @@ unsigned int Scanner_Detach(void)
     DAQJMP( DAQmxStopTask(  g_scanner.daq_ao ));
     DAQJMP( DAQmxClearTask( g_scanner.daq_ao ));
   }
+  if( g_scanner.daq_shutter )
+  { debug("Scanner: Attempting to detach DAQ AO  channel. handle: 0x%p\r\n", g_scanner.daq_shutter );
+    DAQJMP( DAQmxStopTask(  g_scanner.daq_shutter ));
+    DAQJMP( DAQmxClearTask( g_scanner.daq_shutter ));
+  }
 
   status = 0;
   if( g_scanner.digitizer )
@@ -136,8 +141,11 @@ unsigned int Scanner_Attach(void)
 
   Guarded_Assert( g_scanner.daq_ao  == NULL );
   Guarded_Assert( g_scanner.daq_clk == NULL );
+  Guarded_Assert( g_scanner.daq_shutter == NULL );
+
   status = DAQERR( DAQmxCreateTask( "galvo-command", &g_scanner.daq_ao ));
   status = DAQERR( DAQmxCreateTask( "scanner-clock", &g_scanner.daq_clk));
+  status = DAQERR( DAQmxCreateTask( "shutter-command", &g_scanner.daq_shutter));
 
   Device_Set_Available( gp_scanner_device );
 Error:

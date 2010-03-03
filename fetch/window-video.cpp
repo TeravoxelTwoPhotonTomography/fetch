@@ -644,12 +644,7 @@ void Video_Display_Render_One_Frame()
       } // end if try peek
       efficiency_count++;
     } // end if q (if anything is connected)
-    // Frame rate govenor
-    if( efficiency_accumulator < 0.5*efficiency_count )
-      wait_time_ms += 1;
-    else
-      wait_time_ms -= 1;
-    
+    // [ ] TODO: Frame rate govenor
     
     //
     // Clear the back buffer

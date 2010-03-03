@@ -151,30 +151,68 @@ _compute_galvo_waveform__sawtooth( Scanner_Config *cfg, float64 *data, double N 
   data[(int)N-1] = data[0];         // at end of wave, head back to the starting position
 }
 
+void
+_compute_pockels_vertical_blanking_waveform( Scanner_Config *cfg, float64 *data, double N )
+{ int i=(int)N;
+  float64 max = 1.0,
+          min = 0.0; //cfg->galvo_vpp;
+  while(i--)
+    data[i] = max;      // step to max during y scan
+  data[(int)N-1] = min; // step to zero at end of scan
+}
+
 // Configure DAQ for the frame program
 // - slow mirror scan
-// - frame sync 
+// - frame sync
+// - shutter
+void _shutter_set( Scanner* scanner, u8 val )
+{ int32 written = 0;
+  DAQERR( DAQmxWriteDigitalLines( scanner->daq_shutter,
+                                  1,                          // samples per channel,
+                                  1,                          // autostart
+                                  0,                          // timeout
+                                  DAQmx_Val_GroupByChannel,   // data layout,
+                                  &val,                       // buffer
+                                  &written,                   // (out) samples written
+                                  NULL ));                    // reserved
+}
+
+void _shutter_close( Scanner* scanner )
+{ _shutter_set(scanner, SCANNER_DEFAULT_SHUTTER_CLOSED);
+}
+
+void _shutter_open( Scanner* scanner )
+{ _shutter_set(scanner, SCANNER_DEFAULT_SHUTTER_OPEN);
+}
+ 
 void _config_daq(tfp_compute_gavlo_waveform compute_gavlo_waveform)
 { Scanner     *scanner = Scanner_Get();
   Scanner_Config  *cfg = &scanner->config;
   TaskHandle  cur_task = 0;
-  float64        *data = NULL;
+  float64       *data = NULL, *yscan, *pockels;
   int32        written;
 
   ViInt32   N          = cfg->galvo_samples;
   float64   frame_time = cfg->scans / cfg->resonant_frequency; //  512 records / (7920 records/sec)
   float64   freq       = N/frame_time;                         // 4096 samples / 64 ms = 63 kS/s
 
-  data = (float64*) Guarded_Malloc( sizeof(float64) * N, "scanner::_config_daq" );
+  data = (float64*) Guarded_Malloc( sizeof(float64) * N * 2, "scanner::_config_daq" );
+  yscan   = data;
+  pockels = data + N;
+
+  //
+  // VERTICAL
+  //
 
   // fill in data for galvo waveform
-  compute_gavlo_waveform( cfg, data, N );
-
-  // set up ao task
+  compute_gavlo_waveform( cfg, yscan, N );
+  _compute_pockels_vertical_blanking_waveform(cfg, pockels, N );
+  
+  // set up ao task - vertical
   cur_task = scanner->daq_ao;
   DAQERR( DAQmxCreateAOVoltageChan   (cur_task,
                                       cfg->galvo_channel,   //eg: "/Dev1/ao0"
-                                      "galvo-mirror-out",   //name to assign to channel
+                                      "galvo-mirror-out,pockels-out",   //name to assign to channel
                                       cfg->galvo_v_lim_min, //Volts eg: -10.0
                                       cfg->galvo_v_lim_max, //Volts eg:  10.0
                                       DAQmx_Val_Volts,      //Units
@@ -198,6 +236,7 @@ void _config_daq(tfp_compute_gavlo_waveform compute_gavlo_waveform)
                                       &written,
                                       NULL));
   Guarded_Assert( written == N );
+   
   free(data);
 
   // set up counter for sample clock
@@ -215,6 +254,19 @@ void _config_daq(tfp_compute_gavlo_waveform compute_gavlo_waveform)
   DAQERR( DAQmxSetArmStartTrigType         ( cur_task, DAQmx_Val_DigEdge ));
   DAQERR( DAQmxSetDigEdgeArmStartTrigSrc   ( cur_task, cfg->galvo_armstart ));
   DAQERR( DAQmxSetDigEdgeArmStartTrigEdge  ( cur_task, DAQmx_Val_Rising ));
+  
+  // Set up the shutter control
+  { u8 closed = SCANNER_DEFAULT_SHUTTER_CLOSED;
+    int32 written = 0;
+    cur_task = scanner->daq_shutter;
+    DAQERR( DAQmxCreateDOChan(      cur_task,
+                                    SCANNER_DEFAULT_SHUTTER_CHANNEL,
+                                    "shutter-command",
+                                    DAQmx_Val_ChanPerLine ));
+    DAQERR( DAQmxStartTask( cur_task ) );                       // go ahead and start it
+    _shutter_close(scanner);
+  }
+  
   return;
 }
 
@@ -297,6 +349,7 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   ref = _describe_frame();
   ref.format(frm);
 
+  _shutter_open(scanner);
   DAQERR( DAQmxStartTask (ao_task));
   do
   {
@@ -336,7 +389,8 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
   } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
   status = 0;
   debug("Scanner - Video task completed normally.\r\n");
-Error:  
+Error:
+  _shutter_close(scanner);
   free( frm );
   free( wfm );
   niscope_debug_print_status(vi);

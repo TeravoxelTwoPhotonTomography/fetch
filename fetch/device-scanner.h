@@ -18,14 +18,23 @@
 #define SCANNER_DEFAULT_LINE_TRIGGER_SRC              1   // Digitizer channel corresponding to resonant velocity input
                                                           // the channel should be appropriately configured in the digitizer config
 #define SCANNER_DEFAULT_GALVO_SAMPLES              4096   // samples per waveform
-#define SCANNER_DEFAULT_GALVO_VPP                  5.0   // V - peak-to-peak
-#define SCANNER_DEFAULT_GALVO_V_MAX                10.0   // V - peak-to-peak
-#define SCANNER_DEFAULT_GALVO_V_MIN               -10.0   // V - peak-to-peak
+#define SCANNER_DEFAULT_GALVO_VPP                  5.0    // V - peak-to-peak
+#define SCANNER_DEFAULT_GALVO_V_MAX                10.0   // V - Maximum permissible value
+#define SCANNER_DEFAULT_GALVO_V_MIN               -10.0   // V - Minimum permissible value
 #define SCANNER_DEFAULT_GALVO_CHANNEL        "/Dev1/ao0"  // DAQ terminal: should be connected to command input on galvo controller
 #define SCANNER_DEFAULT_GALVO_TRIGGER            "APFI0"  // DAQ terminal: should be connected to resonant velocity output
 #define SCANNER_DEFAULT_GALVO_ARMSTART           "RTSI2"  // DAQ terminal: should be connected to "ReadyForStart" event output from digitizer
 #define SCANNER_DEFAULT_GALVO_CLOCK "Ctr1InternalOutput"  // DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock
 #define SCANNER_DEFAULT_GALVO_CTR           "/Dev1/ctr1"  // DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock
+
+#define SCANNER_DEFAULT_POCKELS_V_MAX                1.0
+#define SCANNER_DEFAULT_POCKELS_V_MIN                0.0
+#define SCANNER_DEFAULT_POCKELS_AO_CHANNEL    "/Dev1/ao2"
+#define SCANNER_DEFAULT_POCKELS_AI_CHANNEL   "/Dev1/ai16"
+
+#define SCANNER_DEFAULT_SHUTTER_CHANNEL "/Dev1/port0/line8"
+#define SCANNER_DEFAULT_SHUTTER_OPEN                     0
+#define SCANNER_DEFAULT_SHUTTER_CLOSED                   1
 
 #define SCANNER_DEFAULT_TIMEOUT               INFINITE // ms
 #define SCANNER_MAX_CHAN_STRING                     32 // characters
@@ -36,6 +45,7 @@ typedef struct _scanner_config
   u32         scans;
   f32         line_duty_cycle;
   u8          line_trigger_src;
+  
   u32         galvo_samples;
   f64         galvo_vpp;
   f64         galvo_v_lim_max;
@@ -45,6 +55,11 @@ typedef struct _scanner_config
   char        galvo_armstart[SCANNER_MAX_CHAN_STRING];
   char        galvo_clock   [SCANNER_MAX_CHAN_STRING];
   char        galvo_ctr     [SCANNER_MAX_CHAN_STRING];
+  
+  f64         pockels_v_max;
+  f64         pockels_v_min;
+  char        pockels_ao_chan[SCANNER_MAX_CHAN_STRING];
+  char        pockels_ai_chan[SCANNER_MAX_CHAN_STRING];
 } Scanner_Config;
 
 #define SCANNER_CONFIG_DEFAULT \
@@ -56,7 +71,7 @@ typedef struct _scanner_config
                         SCANNER_DEFAULT_GALVO_VPP,\
                         SCANNER_DEFAULT_GALVO_V_MAX,\
                         SCANNER_DEFAULT_GALVO_V_MIN,\
-                        SCANNER_DEFAULT_GALVO_CHANNEL,\
+                        SCANNER_DEFAULT_GALVO_CHANNEL "," SCANNER_DEFAULT_POCKELS_AO_CHANNEL,\
                         SCANNER_DEFAULT_GALVO_TRIGGER,\
                         SCANNER_DEFAULT_GALVO_ARMSTART,\
                         SCANNER_DEFAULT_GALVO_CLOCK,\
@@ -67,10 +82,11 @@ typedef struct _scanner
 { Digitizer     *digitizer;
   TaskHandle     daq_ao;
   TaskHandle     daq_clk;
+  TaskHandle     daq_shutter;
   Scanner_Config config;
 } Scanner;
 
-#define SCANNER_DEFAULT {NULL, NULL, NULL, SCANNER_CONFIG_DEFAULT};
+#define SCANNER_DEFAULT {NULL, NULL, NULL, NULL, SCANNER_CONFIG_DEFAULT};
 
 //
 // Device interface
@@ -97,4 +113,3 @@ extern inline DeviceTask* Scanner_Get_Default_Task    (void);
 void             Scanner_UI_Append_Menu  ( HMENU hmenu );
 void             Scanner_UI_Insert_Menu  ( HMENU menu, UINT uPosition, UINT uFlags );
 LRESULT CALLBACK Scanner_UI_Handler      ( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-
