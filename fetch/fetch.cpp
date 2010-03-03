@@ -166,12 +166,15 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //  WM_DESTROY	- post a quit message and return
 //
 //
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	int wmId, wmEvent;
 	PAINTSTRUCT ps;
 	HDC hdc;
 	static HMENU command_menu = 0;
+	static HWND  hedit_pockels = 0,
+	             hspin_pockels = 0;
 	
 	if( !command_menu )
 	  command_menu = GetSubMenu( GetMenu(hWnd), 1);
@@ -190,6 +193,52 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       Guarded_Assert_WinErr( menu );
       Scanner_UI_Insert_Menu( menu, GetMenuItemCount(menu)-1, MF_BYPOSITION );
       //Digitizer_UI_Insert_Menu( menu, GetMenuItemCount(menu)-1, MF_BYPOSITION );
+      
+      //
+      // make the pockels control
+      //
+      
+      // edit box
+      Guarded_Assert_WinErr(
+        hedit_pockels = CreateWindowEx( 0,
+                                        "EDIT",
+                                        "",                       //window name
+                                        WS_CHILD 
+                                        | WS_VISIBLE
+                                        | WS_BORDER,
+                                        0, 0, 50, 20,             //pos and dims
+                                        hWnd,                     //parent
+                                        (HMENU) IDC_POCKELS_EDIT, // child window identifier
+                                        GetModuleHandle(NULL),
+                                        NULL ));
+      { HGDIOBJ  hfDefault;                                       // Set the font to the gui default
+        Guarded_Assert_WinErr( hfDefault = GetStockObject(DEFAULT_GUI_FONT));
+        SendMessage(hedit_pockels, WM_SETFONT, (WPARAM)hfDefault, MAKELPARAM(FALSE, 0));
+      }
+      { HDC hdc = GetDC(hedit_pockels);                           // Size edit control
+        SIZE sz;
+        GetTextExtentPoint32( hdc, "MMMM", 4, &sz );
+        MoveWindow( hedit_pockels, 0,0,sz.cx,sz.cy,TRUE );
+      }
+      
+      // spinner
+      Guarded_Assert_WinErr(
+        hspin_pockels = CreateUpDownControl( WS_CHILD
+                                             | WS_VISIBLE
+                                             | WS_BORDER
+                                             | UDS_ALIGNRIGHT
+                                             | UDS_ARROWKEYS
+                                             | UDS_HOTTRACK
+                                             | UDS_SETBUDDYINT,
+                                             0, 0, 10, 0,
+                                             hWnd,                //parent
+                                             IDC_POCKELS_SPINNER, // child id
+                                             GetModuleHandle(NULL),
+                                             hedit_pockels,       //buddy
+                                             0,                   // min
+                                             2000,                // max
+                                             500 ));              // initial value
+                                                                           
     }
     break;
 	case WM_INITMENU:

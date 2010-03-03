@@ -21,7 +21,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			InheritedPropertySheets=".\NIDAQmx.vsprops;.\NIScope.vsprops;.\DisableWarnings.vsprops"
+			InheritedPropertySheets=".\NIDAQmx.vsprops;.\NIScope.vsprops;.\DisableWarnings.vsprops;..\CommonControls.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
@@ -94,7 +94,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			InheritedPropertySheets=".\NIDAQmx.vsprops;.\NIScope.vsprops;.\DisableWarnings.vsprops"
+			InheritedPropertySheets=".\NIDAQmx.vsprops;.\NIScope.vsprops;.\DisableWarnings.vsprops;..\CommonControls.vsprops"
 			CharacterSet="2"
 			WholeProgramOptimization="1"
 			>

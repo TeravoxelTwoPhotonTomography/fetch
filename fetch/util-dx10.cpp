@@ -34,7 +34,7 @@ void
 dx10_tex2d_dump( char *filename, ID3D10Texture2D *tex )
 { D3D10_MAPPED_TEXTURE2D data;
   D3D10_TEXTURE2D_DESC desc;
-  size_t nbytes, bpp;  
+  size_t nbytes;  
   
   memset(&desc,0,sizeof( D3D10_TEXTURE2D_DESC ));
   tex->GetDesc( &desc );  
