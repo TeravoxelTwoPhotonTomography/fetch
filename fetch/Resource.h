@@ -20,8 +20,7 @@
 #define IDM_LOG_CLOSE                   116
 #define IDR_MAINFRAME                   128
 
-#define IDC_POCKELS_EDIT                129
-#define IDC_POCKELS_SPINNER             130
+#define IDC_POCKELS                     129
 
 #define ID_COMMAND_VIDEODISPLAY         32771
 #define ID_CONTROL_VIDEO                32775

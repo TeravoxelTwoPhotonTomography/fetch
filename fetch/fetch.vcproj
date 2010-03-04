@@ -292,6 +292,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\window-control-pockels.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\window-video.cpp"
 				>
 			</File>
@@ -407,6 +411,10 @@
 			</File>
 			<File
 				RelativePath=".\util-niscope.h"
+				>
+			</File>
+			<File
+				RelativePath=".\window-control-pockels.h"
 				>
 			</File>
 			<File

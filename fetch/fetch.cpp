@@ -7,7 +7,9 @@
 #include "microscope.h"
 #include "device-digitizer.h"
 #include "device-scanner.h"
+
 #include "window-video.h"
+#include "window-control-pockels.h"
 
 #define MAX_LOADSTRING 100
 
@@ -39,9 +41,9 @@ void ApplicationStart(HINSTANCE hInstance)
 }
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
-                     HINSTANCE hPrevInstance,
-                     LPTSTR    lpCmdLine,
-                     int       nCmdShow)
+                       HINSTANCE hPrevInstance,
+                       LPTSTR    lpCmdLine,
+                       int       nCmdShow)
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
@@ -58,6 +60,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
 	LoadString(hInstance, IDC_FETCH, szWindowClass, MAX_LOADSTRING);
 	MyRegisterClass(hInstance);
+	
+  ui::pockels::RegisterClass(hInstance);
 
 	// Perform application initialization:
 	if (!InitInstance (hInstance, nCmdShow))
@@ -173,8 +177,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	PAINTSTRUCT ps;
 	HDC hdc;
 	static HMENU command_menu = 0;
-	static HWND  hedit_pockels = 0,
-	             hspin_pockels = 0;
+	static ui::pockels::UIControl ctl_pock = {0,0,0,0};
 	
 	if( !command_menu )
 	  command_menu = GetSubMenu( GetMenu(hWnd), 1);
@@ -197,48 +200,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       //
       // make the pockels control
       //
-      
-      // edit box
-      Guarded_Assert_WinErr(
-        hedit_pockels = CreateWindowEx( 0,
-                                        "EDIT",
-                                        "",                       //window name
-                                        WS_CHILD 
-                                        | WS_VISIBLE
-                                        | WS_BORDER,
-                                        0, 0, 50, 20,             //pos and dims
-                                        hWnd,                     //parent
-                                        (HMENU) IDC_POCKELS_EDIT, // child window identifier
-                                        GetModuleHandle(NULL),
-                                        NULL ));
-      { HGDIOBJ  hfDefault;                                       // Set the font to the gui default
-        Guarded_Assert_WinErr( hfDefault = GetStockObject(DEFAULT_GUI_FONT));
-        SendMessage(hedit_pockels, WM_SETFONT, (WPARAM)hfDefault, MAKELPARAM(FALSE, 0));
-      }
-      { HDC hdc = GetDC(hedit_pockels);                           // Size edit control
-        SIZE sz;
-        GetTextExtentPoint32( hdc, "MMMM", 4, &sz );
-        MoveWindow( hedit_pockels, 0,0,sz.cx,sz.cy,TRUE );
-      }
-      
-      // spinner
-      Guarded_Assert_WinErr(
-        hspin_pockels = CreateUpDownControl( WS_CHILD
-                                             | WS_VISIBLE
-                                             | WS_BORDER
-                                             | UDS_ALIGNRIGHT
-                                             | UDS_ARROWKEYS
-                                             | UDS_HOTTRACK
-                                             | UDS_SETBUDDYINT,
-                                             0, 0, 10, 0,
-                                             hWnd,                //parent
-                                             IDC_POCKELS_SPINNER, // child id
-                                             GetModuleHandle(NULL),
-                                             hedit_pockels,       //buddy
-                                             0,                   // min
-                                             2000,                // max
-                                             500 ));              // initial value
-                                                                           
+      ctl_pock = ui::pockels::CreateControl( hWnd, 0, 0, IDC_POCKELS );
     }
     break;
 	case WM_INITMENU:
@@ -272,9 +234,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         UpdateWindow( g_hwndLogger );
       }
       break;
-		case IDM_EXIT:
-			DestroyWindow(hWnd);
-			break;
+    case IDM_EXIT:
+      DestroyWindow(g_hwndLogger);
+      break;      
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
