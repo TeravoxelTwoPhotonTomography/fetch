@@ -363,8 +363,8 @@ void _CleanupDevice()
     if( g_video.indices )               g_video.indices->Release();
     if( g_video.vertex_layout )         g_video.vertex_layout->Release();
     
-    if( g_video.vframe )                Video_Frame_Resource_Free( g_video.vframe );
-    
+    if( g_video.vframe )                Video_Frame_Resource_Free( g_video.vframe ); g_video.vframe = NULL;
+        
     if( g_video.cmaps )                 Colormap_Resource_Free  ( g_video.cmaps );    
     
     if( g_video.effect )                g_video.effect->Release();

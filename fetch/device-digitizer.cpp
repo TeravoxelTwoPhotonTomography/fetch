@@ -55,6 +55,7 @@ unsigned int Digitizer_Destroy(void)
 { if( !Device_Disarm( gp_digitizer_device, DIGITIZER_DEFAULT_TIMEOUT ) )
     warning("Could not cleanly release digitizer.\r\n");
   Device_Free( gp_digitizer_device );
+  gp_digitizer_device = NULL;
   return 0;
 }
 
@@ -224,10 +225,10 @@ Digitizer_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	                        | ( (g_digitizer.vi==0)?MF_GRAYED:MF_ENABLED) ));
 	      Guarded_Assert_WinErr(-1!=
 	        CheckMenuItem( hmenu, 2 /*Tasks*/, MF_BYPOSITION
-	                        | ( Device_Is_Armed(gp_digitizer_device)?MF_CHECKED:MF_UNCHECKED) ));
+	                        | ( Device_Is_Ready(gp_digitizer_device)?MF_CHECKED:MF_UNCHECKED) ));
         Guarded_Assert_WinErr(-1!=
 	        EnableMenuItem( hmenu, 3 /*Run*/, MF_BYPOSITION
-	                        | ( (Device_Is_Armed(gp_digitizer_device))?MF_ENABLED:MF_GRAYED) ));
+	                        | ( (Device_Is_Ready(gp_digitizer_device))?MF_ENABLED:MF_GRAYED) ));
 	      Guarded_Assert_WinErr(-1!=
 	        CheckMenuItem( hmenu, 3 /*Run*/, MF_BYPOSITION
 	                        | ( Device_Is_Running(gp_digitizer_device)?MF_CHECKED:MF_UNCHECKED) ));
@@ -248,7 +249,7 @@ Digitizer_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	      int i,n;
 	      i = n = GetMenuItemCount(hmenu);
 	      debug("Task Menu: found %d items\r\n",n);
-	      if( Device_Is_Armed( gp_digitizer_device ) || Device_Is_Running( gp_digitizer_device ) )
+	      if( Device_Is_Ready( gp_digitizer_device ) || Device_Is_Running( gp_digitizer_device ) )
 	      { while(i--) // Search for armed task
 	          if( gp_digitizer_device->task == gp_digitizer_tasks[i] )
 	            break;

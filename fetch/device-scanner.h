@@ -27,8 +27,10 @@
 #define SCANNER_DEFAULT_GALVO_CLOCK "Ctr1InternalOutput"  // DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock
 #define SCANNER_DEFAULT_GALVO_CTR           "/Dev1/ctr1"  // DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock
 
-#define SCANNER_DEFAULT_POCKELS_V_MAX                1.0
+#define SCANNER_DEFAULT_POCKELS_V_MAX                2.0
 #define SCANNER_DEFAULT_POCKELS_V_MIN                0.0
+#define SCANNER_DEFAULT_POCKELS_V_OPEN               1.0
+#define SCANNER_DEFAULT_POCKELS_V_CLOSED             0.0
 #define SCANNER_DEFAULT_POCKELS_AO_CHANNEL    "/Dev1/ao2"
 #define SCANNER_DEFAULT_POCKELS_AI_CHANNEL   "/Dev1/ai16"
 
@@ -58,6 +60,8 @@ typedef struct _scanner_config
   
   f64         pockels_v_max;
   f64         pockels_v_min;
+  f64         pockels_v_open;
+  f64         pockels_v_closed;
   char        pockels_ao_chan[SCANNER_MAX_CHAN_STRING];
   char        pockels_ai_chan[SCANNER_MAX_CHAN_STRING];
 } Scanner_Config;
@@ -75,7 +79,13 @@ typedef struct _scanner_config
                         SCANNER_DEFAULT_GALVO_TRIGGER,\
                         SCANNER_DEFAULT_GALVO_ARMSTART,\
                         SCANNER_DEFAULT_GALVO_CLOCK,\
-                        SCANNER_DEFAULT_GALVO_CTR\
+                        SCANNER_DEFAULT_GALVO_CTR,\
+                        SCANNER_DEFAULT_POCKELS_V_MAX,\
+                        SCANNER_DEFAULT_POCKELS_V_MIN,\
+                        SCANNER_DEFAULT_POCKELS_V_OPEN,\
+                        SCANNER_DEFAULT_POCKELS_V_CLOSED,\
+                        SCANNER_DEFAULT_POCKELS_AO_CHANNEL,\
+                        SCANNER_DEFAULT_POCKELS_AI_CHANNEL,\
                       }
 
 typedef struct _scanner 
@@ -104,6 +114,10 @@ unsigned int Scanner_Attach              (void);     // opens device context
 extern inline Scanner*    Scanner_Get                 (void);
 extern inline Device*     Scanner_Get_Device          (void);
 extern inline DeviceTask* Scanner_Get_Default_Task    (void);
+
+              int         Scanner_Pockels_Is_Volts_In_Bounds      ( f64 volts );
+              int         Scanner_Pockels_Set_Open_Val            ( f64 volts, int time ); // The time argument is used to synchronize "simultaneous" requests. Returns the last timestamp.
+              BOOL        Scanner_Pockels_Set_Open_Val_Nonblocking( f64 volts );
 
 //
 // Windows

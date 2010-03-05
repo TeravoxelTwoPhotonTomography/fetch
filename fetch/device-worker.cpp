@@ -32,7 +32,8 @@ unsigned int Workers_Destroy_All(void)
   while( cur-- > beg )
   { if( !Device_Disarm( cur->device, WORKER_DEFAULT_TIMEOUT ) )
       warning("Could not cleanly release Worker Device for alias %s.\r\n",cur->alias);
-    Device_Free( cur->device );      
+    Device_Free( cur->device );
+    cur->device = NULL;
   }
   
   LeaveCriticalSection(cs);   
@@ -153,7 +154,7 @@ Worker_Destroy(Worker *self)
     { goto_if_fail( 1==_worker_device_disarm_unlocked(item), DeviceDisarmError );
     }
     //Device_Unlock( item->device );
-    Device_Free( item->device );
+    Device_Free( item->device );    
     item->device = NULL;
   }
   LeaveCriticalSection(cs);

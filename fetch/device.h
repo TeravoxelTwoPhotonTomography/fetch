@@ -78,6 +78,7 @@ BOOL Device_Stop_Nonblocking   ( Device *self, DWORD timeout_ms );
 // ---------------------
 unsigned int Device_Is_Available  ( Device *self );
 unsigned int Device_Is_Armed      ( Device *self );
+unsigned int Device_Is_Ready      ( Device *self );
 unsigned int Device_Is_Running    ( Device *self );
 
 // Utilities

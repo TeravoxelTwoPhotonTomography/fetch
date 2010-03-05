@@ -112,6 +112,12 @@ _device_request_available_unlocked( Device *self, int is_try, DWORD timeout_ms )
 unsigned int
 Device_Is_Armed( Device *self )
 { return_val_if_fail( self, 0 );
+  return self->task != NULL;          //task is set
+}
+
+unsigned int
+Device_Is_Ready( Device *self )
+{ return_val_if_fail( self, 0 );
   return self->task != NULL           //task is set
          && !Device_Is_Running(self); //but not running
 }
@@ -244,7 +250,7 @@ Device_Run ( Device *self )
 { DWORD sts = 0;  
   Guarded_Assert( self );  
   Device_Lock(self);  
-  if( Device_Is_Armed(self) )      // Source state condition: Must be armed.
+  if( Device_Is_Ready(self) )      // Source state condition: Must be armed.
   { self->is_running = 1;    
     if( self->thread != INVALID_HANDLE_VALUE )
     { sts = ResumeThread(self->thread) <= 1; // Thread's already alloced so go!      

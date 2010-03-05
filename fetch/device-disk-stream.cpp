@@ -61,6 +61,7 @@ unsigned int Disk_Stream_Destroy(void)
   { if( !Device_Disarm( cur->device, DISK_STREAM_DEFAULT_TIMEOUT ) )
       warning("Could not cleanly release Disk Stream Device for alias %s.\r\n",cur->alias);
     Device_Free( cur->device );      
+    cur->device = NULL;
   }
   
   LeaveCriticalSection(cs);   
@@ -298,6 +299,7 @@ Disk_Stream_Attach (const char* alias,     // look-up name for the stream
             "\tat %s\r\n"
             "\twith mode %c\r\n",alias, filename, mode);
     Device_Free( item->device );
+    item->device = NULL;
     gv_streams->count--;
     item->device = NULL;
     memset(item->alias,0,sizeof(item->alias));

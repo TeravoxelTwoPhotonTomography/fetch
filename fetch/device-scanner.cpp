@@ -56,6 +56,7 @@ unsigned int Scanner_Destroy(void)
 { if( !Device_Disarm( gp_scanner_device, SCANNER_DEFAULT_TIMEOUT ) )
     warning("Could not cleanly release scanner.\r\n");
   Device_Free( gp_scanner_device );
+  gp_scanner_device = NULL;
   return 0;
 }
 
@@ -143,7 +144,7 @@ unsigned int Scanner_Attach(void)
   Guarded_Assert( g_scanner.daq_clk == NULL );
   Guarded_Assert( g_scanner.daq_shutter == NULL );
 
-  status = DAQERR( DAQmxCreateTask( "galvo-command", &g_scanner.daq_ao ));
+  status = DAQERR( DAQmxCreateTask( "frame-command", &g_scanner.daq_ao ));
   status = DAQERR( DAQmxCreateTask( "scanner-clock", &g_scanner.daq_clk));
   status = DAQERR( DAQmxCreateTask( "shutter-command", &g_scanner.daq_shutter));
 
@@ -170,6 +171,87 @@ Scanner_Get_Device(void)
 extern inline DeviceTask*
 Scanner_Get_Default_Task(void)
 { return gp_scanner_tasks[0];
+}
+
+LPCRITICAL_SECTION g_p_scanner_task_change_critical_section = 0;
+
+static LPCRITICAL_SECTION _get_scanner_task_chane_critical_section(void)
+{ static CRITICAL_SECTION gcs;
+  if(!g_p_scanner_task_change_critical_section)
+  { InitializeCriticalSectionAndSpinCount( &gcs, 0x80000400 ); // don't assert - Release builds will optimize this out.
+    g_p_scanner_task_change_critical_section = &gcs;
+  }
+  return g_p_scanner_task_change_critical_section;
+}
+
+int Scanner_Pockels_Is_Volts_In_Bounds( f64 volts )
+{ return ( volts >= g_scanner.config.pockels_v_min ) && (volts <= g_scanner.config.pockels_v_max );
+}
+
+int Scanner_Pockels_Set_Open_Val(f64 volts, int time)        // Returns the time stamp of the last request.
+{ static int lasttime = 0;                                   // changes occur inside the lock
+  
+  return_val_if( gp_scanner_device == NULL, lasttime );
+  Guarded_Assert( Scanner_Pockels_Is_Volts_In_Bounds(volts) ); // Callers that don't like the panicing (e.g. UI responses)
+                                                               //   should do their own bounds checks.
+  
+  EnterCriticalSection( _get_scanner_task_chane_critical_section() );  
+  if( (time - lasttime) > 0 )                                // The <time> is used to synchronize "simultaneous" requests
+  { lasttime = time;                                         // Only process requests dated after the last request.
+
+    g_scanner.config.pockels_v_open = volts;
+    // if the device is armed, we need to communicate the change to the bound task
+    // FIXME: right now this is specific to a single type of task.  This is a
+    //        consequence of an organizational problem.  The configuration should
+    //        be associated with the task and not with this device proxy.  In the 
+    //        interests of getting things done, I'm postponing the reorganization.
+    if( Device_Is_Armed( gp_scanner_device ) )
+    { int run = Device_Is_Running( gp_scanner_device );
+      if(run)
+        Device_Stop( gp_scanner_device, SCANNER_DEFAULT_TIMEOUT );
+      DeviceTask_Scanner_Video_Write_Waveforms( &g_scanner );
+      debug("\tChanged Pockels to %f V at open.\r\n",volts);
+      if( run )
+        Device_Run( gp_scanner_device ); 
+    }
+    
+  }
+  LeaveCriticalSection( _get_scanner_task_chane_critical_section() );
+  return lasttime;
+}
+
+DWORD WINAPI _pockels_set_open_val_thread_proc( LPVOID lparam )
+{ struct T {f64 volts; int time;};
+  struct T v = {0.0, 0};
+  asynq *q = (asynq*) lparam;
+
+  if(!Asynq_Pop_Copy_Try(q,&v))
+  { warning("In Scanner_Pockels_Set_Open_Val work procedure:\r\n"
+            "\tCould not pop arguments from queue.\r\n"
+            "\tPerhaps a request got lost somewhere?\r\n");
+    return 0;
+  }
+  debug( "De-queued request:  Pockels: %f V\t Timestamp: %d\tQ capacity: %d\r\n",v.volts, v.time, q->q->ring->nelem );
+  Scanner_Pockels_Set_Open_Val(v.volts, v.time);
+  return 0; // success
+}
+
+BOOL
+Scanner_Pockels_Set_Open_Val_Nonblocking( f64 volts )
+{ struct T {f64 volts; int time;};
+  struct T v = {volts, 0};
+  static asynq *q = NULL;
+  static int timestamp = 0;
+  
+  v.time = ++timestamp;  
+  
+  if( !q )
+    q = Asynq_Alloc(2, sizeof(struct T) );
+  if( !Asynq_Push_Copy(q, &v, TRUE /*expand queue when full*/) )
+  { warning("In Scanner_Pockels_Set_Open_Val_Nonblocking: Could not push request arguments to queue.");
+    return 0;
+  }
+  return QueueUserWorkItem(&_pockels_set_open_val_thread_proc, (void*)q, NULL /*default flags*/);
 }
 
 //
@@ -245,10 +327,10 @@ Scanner_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	                        | ( (g_scanner.digitizer==0)?MF_GRAYED:MF_ENABLED) ));
 	      Guarded_Assert_WinErr(-1!=
 	        CheckMenuItem( hmenu, 2 /*Tasks*/, MF_BYPOSITION
-	                        | ( Device_Is_Armed(gp_scanner_device)?MF_CHECKED:MF_UNCHECKED) ));
+	                        | ( Device_Is_Ready(gp_scanner_device)?MF_CHECKED:MF_UNCHECKED) ));
         Guarded_Assert_WinErr(-1!=
 	        EnableMenuItem( hmenu, 3 /*Run*/, MF_BYPOSITION
-	                        | ( (Device_Is_Armed(gp_scanner_device))?MF_ENABLED:MF_GRAYED) ));
+	                        | ( (Device_Is_Ready(gp_scanner_device))?MF_ENABLED:MF_GRAYED) ));
 	      Guarded_Assert_WinErr(-1!=
 	        CheckMenuItem( hmenu, 3 /*Run*/, MF_BYPOSITION
 	                        | ( Device_Is_Running(gp_scanner_device)?MF_CHECKED:MF_UNCHECKED) ));
@@ -269,7 +351,7 @@ Scanner_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	      int i,n;
 	      i = n = GetMenuItemCount(hmenu);
 	      debug("Task Menu: found %d items\r\n",n);
-	      if( Device_Is_Armed( gp_scanner_device ) || Device_Is_Running( gp_scanner_device ) )
+	      if( Device_Is_Ready( gp_scanner_device ) || Device_Is_Running( gp_scanner_device ) )
 	      { while(i--) // Search for armed task
 	          if( gp_scanner_device->task == gp_scanner_tasks[i] )
 	            break;

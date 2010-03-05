@@ -32,11 +32,10 @@ void ApplicationStart(HINSTANCE hInstance)
   Logger_RegisterClass(hInstance);
   g_hwndLogger = Logger_InitInstance( hInstance, SW_HIDE );
   g_hwndVideo  = Video_Display_Attach( hInstance, SW_HIDE );
-  
-  Register_New_Shutdown_Callback( Video_Display_Release );
 
   Microscope_Application_Start(); // Registers devices and
-                                  // Puts microscope into default holding state
+                                  // Puts microscope into default holding state  
+  Register_New_Shutdown_Callback( Video_Display_Release );
 
 }
 
