@@ -175,7 +175,7 @@ Scanner_Get_Default_Task(void)
 
 LPCRITICAL_SECTION g_p_scanner_task_change_critical_section = 0;
 
-static LPCRITICAL_SECTION _get_scanner_task_chane_critical_section(void)
+static LPCRITICAL_SECTION _get_scanner_task_change_critical_section(void)
 { static CRITICAL_SECTION gcs;
   if(!g_p_scanner_task_change_critical_section)
   { InitializeCriticalSectionAndSpinCount( &gcs, 0x80000400 ); // don't assert - Release builds will optimize this out.
@@ -190,12 +190,11 @@ int Scanner_Pockels_Is_Volts_In_Bounds( f64 volts )
 
 int Scanner_Pockels_Set_Open_Val(f64 volts, int time)        // Returns the time stamp of the last request.
 { static int lasttime = 0;                                   // changes occur inside the lock
-  
-  return_val_if( gp_scanner_device == NULL, lasttime );
-  Guarded_Assert( Scanner_Pockels_Is_Volts_In_Bounds(volts) ); // Callers that don't like the panicing (e.g. UI responses)
+  Guarded_Assert( Scanner_Pockels_Is_Volts_In_Bounds(volts) ); // Callers that don't like the panics (e.g. UI responses)
                                                                //   should do their own bounds checks.
   
-  EnterCriticalSection( _get_scanner_task_chane_critical_section() );  
+  EnterCriticalSection( _get_scanner_task_change_critical_section() );
+
   if( (time - lasttime) > 0 )                                // The <time> is used to synchronize "simultaneous" requests
   { lasttime = time;                                         // Only process requests dated after the last request.
 
@@ -205,7 +204,7 @@ int Scanner_Pockels_Set_Open_Val(f64 volts, int time)        // Returns the time
     //        consequence of an organizational problem.  The configuration should
     //        be associated with the task and not with this device proxy.  In the 
     //        interests of getting things done, I'm postponing the reorganization.
-    if( Device_Is_Armed( gp_scanner_device ) )
+    if( gp_scanner_device && Device_Is_Armed( gp_scanner_device ) )
     { int run = Device_Is_Running( gp_scanner_device );
       if(run)
         Device_Stop( gp_scanner_device, SCANNER_DEFAULT_TIMEOUT );
@@ -216,7 +215,7 @@ int Scanner_Pockels_Set_Open_Val(f64 volts, int time)        // Returns the time
     }
     
   }
-  LeaveCriticalSection( _get_scanner_task_chane_critical_section() );
+  LeaveCriticalSection( _get_scanner_task_change_critical_section() );
   return lasttime;
 }
 
