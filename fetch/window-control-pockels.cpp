@@ -176,13 +176,31 @@ namespace ui
       return ctl;
     }
     
+    static void OnButtonClicked(HWND hWnd)
+    { BOOL  ok = FALSE;
+      UINT val = GetDlgItemInt(hWnd,_ID_POCKELS_SUBCONTROL_EDIT,&ok,FALSE);                
+      if(ok)
+      { f64 volts = val/1000.0; 
+        debug("Pockels edit change. Value: %f V\r\n", volts);
+        if( Scanner_Pockels_Is_Volts_In_Bounds( volts ) )
+          Scanner_Pockels_Set_Open_Val_Nonblocking( val/1000.0 );
+        else
+        { warning("Value set for Pockels cell is out of bounds.\r\n");
+          SetDlgItemInt(hWnd,
+                        _ID_POCKELS_SUBCONTROL_EDIT,
+                        (UINT) (Scanner_Get()->config.pockels_v_open*1000.0), // convert to mV
+                        FALSE );                                              // unsigned
+        }
+      }
+    }
+
     LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
     { int wmId, wmEvent;
       PAINTSTRUCT ps;
       HDC hdc;
 
       switch( message )
-      {
+      {        
       case WM_PAINT:
         hdc = BeginPaint( hWnd, &ps );
         EndPaint( hWnd, &ps );
@@ -203,23 +221,7 @@ namespace ui
         {
         case _ID_POCKELS_SUBCONTROL_BUTTON:
           switch(wmEvent)
-          { case BN_CLICKED:
-              { BOOL  ok = FALSE;
-                UINT val = GetDlgItemInt(hWnd,_ID_POCKELS_SUBCONTROL_EDIT,&ok,FALSE);                
-                if(ok)
-                { f64 volts = val/1000.0; 
-                  debug("Pockels edit change. Value: %f V\r\n", volts);
-                  if( Scanner_Pockels_Is_Volts_In_Bounds( volts ) )
-                    Scanner_Pockels_Set_Open_Val_Nonblocking( val/1000.0 );
-                  else
-                  { warning("Value set for Pockels cell is out of bounds.\r\n");
-                    SetDlgItemInt(hWnd,
-                                  _ID_POCKELS_SUBCONTROL_EDIT,
-                                  (UINT) (Scanner_Get()->config.pockels_v_open*1000.0), // convert to mV
-                                  FALSE );                                            // unsigned
-                  }
-                }
-              }
+          { case BN_CLICKED: OnButtonClicked(hWnd);               break;
           }
           break;
 

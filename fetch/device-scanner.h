@@ -29,8 +29,8 @@
 
 #define SCANNER_DEFAULT_POCKELS_V_MAX                2.0
 #define SCANNER_DEFAULT_POCKELS_V_MIN                0.0
-#define SCANNER_DEFAULT_POCKELS_V_OPEN               1.0
-#define SCANNER_DEFAULT_POCKELS_V_CLOSED             0.0
+#define SCANNER_DEFAULT_POCKELS_V_OPEN               0.0  // The value to which the pockels cell will be set during a frame.  Default should be a safe value.
+#define SCANNER_DEFAULT_POCKELS_V_CLOSED             0.0  // The value to which the pockels cell will be set between frames.
 #define SCANNER_DEFAULT_POCKELS_AO_CHANNEL    "/Dev1/ao2"
 #define SCANNER_DEFAULT_POCKELS_AI_CHANNEL   "/Dev1/ai16"
 
