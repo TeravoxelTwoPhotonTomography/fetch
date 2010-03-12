@@ -411,34 +411,35 @@ _Pixel_Averager_f32_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
         *fdst = (Frame*) Asynq_Token_Buffer_Alloc(qdst);
   f32 *buf, *acc = NULL;
 
-  { size_t nbytes = in->contents[ 0 ]->q->buffer_size_bytes - sizeof(Frame), //bytes in acc
-            nelem = nbytes / sizeof(f32);
+  { size_t nbytes = in->contents[ 0 ]->q->buffer_size_bytes - sizeof(Frame), //bytes    in source
+            nelem = nbytes / sizeof(f32);                                    //elements in source
 
     int    count = 0;
-    double     N = ctx->ntimes;
     
 
     do
     { while( Asynq_Pop_Try(qsrc, (void**)&fsrc) )
       { f32 *src_cur,*acc_cur;
+        int       N = ctx->ntimes;
+        double norm = N;
         buf = (f32*) fsrc->data;
         
         fsrc->format(fdst);                // Copy source format to destination
-        fdst->width /= ctx->ntimes;        // Adjust output width
+        fdst->width /= N;                  // Adjust output width
         acc = (f32*)fdst->data;
         memset( acc, 0, nbytes );
         
-        fsrc->dump("pixel-averager-source.f32");
+        //fsrc->dump("pixel-averager-source.f32");
         
         acc_cur = acc; // accumulate and average
-        for( src_cur = buf; src_cur < buf+nelem; src_cur++ )
+        for( src_cur = buf; src_cur < buf+nelem; )
         { for( int i=0; i<N; i++ )
             *acc_cur += *src_cur++;
-          *acc_cur /= N;
+          *acc_cur /= norm;
           ++acc_cur;
         }
         
-        fdst->dump("pixel-averager-dest.f32");
+        //fdst->dump("pixel-averager-dest.f32");
 
         goto_if_fail(                    //   push - wait till successful
           Asynq_Push_Timed( qdst, (void**)&fdst, WORKER_DEFAULT_TIMEOUT ),
