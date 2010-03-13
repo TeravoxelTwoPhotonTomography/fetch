@@ -377,6 +377,100 @@ Worker_Create_Task_Frame_Averager_f32(Device *d, unsigned int ntimes)
                           _Frame_Averager_f32_Proc);          
 }
 
+//----------------------------------------------------------------------------
+//
+//  Pixel Averager
+//  - input stream must produce Frames with f32 pixels
+//  - one channel in, one channel out
+//  - output width is floor(input width/N) when averaging N times.
+//
+
+typedef struct _pixel_averager_context
+{ int ntimes;
+} PAC;
+
+unsigned int
+_Pixel_Averager_f32_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
+{ PAC *ctx = (PAC*) d->context;
+  size_t qsize, bufsize;
+  Guarded_Assert( d->task->out == NULL );
+  qsize = WORKER_DEFAULT_NUM_BUFFERS;
+  bufsize  = in->contents[ 0 ]->q->buffer_size_bytes;            // Size of output buffers is same as input channel (accomidates runtime change of ntimes)
+  DeviceTask_Alloc_Outputs( d->task, 1, &qsize, &bufsize );
+  return 1; // success
+}
+
+unsigned int
+_Pixel_Averager_f32_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
+{ PAC *ctx = (PAC*) d->context;
+
+  asynq *qsrc =  in->contents[ 0 ],
+        *qdst = out->contents[ 0 ];
+
+  Frame *fsrc = (Frame*) Asynq_Token_Buffer_Alloc(qsrc),
+        *fdst = (Frame*) Asynq_Token_Buffer_Alloc(qdst);
+  f32 *buf, *acc = NULL;
+
+  { size_t nbytes = in->contents[ 0 ]->q->buffer_size_bytes - sizeof(Frame), //bytes in acc
+            nelem = nbytes / sizeof(f32);
+
+    int    count = 0;
+    double     N = ctx->ntimes;
+    
+
+    do
+    { while( Asynq_Pop_Try(qsrc, (void**)&fsrc) )
+      { f32 *src_cur,*acc_cur;
+        buf = (f32*) fsrc->data;
+        
+        fsrc->format(fdst);                // Copy source format to destination
+        fdst->width /= ctx->ntimes;        // Adjust output width
+        acc = (f32*)fdst->data;
+        memset( acc, 0, nbytes );
+        
+        fsrc->dump("pixel-averager-source.f32");
+        
+        acc_cur = acc; // accumulate and average
+        for( src_cur = buf; src_cur < buf+nelem; src_cur++ )
+        { for( int i=0; i<N; i++ )
+            *acc_cur += *src_cur++;
+          *acc_cur /= N;
+          ++acc_cur;
+        }
+        
+        fdst->dump("pixel-averager-dest.f32");
+
+        goto_if_fail(                    //   push - wait till successful
+          Asynq_Push_Timed( qdst, (void**)&fdst, WORKER_DEFAULT_TIMEOUT ),
+          OutputQueueTimeoutError);        
+      }
+    } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
+  }
+
+  Asynq_Token_Buffer_Free(fsrc);
+  Asynq_Token_Buffer_Free(fdst);
+  _free_context(d);
+  return 0;
+OutputQueueTimeoutError:
+  warning("Pushing to output queue timedout\r\n.");
+  Asynq_Token_Buffer_Free(fsrc);
+  Asynq_Token_Buffer_Free(fdst);
+  _free_context(d);
+  return 1; // failure
+}
+
+DeviceTask*
+Worker_Create_Task_Pixel_Averager_f32(Device *d, unsigned int ntimes)
+{ Guarded_Assert( ntimes > 0 );
+
+  // 1. setup context
+  d->context = Guarded_Malloc( sizeof(PAC), "Worker_Create_Task_Pixel_Averager" );
+  ((PAC*)d->context)->ntimes         = ntimes;
+  
+  // 2. make task
+  return DeviceTask_Alloc(_Pixel_Averager_f32_Cfg,
+                          _Pixel_Averager_f32_Proc);          
+}
 
 //----------------------------------------------------------------------------
 //

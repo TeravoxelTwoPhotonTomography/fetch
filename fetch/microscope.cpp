@@ -109,9 +109,10 @@ void Microscope_Application_Start(void)
   cur = Scanner_Get_Device();
   cur = Worker_Compose_Frame_Caster      ( "scanner/cast/f32", 
                                            cur, 0,
-                                           id_i8/*source type*/, id_f32 );
-  cur = Worker_Compose_Frame_Averager_f32( "scanner/averager", cur, 0, 1 /*times*/ );
-  cur = Worker_Compose_Frame_Caster      ( "scanner/cast/i16", cur, 0, id_f32/*source type*/, id_i8 );
+                                           id_i16/*source type*/, id_f32 );
+  cur = Worker_Compose_Pixel_Averager_f32( "scanner/pixel-averager", cur, 0, 2 /*times*/ );
+  //cur = Worker_Compose_Frame_Averager_f32( "scanner/averager", cur, 0, 2 /*times*/ );
+  cur = Worker_Compose_Frame_Caster      ( "scanner/cast/i16", cur, 0, id_f32/*source type*/, id_i16 );
   Worker_Compose_Terminator( "scanner/trash", cur, 0 );
   Video_Display_Connect_Device( cur, 0 );
   
