@@ -236,7 +236,7 @@ copy_channel( void *dst, size_t rowpitch, size_t ichan )
          dstw = rowpitch/pp,
          shape[] = {this->height,
                     1,
-                    MIN( this->width, dstw )},
+                    pp*MIN( this->width, dstw )},
          dst_pitch[4],
          src_pitch[4];
   Compute_Pitch( dst_pitch, this->height,           1,        dstw, pp );

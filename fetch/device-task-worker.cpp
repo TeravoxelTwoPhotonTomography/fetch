@@ -366,7 +366,9 @@ OutputQueueTimeoutError:
 
 DeviceTask*
 Worker_Create_Task_Frame_Averager_f32(Device *d, unsigned int ntimes)
-{ // 1. setup context
+{ Guarded_Assert( ntimes > 0 );
+
+  // 1. setup context
   d->context = Guarded_Malloc( sizeof(FAC), "Worker_Create_Task_Frame_Averager" );
   ((FAC*)d->context)->ntimes         = ntimes;
   

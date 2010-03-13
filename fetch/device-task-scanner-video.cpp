@@ -32,13 +32,13 @@
 //
 // Acquisition type setup
 //
-//typedef ViInt16     TPixel;
-//#define TPixel_ID   id_i16
-//#define FETCHFUN    (niScope_FetchBinary16)
+typedef ViInt16     TPixel;
+#define TPixel_ID   id_i16
+#define FETCHFUN    (niScope_FetchBinary16)
 
-typedef ViInt8      TPixel;
-#define TPixel_ID   id_i8
-#define FETCHFUN    (niScope_FetchBinary8)
+//typedef ViInt8      TPixel;
+//#define TPixel_ID   id_i8
+//#define FETCHFUN    (niScope_FetchBinary8)
 
 //----------------------------------------------------------------------------
 //

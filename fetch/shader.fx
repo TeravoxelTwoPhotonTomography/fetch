@@ -7,7 +7,7 @@
 //--------------------------------------------------------------------------------------
 // Constant Buffer Variables
 //--------------------------------------------------------------------------------------
-Texture3D                tx;    // Single image torage for different channels
+Texture3D                tx;  // Single image storage for different channels
 Texture2D<float4>      cmap;  // each channel is interpreted according to the corresponding colormap
 float                  nchan; // the number of channels
                               // ??? [ ] - Who should set nchan?

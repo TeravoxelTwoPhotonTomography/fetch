@@ -20,7 +20,7 @@
 
 typedef struct _digitizer_channel_config
 { ViChar    *name;     // Null terminated string with channel syntax: e.g. "0-2,7"
-  ViReal64   range;    // Volts peak to peak
+  ViReal64   range;    // Volts peak to peak.  (NI-5105) Can be 0.05, 0.2, 1, or 6 V for 50 Ohm.  Resolution is 0.1% dB.
   ViInt32    coupling; // Specifies how to couple the input signal. Refer to NISCOPE_ATTR_VERTICAL_COUPLING for more information.
   ViBoolean  enabled;  // Specifies whether the channel is enabled for acquisition. Refer to NISCOPE_ATTR_CHANNEL_ENABLED for more information.
 } Digitizer_Channel_Config;
@@ -64,7 +64,7 @@ typedef struct _digitizer_config
                        0.0,\
                        "0\0",\
                        DIGITIZER_MAX_NUM_CHANNELS,\
-                       {{"0\0",  0.05,NISCOPE_VAL_DC,VI_TRUE},\
+                       {{"0\0",  0.20,NISCOPE_VAL_DC,VI_TRUE},\
                         {"1\0",  2.0,NISCOPE_VAL_DC,VI_TRUE},\
                         {"2\0",  5.0,NISCOPE_VAL_DC,VI_FALSE},\
                         {"3\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\

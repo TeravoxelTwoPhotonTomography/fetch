@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "renderer-colormap.h"
 #include "util-dx10.h"
+#include "util-image.h"
 
 #define CLAMP(v,low,high) ((v)<(low))?(low):(((v)>(high))?(high):(v))
 
@@ -112,8 +113,16 @@ Colormap_Resource_Commit(Colormap_Resource *cmap)
   ID3D10Texture2D        *tex = cmap->texture;
   void                   *src = cmap->buf->contents;
   Guarded_Assert(SUCCEEDED( 
-      tex->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &dst ) ));  
-  Copy_Lines( dst.pData, dst.RowPitch, src, cmap->stride, cmap->nchan );
+      tex->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &dst ) ));
+  { size_t src_pitch[4],
+           dst_pitch[4],                                   // - treat each line like a u8 string.
+           shape[3]     = {1, cmap->nchan, cmap->stride};  // - shape of source region to copy
+    Compute_Pitch( dst_pitch, 1, cmap->nchan, dst.RowPitch, 1);
+    Compute_Pitch( src_pitch, 1, cmap->nchan, cmap->stride, 1);
+    imCopy<u8,u8>( (u8*) dst.pData, dst_pitch, 
+                   (u8*) src,       src_pitch, shape);
+  }      
+  //Copy_Lines( dst.pData, dst.RowPitch, src, cmap->stride, cmap->nchan ); // DEPRICATED 2010-03-12
   tex->Unmap( D3D10CalcSubresource(0, 0, 1) );  
 }
 

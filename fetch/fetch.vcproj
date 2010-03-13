@@ -284,6 +284,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\util-image.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\util-nidaqmx.cpp"
 				>
 			</File>

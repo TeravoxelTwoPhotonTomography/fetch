@@ -547,7 +547,7 @@ LRESULT CALLBACK Video_Display_WndProc( HWND hWnd, UINT message, WPARAM wParam, 
                 case 0x32: // "2" key
                 { size_t ichan = wParam - 0x30;                  
                   if( ichan < g_video.vframe->nchan )
-                  { Video_Frame_Autolevel( g_video.vframe, ichan, 0.05f, g_video.mins+ichan, g_video.maxs+ichan );
+                  { Video_Frame_Autolevel( g_video.vframe, ichan, /*0.05f*/0.0, g_video.mins+ichan, g_video.maxs+ichan );
                     debug("Autolevel channel %d - [%4.3f, %4.3f]\r\n", ichan, g_video.mins[ichan], g_video.maxs[ichan]);
                     Colormap_Autosetup( g_video.cmaps, g_video.mins, g_video.maxs );
                     Colormap_Resource_Commit( g_video.cmaps );

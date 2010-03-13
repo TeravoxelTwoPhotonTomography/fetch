@@ -3,6 +3,7 @@
 #include <d3d10.h>
 #include <d3dx10.h>
 #include "util-dx10.h"
+#include "util-image.h"
 
 Video_Frame_Resource*
 Video_Frame_Resource_Alloc(void)
@@ -111,9 +112,21 @@ Video_Frame_Resource_Commit ( Video_Frame_Resource *self )
   void                   *src = self->buf->contents;
   Guarded_Assert(SUCCEEDED( 
       tex->Map( D3D10CalcSubresource(0, 0, 1), D3D10_MAP_WRITE_DISCARD, 0, &dst ) ));  
-  Copy_Planes_By_Lines( dst.pData, dst.RowPitch, dst.DepthPitch,
-                        src, self->stride, self->stride*self->nlines,
-                        self->nlines, self->nchan );
+  { size_t src_pitch[4],
+           dst_pitch[4] = {dst.DepthPitch*self->nchan,                      // - in destination, each channel is a plane
+                           dst.DepthPitch,
+                           dst.RowPitch,
+                           1};                                              // - treat each line like a u8 string.
+    size_t shape[3]     = {self->nlines, self->nchan, self->stride};        // - shape of source region to copy
+    Compute_Pitch( src_pitch, self->nlines, self->nchan, self->stride, 1);  // - treat each line like a u8 string.
+    imCopyTranspose<u8,u8>( (u8*) dst.pData, dst_pitch, 
+                            (u8*) src,       src_pitch, shape, 0, 1 );      // - on copy, switch lines and nchan dimensions
+    //{ FILE *fp = fopen("src.raw","wb");
+    //  fwrite(src, 1, src_pitch[0], fp );
+    //  fclose(fp);
+    //}
+  }
+
   //{ FILE *fp = fopen("tex.raw","wb");
   //  fwrite(dst.pData, 1, dst.DepthPitch * self->nchan, fp );
   //  fclose(fp);
@@ -124,10 +137,14 @@ Video_Frame_Resource_Commit ( Video_Frame_Resource *self )
 void
 Video_Frame_From_Frame( Video_Frame_Resource *self, Frame *src )
 { size_t ichan;
+
+  src->dump("src.raw");
   
   vector_u8_request( self->buf, src->size_bytes() );
   for(ichan=0; ichan<self->nchan; ichan++ )
-    src->copy_channel(self->buf->contents + ichan*self->stride*self->nlines, self->stride, ichan );
+    src->copy_channel(self->buf->contents + ichan*self->stride*self->nlines, 
+                      self->stride,
+                      ichan );
 }
 
 void

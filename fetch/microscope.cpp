@@ -73,6 +73,7 @@ unsigned int Microscope_Attach( void )
   assert( lock == 0 ); 
   
   lock = 1;
+  
   while( cur-- > beg )
     if(cur)
       err |= (*cur)();
