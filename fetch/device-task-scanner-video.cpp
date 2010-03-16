@@ -169,7 +169,7 @@ void _shutter_set( Scanner* scanner, u8 val )
 { int32 written = 0;
   DAQERR( DAQmxWriteDigitalLines( scanner->daq_shutter,
                                   1,                          // samples per channel,
-                                  0,                          // autostart
+                                  0,                          // autostart - set to false because this task will already be started by config function
                                   0,                          // timeout
                                   DAQmx_Val_GroupByChannel,   // data layout,
                                   &val,                       // buffer
@@ -183,6 +183,7 @@ void _shutter_close( Scanner* scanner )
 
 void _shutter_open( Scanner* scanner )
 { _shutter_set(scanner, SCANNER_DEFAULT_SHUTTER_OPEN);
+  Sleep( SCANNER_DEFAULT_SHUTTER_DELAY /*ms*/ );
 }
 
 void DeviceTask_Scanner_Video_Write_Waveforms( Scanner *scanner )

@@ -35,6 +35,7 @@
 #define SCANNER_DEFAULT_POCKELS_AI_CHANNEL   "/Dev1/ai16"
 
 #define SCANNER_DEFAULT_SHUTTER_CHANNEL "/Dev1/port0/line8"
+#define SCANNER_DEFAULT_SHUTTER_DELAY                   50  // ms - must be an integer
 #define SCANNER_DEFAULT_SHUTTER_OPEN                     0
 #define SCANNER_DEFAULT_SHUTTER_CLOSED                   1
 
