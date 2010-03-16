@@ -40,6 +40,7 @@ DECLARE_USER_MESSAGE( IDM_SCANNER_TASK_STOP,    "{BF56ABFD-286B-4FC0-A25F-BFD7C2
 DECLARE_USER_MESSAGE( IDM_SCANNER_TASK_RUN,     "{BF56ABFD-286B-4FC0-A25F-BFD7C236A13D}");
 DECLARE_USER_MESSAGE( IDM_SCANNER_TASK_0,       "{BF56ABFD-286B-4FC0-A25F-BFD7C236A13D}");
 DECLARE_USER_MESSAGE( IDM_SCANNER_TASK_1,       "{BF56ABFD-286B-4FC0-A25F-BFD7C236A13D}");
+DECLARE_USER_MESSAGE( IDM_SCANNER_TAKE_SNAPSHOT,"{BF56ABFD-286B-4FC0-A25F-BFD7C236A13D}");
 
 unsigned int
 _scanner_free_tasks(void)
@@ -253,6 +254,31 @@ Scanner_Pockels_Set_Open_Val_Nonblocking( f64 volts )
   return QueueUserWorkItem(&_pockels_set_open_val_thread_proc, (void*)q, NULL /*default flags*/);
 }
 
+DWORD WINAPI
+_take_snapshot_thread_proc( LPVOID lparam )
+{ Device        *d = gp_scanner_device;     
+  DeviceTask *task = d->task;
+  DWORD result = 0;
+  if( gp_scanner_device && Device_Is_Armed( gp_scanner_device ) )   
+  { int run = Device_Is_Running( gp_scanner_device );               // In this scope, the device is configured
+    if(run)
+      Device_Stop( gp_scanner_device, SCANNER_DEFAULT_TIMEOUT );
+    SetEvent(gp_scanner_device->notify_stop);
+    result = (task->run_proc)( d, task->in, task->out );             // Since the stop event is signalled, the main loop
+                                                                     //    of the run proc should only run one iteration.
+    if( run )                                                        // NOTE: We ~could~ set up another output channel just
+      Device_Run( gp_scanner_device );                               //       for snapshots.
+  }
+  if(result)
+    warning("Scanner: On Snapshot.  The run procedure returned a non-zero result indicating there was a problem.\r\n");
+  return result;
+}
+
+BOOL
+Scanner_Take_Snapshot_Nonblocking(void)
+{ return QueueUserWorkItem(&_take_snapshot_thread_proc, NULL/*args*/, NULL /*default flags*/);
+}
+
 //
 // USER INTERFACE (WINDOWS)
 //
@@ -273,10 +299,11 @@ _scanner_ui_make_menu(void)
                                        
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_SCANNER_DETACH,  "&Detach"));
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_SCANNER_ATTACH, "&Attach"));
-  Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING | MF_POPUP,  (UINT_PTR) taskmenu, "&Tasks"));
+  Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING | MF_POPUP,  (UINT_PTR) taskmenu, "T&asks"));
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_SCANNER_TASK_RUN,  "&Run" ));
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_SCANNER_TASK_STOP, "&Stop" ));
   Guarded_Assert_WinErr( AppendMenu( submenu, MF_SEPARATOR, NULL, NULL ));
+  Guarded_Assert_WinErr( AppendMenu( submenu, MF_STRING, IDM_SCANNER_TAKE_SNAPSHOT, "&Take Snapshot" ));
   
   g_scanner_ui_main_menu_state.menu     = submenu;
   g_scanner_ui_main_menu_state.taskmenu = taskmenu;
@@ -399,6 +426,10 @@ Scanner_UI_Handler(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     } else if( wmId == IDM_SCANNER_TASK_STOP )
     { debug("IDM_SCANNER_STOP\r\n");
       Device_Stop_Nonblocking( gp_scanner_device, SCANNER_DEFAULT_TIMEOUT );
+      
+    } else if( wmId == IDM_SCANNER_TAKE_SNAPSHOT )
+    { debug("IDM_SCANNER_TAKE_SNAPSHOT\r\n");
+      Scanner_Take_Snapshot_Nonblocking();
       
     } else
       return 1;

@@ -111,13 +111,19 @@ unsigned int Scanner_Attach              (void);     // opens device context
 //
 // Utilities
 //
+
+// Accessors
 extern inline Scanner*    Scanner_Get                 (void);
 extern inline Device*     Scanner_Get_Device          (void);
 extern inline DeviceTask* Scanner_Get_Default_Task    (void);
 
+// Pockels cell
               int         Scanner_Pockels_Is_Volts_In_Bounds      ( f64 volts );
               int         Scanner_Pockels_Set_Open_Val            ( f64 volts, int time ); // The time argument is used to synchronize "simultaneous" requests. Returns the last timestamp.
               BOOL        Scanner_Pockels_Set_Open_Val_Nonblocking( f64 volts );
+
+// Control
+              BOOL        Scanner_Take_Snapshot_Nonblocking(void);              
 
 //
 // Windows
