@@ -23,8 +23,6 @@
 #define CheckPanic( expression ) (niscope_chk( g_digitizer.vi, expression, #expression, &error   ))
 #define ViErrChk( expression )    goto_if( CheckWarn(expression), Error )
 
-typedef ViInt16 TPixel;
-
 Digitizer             g_digitizer              = DIGITIZER_DEFAULT;
 Device               *gp_digitizer_device      = NULL;
 
