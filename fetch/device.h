@@ -27,11 +27,11 @@
 // states.
 //
 // This is typically used by defining an API for each individual device
-// that uses the Device object.  Specific device implimentations 
+// that uses the Device object.  Specific device implementations 
 // usually provide Create/Destroy and Attach/Destroy routines that
 // allocate the Device* and acquire the context handle.  
 //
-// Implimentations also define tasks (see device-task.h for details).  Tasks 
+// Implementations also define tasks (see device-task.h for details).  Tasks 
 // can be largely agnostic of any multithreading.  They get run in their own
 // thread and get/put data via asynchronous queues passed as arguments.
 //

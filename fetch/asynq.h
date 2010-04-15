@@ -74,7 +74,7 @@ unsigned int Asynq_Push_Copy  ( asynq *self, void  *buf,  int expand_on_full ); 
 unsigned int Asynq_Push_Try   ( asynq *self, void **pbuf );                     // on overflow, fails immediatly
 unsigned int Asynq_Push_Timed ( asynq *self, void **pbuf, DWORD timeout_ms );   // on overflow, waits.  Fails after timeout.
 
-unsigned int Asynq_Pop          ( asynq *self, void **pbuf );                   // on onderflow, waits forever.
+unsigned int Asynq_Pop          ( asynq *self, void **pbuf );                   // on underflow, waits forever.
 unsigned int Asynq_Pop_Try      ( asynq *self, void **pbuf );
 unsigned int Asynq_Pop_Copy_Try ( asynq *self, void  *buf  );
 unsigned int Asynq_Pop_Timed    ( asynq *self, void **pbuf, DWORD timeout_ms );

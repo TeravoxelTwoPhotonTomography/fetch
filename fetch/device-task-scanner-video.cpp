@@ -395,7 +395,7 @@ _Scanner_Task_Video_Proc( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 #elif defined( SCANNER_DEBUG_SPIN_WHEN_FULL )
     if(  !Asynq_Push( qdata,(void**) &frm, FALSE ))
 #else
-    error("Choose a push behavior for digitizer by compileing with the appropriate define.\r\n");
+    error("Choose a push behavior for digitizer by compiling with the appropriate define.\r\n");
 #endif
     { warning("Scanner output frame queue overflowed.\r\n\tAborting acquisition task.\r\n");
       goto Error;
