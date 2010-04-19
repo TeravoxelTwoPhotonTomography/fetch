@@ -18,4 +18,12 @@ namespace fetch
       
       return result;  
     }
+
+#define VTREF(e,i) ((void*)(((size_t*) *(size_t*)&(e))[i]))
+
+  static bool                        // Checks to make sure
+    Task::eq(Task *a,Task *b)        //  config and run functions
+  { return VTREF(a,0)==VTREF(b,0) && //  refer to the same address.
+           VTREF(a,1)==VTREF(b,1)    //
+  }
 }

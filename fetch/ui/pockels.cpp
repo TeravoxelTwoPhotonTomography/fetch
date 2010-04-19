@@ -1,5 +1,5 @@
 #include <stdafx.h>
-#include "window-control-pockels.h"
+#include "pockels.h"
 #include "../device/scanner.h"
 
 #define _ID_POCKELS_SUBCONTROL_EDIT    1

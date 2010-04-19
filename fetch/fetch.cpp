@@ -1,15 +1,18 @@
 // fetch.cpp : Defines the entry point for the application.
 //
+// [ ] See digitizer control.  How should app get default device for a certain
+//     category?
 
 #include "stdafx.h"
 #include "fetch.h"
 #include "logger.h"
 #include "microscope.h"
-#include "device-digitizer.h"
-#include "device-scanner.h"
+#include "device/digitizer.h"
+#include "device/scanner.h"
 
 #include "window-video.h"
-#include "window-control-pockels.h"
+#include "ui/pockels.h"
+#include "ui/digitizer.h"
 
 #define MAX_LOADSTRING 100
 
@@ -20,6 +23,7 @@ TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 
 HWND g_hwndLogger = NULL;                 // Logger window
 HWND g_hwndVideo  = NULL;                 // Video  window
+
 
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -60,7 +64,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	LoadString(hInstance, IDC_FETCH, szWindowClass, MAX_LOADSTRING);
 	MyRegisterClass(hInstance);
 	
-  ui::pockels::RegisterClass(hInstance);
+  fetch::ui::pockels::RegisterClass(hInstance);
 
 	// Perform application initialization:
 	if (!InitInstance (hInstance, nCmdShow))
@@ -176,7 +180,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	PAINTSTRUCT ps;
 	HDC hdc;
 	static HMENU command_menu = 0;
-	static ui::pockels::UIControl ctl_pock = {0,0,0,0};
+	static fetch::ui::pockels::UIControl ctl_pock = {0,0,0,0};
+  //static fetch::ui::digitizer::Menu digitizer_menu("&Digitizer", Digitizer()/*replace*/);
 	
 	if( !command_menu )
 	  command_menu = GetSubMenu( GetMenu(hWnd), 1);
@@ -184,7 +189,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
   if( !Scanner_UI_Handler(hWnd, message, wParam, lParam) )
      return 0; // message was handled so return
 
-  //if( !Digitizer_UI_Handler(hWnd, message, wParam, lParam) )
+  //if( !digitizer_menu.Handler(hWnd, message, wParam, lParam) )
   //   return 0; // message was handled so return
 
   // Top level handler    
@@ -194,7 +199,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     { HMENU menu = GetMenu( hWnd );
       Guarded_Assert_WinErr( menu );
       Scanner_UI_Insert_Menu( menu, GetMenuItemCount(menu)-1, MF_BYPOSITION );
-      //Digitizer_UI_Insert_Menu( menu, GetMenuItemCount(menu)-1, MF_BYPOSITION );
+      //digitizer_menu->Insert( menu, GetMenuItemCount(menu)-1, MF_BYPOSITION );
       
       //
       // make the pockels control

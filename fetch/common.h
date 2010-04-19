@@ -8,8 +8,30 @@
 // Windows utitities
 // -----------------
 
-#define DECLARE_USER_MESSAGE(name,guid) \
+#define DECLARE_USER_MESSAGE__NON_STATIC(name) \
+       UINT name
+
+#define DECLARE_USER_MESSAGE_STR(name,guid) \
      static const UINT name = ::RegisterWindowMessage( #name guid )
+
+UINT CreateUserWindowMessage( const char *name, size_t id )
+{ char s[1000];
+  size_t n;
+  memset(s,0,1000);
+  n = strlen(name);
+  memcpy(s,name,n);
+  s+=n;
+  if( sizeof(size_t)==8 )
+    sprintf(s,"-%llu",id);
+  else
+    sprintf(s,"-%lu",id); 
+  return ::RegisterWindowMessage(s); 
+}
+
+#define DECLARE_USER_MESSAGE_INT(name,id) \
+     static const UINT name = ::CreateUserWindowMessage( #name, id )
+#define DEFINE_USER_MESSAGE_INT__NON_STATIC(name,id) \
+     name = ::CreateUserWindowMessage( #name, id )
 
 // -----------------
 // fixed width types
