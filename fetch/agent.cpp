@@ -47,11 +47,58 @@ namespace fetch
       *h = INVALID_HANDLE_VALUE;
     }
 
+  static void
+    Agent::_free_qs(vector_PASYNQ **pqs)
+    { vector_PASYNQ *qs = *pqs;
+      if( qs )
+      { size_t n = qs->count;
+        while(n--)
+          Asynq_Unref( qs->contents[n] );
+        vector_PASYNQ_free( qs );
+        *pqs = NULL;
+      }
+    }
+
+  static void
+    Agent::_alloc_qs( vector_PASYNQ **pqs,
+                      size_t  n
+                      size_t *nbuf, 
+                      size_t *nbytes)
+    { if( num_inputs )
+      { Agent::_free_qs(pqs);               // Release existing queues.
+        *pqs  = vector_PASYNQ_alloc(n); 
+        while( n-- )
+          (*pqs)->contents[n] = Asynq_Alloc(nbuf[n],nbytes[n]);
+        (*pqs)->count = (*pqs)->nelem;      // This is so we can resize correctly later.
+      }
+    }
+
+  static void
+    Agent::_alloc_qs_easy( vector_PASYNQ **pqs,
+                           size_t n
+                           size_t nbuf, 
+                           size_t nbytes)
+    { if( num_inputs )
+      { Agent::_free_qs(pqs);               // Release existing queues.
+        *pqs  = vector_PASYNQ_alloc(n); 
+        while( n-- )
+          (*pqs)->contents[n] = Asynq_Alloc(nbuf,nbytes);
+        (*pqs)->count = (*pqs)->nelem;      // This is so we can resize correctly later.
+      }
+    }
+
     ~Agent(void)
-    { if(this->num_waiting>0)
+    { 
+      if(this->detach(AGENT_DEFAULT_TIMEOUT)>0)
+        warning("~Agent : Attempt to detach() timed out.\r\n");
+
+      if(this->num_waiting>0)
         warning("~Agent : Agent has waiting tasks.\r\n"
                 "         Try calling Agent::detach first.\r\n.");
       
+      _free_qs(&this->in);
+      _free_qs(&this->out);
+
       _safe_free_handle( &this->thread );
       _safe_free_handle( &this->notify_available );
       _safe_free_handle( &this->notify_stop );
@@ -367,5 +414,61 @@ Error:
       return QueueUserWorkItem(&_agent_stop_thread_proc, (void*)q, NULL /*default flags*/);
     }
 
+  DWORD WINAPI
+    _agent_detach_thread_proc( LPVOID lparam )
+    { Agent *d = (Agent*) lparam;
+      return args.d->detach();
+    }
+
+  BOOL
+    Agent::detach_nonblocking(DWORD timeout_ms)
+    { return QueueUserWorkItem(&_agent_detach_thread_proc, (void*)this, NULL /*default flags*/);
+    }
+
+  DWORD WINAPI
+    _agent_attach_thread_proc( LPVOID lparam )
+    { Agent *d = (Agent*) lparam;
+      return args.d->attach();
+    }
+
+  BOOL
+    Agent::attach_nonblocking(DWORD timeout_ms)
+    { return QueueUserWorkItem(&_agent_attach_thread_proc, (void*)this, NULL /*default flags*/);
+    }
+/*
+// FIXME: make this more of a resize op to avoid thrashing
+void
+DeviceTask_Alloc_Inputs( DeviceTask* self,
+                             size_t  num_inputs,
+                             size_t *input_queue_size, 
+                             size_t *input_buffer_size)
+{ if( num_inputs )
+  { DeviceTask_Free_Inputs( self );
+    self->in  = vector_PASYNQ_alloc( num_inputs  ); 
+    while( num_inputs-- )
+      self->in->contents[num_inputs] 
+          = Asynq_Alloc( input_queue_size [num_inputs],
+                         input_buffer_size[num_inputs] );
+    self->in->count = self->in->nelem; // resizable, so use count rather than nelem alone.
+  }                                    //            start full
+}
+
+// FIXME: make this more of a resize op to avoid thrashing
+void
+DeviceTask_Alloc_Outputs( DeviceTask* self,
+                              size_t  num_outputs,
+                              size_t *output_queue_size, 
+                              size_t *output_buffer_size)
+{ if( num_outputs )
+  { DeviceTask_Free_Outputs( self );
+    self->out  = vector_PASYNQ_alloc( num_outputs ); 
+    while( num_outputs-- )
+      self->out->contents[num_outputs] 
+          = Asynq_Alloc( output_queue_size[num_outputs],
+                         output_buffer_size[num_outputs] );
+    self->out->count = self->out->nelem; // resizable, so use count rather than nelem alone.
+  }                                      //            start full
+}
+*/
 } //end namespace fetch
 
