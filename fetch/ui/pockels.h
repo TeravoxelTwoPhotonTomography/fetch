@@ -1,6 +1,10 @@
 #pragma once
 #include "stdafx.h"
 
+#ifndef CALLBACK
+#define CALLBACK
+#endif
+
 namespace fetch
 {
   namespace ui
@@ -14,9 +18,25 @@ namespace fetch
               btn;
       } UIControl;
       
-                  void RegisterClass( HINSTANCE hInstance );
-            UIControl CreateControl( HWND parent, int top, int left, unsigned identifier );
-      LRESULT CALLBACK WndProc      ( HWND, UINT, WPARAM, LPARAM );
+      class PockelsIntensitySpinControl {
+      public:
+        PockelsIntensitySpinControl(device::Pockels *pockels);
+
+        static void      RegisterClass( HINSTANCE hInstance );
+        void             CreateControl( HWND parent, int top, int left, unsigned identifier );
+        LRESULT CALLBACK WndProc      ( HWND, UINT, WPARAM, LPARAM );
+
+        void             OnButtonClicked(HWND hWnd);
+
+      public:
+        device::Pockels *pockels;
+        HWND self,
+              lbl,
+             edit,
+             spin,
+              btn;
+      };
+
     }
   }
 }
