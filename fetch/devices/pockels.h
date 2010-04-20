@@ -90,14 +90,14 @@ namespace fetch
     class Pockels : public NIDAQAgent
     {
     public:
-      typedef struct _config
+      typedef struct _pockels_config
       {
         f64         v_lim_max;
         f64         v_lim_min;
         f64         v_open;
         f64         v_closed;
         char        ao_chan[SCANNER_MAX_CHAN_STRING];
-        char        ai_chan[SCANNER_MAX_CHAN_STRING];
+        char        ai_chan[SCANNER_MAX_CHAN_STRING]; // XXX: Unused at present
       } Config;
 
       Config         config;

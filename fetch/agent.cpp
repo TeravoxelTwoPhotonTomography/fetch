@@ -60,10 +60,10 @@ namespace fetch
     }
 
   static void
-    Agent::_alloc_qs( vector_PASYNQ **pqs,
-                      size_t  n
-                      size_t *nbuf, 
-                      size_t *nbytes)
+    Agent::_alloc_qs(vector_PASYNQ **pqs,
+                     size_t  n,
+                     size_t *nbuf,
+                     size_t *nbytes)
     { if( num_inputs )
       { Agent::_free_qs(pqs);               // Release existing queues.
         *pqs  = vector_PASYNQ_alloc(n); 
@@ -74,10 +74,10 @@ namespace fetch
     }
 
   static void
-    Agent::_alloc_qs_easy( vector_PASYNQ **pqs,
-                           size_t n
-                           size_t nbuf, 
-                           size_t nbytes)
+    Agent::_alloc_qs_easy(vector_PASYNQ **pqs,
+                          size_t n,
+                          size_t nbuf,
+                          size_t nbytes)
     { if( num_inputs )
       { Agent::_free_qs(pqs);               // Release existing queues.
         *pqs  = vector_PASYNQ_alloc(n); 
@@ -186,7 +186,7 @@ namespace fetch
     }
 
   unsigned int
-    Agent::Arm(Task *task, DWORD timeout_ms )
+    Agent::arm(Task *task, DWORD timeout_ms )
     { this->lock();                                           // Source state can not be "armed" or "running"
       if( !_request_available_unlocked(this, 0, timeout_ms) ) // Blocks till agent is available
       { warning("Agent unavailable.  Perhaps another task is running?\r\n"

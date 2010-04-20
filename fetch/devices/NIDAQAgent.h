@@ -19,10 +19,11 @@
  * functions required of the Agent interface.
  */
 
-#ifndef NIDAQAGENT_H_
-#define NIDAQAGENT_H_
+#pragma once
 
 #include "agent.h"
+
+#define NIDAQAGENT_DEFAULT_TIMEOUT INFINITY
 
 namespace fetch
 {
@@ -49,4 +50,3 @@ namespace fetch
 
 }
 
-#endif /* NIDAQAGENT_H_ */

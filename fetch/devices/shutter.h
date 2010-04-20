@@ -39,9 +39,6 @@ namespace fetch
                Shutter();
       virtual ~Shutter();
 
-      unsigned int attach(void);
-      unsigned int detach(void);
-
       void Set          (u8 val);
       void Close        (void);
       void Open         (void);

@@ -9,7 +9,6 @@
 #include "NIDAQAgent.h"
 #include "agent.h"
 
-#define DEFAULT_LINEARSCANMIRROR_SAMPLES              4096   // samples per waveform
 #define DEFAULT_LINEARSCANMIRROR_VPP                  10.0   // V - peak-to-peak
 #define DEFAULT_LINEARSCANMIRROR_V_MAX                10.0   // V - Maximum permissible value
 #define DEFAULT_LINEARSCANMIRROR_V_MIN               -10.0   // V - Minimum permissible value
@@ -17,8 +16,7 @@
 
 #define LINEAR_SCAN_MIRROR__MAX_CHAN_STRING             32
 #define LINEAR_SCAN_MIRROR__DEFAULT_CONFIG \
-        { DEFAULT_LINEARSCANMIRROR_SAMPLES,\
-          DEFAULT_LINEARSCANMIRROR_VPP,\
+        { DEFAULT_LINEARSCANMIRROR_VPP,\
           DEFAULT_LINEARSCANMIRROR_V_MAX,\
           DEFAULT_LINEARSCANMIRROR_V_MIN,\
           DEFAULT_LINEARSCANMIRROR_CHANNEL,\
@@ -33,12 +31,11 @@ namespace fetch
     class LinearScanMirror : public NIDAQAgent
     {
     public:
-      typedef struct _t_config
-      { u32         galvo_samples;
-        f64         galvo_vpp;
-        f64         galvo_v_lim_max;
-        f64         galvo_v_lim_min;
-        char        galvo_channel [LINEAR_SCAN_MIRROR__MAX_CHAN_STRING];
+      typedef struct _t_linear_scan_mirror_config
+      { f64         vpp;                                          // V - peak-to-peak
+        f64         v_lim_max;                                    // V - Maximum permissible value
+        f64         v_lim_min;                                    // V - Minimum permissible value
+        char        channel [LINEAR_SCAN_MIRROR__MAX_CHAN_STRING];// DAQ terminal: should be connected to input on galvo controller
       } Config;
 
       Config     config;

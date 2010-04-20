@@ -29,6 +29,10 @@ namespace fetch
 
     unsigned int NIDAQAgent::detach(void)
     { unsigned int status=1; //success 0, failure 1
+
+      if( !this->disarm(NIDAQAGENT_DEFAULT_TIMEOUT) )
+        warning("Could not cleanly disarm NIDAQAgent: %s\r\n",_daqtaskname);
+
       if(daqtask)
       { debug("%s: Attempting to detach DAQ AO channel. handle 0x%p\r\n",_daqtaskname,daqtask);
         DAQJMP(DAQmxStopTask(daqtask));

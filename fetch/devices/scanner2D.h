@@ -10,12 +10,57 @@
  * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
-
+/*
+ * Scanner2D
+ * ---------
+ *
+ * This class models a device capable of point scanned image acquisition using
+ * a resonant mirror on one axis.
+ *
+ * Acquisition using a resonant mirror requires synchronizing multiple devices.
+ * Here, I've broken the operation of the scanner into four parts, each
+ * represented by parent classes.  The parent classes are all eventually
+ * virtually derived from the Agent class, so Agent state is shared among all
+ * the parent classes.  The hierarchy looks like this:
+ *
+ * (Agent)-------|--------------|
+ *           Digitizer      NIDAQAgent----|-------|--------------|
+ *               |                     Pockels  Shutter  LinearScanMirror
+ *                \                      /       /              /
+ *                 \____________________/_______/______________/
+ *                           |
+ *                        Scanner2D
+ *
+ * The NIDAQAgent and Digitizer classes both provide the attach/detach
+ * functions required of a class implementing the Agent interface.
+ * The NIDAQAgent class is _not_ virtually inherited so each of the Pockels,
+ * Shutter, and LinearScanMirror classes bring in a hardware context handle:
+ * <daqtask>.  The handles all have the same name, so to unambiguously access
+ * the <daqtask> member, a down cast is required.
+ *
+ * It's possible to get independent task handles for the pockels cell, the
+ * shutter and the linear scan mirror by calling the attach() function for each.
+ * Here, however, the Pockels cell and linear scan mirror should be associated
+ * with the same analog output task.  This is done by keeping attaching to
+ * a separate task stored by the Scanner2D class; the <daqtask> handles for
+ * the Pockels and LinearScanMirror classes go unused.
+ *
+ * Note that Pockels and LinearScanMirror interfaces both implement hardware
+ * changes by (a) updating their associated software state and then, if armed,
+ * (b) committing changes to hardware via the associated Task.  Because hardware
+ * commits are routed through the Task, the specific <daqtask> used is up to the
+ * Task. The Shutter class, does _not_ follow this pattern.  In it's current
+ * form, Shutter::attach() _must_ be used in order to use Shutter::Open() and
+ * Shutter::Closed().
+ *
+ * Clear as Mud.
+ */
 #pragma once
 #include "digitizer.h"
 #include "pockels.h"
 #include "shutter.h"
 #include "LinearScanMirror.h"
+#include "frame.h"
 
 //
 // Device configuration
@@ -30,46 +75,65 @@
 #define SCANNER2D_DEFAULT_LINE_DUTY_CYCLE           0.95f // Fraction of resonant period to acquire (must be less than one)
 #define SCANNER2D_DEFAULT_LINE_TRIGGER_SRC              1 // Digitizer channel corresponding to resonant velocity input
                                                           // the channel should be appropriately configured in the digitizer config
-
+#define SCANNER2D_DEFAULT_AO_SAMPLES                 4096 // samples per waveform
 #define SCANNER2D_DEFAULT_LINE_TRIGGER             "APFI0"// DAQ terminal: should be connected to resonant velocity output
 #define SCANNER2D_DEFAULT_FRAME_ARMSTART           "RTSI2"// DAQ terminal: should be connected to "ReadyForStart" event output from digitizer
 #define SCANNER2D_DEFAULT_DAQ_CLOCK   "Ctr1InternalOutput"// DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock
-#define SCANNER2D_DEFAULT_DAQ_CTR             "/Dev1/ctr1"// DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock
+#define SCANNER2D_DEFAULT_DAQ_CTR             "/Dev1/ctr1"// DAQ terminal: A finite pulse train is generated so that this counter may be used as a sample clock.
+#define SCANNER2D_DEFAULT_DAQ_CTR_ALT         "/Dev1/ctr0"// DAQ terminal: Finite pulse train generation requires a pair of counters.  This is the implicitly used one.
 
-#define SCANNER_DEFAULT_TIMEOUT               INFINITE // ms
-#define SCANNER_MAX_CHAN_STRING                     32 // characters
+#define SCANNER2D_DEFAULT_TIMEOUT               INFINITE // ms
+#define SCANNER2D_MAX_CHAN_STRING                     32 // characters
 
+#define SCANNER2D_DEFAULT_CONFIG \
+{ SCANNER2D_DEFAULT_RESONANT_FREQUENCY,\
+  SCANNER2D_DEFAULT_SCANS,\
+  SCANNER2D_DEFAULT_LINE_DUTY_CYCLE,\
+  SCANNER2D_DEFAULT_LINE_TRIGGER_SRC,\
+  SCANNER2D_DEFAULT_AO_SAMPLES,\
+  SCANNER2D_DEFAULT_LINE_TRIGGER,\
+  SCANNER2D_DEFAULT_FRAME_ARMSTART,\
+  SCANNER2D_DEFAULT_DAQ_CLOCK,\
+  SCANNER2D_DEFAULT_DAQ_CTR,\
+  SCANNER2D_DEFAULT_DAQ_CTR_ALT,\
+}
 
 namespace fetch
 {
   namespace device
   {
-    typedef struct _resonant_config
-    {
-      f64         frequency_Hz;
-      u32         nscans;
-      f32         line_duty_cycle;
-      u8          line_trigger_src;
-    } Resonant_Config;
-
-    typedef struct _galvo_config
-    {
-      u32         nsamples;
-      f64         vpp;
-      f64         v_lim_max;
-      f64         v_lim_min;
-      char        channel [SCANNER_MAX_CHAN_STRING];
-      char        trigger [SCANNER_MAX_CHAN_STRING];
-      char        armstart[SCANNER_MAX_CHAN_STRING];
-      char        clock   [SCANNER_MAX_CHAN_STRING];
-      char        ctr     [SCANNER_MAX_CHAN_STRING];
-    } Galvo_Config;
 
     class Scanner2D : public Digitizer, Pockels, Shutter, LinearScanMirror
     {
     public:
                Scanner2D();
       virtual ~Scanner2D();
+
+      unsigned int attach(void);
+      unsigned int detach(void);
+
+    public:
+      typedef struct _t_scanner2d_config
+      {
+        f64         frequency_Hz;                      // Resonant frequency (1/full period)
+        u32         nscans;                            // Number of bidirectional scans (full periods) per frame
+        f32         line_duty_cycle;                   // Acquire samples during this fraction of the full period
+        u8          line_trigger_src;                  // Digitizer channel corresponding to resonant velocity input.
+        u32         nsamples;                          // DAQ AO: Samples per frame
+        char        trigger [SCANNER2D_MAX_CHAN_STRING]; // DAQ   : Line trigger source
+        char        armstart[SCANNER2D_MAX_CHAN_STRING]; // DAQ   : Frame trigger source
+        char        clock   [SCANNER2D_MAX_CHAN_STRING]; // DAQ   : Sample clock - typically set to a counter set up for finite pulse-train generation.
+        char        ctr     [SCANNER2D_MAX_CHAN_STRING]; // DAQ   : The counter generating the sample clock.
+        char        ctr_alt [SCANNER2D_MAX_CHAN_STRING]; // DAQ   : The implicit counter paired with the one used for the sample clock.
+      } Config;
+
+      Config     config;
+      TaskHandle ao,
+                 clk;
+
+    protected:
+      ViInt32                      _compute_record_size(void);
+      Frame_With_Interleaved_Lines _describe_frame(void);
     };
 
   } // end namespace device
