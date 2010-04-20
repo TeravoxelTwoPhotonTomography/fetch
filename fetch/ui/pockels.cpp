@@ -13,7 +13,15 @@ namespace fetch
   {
     namespace pockels
     {
-      void RegisterClass( HINSTANCE hInstance )
+
+      PockelsIntensitySpinControl::
+      PockelsIntensitySpinControl(device::Pockels *pockels)
+        : pockels(pockels)
+      {}
+
+      static void
+      PockelsIntensitySpinControl::
+      RegisterClass( HINSTANCE hInstance )
       { WNDCLASSEX wcex;
         wcex.cbSize           = sizeof( WNDCLASSEX );
         wcex.style            = CS_HREDRAW | CS_VREDRAW;
@@ -30,10 +38,11 @@ namespace fetch
         Guarded_Assert_WinErr( RegisterClassEx( &wcex ) );
       }      
       
-      UIControl CreateControl( HWND parent, int top, int left, unsigned identifier )
+      void
+      PockelsIntensitySpinControl::
+      CreateControl( HWND parent, int top, int left, unsigned identifier )
       { RECT rc = {left, top, left+100, top+100}, 
             trc;
-        UIControl ctl;
         HWND hwnd;
         HINSTANCE hinst = GetModuleHandle(NULL);
         HGDIOBJ  hfDefault;
@@ -56,7 +65,7 @@ namespace fetch
                               hinst,                       // hinstance
                               NULL );                      // lParam for WM_CREATE
         Guarded_Assert_WinErr( hwnd );
-        ctl.self = hwnd;
+        this->self = hwnd;
 
         //
         // make the pockels control
@@ -72,7 +81,7 @@ namespace fetch
                               | SS_RIGHT,
                               left,top,
                               10,10,             // width, height guess.  This will be corrected soon.
-                              ctl.self,
+                              this->self,
                               (HMENU) _ID_POCKELS_SUBCONTROL_STATIC,
                               hinst,
                               NULL );
@@ -102,7 +111,7 @@ namespace fetch
                                 | WS_TABSTOP,
                                 rc.right, top,
                                 50, 20,                   // pos and dims (approx.  These get reset next).
-                                ctl.self,                 // parent
+                                this->self,                 // parent
                                 (HMENU) _ID_POCKELS_SUBCONTROL_EDIT, // child window identifier
                                 hinst,
                                 NULL ));
@@ -114,7 +123,7 @@ namespace fetch
           MoveWindow( hwnd, trc.right, top ,(int)(sz.cx*1.1),(int)(sz.cy*1.1),TRUE );
           ReleaseDC(hwnd,hdc);
         }
-        ctl.edit = hwnd;
+        this->edit = hwnd;
         GetClientRect( hwnd, &trc );
         rc.bottom = MAX(rc.bottom,trc.bottom);
         rc.right += trc.right;
@@ -131,14 +140,14 @@ namespace fetch
                                       | UDS_SETBUDDYINT,
                                       rc.right+10, top,
                                       10, 0,
-                                      ctl.self,            //parent
+                                      this->self,            //parent
                                       _ID_POCKELS_SUBCONTROL_SPINNER, // child id
                                       hinst,
-                                      ctl.edit,            //buddy
+                                      this->edit,            //buddy
                                       2000,                // max
                                       0,                   // min
                                       0 ));                // initial value (off is safest)
-        ctl.spin = hwnd;
+        this->spin = hwnd;
         GetClientRect( hwnd, &trc );
         rc.bottom = MAX(rc.bottom,trc.bottom);
         //rc.right += trc.right;
@@ -155,11 +164,11 @@ namespace fetch
                                 | BS_DEFPUSHBUTTON,       // responds to enter key
                                 rc.right, top,
                                 50, 20,                   // pos and dims (approx.  These get reset next).
-                                ctl.self,                 // parent
+                                this->self,                 // parent
                                 (HMENU) _ID_POCKELS_SUBCONTROL_BUTTON, // child window identifier
                                 hinst,
                                 NULL ));
-        ctl.btn = hwnd;
+        this->btn = hwnd;
         // Size button control
         SetWindowFont( hwnd, hfDefault, FALSE );
         { HDC hdc = GetDC(hwnd);
@@ -172,31 +181,39 @@ namespace fetch
         rc.bottom = MAX(rc.bottom,trc.bottom);
         rc.right += trc.right;
         
-        Guarded_Assert_WinErr( MoveWindow( ctl.self, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, TRUE ));
+        Guarded_Assert_WinErr( MoveWindow( this->self, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, TRUE ));
 
 
-        return ctl;
+        return;
       }
       
-      static void OnButtonClicked(HWND hWnd)
+      void
+      PockelsIntensitySpinControl::
+      OnButtonClicked(HWND hWnd)
       { BOOL  ok = FALSE;
         UINT val = GetDlgItemInt(hWnd,_ID_POCKELS_SUBCONTROL_EDIT,&ok,FALSE);                
         if(ok)
         { f64 volts = val/1000.0; 
           debug("Pockels edit change. Value: %f V\r\n", volts);
-          if( Scanner_Pockels_Is_Volts_In_Bounds( volts ) )
-            Scanner_Pockels_Set_Open_Val_Nonblocking( val/1000.0 );
+          if(pockels->Is_Volts_In_Bounds(volts))
+            pockels->Set_Open_Val_Nonblocking(val/1000.0);
           else
           { warning("Value set for Pockels cell is out of bounds.\r\n");
             SetDlgItemInt(hWnd,
                           _ID_POCKELS_SUBCONTROL_EDIT,
-                          (UINT) (Scanner_Get()->config.pockels_v_open*1000.0), // convert to mV
-                          FALSE );                                              // unsigned
+                          (UINT) (pockels->config.v_open*1000.0), //convert to mV
+                          FALSE );                                // unsigned
           }
         }
       }
 
-      LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
+#ifndef CALLBACK
+#define CALLBACK
+#endif
+
+      LRESULT CALLBACK
+      PockelsIntensitySpinControl::
+      WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
       { int wmId, wmEvent;
         PAINTSTRUCT ps;
         HDC hdc;
@@ -223,7 +240,7 @@ namespace fetch
           {
           case _ID_POCKELS_SUBCONTROL_BUTTON:
             switch(wmEvent)
-            { case BN_CLICKED: OnButtonClicked(hWnd);               break;
+            { case BN_CLICKED: this->OnButtonClicked(hWnd); break;
             }
             break;
 
@@ -243,3 +260,5 @@ namespace fetch
     }
   }
 }
+
+

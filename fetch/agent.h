@@ -1,3 +1,15 @@
+/*
+ * Agent.h
+ *
+ * Author: Nathan Clack <clackn@janelia.hhmi.org>
+ *   Date: Apr 20, 2010
+ */
+/*
+ * Copyright 2010 Howard Hughes Medical Institute.
+ * All rights reserved.
+ * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
+ * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
+ */
 #pragma once
 
 #include "stdafx.h"
@@ -42,7 +54,10 @@
 //
 // The "Back" transition methods (~Agent(), Detach, Disarm, and Stop) accept
 // any upstream state.  That is, Detach() will attempt to Stop() and then
-// Disarm() a running Agent.
+// Disarm() a running Agent.  Additionally, Disarm() can be called from any
+// state.
+//
+//
 //
 // ABSTRACTION RULES
 // =================
@@ -69,8 +84,8 @@ namespace fetch {
   class Agent
   { 
     public:
-      Agent(void);
-      ~Agent(void);
+               Agent(void);
+      virtual ~Agent(void);
 
       // State transition functions
       virtual unsigned int attach (void) = 0;
@@ -94,10 +109,14 @@ namespace fetch {
       unsigned int is_runnable(void);
       unsigned int is_running(void);
 
-    protected:
-      vector_PASYNQ *in,         // Input  pipes
-                    *out;        // Output pipes
+    public:
+      Task            *task;
+      void            *context;
 
+      vector_PASYNQ   *in,         // Input  pipes
+                      *out;        // Output pipes
+
+    protected:
       // _alloc_qs
       // _alloc_qs_easy
       //   Allocate <n> independant asynchronous queues.  These are contained
@@ -128,7 +147,5 @@ namespace fetch {
       u32              num_waiting,
                        _is_available,
                        _is_running;
-      Task            *task;
-      void            *context;
   };
 }

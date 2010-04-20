@@ -1,6 +1,18 @@
+/*
+ * Digitizer.cpp
+ *
+ * Author: Nathan Clack <clackn@janelia.hhmi.org>
+ *   Date: Apr 20, 2010
+ */
+/*
+ * Copyright 2010 Howard Hughes Medical Institute.
+ * All rights reserved.
+ * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
+ * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
+ */
 #include "stdafx.h"
 #include "util/util-niscope.h"
-#include "devices/digitizer.h"
+#include "digitizer.h"
 #include "asynq.h"
 
 #if 1
@@ -16,18 +28,27 @@
 namespace fetch
 {
     Digitizer::Digitizer(void)
-      : config(DIGITIZER_CONFIG_DEFAULT)
+              :config((Digitizer::Config)DIGITIZER_CONFIG_DEFAULT)
     { 
       // Setup output queues.
       // - Sizes determine initial allocations.
-      // - out[0] recieves raw data     from each niScope_Fetch call.
-      // - out[1] recieves the metadata from each niScope_Fetch call.
+      // - out[0] receives raw data     from each niScope_Fetch call.
+      // - out[1] receives the metadata from each niScope_Fetch call.
       //
-      size_t Bpp    = 2; //bytes per pixel to initially allocated for
+      size_t Bpp    = 2, //bytes per pixel to initially allocated for
              nbuf[2] = {DIGITIZER_BUFFER_NUM_FRAMES,
                         DIGITIZER_BUFFER_NUM_FRAMES},
-               sz[2] = { config->num_records * config->record_length * config->num_channels * Bpp;
+               sz[2] = { config->num_records * config->record_length * config->num_channels * Bpp,
                          config->num_records * sizeof(struct niScope_wfmInfo)};
+      _alloc_qs( &this->out, 2, nbuf, sz );
+    }
+
+    Digitizer::Digitizer(size_t nbuf, size_t nbytes_per_frame, size_t nwfm)
+              :config((Digitizer::Config)DIGITIZER_CONFIG_DEFAULT)
+    { size_t Bpp    = 2, //bytes per pixel to initially allocated for
+             nbuf[2] = {nbuf,nbuf},
+               sz[2] = {nbytes_per_frame,
+                        nwfm*sizeof(struct niScope_wfmInfo)};
       _alloc_qs( &this->out, 2, nbuf, sz );
     }
 
