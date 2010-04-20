@@ -109,10 +109,14 @@ namespace fetch {
       unsigned int is_runnable(void);
       unsigned int is_running(void);
 
-    protected:
-      vector_PASYNQ *in,         // Input  pipes
-                    *out;        // Output pipes
+    public:
+      Task            *task;
+      void            *context;
 
+      vector_PASYNQ   *in,         // Input  pipes
+                      *out;        // Output pipes
+
+    protected:
       // _alloc_qs
       // _alloc_qs_easy
       //   Allocate <n> independant asynchronous queues.  These are contained
@@ -143,7 +147,6 @@ namespace fetch {
       u32              num_waiting,
                        _is_available,
                        _is_running;
-      Task            *task;
-      void            *context;
+
   };
 }
