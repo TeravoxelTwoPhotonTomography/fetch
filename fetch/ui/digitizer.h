@@ -61,7 +61,7 @@ namespace fetch
             Task      task;
           } _t_task_table, _t_task_table_row;
           static _t_task_table _task_table[] = {
-            { "Fetch Forever  8-bit",   IDM_DIGITIZER_TASK_0, task::digitizer::FetchForever<i8>()   },
+            { "Fetch Forever  8-bit",   IDM_DIGITIZER_TASK_0, task::digitizer::FetchForever<i8>()  },
             { "Fetch Forever 16-bit",   IDM_DIGITIZER_TASK_1, task::digitizer::FetchForever<i16>() },
             { NULL, NULL, NULL },
           };

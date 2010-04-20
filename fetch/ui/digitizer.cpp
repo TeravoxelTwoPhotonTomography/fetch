@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include "util/util-niscope.h"
-#include "microscope.h"
 #include "device/digitizer.h"
-#include "device.h"
 #include "task/fetch-forever.h"
 
 //
@@ -22,11 +20,15 @@ namespace fetch
   {
     namespace digitizer
     {
-      Menu::Menu(char *name, Digitizer *digitizer):
+      Menu::Menu(char *name, device::Digitizer *digitizer):
         _digitizer(digitizer),
         _menu(0),
         _taskmenu(0)
         {
+          assert(strlen(name)<sizeof(_name));
+          memset(_name,0,sizeof(_name));
+          memcpy(_name,name,strlen(name));
+
           ++_instance_id;
           DEFINE_USER_MESSAGE_INT__NON_STATIC( IDM_DIGITIZER,              _instance_id);
           DEFINE_USER_MESSAGE_INT__NON_STATIC( IDM_DIGITIZER_DETACH,       _instance_id);
@@ -37,8 +39,7 @@ namespace fetch
           DEFINE_USER_MESSAGE_INT__NON_STATIC( IDM_DIGITIZER_TASK_0,       _instance_id);  
           DEFINE_USER_MESSAGE_INT__NON_STATIC( IDM_DIGITIZER_TASK_1,       _instance_id);
 
-          memset(_name,0,sizeof(_name));
-          memcpy(_name,name,strlen(name));
+
         }
 
       HMENU 

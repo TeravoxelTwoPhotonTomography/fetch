@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../agent.h"
-#include "../util/util-niscope.h"
+#include "agent.h"
+#include "util-niscope.h"
 
 #define DIGITIZER_MAX_NUM_CHANNELS        NI5105_MAX_NUM_CHANNELS
 #define DIGITIZER_MAX_SAMPLE_RATE         NI5105_MAX_SAMPLE_RATE
@@ -50,26 +50,30 @@
                         }
 namespace fetch
 {
-  class Digitizer: public Agent
+  namespace device
   {
+    class Digitizer : public virtual Agent
+    {
     public:
 
       typedef struct _digitizer_channel_config
-      { ViChar    *name;     // Null terminated string with channel syntax: e.g. "0-2,7"
-        ViReal64   range;    // Volts peak to peak.  (NI-5105) Can be 0.05, 0.2, 1, or 6 V for 50 Ohm.  Resolution is 0.1% dB.
-        ViInt32    coupling; // Specifies how to couple the input signal. Refer to NISCOPE_ATTR_VERTICAL_COUPLING for more information.
-        ViBoolean  enabled;  // Specifies whether the channel is enabled for acquisition. Refer to NISCOPE_ATTR_CHANNEL_ENABLED for more information.
+      {
+        ViChar   *name;    // Null terminated string with channel syntax: e.g. "0-2,7"
+        ViReal64  range;   // Volts peak to peak.  (NI-5105) Can be 0.05, 0.2, 1, or 6 V for 50 Ohm.  Resolution is 0.1% dB.
+        ViInt32   coupling;// Specifies how to couple the input signal. Refer to NISCOPE_ATTR_VERTICAL_COUPLING for more information.
+        ViBoolean enabled; // Specifies whether the channel is enabled for acquisition. Refer to NISCOPE_ATTR_CHANNEL_ENABLED for more information.
       } Channel_Config;
 
       typedef struct _digitizer_config
-      { ViChar                  *resource_name;       // NI device name: e.g. "Dev6"
-        ViReal64                 sample_rate;         // samples/second
-        ViInt32                  record_length;       // samples per scan
-        ViInt32                  num_records;         // number of records per acquire call.
-        ViReal64                 reference_position;  // as a percentage
-        ViChar                  *acquisition_channels;// the channels to acquire data on (NI Channel String syntax)
-        ViInt32                  num_channels;        // number of channels to independantly configure - typically set to DIGITIZER_MAX_NUM_CHANNELS
-        Channel_Config           channels[DIGITIZER_MAX_NUM_CHANNELS]; // array of channel configurations  
+      {
+        ViChar        *resource_name;                        // NI device name: e.g. "Dev6"
+        ViReal64       sample_rate;                          // samples/second
+        ViInt32        record_length;                        // samples per scan
+        ViInt32        num_records;                          // number of records per acquire call.
+        ViReal64       reference_position;                   // as a percentage
+        ViChar        *acquisition_channels;                 // the channels to acquire data on (NI Channel String syntax)
+        ViInt32        num_channels;                         // number of channels to independantly configure - typically set to DIGITIZER_MAX_NUM_CHANNELS
+        Channel_Config channels[DIGITIZER_MAX_NUM_CHANNELS]; // array of channel configurations
       } Config;
 
       ViSession vi;
@@ -79,6 +83,6 @@ namespace fetch
 
       unsigned int attach(void);
       unsigned int detach(void);
-  };
-
+    };
+  }
 } // namespace fetch

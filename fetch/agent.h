@@ -69,8 +69,8 @@ namespace fetch {
   class Agent
   { 
     public:
-      Agent(void);
-      ~Agent(void);
+               Agent(void);
+      virtual ~Agent(void);
 
       // State transition functions
       virtual unsigned int attach (void) = 0;

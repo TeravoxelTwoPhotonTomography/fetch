@@ -24,6 +24,15 @@ namespace fetch
   static bool                        // Checks to make sure
     Task::eq(Task *a,Task *b)        //  config and run functions
   { return VTREF(a,0)==VTREF(b,0) && //  refer to the same address.
-           VTREF(a,1)==VTREF(b,1)    //
+           VTREF(a,1)==VTREF(b,1);   //
   }
-}
+
+  bool
+  UpdateableTask::eq(UpdateableTask *a, UpdateableTask *b)
+  { return VTREF(a,0)==VTREF(b,0) && // config
+           VTREF(a,1)==VTREF(b,1) && // run
+           VTREF(a,2)==VTREF(b,2);   // update
+  }
+}//end namespace fetch
+
+

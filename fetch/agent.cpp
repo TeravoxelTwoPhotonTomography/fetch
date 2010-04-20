@@ -17,7 +17,7 @@ namespace fetch
     { LeaveCriticalSection(&this->lock);
     }
 
-    Agent(void) : 
+    Agent::Agent(void) :
       thread(INVALID_HANDLE_VALUE),
       _is_available(0),
       _is_running(0),
@@ -87,7 +87,8 @@ namespace fetch
       }
     }
 
-    ~Agent(void)
+    virtual
+    Agent::~Agent(void)
     { 
       if(this->detach(AGENT_DEFAULT_TIMEOUT)>0)
         warning("~Agent : Attempt to detach() timed out.\r\n");
