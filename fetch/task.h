@@ -1,17 +1,44 @@
+/* Task.h
+ *
+ * Author: Nathan Clack <clackn@janelia.hhmi.org>
+ *   Date: Apr 20, 2010
+ */
+/*
+ * Copyright 2010 Howard Hughes Medical Institute.
+ * All rights reserved.
+ * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
+ * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
+ */
 #pragma once
 #include "stdafx.h"
 #include "agent.h"
 
-//
-// A Task instance should not carry any perminant state.
-//
-// That is, when an Task instance is not part of a 
-// running Agent, it has no guaranteed lifetime.
-//
+/* Task
+ * ----
+ *
+ * A Task instance should not carry any permanent state.  This class defines an
+ * associated set of callbacks used by an Agent.
+ *
+ * When a Task instance is not part of a running Agent, it has no guaranteed
+ * lifetime.
+ *
+ * The Task::config() function is called by the Agent::arm() function and is
+ * responsible for setting up resources for the Task::run() function.
+ * Task::run() is called by the Task::thread_main() function when an
+ * associated Agent is transitioned to the Run state.  Task::run() acts like
+ * the task's main loop and should terminate when the Agent::notify_stop event
+ * is set, if not before.
+ *
+ * The Agent state model guarantees calls to Task::run() will follow calls to
+ * Task::config().  However, config() may be called several times (by cycling
+ * Agent arm's and disarm's) before run() is called.  Persistent resources
+ * used by a task should be allocated in the Agent during the attach/detach
+ * routines.
+ */
 
 namespace fetch
 {
-  typedef void Agent;
+  //typedef void Agent;
 
   class Task
   { public:
@@ -23,6 +50,20 @@ namespace fetch
     static bool eq(Task *a, Task *b); // a eq b iff addresses of config and run virtual functions are the same
   };
 
+  /* UpdateableTask
+   * --------------
+   *
+   * An additional update() function is provided to supplement the config()
+   * function.
+   *
+   * config() is intended to be used to set up the entire set of resources
+   * required for a task.  However, in some applications, a subset of those
+   * resources are frequently updated.  The update() function provided here
+   * allows one to implement less expensive updates for frequently changed
+   * resources.
+   *
+   * update() is only called while the associated Agent is in an Armed state.
+   */
   class UpdateableTask: public Task
   { public:
     virtual unsigned int update(Agent *d) = 0; //return 1 on success, 0 otherwise

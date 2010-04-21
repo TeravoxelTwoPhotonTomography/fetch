@@ -2,7 +2,7 @@
 
 #include "tasks/fetch-forever.h"
 #include "util-niscope.h"
-#include "device/digitizer.h"
+#include "devices/digitizer.h"
 #include "frame.h"
 
 

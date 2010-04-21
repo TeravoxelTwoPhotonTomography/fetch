@@ -72,6 +72,8 @@
 #define POCKELS_DEFAULT_AO_CHANNEL    "/Dev1/ao2"
 #define POCKELS_DEFAULT_AI_CHANNEL   "/Dev1/ai16"
 
+#define POCKELS_MAX_CHAN_STRING               32
+
 #define POCKELS_CONFIG_DEFAULT \
         ({ POCKELS_DEFAULT_V_MAX,\
           POCKELS_DEFAULT_V_MIN,\
@@ -96,8 +98,8 @@ namespace fetch
         f64         v_lim_min;
         f64         v_open;
         f64         v_closed;
-        char        ao_chan[SCANNER_MAX_CHAN_STRING];
-        char        ai_chan[SCANNER_MAX_CHAN_STRING]; // XXX: Unused at present
+        char        ao_chan[POCKELS_MAX_CHAN_STRING];
+        char        ai_chan[POCKELS_MAX_CHAN_STRING]; // XXX: Unused at present
       } Config;
 
       Config         config;
