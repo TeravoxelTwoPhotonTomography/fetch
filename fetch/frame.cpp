@@ -134,6 +134,11 @@ FrmFmt::format(Message* unformatted)
   unformatted->data = (u8*)unformatted + this->self_size; // Set the data section
 }
 
+inline void
+FrmFmt::compute_pitches( size_t pitch[4] )
+{ Compute_Pitch( pitch, this->height, this->width, this->nchan, this->Bpp );
+}
+
 /*
  * Frame_With_Interleaved_Pixels
  *

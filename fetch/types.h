@@ -23,3 +23,5 @@ typedef struct _basic_type_attribute
 } Basic_Type_Attribute;
 
 extern const Basic_Type_Attribute g_type_attributes[];
+
+template<typename T> inline Basic_Type_ID TypeID(void);

@@ -36,6 +36,10 @@
  * routines.
  */
 
+#ifndef WINAPI
+#define WINAPI
+#endif
+
 namespace fetch
 {
   //typedef void Agent;

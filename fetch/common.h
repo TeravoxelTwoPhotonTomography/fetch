@@ -36,10 +36,10 @@ UINT CreateUserWindowMessage( const char *name, size_t id )
 // -----------------
 // fixed width types
 // -----------------
-typedef unsigned __int8    u8;
-typedef unsigned __int16   u16;
-typedef unsigned __int32   u32;
-typedef unsigned __int64   u64;
+typedef __uint8    u8;
+typedef __uint16   u16;
+typedef __uint32   u32;
+typedef __uint64   u64;
 typedef __int8             i8;
 typedef __int16            i16;
 typedef __int32            i32;

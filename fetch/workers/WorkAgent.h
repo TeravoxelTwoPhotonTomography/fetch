@@ -22,8 +22,7 @@
  *
  *
  */
-#ifndef WORKAGENT_H_
-#define WORKAGENT_H_
+#pragma once
 
 #include "agent.h"
 
@@ -37,7 +36,7 @@ namespace fetch
    *                                             0,  // x so that step1->in[0] is src->out[x]
    *                                             4); // times to average
    */
-  template<typename TWorkTask, typename TParam>
+  template<typename TWorkTask, typename TParam=void*>
   class WorkAgent : private virtual fetch::Agent
   { public:
       WorkAgent(Agent *source, int ichan, TParam parameter);
@@ -50,14 +49,11 @@ namespace fetch
       TWorkTask __task_instance;
   };
 
-}
+  //
+  // Implementation
+  //
 
-//
-// Implementation
-//
-namespace fetch
-{
-  template<typename TWorkTask,typename TParam>
+  template<typename TWorkTask,typename TParam=void*>
   WorkAgent::WorkAgent(Agent *source, int ichan, TParam parameter)
   { config = parameter;
     connect(this,ichan,source,ichan);
@@ -65,5 +61,4 @@ namespace fetch
     arm(&task_instance,INFINITE);
     run();
   }
-
 }

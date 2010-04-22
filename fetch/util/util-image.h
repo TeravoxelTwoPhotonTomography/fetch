@@ -34,7 +34,7 @@ void Compute_Pitch( size_t pitch[4], size_t d2, size_t d1, size_t d0, size_t pix
 
 int _pitch_first_mismatch( size_t dst_pitch[4], size_t src_pitch[4] );
 
-// cast and copy - always uses a slow copy to gaurantee casting
+// cast and copy - always uses a slow copy to guarantee casting
 template<class Tdst,class Tsrc>
 void
 imCastCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n[3] )
