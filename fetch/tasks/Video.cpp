@@ -4,6 +4,24 @@
  *  Created on: Apr 20, 2010
  *      Author: Nathan Clack <clackn@janelia.hhmi.org>
  */
+/*
+ * Copyright 2010 Howard Hughes Medical Institute.
+ * All rights reserved.
+ * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
+ * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
+ */
+/*
+ * Aside(s)
+ * --------
+ * Q: When should a helper function be included in the class vs. as a static
+ *    local?
+ * A: For code reuse via inheritance.
+ *
+ *    One might want to subclass a Task to reuse most of the config or run
+ *    code.  For example, the volume acquisition task is likely to use mostly
+ *    the same setup as this Video class. (The run loop is different, but
+ *    the setup is very similar).
+ */
 
 #include "stdafx.h"
 #include "Video.h"
@@ -176,18 +194,7 @@ namespace fetch
                      &scanner->config,
                      &((device::LinearScanMirror*)scanner)->config,
                      &((device::Pockels*)scanner)->config);
-      cur_task = scanner->ao;
-
-      scanner->_generate_ao_waveforms();
-      DAQERR( DAQmxWriteAnalogF64(cur_task,
-                                  N,
-                                  0,                           // autostart?
-                                  0.0,                         // timeout (s) - to write - 0 causes write to fail if blocked at all
-                                  DAQmx_Val_GroupByChannel,
-                                  scanner->ao_workspace->contents,
-                                 &written,
-                                  NULL));
-      Guarded_Assert( written == N );
+      this->update(scanner);
 
       // set up counter for sample clock
       cur_task = scanner->clk;
@@ -214,7 +221,7 @@ namespace fetch
                                         "shutter-command",
                                         DAQmx_Val_ChanPerLine ));
         DAQERR( DAQmxStartTask( cur_task ) );                       // go ahead and start it
-        scanner->Close(); //Close the shutter.... FIXME: function name are not descriptive...
+        scanner->Close(); //Close the shutter.... FIXME: function name is not descriptive...
       }
 
       return;
@@ -256,7 +263,79 @@ namespace fetch
     template<class TPixel>
     unsigned int
     Video<TPixel>::run(device::Scanner2D *d)
-    {
+    { asynq *qdata = d->out->contents[0],
+            *qwfm  = d->out->contents[1];
+      Frame *frm   = (Frame*) Asynq_Token_Buffer_Alloc(qdata);
+      Frame_With_Interleaved_Lines ref;
+      struct niScope_wfmInfo *wfm = (niScope_wfmInfo*) Asynq_Token_Buffer_Alloc(qwfm);
+      int  width = d->_compute_record_size(),
+               i = 0,
+          status = 1; // status == 0 implies success, error otherwise
+
+      TicTocTimer outer_clock = tic(),
+                  inner_clock = tic();
+      double dt_in=0.0,
+             dt_out=0.0;
+
+      ViSession        vi = ((device::Digitizer*)d)->vi;
+      ViChar        *chan = ((device::Digitizer*)d)->config.acquisition_channels;
+      TaskHandle  ao_task = d->ao;
+      TaskHandle clk_task = d->clk;
+
+      ref = d->_describe_frame();
+      ref.format(frm);
+
+      d->Open(); // Open shutter: FIXME: Ambiguous function name.
+      DAQJMP( DAQmxStartTask (ao_task));
+      do
+      {
+        DAQJMP( DAQmxStartTask (clk_task));
+        DIGJMP( niScope_InitiateAcquisition(vi));
+
+        dt_out = toc(&outer_clock);
+        //debug("iter: %d\ttime: %5.3g [out] %5.3g [in]\tbacklog: %9.0f Bytes\r\n",i, dt_out, dt_in, sizeof(TPixel)*niscope_get_backlog(vi) );
+        toc(&inner_clock);
+        DIGJMP( FETCHFUN (vi,
+                          chan,
+                          SCANNER_VIDEO_TASK_FETCH_TIMEOUT,//10.0, //(-1=infinite) (0.0=immediate) // seconds
+                          width,
+                          (TPixel*) frm->data,
+                          wfm));
+        //debug("\tGain: %f\r\n",wfm[0].gain);
+
+        // Push the acquired data down the output pipes
+        Asynq_Push( qwfm,(void**) &wfm, 0 );
+    #ifdef SCANNER_DEBUG_FAIL_WHEN_FULL                     //"fail fast"
+        if(  !Asynq_Push_Try( qdata,(void**) &frm ))
+    #elif defined( SCANNER_DEBUG_SPIN_WHEN_FULL )           //"fail proof" - overwrites when full
+        if(  !Asynq_Push( qdata,(void**) &frm, FALSE ))
+    #else
+        error("Choose a push behavior by compiling with the appropriate define.\r\n");
+    #endif
+        { warning("Scanner output frame queue overflowed.\r\n\tAborting acquisition task.\r\n");
+          goto Error;
+        }
+        ref.format(frm);
+        dt_in  = toc(&inner_clock);
+                 toc(&outer_clock);
+        DAQJMP( DAQmxWaitUntilTaskDone (clk_task,DAQmx_Val_WaitInfinitely)); // FIXME: Takes forever.
+
+        DAQJMP(DAQmxStopTask(clk_task));
+        ++i;
+      } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
+      status = 0;
+      debug("Scanner - Video task completed normally.\r\n");
+    Finalize:
+      d->Close(); // Close the shutter. FIXME: Ambiguous function name.
+      free( frm );
+      free( wfm );
+      niscope_debug_print_status(vi);
+      DAQERR( DAQmxStopTask (ao_task) );              // FIXME: ??? These will deadlock on a panic.
+      DAQERR( DAQmxStopTask (clk_task) );
+      DIGERR( niScope_Abort(vi) );
+      return status;
+    Error:
+      goto Finalize;
     }
 
   }
