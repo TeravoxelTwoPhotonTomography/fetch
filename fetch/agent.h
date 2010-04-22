@@ -57,7 +57,14 @@
 // Disarm() a running Agent.  Additionally, Disarm() can be called from any
 // state.
 //
+// OTHER METHODS
+// =============
 //
+// static method
+// <connect>
+//      Destination channel inherits the existing channel's properties.
+//      If both channels exist, the source properties are inherited.
+//      One channel must exist.
 //
 // ABSTRACTION RULES
 // =================
@@ -108,6 +115,10 @@ namespace fetch {
       unsigned int is_armed(void);
       unsigned int is_runnable(void);
       unsigned int is_running(void);
+
+      // Queue manipulation
+      static void connect(Agent *dst, int dst_chan, Agent *src, int src_chan);
+
 
     public:
       Task            *task;

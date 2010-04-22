@@ -5,7 +5,7 @@
 
 #define WORKER_ALIAS_LENGTH 256
 //
-// Intended to act as "softare devices" that transforms data.
+// Intended to act as "software devices" that transforms data.
 //
 
 typedef struct _worker
