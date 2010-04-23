@@ -44,7 +44,7 @@ namespace fetch
       unsigned int attach(Agent *a) {return 1/*success*/;}
       unsigned int detach(Agent *a) {return 1/*success*/;}
 
-    private: //data
+    public: //data
       TParam    config;
       TWorkTask __task_instance;
   };

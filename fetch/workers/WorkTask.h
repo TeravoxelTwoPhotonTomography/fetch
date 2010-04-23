@@ -60,14 +60,14 @@ namespace fetch
 
     class UpdateableWorkTask : public fetch::UpdateableTask
     { public:
-        virtual unsigned int config(WorkAgent *d) {}
-        virtual unsigned int update(WorkAgent *d) {}
+        virtual unsigned int config(Agent *d) {}
+        virtual unsigned int update(Agent *d) {}
     };
 
     class OneToOneWorkTask : public WorkTask
     { public:
-                unsigned int run(WorkAgent *d);
-        virtual unsigned int work(Message *dst, Message *src);
+                unsigned int run(Agent *d);
+        virtual unsigned int work(Agent *agent, Message *dst, Message *src);
     };
 
   }

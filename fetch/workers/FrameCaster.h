@@ -38,7 +38,7 @@ namespace fetch
     class FrameCast : public fetch::task::OneToOneWorkTask
     {
       public:
-        unsigned int work(Frame *fdst, Frame *fsrc);
+        unsigned int work(WorkAgent *agent, Frame *fdst, Frame *fsrc);
     };
 
     /*
@@ -46,7 +46,7 @@ namespace fetch
      */
     template<typename Tdst>
       inline unsigned int
-      FrameCast<Tdst>::work(Frame *fdst, Frame *fsrc)
+      FrameCast<Tdst>::work(WorkAgent *agent, Frame *fdst, Frame *fsrc)
       { void  *s,*d;
         size_t dst_pitch, src_pitch;
         fdst->rtti = TypeID<Tdst> ();

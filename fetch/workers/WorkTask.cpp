@@ -23,7 +23,7 @@ namespace fetch
       { while( Asynq_Pop_Try(qsrc, (void**)&fsrc) )
         { fsrc->format(fdst);
           goto_if_fail(
-            work(fdst,fsrc),
+            work(d,fdst,fsrc),
             WorkFunctionFailure);
           goto_if_fail(
             Asynq_Push_Timed( qdst, (void**)&fdst, WORKER_DEFAULT_TIMEOUT ),
