@@ -173,10 +173,6 @@ namespace fetch
         return this->_is_running;
     }
 
-    void Agent::connect(Agent *dst, int dst_chan, Agent *src, int src_chan)
-    {
-    }
-
     void Agent::set_available(void)
     {
         //Notify waiting tasks
@@ -497,9 +493,10 @@ namespace fetch
       vector_PASYNQ_request( src->out, src_channel );   // make space
       src->out->contents[src_channel] = Asynq_Ref( d );
     } else
-    { error("In DeviceTask_Connect: Neither channel exists\r\n");
+    { error("In Agent::connect: Neither channel exists\r\n");
     }
   }
+
   /*// Destination channel inherits the existing channel's properties.
 // If both channels exist, the source properties are inhereted.
 // One channel must exist.

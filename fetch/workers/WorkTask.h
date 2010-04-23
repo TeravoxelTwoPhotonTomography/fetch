@@ -10,7 +10,8 @@
  * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
-/* WorkTask
+/*
+ * WorkTask
  * UpdateableWorkTask
  *
  *      WorkTasks are simplified tasks that are used as template parameters
@@ -23,6 +24,13 @@
  *      Usually work tasks don't require any initialization of resources.
  *      Exceptions to this rule would be, for example, tasks that need to
  *      add static data to a buffer that will be used during the run.
+ *
+ *      <alloc_output_queues(Agent *agent)>
+ *
+ *              This is responsible for allocating output queues.  It is called
+ *              during construction of the associated WorkAgent<>.  The
+ *              default implementation assumes a single output queue at out[0]
+ *              that is the same size as the in[0] queue.
  *
  * UpdateableWorkTask
  *
@@ -56,19 +64,24 @@ namespace fetch
     class WorkTask : public fetch::Task
     { public:
         unsigned int config(WorkAgent *d) {}
+
+        virtual static void alloc_output_queues(Agent *agent);
     };
 
     class UpdateableWorkTask : public fetch::UpdateableTask
     { public:
         virtual unsigned int config(Agent *d) {}
         virtual unsigned int update(Agent *d) {}
+
+        virtual static void alloc_output_queues(Agent *agent);
     };
 
     class OneToOneWorkTask : public WorkTask
     { public:
                 unsigned int run(Agent *d);
-        virtual unsigned int work(Agent *agent, Message *dst, Message *src);
+        virtual unsigned int work(Agent *agent, Message *dst, Message *src) = 0;
     };
 
   }
 }
+

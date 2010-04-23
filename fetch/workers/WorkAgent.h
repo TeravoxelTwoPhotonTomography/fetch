@@ -11,8 +11,12 @@
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
 /*
- * WorkAgent
- * ---------
+ * WorkAgent<TWorkTask,TParam=void*>
+ * ---------------------------------
+ *
+ * TWorkTask
+ *  - must be a child of class Task.
+ *  - must implement alloc_output_queues(Agent*)
  *
  * Notes
  * -----
@@ -57,8 +61,10 @@ namespace fetch
   WorkAgent::WorkAgent(Agent *source, int ichan, TParam parameter)
   { config = parameter;
     connect(this,ichan,source,ichan);
+    TWorkTask::alloc_output_queues(this);// Task must implement this.  WorkTask has a default impl. that assumes in[0]->out[0]
     __task_instance = TWorkTask();       // a bit kludgey - the WorkAgent is only ever associated with a single task.
     arm(&task_instance,INFINITE);
     run();
   }
+
 }
