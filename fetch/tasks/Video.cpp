@@ -51,16 +51,12 @@
 namespace fetch
 { namespace task
   {
-    //get_type_id
-    template<class TPixel> static inline TPixel_ID get_type_id(void);
-    template               static inline TPixel_ID get_type_id< i8>(void) {return id_i8;}
-    template               static inline TPixel_ID get_type_id<i16>(void) {return id_i16;}
 
     //get_fetch_func
     typedef ViStatus (*t_fetch_func)(ViSession,ViChar,ViReal64,ViInt32,void*,struct niScope_wfmInfo);
     template<class TPixel> static inline t_fetch_func get_fetch_func(void);
-    template               static inline t_fetch_func get_fetch_func< i8>(void) {return niScope_FetchBinary8;}
-    template               static inline t_fetch_func get_fetch_func<i16>(void) {return niScope_FetchBinary16;}
+    template<>             static inline t_fetch_func get_fetch_func< i8>(void) {return niScope_FetchBinary8;}
+    template<>             static inline t_fetch_func get_fetch_func<i16>(void) {return niScope_FetchBinary16;}
 
     template<class TPixel>
     void
@@ -129,8 +125,8 @@ namespace fetch
                                             NISCOPE_VAL_PFI_1 ));
       return;
     }
-    template void Video<i8 >::_config_digitizer(device::Scanner2D *scanner);
-    template void Video<i16>::_config_digitizer(device::Scanner2D *scanner);
+    template<> void Video<i8 >::_config_digitizer(device::Scanner2D *scanner);
+    template<> void Video<i16>::_config_digitizer(device::Scanner2D *scanner);
 
     static void
     _setup_ao_chan(TaskHandle cur_task,
@@ -260,17 +256,47 @@ namespace fetch
       return 1;
     }
 
+    template<typename T>
+    Frame_With_Interleaved_Lines
+    _describe_actual_frame(device::Scanner2D *d, ViInt32 *precordsize, ViInt32 *pnwfm)
+    { ViSession                   vi = ((device::Digitizer*)d)->vi;
+      ViInt32                   nwfm;
+      ViInt32          record_length;
+      void                     *meta = NULL;
+
+      DIGERR( niScope_ActualNumWfms(vi,
+                                    ((device::Digitizer*)d)->config.acquisition_channels,
+                                    &nwfm ) );
+      DIGERR( niScope_ActualRecordLength(vi, &record_length) );
+
+      u32 scans = d->config.nscans;
+      Frame_With_Interleaved_Lines format( (u16) record_length,              // width
+                                                 scans,                      // height
+                                           (u8) (nwfm/scans),                // number of channels
+                                                 TypeID<T>() );              // pixel type
+      Guarded_Assert( format.nchan  > 0 );
+      Guarded_Assert( format.height > 0 );
+      Guarded_Assert( format.width  > 0 );
+      *precordsize = record_length;
+      *pnwfm       = nwfm;
+      return format;
+    }
+    template Frame_With_Interleaved_Lines _describe_actual_frame<i8 >(device::Scanner2D*,ViInt32*,ViInt32*);
+    template Frame_With_Interleaved_Lines _describe_actual_frame<i16>(device::Scanner2D*,ViInt32*,ViInt32*);
+
     template<class TPixel>
     unsigned int
     Video<TPixel>::run(device::Scanner2D *d)
     { asynq *qdata = d->out->contents[0],
             *qwfm  = d->out->contents[1];
-      Frame *frm   = (Frame*) Asynq_Token_Buffer_Alloc(qdata);
+      Frame *frm   = NULL; //(Frame*) Asynq_Token_Buffer_Alloc(qdata);
       Frame_With_Interleaved_Lines ref;
-      struct niScope_wfmInfo *wfm = (niScope_wfmInfo*) Asynq_Token_Buffer_Alloc(qwfm);
-      int  width = d->_compute_record_size(),
+      struct niScope_wfmInfo *wfm = NULL; //(niScope_wfmInfo*) Asynq_Token_Buffer_Alloc(qwfm);
+      ViInt32 nwfm;
+      int  width,// = d->_compute_record_size(),
                i = 0,
           status = 1; // status == 0 implies success, error otherwise
+      size_t nbytes;
 
       TicTocTimer outer_clock = tic(),
                   inner_clock = tic();
@@ -282,7 +308,12 @@ namespace fetch
       TaskHandle  ao_task = d->ao;
       TaskHandle clk_task = d->clk;
 
-      ref = d->_describe_frame();
+      ref = _describe_actual_frame(d,&width,&nwfm);
+      nbytes = ref.size_bytes();
+      //
+      frm = Guarded_Malloc(ref.size_bytes(),"task::Video - Allocate actual frame.");
+      wfm = Guarded_Malloc(nwfm*sizeof(struct niScope_wfminfo),"task::Video - Allocate waveform info");
+      //
       ref.format(frm);
 
       d->Open(); // Open shutter: FIXME: Ambiguous function name.
@@ -306,9 +337,9 @@ namespace fetch
         // Push the acquired data down the output pipes
         Asynq_Push( qwfm,(void**) &wfm, 0 );
     #ifdef SCANNER_DEBUG_FAIL_WHEN_FULL                     //"fail fast"
-        if(  !Asynq_Push_Try( qdata,(void**) &frm ))
+        if(  !Asynq_Push_Try( qdata,(void**) &frm,nbytes ))
     #elif defined( SCANNER_DEBUG_SPIN_WHEN_FULL )           //"fail proof" - overwrites when full
-        if(  !Asynq_Push( qdata,(void**) &frm, FALSE ))
+        if(  !Asynq_Push( qdata,(void**) &frm, nbytes, FALSE ))
     #else
         error("Choose a push behavior by compiling with the appropriate define.\r\n");
     #endif
@@ -337,6 +368,8 @@ namespace fetch
     Error:
       goto Finalize;
     }
+    template unsigned int Video<i8 >::run(device::Scanner2D *d);
+    template unsigned int Video<i16>::run(device::Scanner2D *d);
 
   }
 }

@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-#include "tasks/fetch-forever.h"
+#include "fetch-forever.h"
 #include "util-niscope.h"
 #include "devices/digitizer.h"
 #include "frame.h"
@@ -24,27 +24,21 @@ namespace fetch
       
       template <class T>
         static inline Frame_With_Interleaved_Planes
-        format_frame(ViInt32 record_length, ViInt32 nwfm );
+        format_frame(ViInt32 record_length, ViInt32 nwfm )
+      { Frame_With_Interleaved_Planes fmt( (u8) (record_length/512), // width
+                                                512,                 // height
+                                          (u8)  nwfm,                // # channels
+                                                TypeID<T>() );       // pixel type
+        return fmt;
+      }
 
-      template<i8>
+      template<>
         static inline Frame_With_Interleaved_Planes
-        format_frame(ViInt32 record_length, ViInt32 nwfm );
-        { Frame_With_Interleaved_Planes fmt( (u8) (record_length/512), // width
-                                                  512,                 // height
-                                            (u8)  nwfm,                // # channels
-                                                  id_i8 );             // pixel type
-          return fmt;
-        }
+        format_frame<i8>(ViInt32 record_length, ViInt32 nwfm );
 
-      template<i16>
+      template<>
         static inline Frame_With_Interleaved_Planes
-        format_frame(ViInt32 record_length, ViInt32 nwfm );
-        { Frame_With_Interleaved_Planes fmt( (u8) (record_length/512), // width
-                                                  512,                 // height
-                                            (u8)  nwfm,                // # channels
-                                                  id_i16 );            // pixel type
-          return fmt;
-        }
+        format_frame<i16>(ViInt32 record_length, ViInt32 nwfm );
 
       template<class TPixel>
         unsigned int
@@ -84,21 +78,23 @@ namespace fetch
           return 1;
         }
 
-      template<i8>  unsigned int FetchForever::config(Digitizer *dig);
-      template<i16> unsigned int FetchForever::config(Digitizer *dig);
+      template<> unsigned int FetchForever<i8>::config(Digitizer *dig);
+      template<> unsigned int FetchForever<i16>::config(Digitizer *dig);
+
+      //get_fetch_func
+      // TODO: try template constant
+      typedef ViStatus (*t_fetch_func)(ViSession,ViChar,ViReal64,ViInt32,void*,struct niScope_wfmInfo);
+      template<class TPixel> static inline t_fetch_func get_fetch_func(void);
+      template               static inline t_fetch_func get_fetch_func< i8>(void) {return niScope_FetchBinary8;}
+      template               static inline t_fetch_func get_fetch_func<i16>(void) {return niScope_FetchBinary16;}
 
       template<class T> static inline
-        ViStatus _fetch(ViSession vi, ViChar *chan, double t, ViInt32 nelem, T *data, niScope_wfmInfo *wfm);
+        ViStatus _fetch(ViSession vi, ViChar *chan, double t, ViInt32 nelem, T *data, niScope_wfmInfo *wfm)
+      { return (*get_fetch_func<T>())(vi,chan,t,nelem,(ViInt8*)data,wfm);
+      }
 
-      template<i8> static inline
-        ViStatus _fetch(ViSession vi, ViChar *chan, double t, ViInt32 nelem, i8 *data, niScope_wfmInfo *wfm);
-        { return niScope_FetchBinary8(vi,chan,t,nelem,(ViInt8*)data,wfm);
-        }
-
-      template<i16> static inline
-        ViStatus _fetch(ViSession vi, ViChar *chan, double t, ViInt32 nelem, i16 *data, niScope_wfmInfo *wfm);
-        { return niScope_FetchBinary16(vi,chan,t,nelem,(ViInt16*)data,wfm);
-        }
+      template<> static inline ViStatus _fetch<i8 >(ViSession,ViChar*,double,ViInt32,i8*, struct niScope_wfmInfo*);
+      template<> static inline ViStatus _fetch<i16>(ViSession,ViChar*,double,ViInt32,i16*,struct niScope_wfmInfo*);
 
       template<class TPixel>
         unsigned int
@@ -117,15 +113,21 @@ namespace fetch
           TicTocTimer t, delay_clock;
           double delay, maxdelay = 0.0, accdelay = 0.0;
           u32    last_max_fetch = 0;  
-          Frame                  *frm  = (Frame*)            Asynq_Token_Buffer_Alloc(qdata);
-          struct niScope_wfmInfo *wfm  = (niScope_wfmInfo*)  Asynq_Token_Buffer_Alloc(qwfm);
+          Frame                  *frm  = NULL; //(Frame*)            Asynq_Token_Buffer_Alloc(qdata);
+          struct niScope_wfmInfo *wfm  = NULL; //(niScope_wfmInfo*)  Asynq_Token_Buffer_Alloc(qwfm);
           Frame_With_Interleaved_Planes ref;
           unsigned int ret = 1;
+          size_t nbytes;
 
           // Compute image dimensions
           CheckPanic( niScope_ActualNumWfms(vi, chan, &nwfm ) );
           CheckPanic( niScope_ActualRecordLength(vi, &nelem) );
           ref = _format_frame<TPixel>( nelem, nwfm );
+          nbytes = ref.size_bytes();
+          //
+          frm = Guarded_Malloc(ref.size_bytes(),"task::FetchForever - Allocate actual frame.");
+          wfm = Guarded_Malloc(nwfm*sizeof(struct niScope_wfminfo),"task::FetchForver - Allocate waveform info");
+          //
           ref.format(frm);
           
           ViErrChk   (niScope_GetAttributeViInt32 (vi, NULL,   // TODO: reset to default when done
@@ -172,9 +174,9 @@ namespace fetch
             // Handle the full buffer
             { //double dt;
 #ifdef DIGITIZER_DEBUG_FAIL_WHEN_FULL
-              if(  !Asynq_Push_Try( qdata,(void**) &frm ))    //   Push buffer and reset total samples count
+              if(  !Asynq_Push_Try( qdata,(void**) &frm, nbytes ))    //   Push buffer and reset total samples count
 #elif defined( DIGITIZER_DEBUG_SPIN_WHEN_FULL )
-              if(  !Asynq_Push( qdata,(void**) &frm, FALSE )) //   Push buffer and reset total samples count
+              if(  !Asynq_Push( qdata,(void**) &frm, nbytes, FALSE )) //   Push buffer and reset total samples count
 #else
                 error("Choose a push behavior for digitizer by compileing with the appropriate define.\r\n");
 #endif
