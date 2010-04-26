@@ -12,7 +12,7 @@ Message::to_file(FILE *fp)                                     // Writing to a f
 { size_t sz  = this->size_bytes(),                             // -----------------------------                                           
          off = (u8*)this->data - (u8*)this;                    // 0. Compute the size of the formating data
   Guarded_Assert( 1 == fwrite( &sz,  sizeof(size_t), 1, fp )); // 1. The size (in bytes) is written to the stream.
-  Guarded_Assert( 1 == fwrite( &off, sizeof(size_t), 1, fp )); // 2. Write out the size of the formating data.
+  Guarded_Assert( 1 == fwrite( &off, sizeof(size_t), 1, fp )); // 2. WriteRaw out the size of the formating data.
   Guarded_Assert( 1 == fwrite( this, 1, sz, fp ));             // 3. A block of data from <this> to <this+size> is written to the stream. 
 }
 

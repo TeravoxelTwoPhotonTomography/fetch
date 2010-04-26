@@ -83,7 +83,8 @@
 //    on each queue.
 //
 namespace fetch {
-  typedef void Task;
+
+  //typedef void Task;
 
   typedef asynq* PASYNQ;
   TYPE_VECTOR_DECLARE(PASYNQ);
@@ -122,7 +123,7 @@ namespace fetch {
 
     public:
       Task            *task;
-      void            *context;
+      //void            *context; // XXX delete me:  I don't think anyone uses this anymore
 
       vector_PASYNQ   *in,         // Input  pipes
                       *out;        // Output pipes

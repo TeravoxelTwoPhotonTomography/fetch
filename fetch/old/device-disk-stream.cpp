@@ -345,7 +345,7 @@ Device* Disk_Stream_Attach_And_Arm (const char *alias,
 // Tasks
 // -----
 
-// Write
+// WriteRaw
 unsigned int
 _Disk_Stream_Task_Write_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 { return 1;
@@ -379,7 +379,7 @@ Disk_Stream_Create_Raw_Write_Task(void)
                           _Disk_Stream_Task_Write_Proc);
 }
 
-// Read
+// ReadRaw
 unsigned int
 _Disk_Stream_Task_Read_Cfg( Device *d, vector_PASYNQ *in, vector_PASYNQ *out )
 { return 1;
