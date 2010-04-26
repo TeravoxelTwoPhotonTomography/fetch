@@ -74,7 +74,7 @@ RingFIFO_Expand( RingFIFO *self )
           *beg = buf,     // (will be) beginning of interval requiring new malloced data
           *cur = buf + n; // (will be) end       "  "        "         "   "        "
     
-    // Need to gaurantee that the new interval is outside of the 
+    // Need to guarantee that the new interval is outside of the
     //    tail -> head interval (active data runs from tail to head).
     if( head <= tail && (head!=0 || tail!=0) ) //The `else` case can handle when head=tail=0 and avoid a copy
     { // Move data to end
@@ -101,6 +101,27 @@ RingFIFO_Expand( RingFIFO *self )
   }
 }
 
+void
+RingFIFO_Resize(RingFIFO* self, size_t buffer_size_bytes)
+{ vector_PVOID *r = self->ring;
+  size_t i,n = r->nelem;
+         head = MOD_UNSIGNED_POW2( self->head, old ), // Write point (push)- points to a "dead" buffer
+         tail = MOD_UNSIGNED_POW2( self->tail, old ); // Read point (pop)  - points to a "live" buffer
+  if (self->buffer_size_bytes > buffer_size_bytes)
+  {
+    // Resize the buffers
+    for (i = head;MOD_UNSIGNED_POW2(i,n) != tail; ++i)
+    {
+      size_t idx;
+      void *t;
+      idx = MOD_UNSIGNED_POW2(i,n);
+      assert(t = realloc(r->contents+idx, buffer_size_bytes));
+      r->contents[idx] = t;
+    }
+  }
+  self->buffer_size_bytes = buffer_size_bytes;
+}
+
 static inline size_t
 _swap( RingFIFO *self, void **pbuf, size_t idx)
 { vector_PVOID *r = self->ring;                  // taking the mod on read (here) saves some ops                     
@@ -115,9 +136,11 @@ _swap( RingFIFO *self, void **pbuf, size_t idx)
 
 extern inline 
 unsigned int
-RingFIFO_Pop( RingFIFO *self, void **pbuf)
+RingFIFO_Pop( RingFIFO *self, void **pbuf, size_t sz)
 { ringfifo_debug("- head: %-5d tail: %-5d size: %-5d\r\n",self->head, self->tail, self->head - self->tail);
   return_val_if( RingFIFO_Is_Empty(self), 1);
+  if( sz<self->buffer_size_bytes )
+    assert(*pbuf = realloc(*pbuf,self->buffer_size_bytes));
   _swap( self, pbuf, self->tail++ );
   return 0;
 }
@@ -150,16 +173,18 @@ RingFIFO_Peek_At( RingFIFO *self, void *buf, size_t index)
 
 extern inline 
 unsigned int
-RingFIFO_Push_Try( RingFIFO *self, void **pbuf)
+RingFIFO_Push_Try( RingFIFO *self, void **pbuf, size_t sz)
 { //ringfifo_debug("+ head: %-5d tail: %-5d size: %-5d TRY\r\n",self->head, self->tail, self->head - self->tail);
   if( RingFIFO_Is_Full(self) )
     return 1;
+  if(sz>self->buffer_size_bytes) //if too big, resize.  if too small, ignore.
+    RingFIFO_Resize(self,sz);
   _swap( self, pbuf, self->head++ );
   return 0;
 }
 
 unsigned int
-RingFIFO_Push( RingFIFO *self, void **pbuf, int expand_on_full)
+RingFIFO_Push( RingFIFO *self, void **pbuf, size_t sz, int expand_on_full)
 { unsigned int retval = 0;
   ringfifo_debug("+ head: %-5d tail: %-5d size: %-5d\r\n",self->head, self->tail, self->head - self->tail);
   return_val_if( RingFIFO_Push_Try(self, pbuf)==0, 0 );
@@ -168,6 +193,8 @@ RingFIFO_Push( RingFIFO *self, void **pbuf, int expand_on_full)
     RingFIFO_Expand(self);  
   else                      // Overwrite
     self->tail++;      
+  if(sz>self->buffer_size_bytes) //if too big, resize.  if too small, ignore.
+    RingFIFO_Resize(self,sz);
   _swap( self, pbuf, self->head++ );
   return !expand_on_full;
 }
