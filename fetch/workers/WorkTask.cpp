@@ -37,13 +37,13 @@ namespace fetch
       Frame *fsrc =  (Frame*)Asynq_Token_Buffer_Alloc(qsrc),
             *fdst =  (Frame*)Asynq_Token_Buffer_Alloc(qdst);
       do
-      { while( Asynq_Pop_Try(qsrc, (void**)&fsrc) )
+      { while( Asynq_Pop_Try(qsrc, (void**)&fsrc, fsrc->size_bytes()) )
         { fsrc->format(fdst);
           goto_if_fail(
             work(d,fdst,fsrc),
             WorkFunctionFailure);
           goto_if_fail(
-            Asynq_Push_Timed( qdst, (void**)&fdst, WORKER_DEFAULT_TIMEOUT ),
+            Asynq_Push_Timed( qdst, (void**)&fdst, fdst->size_bytes(), WORKER_DEFAULT_TIMEOUT ),
             OutputQueueTimeoutError);
         }
       } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );

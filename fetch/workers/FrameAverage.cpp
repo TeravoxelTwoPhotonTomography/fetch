@@ -4,7 +4,12 @@
  *  Created on: Apr 22, 2010
  *      Author: Nathan Clack <clackn@janelia.hhmi.org>
  */
-
+/*
+ * Notes for change to resizable queue
+ * -----------------------------------
+ * - need current buffer size for push/pop...just need to keep track
+ * - what happens if the source buffer changes in the middle of an average
+ */
 #include "FrameAverage.h"
 
 namespace fetch
@@ -24,24 +29,29 @@ namespace fetch
             *fdst = (Frame*) Asynq_Token_Buffer_Alloc(qdst);
       f32 *buf, *acc = NULL;
       f32 *src_cur,*acc_cur;
-
-      { size_t nbytes = in->contents[ 0 ]->q->buffer_size_bytes - sizeof(Frame), //bytes in acc
-                nelem = nbytes / sizeof(f32);
-
-        int i,count=0;
-
+      size_t dst_bytes = qdst->q->buffer_size_bytes;
+      { int i,count=0;
 
         do
-        { // First one
-          if( Asynq_Pop_Try(qsrc,(void**)&fsrc))
-          { fsrc->format(fdst);
+        {
+          size_t src_bytes = qsrc->q->buffer_size_bytes,
+                    nbytes = src_bytes - sizeof(Frame), //bytes in acc
+                     nelem = nbytes / sizeof(f32);
+
+          // First one
+          if( Asynq_Pop_Try(qsrc,(void**)&fsrc,src_bytes))
+          {
+            if(fsrc->size_bytes()>dst_bytes)
+              Guarded_Assert(fdst = realloc(fdst,dst_bytes = fsrc->size_bytes()));
+
+            fsrc->format(fdst);
             acc = (f32*) fdst->data;
             memcpy(acc,fsrc->data,nbtyes);
           } else
             continue;
 
           // The rest
-          while( Asynq_Pop_Try(qsrc, (void**)&fsrc) )
+          while( Asynq_Pop_Try(qsrc, (void**)&fsrc, fsrc->size_bytes()) )
           { buf = (f32*) fsrc->data;
 
             ++count;
@@ -51,8 +61,10 @@ namespace fetch
                 acc[i]/=norm;
 
               goto_if_fail(                    //   push - wait till successful
-                Asynq_Push_Timed( qdst, (void**)&fdst, WORKER_DEFAULT_TIMEOUT ),
+                Asynq_Push_Timed( qdst, (void**)&fdst, fdst->size_bytes(), WORKER_DEFAULT_TIMEOUT ),
                 OutputQueueTimeoutError);
+              if(fsrc->size_bytes()>dst_bytes)
+                  Guarded_Assert(fdst = realloc(fdst,dst_bytes = fsrc->size_bytes()));
               fsrc->format(fdst);              // Initialize the accumulator
               acc = (f32*)fdst->data;
               memcpy(acc,fsrc->data,nbytes);

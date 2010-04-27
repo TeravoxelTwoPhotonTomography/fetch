@@ -10,9 +10,7 @@
  * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
-#ifndef TERMINATOR_H_
-#define TERMINATOR_H_
-
+#pragma once
 #include "WorkTask.h"
 #include "WorkAgent.h"
 
@@ -27,11 +25,9 @@ namespace fetch
     class Terminator : public WorkTask
     { public:
         unsigned int run(TerminalAgent *agent);
-        virtual static void alloc_output_queues(Agent *agent);
+        virtual static void alloc_output_queues(Agent *agent);//noop
     };
 
   }
 
 }
-
-#endif /* TERMINATOR_H_ */
