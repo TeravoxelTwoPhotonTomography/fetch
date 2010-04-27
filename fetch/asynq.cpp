@@ -1,3 +1,13 @@
+/*
+ * Author: Nathan Clack <clackn@janelia.hhmi.org>
+ *   Date: Apr 26, 2010
+ */
+/*
+ * Copyright 2010 Howard Hughes Medical Institute.
+ * All rights reserved.
+ * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
+ * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
+ */
 #include "stdafx.h"
 #include "asynq.h"
 
@@ -187,6 +197,7 @@ static unsigned int                          // Pushes to head.
 _asynq_push_unlocked(                        // Returns 1 on success, 0 otherwise.
                       asynq *self,           // 
                       void **pbuf,           // Pointer to the input buffer.  On return from a success, *pbuf points to different but valid buffer for writing.
+                      size_t sz,             // The size of the input buffer (bytes).
                       int expand_on_full,    // Allocate additional space in the queue if the queue is full, and then push.
                       int block_on_full,     // Block (wait) when the queue is full rather than overwrite data.
                       int is_try,               // if true, push returns immediately whether successful or not.  Never waits.
@@ -199,7 +210,7 @@ _asynq_push_unlocked(                        // Returns 1 on success, 0 otherwis
         if( RingFIFO_Is_Full( q ) )
           return 0;    
   }
-  RingFIFO_Push( q, pbuf, expand_on_full );
+  RingFIFO_Push( q, pbuf, sz, expand_on_full );
   if( self->waiting_consumers )
     SetEvent( self->notify_data );
   return 1;
@@ -209,7 +220,8 @@ static unsigned int                          // Pops tail buffer.
 _asynq_pop_unlocked(                         // Returns 1 on success, 0 otherwise.
                       asynq *self,           // 
                       void **pbuf,           // Pointer to the input buffer.  On return from a success, *pbuf points to different but valid buffer for writing.
-                      int is_try,               // if true, push returns immediately whether successful or not.  Never waits.
+                      size_t sz,             // The size of the input buffer (bytes).
+                      int is_try,            // if true, push returns immediately whether successful or not.  Never waits.
                       DWORD timeout_ms )     // Time to wait for a self->notify_space event.  Set to INFINITE for no timeout.
 { RingFIFO* q = self->q;
   if( RingFIFO_Is_Empty( q ))
@@ -218,7 +230,7 @@ _asynq_pop_unlocked(                         // Returns 1 on success, 0 otherwis
       if( RingFIFO_Is_Empty( q ) )
         return 0;
   }
-  return_val_if( RingFIFO_Pop( q, pbuf ), 0 ); // Fail if the queue is empty
+  return_val_if( RingFIFO_Pop( q, pbuf, sz ), 0 ); // Fail if the queue is empty
   if( self->waiting_producers )
     SetEvent( self->notify_space );
   return 1;
@@ -228,7 +240,7 @@ static unsigned int                          // Copies data from tail.
 _asynq_peek_unlocked(                        // Returns 1 on success, 0 otherwise.
                       asynq *self,           // 
                       void *buf,             // Destination buffer.
-                      int is_try,               // if true, push returns immediately whether successful or not.  Never waits.
+                      int is_try,            // if true, push returns immediately whether successful or not.  Never waits.
                       DWORD timeout_ms )     // Time to wait for a self->notify_space event.  Set to INFINITE for no timeout.
 { RingFIFO* q = self->q;
   if( RingFIFO_Is_Empty( q ))
@@ -245,32 +257,32 @@ _asynq_peek_unlocked(                        // Returns 1 on success, 0 otherwis
 //
 
 unsigned int
-Asynq_Push( asynq *self, void **pbuf, int expand_on_full )
+Asynq_Push( asynq *self, void **pbuf, size_t sz, int expand_on_full )
 { unsigned int result;
   Asynq_Lock(self);
-  result = _asynq_push_unlocked(self, pbuf, expand_on_full, FALSE, FALSE, INFINITE );
+  result = _asynq_push_unlocked(self, pbuf, sz, expand_on_full, FALSE, FALSE, INFINITE );
   Asynq_Unlock(self);
   return result;
 }
 
 unsigned int
-Asynq_Push_Copy(asynq *self, void *buf, int expand_on_full )
+Asynq_Push_Copy(asynq *self, void *buf, size_t sz, int expand_on_full )
 { unsigned int result;
   static void *token = 0;
   Asynq_Lock(self);
   if( !token ) // one-time-initialize working space
     token = Asynq_Token_Buffer_Alloc(self);
   memcpy(token,buf, self->q->buffer_size_bytes);
-  result = _asynq_push_unlocked(self, &token, expand_on_full, FALSE, FALSE, INFINITE );
+  result = _asynq_push_unlocked(self, &token, sz, expand_on_full, FALSE, FALSE, INFINITE );
   Asynq_Unlock(self);
   return result;
 }
 
 unsigned int
-Asynq_Push_Try( asynq *self, void **pbuf )
+Asynq_Push_Try( asynq *self, void **pbuf, size_t sz)
 { unsigned int result;
   Asynq_Lock(self);
-  result = _asynq_push_unlocked(self, pbuf, 
+  result = _asynq_push_unlocked(self, pbuf, sz,
                                 FALSE,      // expand on full
                                 FALSE,      // block on full
                                 TRUE,       // try
@@ -280,10 +292,10 @@ Asynq_Push_Try( asynq *self, void **pbuf )
 }
 
 unsigned int
-Asynq_Push_Timed( asynq *self, void **pbuf, DWORD timeout_ms )
+Asynq_Push_Timed( asynq *self, void **pbuf, size_t sz, DWORD timeout_ms )
 { unsigned int result;
   Asynq_Lock(self);
-  result = _asynq_push_unlocked(self, pbuf, 
+  result = _asynq_push_unlocked(self, pbuf, sz,
                                 FALSE,        // expand on full
                                 TRUE,         // block on full
                                 FALSE,        // try
@@ -297,19 +309,19 @@ Asynq_Push_Timed( asynq *self, void **pbuf, DWORD timeout_ms )
 //
 
 unsigned int
-Asynq_Pop( asynq *self, void **pbuf)
+Asynq_Pop( asynq *self, void **pbuf, size_t sz)
 { unsigned int result;
   Asynq_Lock(self);
-  result = _asynq_pop_unlocked(self, pbuf, FALSE, INFINITE );
+  result = _asynq_pop_unlocked(self, pbuf, sz, FALSE, INFINITE );
   Asynq_Unlock(self);
   return result;
 }
 
 unsigned int
-Asynq_Pop_Try( asynq *self, void **pbuf )
+Asynq_Pop_Try( asynq *self, void **pbuf, size_t sz)
 { unsigned int result;
   Asynq_Lock(self);
-  result = _asynq_pop_unlocked(self, pbuf, 
+  result = _asynq_pop_unlocked(self, pbuf, sz,
                                 TRUE,       // try
                                 INFINITE ); // timeout
   Asynq_Unlock(self);
@@ -317,13 +329,13 @@ Asynq_Pop_Try( asynq *self, void **pbuf )
 }
 
 unsigned int
-Asynq_Pop_Copy_Try( asynq *self, void *buf )
+Asynq_Pop_Copy_Try( asynq *self, void *buf, size_t sz)
 { unsigned int result;
   static void* token;
   Asynq_Lock(self);
   if( !token )
     token = Asynq_Token_Buffer_Alloc(self);
-  result = _asynq_pop_unlocked(self, &token, 
+  result = _asynq_pop_unlocked(self, &token, sz,
                                 TRUE,       // try
                                 INFINITE ); // timeout
   memcpy(buf,token,self->q->buffer_size_bytes);
@@ -332,10 +344,10 @@ Asynq_Pop_Copy_Try( asynq *self, void *buf )
 }
 
 unsigned int
-Asynq_Pop_Timed( asynq *self, void **pbuf, DWORD timeout_ms )
+Asynq_Pop_Timed( asynq *self, void **pbuf, size_t sz, DWORD timeout_ms )
 { unsigned int result;
   Asynq_Lock(self);
-  result = _asynq_pop_unlocked(self, pbuf,
+  result = _asynq_pop_unlocked(self, pbuf, sz,
                                 FALSE,        // try
                                 timeout_ms ); // timeout
   Asynq_Unlock(self);

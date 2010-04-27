@@ -127,13 +127,15 @@ namespace fetch
         char        ctr_alt [SCANNER2D_MAX_CHAN_STRING]; // DAQ   : The implicit counter paired with the one used for the sample clock.
       } Config;
 
-      Config     config;
-      TaskHandle ao,
-                 clk;
+      Config      config;
+      TaskHandle  ao,
+                  clk;
+      vector_f64 *ao_workspace;
 
-    protected:
-      ViInt32                      _compute_record_size(void);
-      Frame_With_Interleaved_Lines _describe_frame(void);
+    public:
+      ViInt32                      _compute_record_size(void);   // determines the number of elements acquired with each digitizer record
+      Frame_With_Interleaved_Lines _describe_frame(void);        // determines frame format from configuration
+      void                         _generate_ao_waveforms(void); // fills ao_workspace with data for analog output
     };
 
   } // end namespace device

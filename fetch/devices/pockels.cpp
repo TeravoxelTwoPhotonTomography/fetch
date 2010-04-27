@@ -68,6 +68,10 @@ namespace fetch
       return lasttime;
     }
 
+#ifndef WINAPI
+#define WINAPI
+#endif
+
     DWORD WINAPI
     _pockels_set_open_val_thread_proc( LPVOID lparam )
     { struct T {Pockels *self; f64 volts; int time;};

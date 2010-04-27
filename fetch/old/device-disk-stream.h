@@ -49,7 +49,7 @@ Device*      Disk_Stream_Attach_And_Arm          (const char *alias,
                                                   Device *src, int src_channel);
 //                                                  
 // Tasks
-// - different file formats would be implimented through different tasks.
+// - different file formats would be implemented through different tasks.
 //   The format would then be specified when arming the device.
 DeviceTask* Disk_Stream_Create_Raw_Write_Task(void);
 
