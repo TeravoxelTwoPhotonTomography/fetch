@@ -60,7 +60,7 @@
 #include "pockels.h"
 #include "shutter.h"
 #include "LinearScanMirror.h"
-#include "frame.h"
+#include "../frame.h"
 
 //
 // Device configuration
@@ -103,23 +103,26 @@ namespace fetch
   namespace device
   {
 
-    class Scanner2D : public Digitizer, Pockels, Shutter, LinearScanMirror
+    class Scanner2D : public Digitizer, 
+                      public Pockels, 
+                      public Shutter, 
+                      public LinearScanMirror
     {
     public:
                Scanner2D();
       virtual ~Scanner2D();
 
-      unsigned int attach(void);
-      unsigned int detach(void);
+      unsigned int attach(void);                         // Returns 0 on success, 1 otherwise
+      unsigned int detach(void);                         // Returns 0 on success, 1 otherwise
 
     public:
       typedef struct _t_scanner2d_config
       {
-        f64         frequency_Hz;                      // Resonant frequency (1/full period)
-        u32         nscans;                            // Number of bidirectional scans (full periods) per frame
-        f32         line_duty_cycle;                   // Acquire samples during this fraction of the full period
-        u8          line_trigger_src;                  // Digitizer channel corresponding to resonant velocity input.
-        u32         nsamples;                          // DAQ AO: Samples per frame
+        f64         frequency_Hz;                        // Resonant frequency (1/full period)
+        u32         nscans;                              // Number of bidirectional scans (full periods) per frame
+        f32         line_duty_cycle;                     // Acquire samples during this fraction of the full period
+        u8          line_trigger_src;                    // Digitizer channel corresponding to resonant velocity input.
+        u32         nsamples;                            // DAQ AO: Samples per frame
         char        trigger [SCANNER2D_MAX_CHAN_STRING]; // DAQ   : Line trigger source
         char        armstart[SCANNER2D_MAX_CHAN_STRING]; // DAQ   : Frame trigger source
         char        clock   [SCANNER2D_MAX_CHAN_STRING]; // DAQ   : Sample clock - typically set to a counter set up for finite pulse-train generation.

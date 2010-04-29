@@ -1,17 +1,44 @@
+/*
+ * Microscope.h
+ *
+ * Author: Nathan Clack <clackn@janelia.hhmi.org>
+ *   Date: Apr 28, 2010
+ */
+/*
+ * Copyright 2010 Howard Hughes Medical Institute.
+ * All rights reserved.
+ * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
+ * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
+ */
 #pragma once
 
-typedef unsigned int (*pf_microscope_attach_callback)(void);
-typedef unsigned int (*pf_microscope_detach_callback) (void);
+#include "agent.h"
+#include "task.h"
+#include "devices/scanner2D.h"
 
-TYPE_VECTOR_DECLARE( pf_microscope_attach_callback );
-TYPE_VECTOR_DECLARE( pf_microscope_detach_callback  );
+#include "workers/WorkAgent.h"
 
-void Microscope_Register_Application_Shutdown_Procs(void);
+#define MICROSCOPE_MAX_WORKERS     10
+#define MICROSCOPE_DEFAULT_TIMEOUT INFINITE
 
-size_t Register_New_Microscope_Attach_Callback( pf_microscope_attach_callback callback );
-size_t Register_New_Microscope_Detach_Callback ( pf_microscope_detach_callback  callback );
-
-unsigned int Microscope_Detach ( void );
-unsigned int Microscope_Attach( void );
-
-void Microscope_Application_Start(void);
+namespace fetch
+{ namespace device
+  {
+  
+    class Microscope : public virtual Agent
+    { public:
+                        Microscope();
+        virtual inline ~Microscope();
+        
+        unsigned int attach(void);
+        unsigned int detach(void);
+        
+        unsigned int disarm(DWORD timeout_ms);
+        
+      public:
+        Scanner2D *scanner;        
+               
+    };
+    
+  }
+}

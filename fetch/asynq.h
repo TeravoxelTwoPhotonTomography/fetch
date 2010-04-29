@@ -69,7 +69,7 @@ typedef struct _asynq
   u32 waiting_producers;
   u32 waiting_consumers;
   
-  CRITICAL_SECTION   lock;            // mutex
+  CRITICAL_SECTION   _lock;           // mutex
   HANDLE             notify_space;    // triggered when queue is not full (has available space)
   HANDLE             notify_data;     // triggered when queue is not empty (has available data).
   HANDLE             notify_abort;    // triggered to abort any pending operations (e.g. for shutdown).

@@ -18,8 +18,8 @@
  */
 #pragma once
 
-#include "stdafx.h"
-#include "agent.h"
+#include "../stdafx.h"
+#include "../agent.h"
 
 #define DISKSTREAM_MAX_PATH         1024
 #define DISKSTREAM_MAX_MODE         4
@@ -30,24 +30,28 @@ namespace fetch
 
   namespace device
   {
-
+    
     class DiskStream : public virtual Agent
     {
       public:
         DiskStream();
         DiskStream(char *filename, char *mode);
+        ~DiskStream();
 
                unsigned int open  (char *filename, char *mode);
         inline unsigned int close (void);                       //synonymous with detach()
                unsigned int detach(void);
 
-      private:
-        unsigned int attach(void);
+      public:        
 
+        Task   *reader;
+        Task   *writer;
         char   filename[DISKSTREAM_MAX_PATH];
         char   mode[DISKSTREAM_MAX_PATH];
         HANDLE hfile;
 
+      private:
+        unsigned int attach(void);        // use open() instead
     };
 
   }

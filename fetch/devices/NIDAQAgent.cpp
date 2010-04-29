@@ -19,7 +19,7 @@ namespace fetch
   {
 
     NIDAQAgent::NIDAQAgent(char *name)
-               : daqtask(NULL)
+               : Agent(),daqtask(NULL)
     { // Copy name
       size_t n = strlen(name);
       Guarded_Assert(n<sizeof(_daqtaskname));
@@ -55,7 +55,7 @@ namespace fetch
       this->unlock();
       return status;
     }
-
+    
   }
 
 }

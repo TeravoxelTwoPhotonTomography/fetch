@@ -12,7 +12,7 @@
  */
 #include "stdafx.h"
 #include "scanner2D.h"
-#include "frame.h"
+#include "../frame.h"
 
 #define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, warning))
 #define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, error  ))
@@ -41,9 +41,9 @@ namespace fetch
     ViInt32
     Scanner2D::_compute_record_size(void)
     {
-      f32 duty = this->config.line_duty_cycle, rate =
-          ((Digitizer*) (this))->config.sample_rate, freq =
-          this->config.frequency_Hz;
+      double duty = this->config.line_duty_cycle,
+             rate = ((Digitizer*) (this))->config.sample_rate,
+             freq = this->config.frequency_Hz;
       return (ViInt32)(duty * rate / freq);
     }
 
@@ -54,7 +54,7 @@ namespace fetch
       Frame_With_Interleaved_Lines
           format((u16)(samples_per_scan),
                  config.nscans,
-                 ((Digitizer*) (this))->config.num_channels,
+                 (u8) (((Digitizer*) (this))->config.num_channels),
                  id_i16);
       Guarded_Assert(format.nchan > 0);
       Guarded_Assert(format.height > 0);
@@ -68,8 +68,8 @@ namespace fetch
       unsigned int status = 0; // success 0, error 1
       if (!this->disarm(SCANNER2D_DEFAULT_TIMEOUT))
         warning("Could not cleanly disarm Scanner2D.\r\n");
-      status |= ((Shutter*) ((this)))->detach();
-      status |= ((Digitizer*) ((this)))->detach();
+      status |= ((Shutter*)   this)->detach();
+      status |= ((Digitizer*) this)->detach();
       this->lock();
       if (clk)
       {
@@ -82,8 +82,8 @@ namespace fetch
       {
         debug("Scanner2D: Attempting to detach DAQ AO  channel. handle: 0x%p\r\n",
               ao);
-        DAQJMP( DAQmxStopTask( daq_ao ));
-        DAQJMP( DAQmxClearTask( daq_ao ));
+        DAQJMP( DAQmxStopTask(  ao ));
+        DAQJMP( DAQmxClearTask( ao ));
       }
     Error:
       this->unlock();
@@ -101,15 +101,16 @@ namespace fetch
       this->lock();
       Guarded_Assert(ao == NULL);
       Guarded_Assert(clk == NULL);
-      status = DAQERR( DAQmxCreateTask( "scanner2d-ao", &ao ));
-      status = DAQERR( DAQmxCreateTask( "scannner2d-clk", &clk));
-      Device_Set_Available;
+      DAQJMP( status = DAQmxCreateTask( "scanner2d-ao", &ao ));
+      DAQJMP( status = DAQmxCreateTask( "scannner2d-clk", &clk));
+      this->set_available();    
     Error:
       this->unlock();
       return status;
     }
+    
     void
-    _compute_galvo_waveform__constant_zero( Scanner_Config *cfg, float64 *data, double N )
+    _compute_galvo_waveform__constant_zero( Scanner2D::Config *cfg, float64 *data, double N )
     { memset(data,0, ((size_t)N*sizeof(float64)));
     }
 
@@ -137,10 +138,10 @@ namespace fetch
     { int N = config.nsamples;
       f64 *m,*p;
       vector_f64_request(ao_workspace, 2*N - 1 /*max index*/);
-      *m = ao_workspace->contents; // first the mirror data
-      *p = m + N;                  // then the pockels data
-      _compute_linear_scan_mirror_waveform__sawtooth( ((LinearScanMirror*)this)->config, m, N);
-      _compute_pockels_vertical_blanking_waveform(    (         (Pockels*)this)->config, p, N);
+      m = ao_workspace->contents; // first the mirror data
+      p = m + N;                  // then the pockels data
+      _compute_linear_scan_mirror_waveform__sawtooth( &((LinearScanMirror*)this)->config, m, N);
+      _compute_pockels_vertical_blanking_waveform(    &(         (Pockels*)this)->config, p, N);
     }
 
   }

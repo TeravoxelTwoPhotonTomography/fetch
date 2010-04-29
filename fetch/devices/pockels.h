@@ -10,6 +10,7 @@
  * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
+ 
 /* Class Pockels
  * =============
  *
@@ -63,7 +64,7 @@
 
 #include "NIDAQAgent.h"
 
-#define POCKELS_DEFAULT_TIMEOUT         INFINITY
+#define POCKELS_DEFAULT_TIMEOUT         INFINITE
 
 #define POCKELS_DEFAULT_V_MAX                2.0
 #define POCKELS_DEFAULT_V_MIN                0.0
@@ -92,7 +93,7 @@ namespace fetch
     class Pockels : public NIDAQAgent
     {
     public:
-      typedef struct _pockels_config
+      struct Config
       {
         f64         v_lim_max;
         f64         v_lim_min;
@@ -100,7 +101,16 @@ namespace fetch
         f64         v_closed;
         char        ao_chan[POCKELS_MAX_CHAN_STRING];
         char        ai_chan[POCKELS_MAX_CHAN_STRING]; // XXX: Unused at present
-      } Config;
+        
+        Config()
+        : v_lim_max (POCKELS_DEFAULT_V_MAX),
+          v_lim_min (POCKELS_DEFAULT_V_MIN),
+          v_open    (POCKELS_DEFAULT_V_OPEN),
+          v_closed  (POCKELS_DEFAULT_V_CLOSED)
+        { strncpy(ao_chan,POCKELS_DEFAULT_AO_CHANNEL,sizeof(POCKELS_DEFAULT_AO_CHANNEL));
+          strncpy(ai_chan,POCKELS_DEFAULT_AI_CHANNEL,sizeof(POCKELS_DEFAULT_AI_CHANNEL));
+        }
+      };
 
       Config         config;
     public:

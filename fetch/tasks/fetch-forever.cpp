@@ -1,13 +1,13 @@
 #include "stdafx.h"
 
 #include "fetch-forever.h"
-#include "util-niscope.h"
-#include "devices/digitizer.h"
-#include "frame.h"
+#include "../util/util-niscope.h"
+#include "../devices/digitizer.h"
+#include "../frame.h"
 
 
-#define CheckWarn( expression )  (niscope_chk( Digitizer_Get()->vi, expression, #expression, &warning ))
-#define CheckPanic( expression ) (niscope_chk( Digitizer_Get()->vi, expression, #expression, &error   ))
+#define CheckWarn( expression )  (niscope_chk( vi, expression, #expression, &warning ))
+#define CheckPanic( expression ) (niscope_chk( vi, expression, #expression, &error   ))
 #define ViErrChk( expression )    goto_if( CheckWarn(expression), Error )
 
 #if 0
@@ -22,9 +22,9 @@ namespace fetch
   { namespace digitizer
     {
       
-      template <class T>
+      template<typename T>
         static inline Frame_With_Interleaved_Planes
-        format_frame(ViInt32 record_length, ViInt32 nwfm )
+        _format_frame(ViInt32 record_length, ViInt32 nwfm )
       { Frame_With_Interleaved_Planes fmt( (u8) (record_length/512), // width
                                                 512,                 // height
                                           (u8)  nwfm,                // # channels
@@ -34,23 +34,23 @@ namespace fetch
 
       template<>
         static inline Frame_With_Interleaved_Planes
-        format_frame<i8>(ViInt32 record_length, ViInt32 nwfm );
+        _format_frame<i8>(ViInt32 record_length, ViInt32 nwfm );
 
       template<>
         static inline Frame_With_Interleaved_Planes
-        format_frame<i16>(ViInt32 record_length, ViInt32 nwfm );
+        _format_frame<i16>(ViInt32 record_length, ViInt32 nwfm );
 
-      template<class TPixel>
+      template<typename TPixel>
         unsigned int
-        FetchForever::config(Digitizer *dig)
+        FetchForever<TPixel>::config(device::Digitizer *dig)
         { ViSession   vi = dig->vi;
-          Digitizer::Config cfg = dig->config;
+          device::Digitizer::Config cfg = dig->config;
           ViInt32 i;
           int nchan = 0;
           
           // Vertical
           for(i=0; i<cfg.num_channels; i++)
-          { Digitizer::Channel_Config ch = cfg.channels[i];
+          { device::Digitizer::Channel_Config ch = cfg.channels[i];
             CheckPanic(niScope_ConfigureVertical (vi, 
                                                   ch.name,     //channelName, 
                                                   ch.range,    //verticalRange, 
@@ -78,27 +78,12 @@ namespace fetch
           return 1;
         }
 
-      template<> unsigned int FetchForever<i8>::config(Digitizer *dig);
-      template<> unsigned int FetchForever<i16>::config(Digitizer *dig);
-
-      //get_fetch_func
-      // TODO: try template constant
-      typedef ViStatus (*t_fetch_func)(ViSession,ViChar,ViReal64,ViInt32,void*,struct niScope_wfmInfo);
-      template<class TPixel> static inline t_fetch_func get_fetch_func(void);
-      template               static inline t_fetch_func get_fetch_func< i8>(void) {return niScope_FetchBinary8;}
-      template               static inline t_fetch_func get_fetch_func<i16>(void) {return niScope_FetchBinary16;}
-
-      template<class T> static inline
-        ViStatus _fetch(ViSession vi, ViChar *chan, double t, ViInt32 nelem, T *data, niScope_wfmInfo *wfm)
-      { return (*get_fetch_func<T>())(vi,chan,t,nelem,(ViInt8*)data,wfm);
-      }
-
-      template<> static inline ViStatus _fetch<i8 >(ViSession,ViChar*,double,ViInt32,i8*, struct niScope_wfmInfo*);
-      template<> static inline ViStatus _fetch<i16>(ViSession,ViChar*,double,ViInt32,i16*,struct niScope_wfmInfo*);
+      template<> unsigned int FetchForever<i8 >::config(device::Digitizer *dig);
+      template<> unsigned int FetchForever<i16>::config(device::Digitizer *dig);
 
       template<class TPixel>
         unsigned int
-        FetchForever::run(Digitizer *dig)
+        FetchForever<TPixel>::run(device::Digitizer *dig)
         { ViSession   vi = dig->vi;
           ViChar   *chan = dig->config.acquisition_channels;
           asynq   *qdata = dig->out->contents[0],
@@ -117,7 +102,7 @@ namespace fetch
           struct niScope_wfmInfo *wfm  = NULL; //(niScope_wfmInfo*)  Asynq_Token_Buffer_Alloc(qwfm);
           Frame_With_Interleaved_Planes ref;
           unsigned int ret = 1;
-          size_t nbytes;
+          size_t nbytes, Bpp = sizeof(TPixel);
 
           // Compute image dimensions
           CheckPanic( niScope_ActualNumWfms(vi, chan, &nwfm ) );
@@ -125,8 +110,8 @@ namespace fetch
           ref = _format_frame<TPixel>( nelem, nwfm );
           nbytes = ref.size_bytes();
           //
-          frm = Guarded_Malloc(ref.size_bytes(),"task::FetchForever - Allocate actual frame.");
-          wfm = Guarded_Malloc(nwfm*sizeof(struct niScope_wfminfo),"task::FetchForver - Allocate waveform info");
+          frm = (Frame*)                  Guarded_Malloc(ref.size_bytes()                   ,"task::FetchForever - Allocate actual frame.");
+          wfm = (struct niScope_wfmInfo*) Guarded_Malloc(nwfm*sizeof(struct niScope_wfmInfo),"task::FetchForver - Allocate waveform info");
           //
           ref.format(frm);
           
@@ -151,11 +136,11 @@ namespace fetch
               delay = toc( &delay_clock );
               delay = toc( &delay_clock );
               maxdelay = MAX(delay, maxdelay);
-              ViStatus sts = _fetch<TPixel>(vi, 
+              ViStatus sts = Fetch<TPixel>(vi, 
                                             chan,          // (acquistion channels)
                                             0.0,           // Immediate
                                             nelem - ttl,   // Remaining space in buffer
-                                            (TPixel*)frm->data + ttl,   // Where to put the data
+                                            frm->data + Bpp*ttl,   // Where to put the data
                                             wfm);          // metadata for fetch
               if( delay > maxdelay )
               { maxdelay = delay;
@@ -213,8 +198,8 @@ namespace fetch
           CheckPanic( niScope_Abort(vi) );
           return ret;
         }
-      template<i8>  unsigned int FetchForever::run(Digitizer *dig);
-      template<i16> unsigned int FetchForever::run(Digitizer *dig);
+      template<> unsigned int FetchForever<i8 >::run(device::Digitizer *dig);
+      template<> unsigned int FetchForever<i16>::run(device::Digitizer *dig);
 
     } // namespace digitizer
   }   // namespace task

@@ -1,17 +1,21 @@
 #pragma once
 
-#include "task.h"
-#include "agent.h"
+#include "../task.h"
+#include "../agent.h"
+#include "../devices/Digitizer.h"
 
 namespace fetch
 { namespace task
   { namespace digitizer
     {
+      typedef UpcastTask<device::Digitizer> DigitizerTask;
+
+    
       template<class TPixel>
-        class FetchForever
+        class FetchForever : public DigitizerTask
         { public:
-          unsigned int config(Digitizer *d);
-          unsigned int run(Digitizer *d);
+          unsigned int config(device::Digitizer *d);
+          unsigned int run(device::Digitizer *d);
         };
     }
   }

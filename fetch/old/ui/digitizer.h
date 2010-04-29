@@ -1,3 +1,16 @@
+/*
+ * Author: Nathan Clack <clackn@janelia.hhmi.org>
+ *   Date: Apr 20, 2010
+ */
+/*
+ * Copyright 2010 Howard Hughes Medical Institute.
+ * All rights reserved.
+ * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
+ * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
+ */
+#include "stdafx.h"
+#include "../devices/digitizer.h"
+
 namespace fetch
 {
   namespace ui
@@ -27,13 +40,13 @@ namespace fetch
       // Handler     should be called during the parent's WndProc
       //             handles events from the menu
       class Menu
-      { char       _name[512];
-        Digitizer *_digitizer;
-        HMENU      _menu,
-                   _taskmenu;
+      { char               _name[512];
+        device::Digitizer *_digitizer;
+        HMENU              _menu,
+                           _taskmenu;
 
         public:
-          Menu(Digitizer *digitizer);
+          Menu(device::Digitizer *digitizer);
 
           LRESULT CALLBACK Handler ( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
           void             Append  ( HMENU hmenu );
@@ -46,14 +59,14 @@ namespace fetch
           // The message are assigned in the constructor.
           static size_t _instance_id = 0;
 
-          DECLARE_USER_MESSAGE_NON_STATIC( IDM_DIGITIZER);
-          DECLARE_USER_MESSAGE_NON_STATIC( IDM_DIGITIZER_DETACH);
-          DECLARE_USER_MESSAGE_NON_STATIC( IDM_DIGITIZER_ATTACH);
-          DECLARE_USER_MESSAGE_NON_STATIC( IDM_DIGITIZER_LIST_DEVICES);
-          DECLARE_USER_MESSAGE_NON_STATIC( IDM_DIGITIZER_TASK_STOP);
-          DECLARE_USER_MESSAGE_NON_STATIC( IDM_DIGITIZER_TASK_RUN);
-          DECLARE_USER_MESSAGE_NON_STATIC( IDM_DIGITIZER_TASK_0);
-          DECLARE_USER_MESSAGE_NON_STATIC( IDM_DIGITIZER_TASK_1);
+          UINT IDM_DIGITIZER);
+          UINT IDM_DIGITIZER_DETACH);
+          UINT IDM_DIGITIZER_ATTACH);
+          UINT IDM_DIGITIZER_LIST_DEVICES);
+          UINT IDM_DIGITIZER_TASK_STOP);
+          UINT IDM_DIGITIZER_TASK_RUN);
+          UINT IDM_DIGITIZER_TASK_0);
+          UINT IDM_DIGITIZER_TASK_1);
 
           struct __task_table_row
           { char     *menutext;

@@ -13,6 +13,8 @@
 #pragma once
 
 #include "stdafx.h"
+#include "asynq.h"
+//#include "task.h"
 
 //
 // Class Agent
@@ -75,6 +77,13 @@
 //      unsigned int attach()
 //      unsigned int detach()
 //
+//    <detach> Should attempt to disarm, if possible, and warn when disarm() fails.
+//             Should return 0 on success, non-zero otherwise.
+//             Should explicitly lock()/unlock() when necessary.
+//
+//    <attach> Should return 0 on success, non-zero otherwise.
+//             Should explicitly lock()/unlock() when necessary.
+//
 // 2. Children must allocate the required input and output channels on 
 //    instatiation.  Preferably with the provided Agent::_alloc_qs functions.
 //
@@ -82,13 +91,17 @@
 //    is that the device specify the number of queues and the number of buffers
 //    on each queue.
 //
+
+#define AGENT_DEFAULT_TIMEOUT INFINITE
+
 namespace fetch {
 
-  //typedef void Task;
-
-  typedef asynq* PASYNQ;
+  typedef asynq* PASYNQ;  
+  
   TYPE_VECTOR_DECLARE(PASYNQ);
 
+  class Task;
+  
   class Agent
   { 
     public:
@@ -96,13 +109,13 @@ namespace fetch {
       virtual ~Agent(void);
 
       // State transition functions
-      virtual unsigned int attach (void) = 0;
-      virtual unsigned int detach (void) = 0;
+      virtual unsigned int attach (void) = 0;                  // Returns 0 on success, nonzero otherwise.
+      virtual unsigned int detach (void) = 0;                  // Returns 0 on success, nonzero otherwise.  Should attempt to disarm if running.  Should not panic if possible.      
 
-      unsigned int arm    (Task *t, DWORD timeout_ms);
-      unsigned int disarm (DWORD timeout_ms);
-      unsigned int run    (void);
-      unsigned int stop   (DWORD timeout_ms);
+              unsigned int arm    (Task *t, DWORD timeout_ms); // Returns 0 on success, nonzero otherwise.
+      virtual unsigned int disarm (DWORD timeout_ms);          // Returns 0 on success, nonzero otherwise.
+              unsigned int run    (void);                      // Returns 0 on success, nonzero otherwise.
+              unsigned int stop   (DWORD timeout_ms);          // Returns 0 on success, nonzero otherwise.
       
       BOOL      attach_nonblocking (void);
       BOOL      detach_nonblocking (void);
@@ -112,23 +125,23 @@ namespace fetch {
       BOOL        stop_nonblocking (DWORD timeout_ms);
 
       // State query functions
-      unsigned int is_available(void);
+      unsigned int is_available(void); // returns 1 if "attached", 0 otherwise.  If 1, Agent is armable.
       unsigned int is_armed(void);
       unsigned int is_runnable(void);
       unsigned int is_running(void);
-
+      unsigned int is_stopping(void);  // use this for testing for main-loop termination in Tasks.
+                                       // FIXME: not clear from name that is_stopping is very different from is_running
+                                             
       // Queue manipulation
-      static void connect(Agent *dst, int dst_chan, Agent *src, int src_chan);
-
-
+      static void connect(Agent *dst, size_t dst_chan, Agent *src, size_t src_chan);
+      
     public:
       Task            *task;
-      //void            *context; // XXX delete me:  I don't think anyone uses this anymore
 
       vector_PASYNQ   *in,         // Input  pipes
                       *out;        // Output pipes
 
-    protected:
+    public:
       // _alloc_qs
       // _alloc_qs_easy
       //   Allocate <n> independant asynchronous queues.  These are contained
@@ -143,7 +156,8 @@ namespace fetch {
       static void _alloc_qs      (vector_PASYNQ **qs, size_t n, size_t *nbuf, size_t *nbytes);
       static void _alloc_qs_easy (vector_PASYNQ **qs, size_t n, size_t nbuf, size_t nbytes);
       static void _free_qs       (vector_PASYNQ **qs);
-
+      
+    protected:
       void   lock(void);
       void unlock(void);
 
@@ -155,9 +169,14 @@ namespace fetch {
       HANDLE           thread,
                        notify_available,
                        notify_stop;
-      CRITICAL_SECTION lock;
+      CRITICAL_SECTION _lock;
       u32              num_waiting,
                        _is_available,
                        _is_running;
+                       
+    private:
+      inline static unsigned _handle_wait_for_result     (DWORD result, const char *msg);
+      inline        unsigned _wait_for_available         (DWORD timeout_ms);
+                    Agent*   _request_available_unlocked (int is_try, DWORD timeout_ms);
   };
 }

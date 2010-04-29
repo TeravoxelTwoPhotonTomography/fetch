@@ -10,6 +10,7 @@
  * - need current buffer size for push/pop...just need to keep track
  * - what happens if the source buffer changes in the middle of an average
  */
+#include "stdafx.h"
 #include "FrameAverage.h"
 
 namespace fetch
@@ -19,18 +20,18 @@ namespace fetch
   {
 
     unsigned int
-    FrameAverage::run(FrameAverageAgent *agent)
-    { int every = agent->config;
+    FrameAverage::run(Agent *a)
+    { FrameAverageAgent *agent = dynamic_cast<FrameAverageAgent*>(a);
+      int every = agent->config;
 
-      asynq *qsrc =  in->contents[ 0 ],
-            *qdst = out->contents[ 0 ];
+      asynq *qsrc = agent->in->contents[ 0 ],
+            *qdst = agent->out->contents[ 0 ];
 
       Frame *fsrc = (Frame*) Asynq_Token_Buffer_Alloc(qsrc),
             *fdst = (Frame*) Asynq_Token_Buffer_Alloc(qdst);
       f32 *buf, *acc = NULL;
-      f32 *src_cur,*acc_cur;
       size_t dst_bytes = qdst->q->buffer_size_bytes;
-      { int i,count=0;
+      { unsigned int i,count=0;
 
         do
         {
@@ -42,11 +43,11 @@ namespace fetch
           if( Asynq_Pop_Try(qsrc,(void**)&fsrc,src_bytes))
           {
             if(fsrc->size_bytes()>dst_bytes)
-              Guarded_Assert(fdst = realloc(fdst,dst_bytes = fsrc->size_bytes()));
+              Guarded_Assert(fdst = (Frame*) realloc(fdst,dst_bytes = fsrc->size_bytes()));
 
             fsrc->format(fdst);
             acc = (f32*) fdst->data;
-            memcpy(acc,fsrc->data,nbtyes);
+            memcpy(acc,fsrc->data,nbytes);
           } else
             continue;
 
@@ -64,7 +65,7 @@ namespace fetch
                 Asynq_Push_Timed( qdst, (void**)&fdst, fdst->size_bytes(), WORKER_DEFAULT_TIMEOUT ),
                 OutputQueueTimeoutError);
               if(fsrc->size_bytes()>dst_bytes)
-                  Guarded_Assert(fdst = realloc(fdst,dst_bytes = fsrc->size_bytes()));
+                  Guarded_Assert(fdst = (Frame*)realloc(fdst,dst_bytes = fsrc->size_bytes()));
               fsrc->format(fdst);              // Initialize the accumulator
               acc = (f32*)fdst->data;
               memcpy(acc,fsrc->data,nbytes);
@@ -73,7 +74,7 @@ namespace fetch
                 acc[i] += buf[i];
             }
           }
-        } while ( WAIT_OBJECT_0 != WaitForSingleObject(d->notify_stop, 0) );
+        } while (!agent->is_stopping());
       }
       Asynq_Token_Buffer_Free(fsrc);
       Asynq_Token_Buffer_Free(fdst);
@@ -87,5 +88,3 @@ namespace fetch
 
   }
 }
-
-

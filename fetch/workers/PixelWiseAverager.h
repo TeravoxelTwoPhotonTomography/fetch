@@ -21,12 +21,12 @@ namespace fetch
   namespace task
   {
 
-    typedef WorkAgent<PixelWiseAverager,int> PixelWiseAveragerAgent;
-
-    class PixelWiseAverager : public OneToOneWorkTask
+    class PixelWiseAverager : public OneToOneWorkTask<Frame>
     { public:
-        unsigned int work(PixelWiseAveragerAgent *agent, Frame *dst, Frame *src);
+        unsigned int work(Agent *agent, Frame *dst, Frame *src);
     };
+
+    typedef WorkAgent<PixelWiseAverager,int> PixelWiseAveragerAgent;
 
   }
 

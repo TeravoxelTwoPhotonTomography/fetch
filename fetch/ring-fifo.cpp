@@ -104,9 +104,9 @@ RingFIFO_Expand( RingFIFO *self )
 void
 RingFIFO_Resize(RingFIFO* self, size_t buffer_size_bytes)
 { vector_PVOID *r = self->ring;
-  size_t i,n = r->nelem;
-         head = MOD_UNSIGNED_POW2( self->head, old ), // Write point (push)- points to a "dead" buffer
-         tail = MOD_UNSIGNED_POW2( self->tail, old ); // Read point (pop)  - points to a "live" buffer
+  size_t i,n = r->nelem,
+         head = MOD_UNSIGNED_POW2( self->head, n ), // Write point (push)- points to a "dead" buffer
+         tail = MOD_UNSIGNED_POW2( self->tail, n ); // Read point (pop)  - points to a "live" buffer
   if (self->buffer_size_bytes > buffer_size_bytes)
   {
     // Resize the buffers
@@ -187,7 +187,7 @@ unsigned int
 RingFIFO_Push( RingFIFO *self, void **pbuf, size_t sz, int expand_on_full)
 { unsigned int retval = 0;
   ringfifo_debug("+ head: %-5d tail: %-5d size: %-5d\r\n",self->head, self->tail, self->head - self->tail);
-  return_val_if( RingFIFO_Push_Try(self, pbuf)==0, 0 );
+  return_val_if( RingFIFO_Push_Try(self, pbuf, sz)==0, 0 );
   // Handle when full
   if( expand_on_full )      // Expand
     RingFIFO_Expand(self);  

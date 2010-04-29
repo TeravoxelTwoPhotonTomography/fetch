@@ -1,0 +1,143 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" GroupingSetting="Access">
+  <Comment CommentText="Typically, tasks operating on scanner 2d will not use the daqtask handles inherited from Pockels and LinearScanMirror.">
+    <Position X="9" Y="15.729" Height="0.823" Width="2.617" />
+  </Comment>
+  <Comment CommentText="Virtual inheritence means that all subclasses share references to a single core Agent.">
+    <Position X="9.385" Y="5.781" Height="0.531" Width="2.929" />
+  </Comment>
+  <Comment CommentText="attach() is made private here to encourage the use of open() in it's place.">
+    <Position X="12.688" Y="11.302" Height="0.677" Width="1.7" />
+  </Comment>
+  <Comment CommentText="detach() and close() are synonymous.">
+    <Position X="12.698" Y="12.021" Height="0.75" Width="1.7" />
+  </Comment>
+  <Class Name="fetch::Agent">
+    <Position X="7" Y="0.5" Width="2.25" />
+    <Compartments>
+      <Compartment Name="Protected" Collapsed="true" />
+      <Compartment Name="Private" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>KAAgI8QCUgAGAAEhgAFAAAJCgAAgAAGAAgAAJARAYAI=</HashCode>
+      <FileName>agent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="fetch::device::Digitizer">
+    <Position X="9.25" Y="7.75" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Nested Types" Collapsed="false" />
+    </Compartments>
+    <NestedTypes>
+      <Struct Name="fetch::device::Digitizer::Channel_Config" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>devices\digitizer.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Struct>
+      <Struct Name="fetch::device::Digitizer::Config" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>devices\digitizer.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Struct>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAiAEgAAAAAAAAAAAAAAAAACAAAAAAAAAAAA=</HashCode>
+      <FileName>devices\digitizer.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="fetch::device::Shutter">
+    <Position X="4" Y="11" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Nested Types" Collapsed="false" />
+    </Compartments>
+    <NestedTypes>
+      <Struct Name="fetch::device::Shutter::Config" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>devices\shutter.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Struct>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AAACgAAAAAAAJAAAAAAAAAAAAAAAAAAAAAAAAACAAAA=</HashCode>
+      <FileName>devices\shutter.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="fetch::device::DiskStream">
+    <Position X="12.5" Y="7.75" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAABAAgAAAACAACAAAAACAIAAAACEAYAAAAAQAAA=</HashCode>
+      <FileName>devices\DiskStream.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="fetch::device::LinearScanMirror">
+    <Position X="1.75" Y="11" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Nested Types" Collapsed="false" />
+    </Compartments>
+    <NestedTypes>
+      <Struct Name="fetch::device::LinearScanMirror::Config" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>devices\LinearScanMirror.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Struct>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>devices\LinearScanMirror.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="fetch::device::NIDAQAgent">
+    <Position X="4.5" Y="7.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAgAAAAAAAAAAAAAAAAAAgACAAAAAAAABgAA=</HashCode>
+      <FileName>devices\NIDAQAgent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="fetch::device::Pockels">
+    <Position X="6.25" Y="11" Width="2.25" />
+    <Compartments>
+      <Compartment Name="Nested Types" Collapsed="false" />
+    </Compartments>
+    <NestedTypes>
+      <Struct Name="fetch::device::Pockels::Config" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>devices\pockels.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Struct>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>QAQiAAAAAAABQAAAAAAAAAAAAAEAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>devices\pockels.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="fetch::device::Scanner2D">
+    <Position X="4.75" Y="15.5" Width="4" />
+    <Compartments>
+      <Compartment Name="Nested Types" Collapsed="false" />
+    </Compartments>
+    <NestedTypes>
+      <Struct Name="fetch::device::Scanner2D::_t_scanner2d_config" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>devices\scanner2D.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Struct>
+      <Typedef Name="fetch::device::Scanner2D::Config" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>devices\scanner2D.h</NewMemberFileName>
+        </TypeIdentifier>
+      </Typedef>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AAAiAAAAAgAAAAAAAABAAAAIAAAAMACAgAAAQAAgAAA=</HashCode>
+      <FileName>devices\scanner2D.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="fetch::WorkAgent&lt;TWorkTask, TParam&gt;">
+    <Position X="0.75" Y="7.75" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAgAAAAAAAAAAAAAAAAAAAACAAAAwAAAAAAA=</HashCode>
+      <FileName>workers\WorkAgent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

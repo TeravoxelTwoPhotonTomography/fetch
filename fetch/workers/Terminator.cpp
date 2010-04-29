@@ -10,6 +10,7 @@
  * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
+#include "stdafx.h"
 #include "Terminator.h"
 
 namespace fetch
@@ -17,7 +18,7 @@ namespace fetch
   namespace task
   {
     unsigned int
-    Terminator::run(TerminalAgent *agent)
+    Terminator::run(Agent *agent)
     {
       asynq **q;   // input queues (all input channels)
       void **buf;  // array of token buffers
@@ -25,11 +26,11 @@ namespace fetch
       unsigned int i, n;
 
       q = agent->in->contents;
-      buf = (void**)  (Guarded_Malloc(in->nelem * sizeof(void*),
+      n = agent->in->nelem;
+      buf = (void**)  (Guarded_Malloc(n * sizeof(void*),
                                      "Worker device task - Terminator"));
-      szs = (size_t*) (Guarded_Malloc(in->nelem * sizeof(size_t),
+      szs = (size_t*) (Guarded_Malloc(n * sizeof(size_t),
                                      "Worker device task - Terminator"));
-      n = in->nelem;
       // alloc the token buffers
       for (i = 0; i < n; i++)
       { buf[i] = Asynq_Token_Buffer_Alloc(q[i]);
@@ -42,9 +43,8 @@ namespace fetch
         Asynq_Pop_Try(q[i % n], buf + i%n,szs[i%n]);
         szs[i%n] = q[i%n]->q->buffer_size_bytes;
         i++;
-      } while (WAIT_OBJECT_0
-          != WaitForSingleObject(d->notify_stop,
-                                 TERMINATOR_DEFAULT_WAIT_TIME_MS));
+      } while (!agent->is_stopping());
+      
       // cleanup
       for (i = 0; i < n; i++)
         Asynq_Token_Buffer_Free(buf[i]);
@@ -55,7 +55,7 @@ namespace fetch
 
     void
     Terminator::alloc_output_queues(Agent *agent)
-    { //NULL - No output
+    { //noop - No output
     }
 
   }

@@ -9,8 +9,10 @@
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
 #pragma once
-#include "stdafx.h"
-#include "agent.h"
+#include "../stdafx.h"
+#include "../common.h"
+#include "../agent.h"
+#include "../task.h"
 
 #ifndef CALLBACK
 #define CALLBACK
@@ -45,7 +47,7 @@ namespace fetch
     class AgentStateMenu
     {
     public:
-      AgentStateMenu(Agent *agent);
+      AgentStateMenu(char *name, Agent *agent);
 
       LRESULT CALLBACK Handler (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
       void              Append (HMENU hmenu);
@@ -60,29 +62,32 @@ namespace fetch
       // See common.h for macro.
       // All IDM_* are static const int.
       // The message are assigned in the constructor.
-      static size_t _instance_id = 0;
+      static size_t _instance_id;
 
-      DECLARE_USER_MESSAGE_NON_STATIC( IDM_AGENT);
-      DECLARE_USER_MESSAGE_NON_STATIC( IDM_AGENT_DETACH);
-      DECLARE_USER_MESSAGE_NON_STATIC( IDM_AGENT_ATTACH);
-      DECLARE_USER_MESSAGE_NON_STATIC( IDM_AGENT_LIST_DEVICES);
-      DECLARE_USER_MESSAGE_NON_STATIC( IDM_AGENT_TASK_STOP);
-      DECLARE_USER_MESSAGE_NON_STATIC( IDM_AGENT_TASK_RUN);
+      UINT IDM_AGENT;                        // These will be unique messages for each instance
+      UINT IDM_AGENT_DETACH;
+      UINT IDM_AGENT_ATTACH;
+      UINT IDM_AGENT_LIST_DEVICES;
+      UINT IDM_AGENT_TASK_STOP;
+      UINT IDM_AGENT_TASK_RUN;
 
-      struct __t_task_table_row
+      struct _t_task_table
       {
-        char *menutext;
-        const int messageid;
-        Task task;
-      } _t_task_table, _t_task_table_row;
+        char     *menutext;
+        UINT      messageid;
+        Task     *task;
+      };
+      typedef _t_task_table _t_task_table_row;
 
-      static _t_task_table _task_table[] =
-        {
-          { NULL, NULL, NULL },
-        };
+      static _t_task_table _task_table[];
 
       HMENU _make_menu(void);
-    };
+    };  
+    
+    AgentStateMenu::_t_task_table AgentStateMenu::_task_table[] = 
+        {
+          { NULL, NULL, NULL },
+        }; 
 
   }
 }

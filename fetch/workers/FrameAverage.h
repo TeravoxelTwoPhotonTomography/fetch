@@ -16,13 +16,13 @@ namespace fetch
 
   namespace task
   {
-
-    typedef WorkAgent<FrameAverage,int> FrameAverageAgent;
-
-    class FrameAverage : public UpdateableWorkTask
+   
+    class FrameAverage : public WorkTask
     { public:
-        unsigned int run(FrameAverageAgent* agent);
+        unsigned int run(Agent* agent);
     };
+    
+    typedef WorkAgent<FrameAverage,int> FrameAverageAgent;
 
   }
 

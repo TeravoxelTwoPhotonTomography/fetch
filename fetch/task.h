@@ -43,38 +43,56 @@
 namespace fetch
 {
   //typedef void Agent;
+  class Agent;
 
   class Task
   { public:
     virtual unsigned int config(Agent *d) = 0; // return 1 on success, 0 otherwise
     virtual unsigned int run(Agent *d)    = 0; // return 1 on success, 0 otherwise
   
-    DWORD WINAPI thread_main(LPVOID lpParam);
+    static DWORD WINAPI thread_main(LPVOID lpParam);
 
     static bool eq(Task *a, Task *b); // a eq b iff addresses of config and run virtual functions are the same
   };
-<<<<<<< HEAD
-=======
-
-  /* UpdateableTask
-   * --------------
-   *
-   * An additional update() function is provided to supplement the config()
-   * function.
-   *
-   * config() is intended to be used to set up the entire set of resources
-   * required for a task.  However, in some applications, a subset of those
-   * resources are frequently updated.  The update() function provided here
-   * allows one to implement less expensive updates for frequently changed
-   * resources.
-   *
-   * update() is only called while the associated Agent is in an Armed state.
+  
+  /* UpcastTask
+   * ----------
+   * Provides a mechanism to ensure Task types that are only used with the appropriate Agent types.
    */
-  class UpdateableTask: public Task
+  template<typename TAgent>
+  class UpcastTask: public fetch::Task
+  { public:
+              unsigned int config (Agent *agent)              {return config(dynamic_cast<TAgent*>(agent));}
+              unsigned int run    (Agent *agent)              {return run   (dynamic_cast<TAgent*>(agent));}
+      virtual unsigned int config (TAgent *agent) = 0;
+      virtual unsigned int run    (TAgent *agent) = 0;
+  };
+
+  /*
+     IUpdateable
+     --------------
+    
+     An additional update() function is provided to supplement the config()
+     function.
+    
+     config() is intended to be used to set up the entire set of resources
+     required for a task.  However, in some applications, a subset of those
+     resources are frequently updated.  The update() function provided here
+     allows one to implement less expensive updates for frequently changed
+     resources.
+    
+     update() is only called while the associated Agent is in an Armed state.
+   */
+  class IUpdateable
   { public:
     virtual unsigned int update(Agent *d) = 0; //return 1 on success, 0 otherwise
-
-    static bool eq(UpdateableTask *a, UpdateableTask *b); // a eq b iff addresses of virtual functions are the same
   };
->>>>>>> 12e2db4651f266b9604e47c76b0a614cafc92fb1
+  
+  template<typename TAgent>
+  class IUpdateableCast: public IUpdateable
+  { public:
+            unsigned int update(Agent *d)  {return update(dynamic_cast<TAgent*>(d));}
+    virtual unsigned int update(TAgent *d) = 0;
+  };
+
 }

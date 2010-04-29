@@ -45,7 +45,7 @@ Asynq_Alloc(size_t buffer_count, size_t buffer_size_bytes )
   //    set high bit to preallocate event used in EnterCriticalSection for W2K
   //    see: http://msdn.microsoft.com/en-us/library/ms683472(VS.85).aspx
   Guarded_Assert_WinErr( 
-    InitializeCriticalSectionAndSpinCount( &self->lock, 
+    InitializeCriticalSectionAndSpinCount( &self->_lock, 
                                             0x80000400 ) 
   );
   
@@ -87,7 +87,7 @@ Asynq_Unref( asynq *self )
     { SetEvent( self->notify_abort );
       return 0;
     }  
-    DeleteCriticalSection( &self->lock );
+    DeleteCriticalSection( &self->_lock );
     if( !CloseHandle( self->notify_data  )) ReportLastWindowsError();
     if( !CloseHandle( self->notify_space )) ReportLastWindowsError();
     if( !CloseHandle( self->notify_abort )) ReportLastWindowsError();
@@ -105,7 +105,7 @@ Asynq_Unref( asynq *self )
 
 inline void 
 Asynq_Lock ( asynq *self )
-{ EnterCriticalSection( &self->lock );
+{ EnterCriticalSection( &self->_lock );
 }
 
 /* Returns 1 on success, 0 otherwise.
@@ -156,7 +156,7 @@ _handle_wait_for_multiple_result(DWORD result, int n, const char* msg)
 
 inline void 
 Asynq_Unlock ( asynq *self )
-{ LeaveCriticalSection( &self->lock );
+{ LeaveCriticalSection( &self->_lock );
 }
 
 //

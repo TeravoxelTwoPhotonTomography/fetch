@@ -12,7 +12,7 @@
  */
 
 #pragma once
-#include "task.h"
+#include "../task.h"
 #include "../devices/scanner2D.h"
 
 namespace fetch
@@ -20,20 +20,21 @@ namespace fetch
 
   namespace task
   {
-
-    template<class TPixel>
-    class Video : public UpdateableTask
+    namespace scanner
     {
-      public:
-        unsigned int config (device::Scanner2D *d);
-        unsigned int run    (device::Scanner2D *d);
-        unsigned int update (device::Scanner2D *d);
+      template<class TPixel>
+      class Video : public UpcastTask<device::Scanner2D>, public IUpdateableCast<device::Scanner2D>
+      {
+        public:
+          unsigned int config (device::Scanner2D *d);
+          unsigned int run    (device::Scanner2D *d);
+          unsigned int update (device::Scanner2D *d);
 
-      protected:
-        void    _config_digitizer(device::Scanner2D *scanner);
-        void    _config_daq(device::Scanner2D *scanner);          // TODO: replace DeviceTask_Scanner_Video_Write_Waveforms
-    };
+        protected:
+          void    _config_digitizer(device::Scanner2D *scanner);
+          void    _config_daq(device::Scanner2D *scanner);          // TODO: replace DeviceTask_Scanner_Video_Write_Waveforms
+      };
 
-
+    }
   }
 }

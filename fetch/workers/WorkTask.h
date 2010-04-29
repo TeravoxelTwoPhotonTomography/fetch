@@ -63,23 +63,24 @@ namespace fetch
 
     class WorkTask : public fetch::Task
     { public:
-        unsigned int config(WorkAgent *d) {}
+        unsigned int config(Agent *d) {}
 
-        virtual static void alloc_output_queues(Agent *agent);
+        static void alloc_output_queues(Agent *agent);
     };
 
-    class UpdateableWorkTask : public fetch::UpdateableTask
-    { public:
-        virtual unsigned int config(Agent *d) {}
-        virtual unsigned int update(Agent *d) {}
+    //class UpdateableWorkTask : public fetch::UpdateableTask
+    //{ public:
+    //    virtual unsigned int config(Agent *d) {}
+    //    virtual unsigned int update(Agent *d) {}
 
-        virtual static void alloc_output_queues(Agent *agent);
-    };
+    //    virtual static void alloc_output_queues(Agent *agent);
+    //};
 
+    template<typename TMessage>
     class OneToOneWorkTask : public WorkTask
     { public:
                 unsigned int run(Agent *d);
-        virtual unsigned int work(Agent *agent, Message *dst, Message *src) = 0;
+        virtual unsigned int work(Agent *agent, TMessage *dst, TMessage *src) = 0;
     };
 
   }

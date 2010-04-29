@@ -21,9 +21,10 @@
 
 #pragma once
 
-#include "agent.h"
+#include "../agent.h"
+#include "../util/util-nidaqmx.h"
 
-#define NIDAQAGENT_DEFAULT_TIMEOUT INFINITY
+#define NIDAQAGENT_DEFAULT_TIMEOUT INFINITE
 
 namespace fetch
 {
@@ -31,14 +32,13 @@ namespace fetch
   namespace device
   {
 
-    class NIDAQAgent : public virtual Agent
+    class NIDAQAgent : public virtual fetch::Agent
     {
     public:
       NIDAQAgent(char *name);
 
       unsigned int attach();
       unsigned int detach();
-
     public:
       TaskHandle daqtask;
 

@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "renderer-colormap.h"
-#include "util-dx10.h"
-#include "util-image.h"
+#include "util/util-dx10.h"
+#include "util/util-image.h"
 
 #define CLAMP(v,low,high) ((v)<(low))?(low):(((v)>(high))?(high):(v))
 

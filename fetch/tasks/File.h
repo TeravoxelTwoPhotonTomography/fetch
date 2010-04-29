@@ -13,7 +13,7 @@
 #pragma once
 
 #include "../devices/DiskStream.h"
-#include "task.h"
+#include "../task.h"
 
 namespace fetch
 {
@@ -22,25 +22,27 @@ namespace fetch
   {
     namespace file {
 
-      class WriteRaw : public fetch::Task
+      typedef UpcastTask<device::DiskStream> DiskStreamTask;
+
+      class WriteRaw : public DiskStreamTask
       { public:
           unsigned int config(device::DiskStream *agent);
           unsigned int run(device::DiskStream *agent);
       };
 
-      class ReadRaw : public fetch::Task
+      class ReadRaw : public DiskStreamTask
       { public:
           unsigned int config(device::DiskStream *agent);
           unsigned int run(device::DiskStream *agent);
       };
 
-      class WriteMessage : public fetch::Task
+      class WriteMessage : public DiskStreamTask
       { public:
           unsigned int config(device::DiskStream *agent);
           unsigned int run(device::DiskStream *agent);
       };
 
-      class ReadMessage : public fetch::Task
+      class ReadMessage : public DiskStreamTask
       { public:
           unsigned int config(device::DiskStream *agent);
           unsigned int run(device::DiskStream *agent);

@@ -46,7 +46,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				UsePrecompiledHeader="2"
+				UsePrecompiledHeader="1"
 				WarningLevel="3"
 				DebugInformationFormat="4"
 			/>
@@ -176,47 +176,15 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\agent.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\asynq.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\common.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\device-digitizer.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\device-disk-stream.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\device-scanner.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\device-task-digitizer-fetch-forever.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\device-task-scanner-video.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\device-task-worker.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\device-task.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\device-worker.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\device.cpp"
 				>
 			</File>
 			<File
@@ -232,7 +200,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\microscope.cpp"
+				RelativePath=".\Microscope.cpp"
 				>
 			</File>
 			<File
@@ -254,55 +222,135 @@
 			<File
 				RelativePath=".\stdafx.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\task.cpp"
+				>
 			</File>
 			<File
 				RelativePath=".\types.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\util-dx10.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\util-file.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\util-image.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\util-nidaqmx.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\util-niscope.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\window-control-pockels.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\window-video.cpp"
 				>
 			</File>
+			<Filter
+				Name="util"
+				>
+				<File
+					RelativePath=".\util\util-dx10.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\util\util-file.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\util\util-image.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\util\util-nidaqmx.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\util\util-niscope.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="workers"
+				>
+				<File
+					RelativePath=".\workers\FrameAverage.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\workers\PixelWiseAverager.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\workers\Terminator.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\workers\WorkTask.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="devices"
+				>
+				<File
+					RelativePath=".\devices\digitizer.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\devices\DiskStream.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\devices\LinearScanMirror.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\devices\NIDAQAgent.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\devices\pockels.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\devices\scanner2D.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\devices\shutter.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="ui"
+				>
+				<File
+					RelativePath=".\ui\AgentStateMenu.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ui\DigitizerStateMenu.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ui\pockels.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\ui\ScannerStateMenu.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="tasks"
+				>
+				<File
+					RelativePath=".\tasks\fetch-forever.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\tasks\File.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\tasks\microscope-interaction.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\tasks\Video.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -310,47 +358,15 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\agent.h"
+				>
+			</File>
+			<File
 				RelativePath=".\asynq.h"
 				>
 			</File>
 			<File
 				RelativePath=".\common.h"
-				>
-			</File>
-			<File
-				RelativePath=".\device-digitizer.h"
-				>
-			</File>
-			<File
-				RelativePath=".\device-disk-stream.h"
-				>
-			</File>
-			<File
-				RelativePath=".\device-scanner.h"
-				>
-			</File>
-			<File
-				RelativePath=".\device-task-digitizer-fetch-forever.h"
-				>
-			</File>
-			<File
-				RelativePath=".\device-task-scanner-video.h"
-				>
-			</File>
-			<File
-				RelativePath=".\device-task-worker.h"
-				>
-			</File>
-			<File
-				RelativePath=".\device-task.h"
-				>
-			</File>
-			<File
-				RelativePath=".\device-worker.h"
-				>
-			</File>
-			<File
-				RelativePath=".\device.h"
 				>
 			</File>
 			<File
@@ -366,7 +382,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\microscope.h"
+				RelativePath=".\Microscope.h"
 				>
 			</File>
 			<File
@@ -394,37 +410,142 @@
 				>
 			</File>
 			<File
+				RelativePath=".\task.h"
+				>
+			</File>
+			<File
 				RelativePath=".\types.h"
-				>
-			</File>
-			<File
-				RelativePath=".\util-dx10.h"
-				>
-			</File>
-			<File
-				RelativePath=".\util-file.h"
-				>
-			</File>
-			<File
-				RelativePath=".\util-image.h"
-				>
-			</File>
-			<File
-				RelativePath=".\util-nidaqmx.h"
-				>
-			</File>
-			<File
-				RelativePath=".\util-niscope.h"
-				>
-			</File>
-			<File
-				RelativePath=".\window-control-pockels.h"
 				>
 			</File>
 			<File
 				RelativePath=".\window-video.h"
 				>
 			</File>
+			<Filter
+				Name="tasks"
+				>
+				<File
+					RelativePath=".\tasks\fetch-forever.h"
+					>
+				</File>
+				<File
+					RelativePath=".\tasks\File.h"
+					>
+				</File>
+				<File
+					RelativePath=".\tasks\microscope-interaction.h"
+					>
+				</File>
+				<File
+					RelativePath=".\tasks\Video.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="workers"
+				>
+				<File
+					RelativePath=".\workers\FrameAverage.h"
+					>
+				</File>
+				<File
+					RelativePath=".\workers\FrameCaster.h"
+					>
+				</File>
+				<File
+					RelativePath=".\workers\PixelWiseAverager.h"
+					>
+				</File>
+				<File
+					RelativePath=".\workers\Terminator.h"
+					>
+				</File>
+				<File
+					RelativePath=".\workers\WorkAgent.h"
+					>
+				</File>
+				<File
+					RelativePath=".\workers\WorkTask.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="devices"
+				>
+				<File
+					RelativePath=".\devices\digitizer.h"
+					>
+				</File>
+				<File
+					RelativePath=".\devices\DiskStream.h"
+					>
+				</File>
+				<File
+					RelativePath=".\devices\LinearScanMirror.h"
+					>
+				</File>
+				<File
+					RelativePath=".\devices\NIDAQAgent.h"
+					>
+				</File>
+				<File
+					RelativePath=".\devices\pockels.h"
+					>
+				</File>
+				<File
+					RelativePath=".\devices\scanner2D.h"
+					>
+				</File>
+				<File
+					RelativePath=".\devices\shutter.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="ui"
+				>
+				<File
+					RelativePath=".\ui\AgentStateMenu.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ui\DigitizerStateMenu.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ui\pockels.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ui\ScannerStateMenu.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="util"
+				Filter="h;hpp"
+				>
+				<File
+					RelativePath=".\util\util-dx10.h"
+					>
+				</File>
+				<File
+					RelativePath=".\util\util-file.h"
+					>
+				</File>
+				<File
+					RelativePath=".\util\util-image.h"
+					>
+				</File>
+				<File
+					RelativePath=".\util\util-nidaqmx.h"
+					>
+				</File>
+				<File
+					RelativePath=".\util\util-niscope.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Resource Files"
@@ -449,7 +570,19 @@
 			</File>
 		</Filter>
 		<File
+			RelativePath=".\Agents.cd"
+			>
+		</File>
+		<File
+			RelativePath=".\MessageTypes.cd"
+			>
+		</File>
+		<File
 			RelativePath=".\ReadMe.txt"
+			>
+		</File>
+		<File
+			RelativePath=".\Tasks.cd"
 			>
 		</File>
 	</Files>

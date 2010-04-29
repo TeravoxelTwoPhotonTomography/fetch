@@ -9,10 +9,10 @@
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
 #include "stdafx.h"
-#include "util/util-niscope.h"
-#include "agent.h"
-#include "ui/AgentStateMenu.h"
-#include "tasks/fetch-forever.h"
+#include "../util/util-niscope.h"
+#include "../agent.h"
+#include "AgentStateMenu.h"
+#include "../tasks/fetch-forever.h"
 
 //
 // [x] resolve access to g_digitizer.
@@ -31,6 +31,8 @@ namespace fetch
 {
   namespace ui
   {
+    size_t AgentStateMenu::_instance_id = 0;
+  
     AgentStateMenu::AgentStateMenu(char *name, fetch::Agent *agent)
                    :_agent(agent),
                     _menu(0),
@@ -46,29 +48,30 @@ namespace fetch
       DEFINE_USER_MESSAGE_INT__NON_STATIC( IDM_AGENT_ATTACH, _instance_id);
       DEFINE_USER_MESSAGE_INT__NON_STATIC( IDM_AGENT_LIST_DEVICES, _instance_id);
       DEFINE_USER_MESSAGE_INT__NON_STATIC( IDM_AGENT_TASK_STOP, _instance_id);
-      DEFINE_USER_MESSAGE_INT__NON_STATIC( IDM_AGENT_TASK_RUN, _instance_id);
-
+      DEFINE_USER_MESSAGE_INT__NON_STATIC( IDM_AGENT_TASK_RUN, _instance_id);            
     }
-
+    
     HMENU
     AgentStateMenu::_make_menu(void)
     {
-      _menu = CreatePopupMenu(), _taskmenu = CreatePopupMenu();
+      _menu = CreatePopupMenu();
+      _taskmenu = CreatePopupMenu();
 
       // Loop over task table, adding menu entries for each row.
       {
-        _t_task_table_row * ttr;
+        _t_task_table_row *ttr;
         for (ttr = _task_table; ttr->menutext; ++ttr)
-          Guarded_Assert_WinErr(AppendMenu(_task_table,MF_STRING,ttr->messageid,ttr->menutext));
+          Guarded_Assert_WinErr(AppendMenu(_taskmenu,MF_STRING,ttr->messageid,ttr->menutext));
       }
 
       Guarded_Assert_WinErr( AppendMenu( _menu, MF_STRING, IDM_AGENT_DETACH, "&Detach"));
       Guarded_Assert_WinErr( AppendMenu( _menu, MF_STRING, IDM_AGENT_ATTACH, "&Attach"));
-      Guarded_Assert_WinErr( AppendMenu( _menu, MF_STRING | MF_POPUP, (UINT_PTR) taskmenu, "&Tasks"));
+      Guarded_Assert_WinErr( AppendMenu( _menu, MF_STRING | MF_POPUP, (UINT_PTR) _taskmenu, "&Tasks"));
       Guarded_Assert_WinErr( AppendMenu( _menu, MF_STRING, IDM_AGENT_TASK_RUN, "&Run" ));
       Guarded_Assert_WinErr( AppendMenu( _menu, MF_STRING, IDM_AGENT_TASK_STOP, "&Stop" ));
       Guarded_Assert_WinErr( AppendMenu( _menu, MF_SEPARATOR, NULL, NULL ));
       Guarded_Assert_WinErr( AppendMenu( _menu, MF_STRING, IDM_AGENT_LIST_DEVICES, "&List NI modular devices"));
+      return _menu;
     }
 
     void
@@ -88,7 +91,7 @@ namespace fetch
           InsertMenu( menu,
               uPosition,
               uFlags | MF_STRING | MF_POPUP,
-              (UINT_PTR) _submenu,
+              (UINT_PTR) _menu,
               _name));
     }
 
@@ -111,10 +114,10 @@ namespace fetch
             {
               Guarded_Assert_WinErr(-1!=
                   EnableMenuItem( hmenu, 1 /*Attach*/, MF_BYPOSITION
-                      | ( (_agent->vi==0)?MF_ENABLED:MF_GRAYED) ));
+                      | ( (_agent->is_available())?MF_GRAYED:MF_ENABLED) ));
               Guarded_Assert_WinErr(-1!=
                   EnableMenuItem( hmenu, 2 /*Tasks*/, MF_BYPOSITION
-                      | ( (_agent->vi==0)?MF_GRAYED:MF_ENABLED) ));
+                      | ( (_agent->is_available())?MF_ENABLED:MF_GRAYED) ));
               Guarded_Assert_WinErr(-1!=
                   CheckMenuItem( hmenu, 2 /*Tasks*/, MF_BYPOSITION
                       | ( _agent->is_runnable()?MF_CHECKED:MF_UNCHECKED) ));
@@ -130,7 +133,7 @@ namespace fetch
               //DONE? update for running and stop
               Guarded_Assert(-1!= // Detect state
                   CheckMenuRadioItem(_menu, // Toggle radio button to reflect
-                      0,1,((_agent->vi==0)?0/*Off*/:1/*Hold*/), MF_BYPOSITION ) );
+                      0,1,((_agent->is_available())?1/*Hold*/:0/*Off*/), MF_BYPOSITION ) );
             }
           else if (hmenu == _taskmenu)
             { // - Identify if any tasks are running.
@@ -144,7 +147,7 @@ namespace fetch
                 {
                   _t_task_table_row *ttr; // Search for armed task
                   for (i = 0, ttr = _task_table; ttr->menutext; ++i, ++ttr)
-                    if (Task::eq(_agent->task, &ttr->task))
+                    if (Task::eq(_agent->task, ttr->task))
                       break;
 
                   Guarded_Assert(-1!=
@@ -207,10 +210,9 @@ namespace fetch
             // should be valid for the lifetime of the application.
             _t_task_table_row * ttr;
             for (ttr = _task_table; ttr->menutext; ++ttr)
-              if (wmID == ttr->messageid)
+              if (wmId == ttr->messageid)
                 {
-                  _agent->arm_nonblocking(&ttr->task,
-                      AGENT_DEFAULT_TIMEOUT);
+                  _agent->arm_nonblocking(ttr->task,AGENT_DEFAULT_TIMEOUT);
                   return 0;
                 }
             return 1; // didn't find any matches for the message

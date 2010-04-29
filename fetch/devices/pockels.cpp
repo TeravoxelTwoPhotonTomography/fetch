@@ -12,6 +12,7 @@
 
 #include "stdafx.h"
 #include "Pockels.h"
+#include "../task.h"
 
 #define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, warning))
 #define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, error  ))
@@ -24,10 +25,7 @@ namespace fetch
   {
 
     Pockels::Pockels(void)
-            : NIDAQAgent("Pockels"),
-              config(POCKELS_CONFIG_DEFAULT),
-              daq_ao(NULL),
-              local_state_lock(NULL)
+            : NIDAQAgent("Pockels")
     { Guarded_Assert_WinErr(
         InitializeCriticalSectionAndSpinCount(&local_state_lock, 0x80000400 ));
     }
@@ -57,7 +55,7 @@ namespace fetch
         { int run = this->is_running();
           if(run)
             this->stop(POCKELS_DEFAULT_TIMEOUT);
-          dynamic_cast<UpdateableTask*>(this->task)->update(this); //commit
+          dynamic_cast<fetch::IUpdateable*>(this->task)->update(this); //commit
           debug("\tChanged Pockels to %f V at open.\r\n",volts);
           if( run )
             this->run();
@@ -78,7 +76,7 @@ namespace fetch
       struct T v = {NULL, 0.0, 0};
       asynq *q = (asynq*) lparam;
 
-      if(!Asynq_Pop_Copy_Try(q,&v))
+      if(!Asynq_Pop_Copy_Try(q,&v,sizeof(T)))
       { warning("In Pockels::Set_Open_Val work procedure:\r\n"
                 "\tCould not pop arguments from queue.\r\n");
         return 0;
@@ -100,7 +98,7 @@ namespace fetch
 
       if( !q )
         q = Asynq_Alloc(2, sizeof(struct T) );
-      if( !Asynq_Push_Copy(q, &v, TRUE /*expand queue when full*/) )
+      if( !Asynq_Push_Copy(q, &v, sizeof(T), TRUE /*expand queue when full*/) )
       { warning("In Scanner_Pockels_Set_Open_Val_Nonblocking: Could not push request arguments to queue.");
         return 0;
       }

@@ -7,14 +7,16 @@
 #include "fetch.h"
 #include "logger.h"
 #include "microscope.h"
-#include "device/digitizer.h"
-#include "device/scanner.h"
+#include "devices/digitizer.h"
+#include "devices/scanner2d.h"
 
 #include "window-video.h"
 #include "ui/pockels.h"
-#include "ui/digitizer.h"
+#include "ui/DigitizerStateMenu.h"
 
 #define MAX_LOADSTRING 100
+
+using namespace fetch;
 
 // Global Variables:
 HINSTANCE hInst;				        		  		// current instance

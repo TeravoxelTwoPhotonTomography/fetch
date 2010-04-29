@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "frame.h"
-#include "util-file.h"
-#include "util-image.h"
+#include "util/util-file.h"
+#include "util/util-image.h"
 
 /*
  * MESSAGE

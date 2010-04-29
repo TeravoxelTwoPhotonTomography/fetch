@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "agent.h"
+#include "task.h"
 
 #define DEBUG_AGENT__HANDLE_WAIT_FOR_RESULT
 
@@ -9,12 +10,12 @@ namespace fetch
 
   inline void
     Agent::lock(void)
-    { EnterCriticalSection(&this->lock);
+    { EnterCriticalSection(&_lock);
     }
 
   inline void
     Agent::unlock(void)
-    { LeaveCriticalSection(&this->lock);
+    { LeaveCriticalSection(&_lock);
     }
 
     Agent::Agent(void) :
@@ -43,7 +44,7 @@ namespace fetch
                                               FALSE,  // initially unsignalled
                                               NULL ));
         Guarded_Assert_WinErr(
-        InitializeCriticalSectionAndSpinCount( &this->lock, 0x8000400 ));
+        InitializeCriticalSectionAndSpinCount( &_lock, 0x8000400 ));
     }
 
     inline static void _safe_free_handle(HANDLE *h)
@@ -55,7 +56,8 @@ namespace fetch
 
         *h = INVALID_HANDLE_VALUE;
     }
-    static void Agent::_free_qs(vector_PASYNQ **pqs)
+    
+    void Agent::_free_qs(vector_PASYNQ **pqs)
     {
         vector_PASYNQ *qs = *pqs;
         if( qs )
@@ -67,9 +69,9 @@ namespace fetch
       }
     }
 
-    static void Agent::_alloc_qs(vector_PASYNQ **pqs, size_t n, size_t *nbuf, size_t *nbytes)
+    void Agent::_alloc_qs(vector_PASYNQ **pqs, size_t n, size_t *nbuf, size_t *nbytes)
     {
-        if(num_inputs){
+        if(n){
             Agent::_free_qs(pqs); // Release existing queues.
             *pqs = vector_PASYNQ_alloc(n);
             while(n--)
@@ -79,9 +81,9 @@ namespace fetch
         }
     }
 
-    static void Agent::_alloc_qs_easy(vector_PASYNQ **pqs, size_t n, size_t nbuf, size_t nbytes)
+    void Agent::_alloc_qs_easy(vector_PASYNQ **pqs, size_t n, size_t nbuf, size_t nbytes)
     {
-        if(num_inputs){
+        if(n){
             Agent::_free_qs(pqs); // Release existing queues.
             *pqs = vector_PASYNQ_alloc(n);
             while(n--)
@@ -91,9 +93,9 @@ namespace fetch
         }
     }
 
-    virtual Agent::~Agent(void)
+    Agent::~Agent(void)
     {
-        if(this->detach(AGENT_DEFAULT_TIMEOUT) > 0)
+        if(this->detach() > 0)
             warning("~Agent : Attempt to detach() timed out.\r\n");
 
         if(this->num_waiting > 0)
@@ -104,19 +106,20 @@ namespace fetch
         _safe_free_handle(&this->thread);
         _safe_free_handle(&this->notify_available);
         _safe_free_handle(&this->notify_stop);
-        DeleteCriticalSection(&this->lock);
+        DeleteCriticalSection(&this->_lock);
         this->task = NULL;
     }
+    
     /* Returns 1 on success, 0 otherwise.
-  * Possibly generates a panic shutdown.
-  * Lack of success could indicate the lock was
-  *   abandoned or a timeout elapsed.
-  * A warning will be generated if the lock was
-  *   abandoned.
-  * Return of 0 indicates a timeout or an 
-  *   abandoned wait.
-  */
-    inline static unsigned _handle_wait_for_result(DWORD result, const char *msg)
+    * Possibly generates a panic shutdown.
+    * Lack of success could indicate the lock was
+    *   abandoned or a timeout elapsed.
+    * A warning will be generated if the lock was
+    *   abandoned.
+    * Return of 0 indicates a timeout or an 
+    *   abandoned wait.
+    */
+    inline unsigned Agent::_handle_wait_for_result(DWORD result, const char *msg)
     {
         return_val_if( result == WAIT_OBJECT_0, 1 );
         Guarded_Assert_WinErr( result != WAIT_FAILED );
@@ -128,28 +131,29 @@ namespace fetch
 
         return 0;
     }
-    inline static unsigned _wait_for_available(Agent *self, DWORD timeout_ms)
+    
+    inline unsigned Agent::_wait_for_available(DWORD timeout_ms)
     {
-        HANDLE notify = self->notify_available;
+        HANDLE notify = this->notify_available;
         DWORD res;
         Guarded_Assert_WinErr( ResetEvent( notify ) );
-        self->num_waiting++;
-        self->unlock();
+        this->num_waiting++;
+        this->unlock();
         res = WaitForSingleObject(notify, timeout_ms);
-        self->lock();
-        self->num_waiting--;
+        this->lock();
+        this->num_waiting--;
         return _handle_wait_for_result(res, "Agent wait for availability.");
     }
 
-    Agent *_request_available_unlocked(Agent *self, int is_try, DWORD timeout_ms)
+    Agent* Agent::_request_available_unlocked(int is_try, DWORD timeout_ms)
     {
-        if( !self->_is_available )
+      if( !this->_is_available )
       { if( is_try ) return NULL;
-        if( !_wait_for_available( self, timeout_ms ))
-          if( !self->_is_available )
+        if( !_wait_for_available(timeout_ms))
+          if( !this->_is_available )
             return NULL;
       }
-        return self;
+      return this;
     }
 
     unsigned int Agent::is_armed(void)
@@ -172,55 +176,59 @@ namespace fetch
     {
         return this->_is_running;
     }
+    
+    unsigned int Agent::is_stopping(void)
+    { return WAIT_OBJECT_0 == WaitForSingleObject(notify_stop, 0);
+    }
 
     void Agent::set_available(void)
     {
         //Notify waiting tasks
         this->_is_available = 1;
-        if( self->num_waiting > 0 )
+        if( this->num_waiting > 0 )
         Guarded_Assert_WinErr(
-          SetEvent( self->notify_available ) )
+          SetEvent( this->notify_available ) )
         ;
     }
 
     unsigned int Agent::arm(Task *task, DWORD timeout_ms)
     {
-        this->lock(); // Source state can not be "armed" or "running"
-        if(!_request_available_unlocked(this, 0, timeout_ms))// Blocks till agent is available
-        {
-            warning("Agent unavailable.  Perhaps another task is running?\r\n\tAborting attempt to arm.\r\n");
-            goto Error;
-        }
-        this->task = task; // save the task
-        // Exec task config function
-        if(!(task->config)(this)){
-            warning("While loading task, something went wrong with the task configuration.\r\n\tAgent not armed.\r\n");
-            goto Error;
-        }
-        // Create thread for running task
-        // use default access rights
-        // use default stack size (1 MB)
-        // main function
-        // arguments
-        // don't start yet
-        Guarded_Assert_WinErr(
-        this->thread = CreateThread(0,                  // use default access rights
-                                    0,                  // use default stack size (1 MB)
-                                    task->thread_main,  // main function
-                                    this,               // arguments
-                                    CREATE_SUSPENDED,   // don't start yet
-                                    NULL )); // don't worry about the thread id
-        this->_is_available = 0;
-        this->unlock();
-        debug("Armed\r\n");
-        return 1;
-        Error:
-      self->task = NULL;
-        this->unlock();
-        return 0;
+      this->lock(); // Source state can not be "armed" or "running"
+      if(!_request_available_unlocked(0, timeout_ms))// Blocks till agent is available
+      {
+          warning("Agent unavailable.  Perhaps another task is running?\r\n\tAborting attempt to arm.\r\n");
+          goto Error;
+      }
+      this->task = task; // save the task
+      // Exec task config function
+      if(!(task->config)(this)){
+          warning("While loading task, something went wrong with the task configuration.\r\n\tAgent not armed.\r\n");
+          goto Error;
+      }
+      // Create thread for running task
+      // use default access rights
+      // use default stack size (1 MB)
+      // main function
+      // arguments
+      // don't start yet
+      Guarded_Assert_WinErr(
+      this->thread = CreateThread(0,                  // use default access rights
+                                  0,                  // use default stack size (1 MB)
+                                  task->thread_main,  // main function
+                                  this,               // arguments
+                                  CREATE_SUSPENDED,   // don't start yet
+                                  NULL )); // don't worry about the thread id
+      this->_is_available = 0;
+      this->unlock();
+      debug("Armed\r\n");
+      return 1;
+    Error:
+      this->task = NULL;
+      this->unlock();
+      return 0;
     }
 
-    DWORD _agent_arm_thread_proc(LPVOID lparam)
+    DWORD WINAPI _agent_arm_thread_proc(LPVOID lparam)
     {
         struct T
         {
@@ -230,7 +238,7 @@ namespace fetch
         };
         asynq *q = (asynq*)(lparam);
         T args = {0, 0, 0};
-        if(!Asynq_Pop_Copy_Try(q, &args)){
+        if(!Asynq_Pop_Copy_Try(q, &args, sizeof(T))){
             warning("In Agent::arm_nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
             return 0;
         }
@@ -250,7 +258,7 @@ namespace fetch
         if(!q)
             q = Asynq_Alloc(32, sizeof (T));
 
-        if(!Asynq_Push_Copy(q, &args, TRUE)){
+        if(!Asynq_Push_Copy(q, &args, sizeof(T), TRUE)){
             warning("In Agent::arm_nonblocking: Could not push request arguments to queue.");
             return 0;
         }
@@ -270,16 +278,17 @@ namespace fetch
         debug("Disarmed\r\n");
         return 1;
     }
-    DWORD _agent_disarm_thread_proc(LPVOID lparam)
+    
+    DWORD WINAPI _agent_disarm_thread_proc(LPVOID lparam)
     {
         struct T
         {
-            agent *d;
+            Agent *d;
             DWORD timeout;
         };
         asynq *q = (asynq*)(lparam);
         struct T args = {0, 0};
-        if(!Asynq_Pop_Copy_Try(q, &args)){
+        if(!Asynq_Pop_Copy_Try(q, &args, sizeof(T))){
             warning("In Agent::disarm_nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
             return 0;
         }
@@ -298,7 +307,7 @@ namespace fetch
         if(!q)
             q = Asynq_Alloc(32, sizeof (T));
 
-        if(!Asynq_Push_Copy(q, &args, TRUE)){
+        if(!Asynq_Push_Copy(q, &args, sizeof(T), TRUE)){
             warning("In Agent::disarm_nonblocking:\r\n\tCould not push request arguments to queue.\r\n");
             return 0;
         }
@@ -324,7 +333,7 @@ namespace fetch
           Guarded_Assert_WinErr(
             this->thread = CreateThread(0,                  // use default access rights
                                         0,                  // use default stack size (1 MB)
-                                        this->task->main,   // main function
+                                        this->task->thread_main, // main function
                                         this,               // arguments
                                         0,                  // run immediately
                                         NULL ));            // don't worry about the threadid
@@ -342,7 +351,7 @@ namespace fetch
         return sts;
     }
 
-    DWORD _agent_run_thread_proc(LPVOID lparam)
+    DWORD WINAPI _agent_run_thread_proc(LPVOID lparam)
     {
         struct T
         {
@@ -350,7 +359,7 @@ namespace fetch
         };
         asynq *q = (asynq*)(lparam);
         struct T args = {0};
-        if(!Asynq_Pop_Copy_Try(q, &args)){
+        if(!Asynq_Pop_Copy_Try(q, &args, sizeof(T))){
             warning("In Agent::run_nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
             return 0;
         }
@@ -369,7 +378,7 @@ namespace fetch
         if(!q)
             q = Asynq_Alloc(32, sizeof (T));
 
-        if(!Asynq_Push_Copy(q, &args, TRUE)){
+        if(!Asynq_Push_Copy(q, &args, sizeof(T), TRUE)){
             warning("In Agent_Run_Nonblocking:\r\n\tCould not push request arguments to queue.\r\n");
             return 0;
         }
@@ -380,32 +389,31 @@ namespace fetch
     // Returns 1 on success
     unsigned int Agent::stop(DWORD timeout_ms)
     {
-        DWORD res;
-        this->lock();
-        if( this->_is_running )
+      DWORD res;
+      this->lock();
+      if( this->_is_running )
       { if( this->thread != INVALID_HANDLE_VALUE)
         { SetEvent(this->notify_stop);
           this->unlock();
           res = WaitForSingleObject(this->thread, timeout_ms); // wait for running thread to stop
           this->lock();
-          
+
           // Handle a timeout on the wait.  
           if( !_handle_wait_for_result(res, "Agent stop: Wait for thread."))
           { warning("Timed out waiting for task thread to stop.  Forcing termination.\r\n");
-            Guarded_Assert_WinErr( 
-              TerminateThread(this->thread, 127) ); // Force the thread to stop
-          }
+            Guarded_Assert_WinErr(TerminateThread(this->thread,127)); // Force the thread to stop
+          } 
           CloseHandle(this->thread);
           this->thread = INVALID_HANDLE_VALUE;
-        }
-        this->is_running = 0;
+        } 
+        this->_is_running = 0;
       }
-        this->unlock();
-        debug("Agent: Stopped\r\n");
-        return 1;
+      this->unlock();
+      debug("Agent: Stopped\r\n");
+      return 1;
     }
 
-    DWORD _agent_stop_thread_proc(LPVOID lparam)
+    DWORD WINAPI _agent_stop_thread_proc(LPVOID lparam)
     {
         struct T
         {
@@ -414,7 +422,7 @@ namespace fetch
         };
         asynq *q = (asynq*)(lparam);
         struct T args = {0, 0};
-        if(!Asynq_Pop_Copy_Try(q, &args)){
+        if(!Asynq_Pop_Copy_Try(q, &args, sizeof(T))){
             warning("In Agent_Stop_Nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
             return 0;
         }
@@ -433,40 +441,43 @@ namespace fetch
         if(!q)
             q = Asynq_Alloc(32, sizeof (T));
 
-        if(!Asynq_Push_Copy(q, &args, TRUE)){
+        if(!Asynq_Push_Copy(q, &args, sizeof(T), TRUE)){
             warning("In Agent::stop_nonblocking:\r\n\tCould not push request arguments to queue.\r\n");
             return 0;
         }
         return QueueUserWorkItem(&_agent_stop_thread_proc, (void*)q, NULL /*default flags*/);
     }
 
-    DWORD _agent_detach_thread_proc(LPVOID lparam)
+    DWORD WINAPI _agent_detach_thread_proc(LPVOID lparam)
     {
         Agent *d = (Agent*)(lparam);
-        return args.d->detach();
+        return d->detach();
     }
 
-    BOOL Agent::detach_nonblocking(DWORD timeout_ms)
+    BOOL Agent::detach_nonblocking()
     {
         return QueueUserWorkItem(&_agent_detach_thread_proc, (void*)this, NULL /*default flags*/);
     }
 
-    DWORD _agent_attach_thread_proc(LPVOID lparam)
+    DWORD WINAPI _agent_attach_thread_proc(LPVOID lparam)
     {
-        Agent *d = (Agent*)(lparam);
-      return args.d->attach();
+      Agent *d = (Agent*)(lparam);
+      return d->attach();
     }
 
   BOOL
-    Agent::attach_nonblocking(DWORD timeout_ms)
+    Agent::attach_nonblocking()
     { return QueueUserWorkItem(&_agent_attach_thread_proc, (void*)this, NULL /*default flags*/);
     }
 
   // Destination channel inherits the existing channel's properties.
   // If both channels exist, the source properties are inherited.
   // One channel must exist.
-  static void
-    Agent::connect(Agent *dst, int dst_channel, Agent *src, int src_channel)
+  // 
+  // If destination channel exists, the existing one will be unref'd (deleted)
+  // and replaced by the source channel (which gets ref'd).
+  void
+    Agent::connect(Agent *dst, size_t dst_channel, Agent *src, size_t src_channel)
   { // ensure channel indexes are valid
     asynq  *s,*d;
 
@@ -497,75 +508,6 @@ namespace fetch
     }
   }
 
-  /*// Destination channel inherits the existing channel's properties.
-// If both channels exist, the source properties are inhereted.
-// One channel must exist.
-void
-DeviceTask_Connect( DeviceTask *dst, size_t dst_channel,
-                    DeviceTask *src, size_t src_channel)
-{ // ensure channel indexes are valid
-  asynq  *s,*d;
 
-  // alloc in/out channels if neccessary
-  if( src->out == NULL )
-    src->out = vector_PASYNQ_alloc(src_channel + 1);
-  if( dst->in == NULL )
-    dst->in = vector_PASYNQ_alloc(dst_channel + 1);
-  Guarded_Assert( src->out && dst->in );
-
-  if( src_channel < src->out->nelem )                // source channel exists
-  { s = src->out->contents[src_channel];
-
-    if( dst_channel < dst->in->nelem )
-    { asynq **d = dst->in->contents + dst_channel;
-      Asynq_Unref( *d );
-      *d = Asynq_Ref( s );
-    } else
-    { vector_PASYNQ_request( dst->in, dst_channel );  // make space
-      dst->in->contents[ dst_channel ] = Asynq_Ref( s );
-    }
-  } else if( dst_channel < dst->in->nelem ) // dst exists, but not src
-  { d = dst->in->contents[dst_channel];
-    vector_PASYNQ_request( src->out, src_channel );   // make space
-    src->out->contents[src_channel] = Asynq_Ref( d );
-  } else
-  { error("In DeviceTask_Connect: Neither channel exists\r\n");
-  }
-}*/
-/*
-// FIXME: make this more of a resize op to avoid thrashing
-void
-DeviceTask_Alloc_Inputs( DeviceTask* self,
-                             size_t  num_inputs,
-                             size_t *input_queue_size, 
-                             size_t *input_buffer_size)
-{ if( num_inputs )
-  { DeviceTask_Free_Inputs( self );
-    self->in  = vector_PASYNQ_alloc( num_inputs  ); 
-    while( num_inputs-- )
-      self->in->contents[num_inputs] 
-          = Asynq_Alloc( input_queue_size [num_inputs],
-                         input_buffer_size[num_inputs] );
-    self->in->count = self->in->nelem; // resizable, so use count rather than nelem alone.
-  }                                    //            start full
-}
-
-// FIXME: make this more of a resize op to avoid thrashing
-void
-DeviceTask_Alloc_Outputs( DeviceTask* self,
-                              size_t  num_outputs,
-                              size_t *output_queue_size, 
-                              size_t *output_buffer_size)
-{ if( num_outputs )
-  { DeviceTask_Free_Outputs( self );
-    self->out  = vector_PASYNQ_alloc( num_outputs ); 
-    while( num_outputs-- )
-      self->out->contents[num_outputs] 
-          = Asynq_Alloc( output_queue_size[num_outputs],
-                         output_buffer_size[num_outputs] );
-    self->out->count = self->out->nelem; // resizable, so use count rather than nelem alone.
-  }                                      //            start full
-}
-*/
 } //end namespace fetch
 

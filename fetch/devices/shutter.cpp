@@ -6,12 +6,13 @@
  */
 
 #include "stdafx.h"
-#include "Shutter.h"
+#include "shutter.h"
+#include "NIDAQAgent.h"
 
-#include "util-nidaqmx.h"
+#include "../util/util-nidaqmx.h"
 
 #define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, error  ))
-#define DAQJMP( expr )        goto_if_fail( 0==DAQWRN(expr), Error)
+#define DAQJMP( expr )   goto_if_fail( 0==DAQWRN(expr), Error)
 
 namespace fetch
 {
@@ -20,17 +21,8 @@ namespace fetch
   {
 
     Shutter::Shutter()
-            : config((Shutter::Config)SHUTTER_DEFAULT_CONFIG),
-              dout(NULL)
-    {
-      // TODO Auto-generated constructor stub
-
-    }
-
-    Shutter::~Shutter()
-    {
-      // TODO Auto-generated destructor stub
-    }
+            : NIDAQAgent("shutter")
+    {}
 
     /*
      * Note:
@@ -67,6 +59,16 @@ namespace fetch
     void
     Shutter::Close(void)
     { Set(config.closed);
+    }
+    
+    void
+    Shutter::Bind(void)
+    { DAQERR( DAQmxCreateDOChan( daqtask,
+                                 config.do_channel,
+                                 "shutter-command",
+                                 DAQmx_Val_ChanPerLine ));
+      DAQERR( DAQmxStartTask( daqtask ) );                        // go ahead and start it
+      Close();                                                    //Close the shutter.... FIXME: function name is not descriptive...
     }
 
   }
