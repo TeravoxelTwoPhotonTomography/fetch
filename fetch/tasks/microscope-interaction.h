@@ -12,7 +12,7 @@
  */
 #pragma once
 #include "../task.h"
-#include "../microscope.h"
+#include "../devices/microscope.h"
 
 namespace fetch
 { namespace task
@@ -22,8 +22,8 @@ namespace fetch
       
       class Interaction : public MicroscopeTask
       { public:
-          unsigned int config(device::Microscope *agent);
-          unsigned int    run(device::Microscope *agent);
+          unsigned int config(device::Microscope *agent); // sets up the pipeline for interactive use
+          unsigned int    run(device::Microscope *agent); // does nothing
       };
       
     }

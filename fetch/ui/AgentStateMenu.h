@@ -84,10 +84,13 @@ namespace fetch
       HMENU _make_menu(void);
     };  
     
+/* Children classes should initialize the task table according to the following pattern:
+
     AgentStateMenu::_t_task_table AgentStateMenu::_task_table[] = 
         {
           { NULL, NULL, NULL },
-        }; 
+        }
+ */; 
 
   }
 }

@@ -21,9 +21,11 @@ namespace fetch
     { public:
         unsigned int run(Agent* agent);
     };
-    
-    typedef WorkAgent<FrameAverage,int> FrameAverageAgent;
+  }
 
+  namespace worker
+  {
+    typedef WorkAgent<task::FrameAverage,int> FrameAverageAgent;
   }
 
 }

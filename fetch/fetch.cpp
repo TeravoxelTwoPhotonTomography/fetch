@@ -6,7 +6,7 @@
 #include "stdafx.h"
 #include "fetch.h"
 #include "logger.h"
-#include "microscope.h"
+#include "devices/microscope.h"
 #include "devices/digitizer.h"
 #include "devices/scanner2d.h"
 

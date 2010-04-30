@@ -12,11 +12,15 @@
  */
 #pragma once
 
-#include "agent.h"
-#include "task.h"
-#include "devices/scanner2D.h"
+#include "../agent.h"
+#include "../task.h"
+#include "scanner2D.h"
 
-#include "workers/WorkAgent.h"
+#include "../workers/FrameAverage.h"
+#include "../workers/PixelWiseAverager.h"
+#include "../workers/Terminator.h"
+
+#include "DiskStream.h"
 
 #define MICROSCOPE_MAX_WORKERS     10
 #define MICROSCOPE_DEFAULT_TIMEOUT INFINITE
@@ -36,8 +40,13 @@ namespace fetch
         unsigned int disarm(DWORD timeout_ms);
         
       public:
-        Scanner2D *scanner;        
-               
+        device::Scanner2D              scanner;
+
+        worker::FrameAverageAgent 	   frame_averager;
+        worker::PixelWiseAveragerAgent pixel_averager;
+        worker::TerminalAgent		       trash;
+
+        device::DiskStreamMessage      disk;
     };
     
   }

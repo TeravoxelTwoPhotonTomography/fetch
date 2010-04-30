@@ -20,6 +20,7 @@
 
 #include "../stdafx.h"
 #include "../agent.h"
+#include "../tasks/File.h"
 
 #define DISKSTREAM_MAX_PATH         1024
 #define DISKSTREAM_MAX_MODE         4
@@ -31,28 +32,37 @@ namespace fetch
   namespace device
   {
     
-    class DiskStream : public virtual Agent
+    class DiskStream: public virtual Agent
     {
       public:
         DiskStream();
         DiskStream(char *filename, char *mode);
         ~DiskStream();
 
-               unsigned int open  (char *filename, char *mode);
-        inline unsigned int close (void);                       //synonymous with detach()
-               unsigned int detach(void);
+        virtual unsigned int open  (char *filename, char *mode) = 0;
+        inline  unsigned int close (void);                       //synonymous with detach()
+                unsigned int detach(void);
 
       public:        
 
-        Task   *reader;
-        Task   *writer;
-        char   filename[DISKSTREAM_MAX_PATH];
-        char   mode[DISKSTREAM_MAX_PATH];
-        HANDLE hfile;
+        char    filename[DISKSTREAM_MAX_PATH];
+        char    mode[DISKSTREAM_MAX_PATH];
+        HANDLE  hfile;
 
       private:
-        unsigned int attach(void);        // use open() instead
+        unsigned int attach(void);                              // use open() instead
     };
+
+    template<typename TReader,typename TWriter>
+    class DiskStreamSpecialized : public DiskStream
+    { public:
+        TReader reader;
+        TWriter writer;
+        
+        unsigned int open(char *filename, char *mode);
+    };
+    typedef DiskStreamSpecialized<task::file::ReadMessage,task::file::WriteMessage> DiskStreamMessage;
+    typedef DiskStreamSpecialized<task::file::ReadRaw    ,task::file::WriteRaw>         DiskStreamRaw;
 
   }
 

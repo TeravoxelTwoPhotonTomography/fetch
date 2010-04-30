@@ -1,19 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ClassDiagram MajorVersion="1" MinorVersion="1" GroupingSetting="Access">
   <Comment CommentText="Typically, tasks operating on scanner 2d will not use the daqtask handles inherited from Pockels and LinearScanMirror.">
-    <Position X="9" Y="15.729" Height="0.823" Width="2.617" />
+    <Position X="11.156" Y="18.864" Height="0.823" Width="2.617" />
   </Comment>
   <Comment CommentText="Virtual inheritence means that all subclasses share references to a single core Agent.">
-    <Position X="9.385" Y="5.781" Height="0.531" Width="2.929" />
+    <Position X="10.198" Y="6.375" Height="0.531" Width="2.929" />
   </Comment>
   <Comment CommentText="attach() is made private here to encourage the use of open() in it's place.">
-    <Position X="12.688" Y="11.302" Height="0.677" Width="1.7" />
+    <Position X="12.896" Y="11.771" Height="0.677" Width="1.7" />
   </Comment>
   <Comment CommentText="detach() and close() are synonymous.">
-    <Position X="12.698" Y="12.021" Height="0.75" Width="1.7" />
+    <Position X="12.906" Y="12.49" Height="0.75" Width="1.7" />
   </Comment>
   <Class Name="fetch::Agent">
-    <Position X="7" Y="0.5" Width="2.25" />
+    <Position X="7.75" Y="0.5" Width="2.25" />
     <Compartments>
       <Compartment Name="Protected" Collapsed="true" />
       <Compartment Name="Private" Collapsed="true" />
@@ -24,7 +24,7 @@
     </TypeIdentifier>
   </Class>
   <Class Name="fetch::device::Digitizer">
-    <Position X="9.25" Y="7.75" Width="2.5" />
+    <Position X="11.5" Y="7.75" Width="2.5" />
     <Compartments>
       <Compartment Name="Nested Types" Collapsed="false" />
     </Compartments>
@@ -46,7 +46,7 @@
     </TypeIdentifier>
   </Class>
   <Class Name="fetch::device::Shutter">
-    <Position X="4" Y="11" Width="1.5" />
+    <Position X="6.25" Y="10.75" Width="1.5" />
     <Compartments>
       <Compartment Name="Nested Types" Collapsed="false" />
     </Compartments>
@@ -62,15 +62,8 @@
       <FileName>devices\shutter.h</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="fetch::device::DiskStream">
-    <Position X="12.5" Y="7.75" Width="2" />
-    <TypeIdentifier>
-      <HashCode>AAAAAABAAgAAAACAACAAAAACAIAAAACEAYAAAAAQAAA=</HashCode>
-      <FileName>devices\DiskStream.h</FileName>
-    </TypeIdentifier>
-  </Class>
   <Class Name="fetch::device::LinearScanMirror">
-    <Position X="1.75" Y="11" Width="1.5" />
+    <Position X="4" Y="10.75" Width="1.5" />
     <Compartments>
       <Compartment Name="Nested Types" Collapsed="false" />
     </Compartments>
@@ -87,14 +80,14 @@
     </TypeIdentifier>
   </Class>
   <Class Name="fetch::device::NIDAQAgent">
-    <Position X="4.5" Y="7.75" Width="1.5" />
+    <Position X="6.5" Y="7.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAgAAAAAAAAAAAAAAAAAAgACAAAAAAAABgAA=</HashCode>
       <FileName>devices\NIDAQAgent.h</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="fetch::device::Pockels">
-    <Position X="6.25" Y="11" Width="2.25" />
+    <Position X="8.5" Y="10.75" Width="2.25" />
     <Compartments>
       <Compartment Name="Nested Types" Collapsed="false" />
     </Compartments>
@@ -111,7 +104,7 @@
     </TypeIdentifier>
   </Class>
   <Class Name="fetch::device::Scanner2D">
-    <Position X="4.75" Y="15.5" Width="4" />
+    <Position X="7" Y="15" Width="4" />
     <Compartments>
       <Compartment Name="Nested Types" Collapsed="false" />
     </Compartments>
@@ -135,8 +128,15 @@
   <Class Name="fetch::WorkAgent&lt;TWorkTask, TParam&gt;">
     <Position X="0.75" Y="7.75" Width="2.5" />
     <TypeIdentifier>
-      <HashCode>AAACAAAAAgAAAAAAAAAAAAAAAAAAAACAAAAwAAAAAAA=</HashCode>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>workers\WorkAgent.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="fetch::device::Microscope" Collapsed="true">
+    <Position X="14.75" Y="7.75" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>QAAEAAAAAgAAAAAAAAAAAAgAAAAAAACAAAAAAwAAYAA=</HashCode>
+      <FileName>devices\Microscope.h</FileName>
     </TypeIdentifier>
   </Class>
   <Font Name="Segoe UI" Size="9" />

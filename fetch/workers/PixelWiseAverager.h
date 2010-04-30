@@ -25,9 +25,11 @@ namespace fetch
     { public:
         unsigned int work(Agent *agent, Frame *dst, Frame *src);
     };
+  }
 
-    typedef WorkAgent<PixelWiseAverager,int> PixelWiseAveragerAgent;
-
+  namespace worker
+  {
+    typedef WorkAgent<task::PixelWiseAverager,int> PixelWiseAveragerAgent;
   }
 
 }

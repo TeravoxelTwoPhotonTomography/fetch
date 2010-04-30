@@ -63,7 +63,7 @@ namespace fetch
 
     class WorkTask : public fetch::Task
     { public:
-        unsigned int config(Agent *d) {}
+        unsigned int config(Agent *d) {return 0;} //?success?
 
         static void alloc_output_queues(Agent *agent);
     };

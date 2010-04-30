@@ -25,9 +25,13 @@ namespace fetch
         unsigned int run                (Agent *agent);
         static  void alloc_output_queues(Agent *agent);//noop
     };
-
-    typedef WorkAgent<Terminator> TerminalAgent;
-
   }
+
+  namespace worker
+  {
+    typedef WorkAgent<task::Terminator> TerminalAgent;
+  }
+
+
 
 }

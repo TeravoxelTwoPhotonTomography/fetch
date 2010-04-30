@@ -52,14 +52,15 @@ namespace fetch
    */
   template<typename TWorkTask, typename TParam=void*>
   class WorkAgent : public virtual fetch::Agent
-  { public:      
+  { public:
+      WorkAgent();                                           // Will configure only.  Use apply() to connect, arm, and run.  config is set to TParam().
       WorkAgent(TParam parameter);                           // Will configure only.  Use apply() to connect, arm, and run.
       WorkAgent(Agent *source, int ichan, TParam parameter); // Will connect, configure, arm, and run
 
       WorkAgent<TWorkTask,TParam>* apply(Agent *source, int ichan=0); // returns <this>
 
-      unsigned int attach(Agent *a) {return 1/*success*/;}
-      unsigned int detach(Agent *a) {return 1/*success*/;}
+      unsigned int attach(void) {return 1/*success*/;}
+      unsigned int detach(void) {return 1/*success*/;}
 
     public: //data
       TParam    config;
@@ -71,10 +72,16 @@ namespace fetch
   //
 
   template<typename TWorkTask,typename TParam>
+  WorkAgent<TWorkTask,TParam>::WorkAgent()
+  : config(),
+    __task_instance()
+  { }
+
+  template<typename TWorkTask,typename TParam>
   WorkAgent<TWorkTask,TParam>::WorkAgent(TParam parameter)
-  { config = parameter;
-    __task_instance = TWorkTask();
-  }
+  : config(parameter),
+    __task_instance()
+  { }
 
   template<typename TWorkTask,typename TParam>
   WorkAgent<TWorkTask,TParam>::WorkAgent(Agent *source, int ichan, TParam parameter)

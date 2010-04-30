@@ -13,7 +13,7 @@
 #pragma once
 #include "stdafx.h"
 #include "..\task.h"
-#include "..\microscope.h"
+#include "..\devices\Microscope.h"
 #include "microscope-interaction.h"
 
 namespace fetch

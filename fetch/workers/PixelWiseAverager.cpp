@@ -9,6 +9,8 @@
 #include "WorkAgent.h"
 #include "PixelWiseAverager.h"
 
+using namespace fetch::worker;
+
 namespace fetch
 {
   namespace task

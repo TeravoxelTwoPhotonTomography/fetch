@@ -15,8 +15,10 @@
 #include "../devices/DiskStream.h"
 #include "../task.h"
 
+
+
 namespace fetch
-{
+{ namespace device { class DiskStream; }
 
   namespace task
   {

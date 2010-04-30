@@ -13,12 +13,13 @@
 #include "stdafx.h"
 #include "FrameAverage.h"
 
+using namespace fetch::worker;
+
 namespace fetch
 {
 
   namespace task
-  {
-
+  { 
     unsigned int
     FrameAverage::run(Agent *a)
     { FrameAverageAgent *agent = dynamic_cast<FrameAverageAgent*>(a);

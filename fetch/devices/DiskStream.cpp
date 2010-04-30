@@ -25,29 +25,32 @@ namespace fetch
 { 
   namespace device
   {
-
+	
     DiskStream::DiskStream()
       : hfile(INVALID_HANDLE_VALUE)
-    { reader = new task::file::ReadMessage();
-      writer = new task::file::WriteMessage();
+    { //reader = new TReader();
+      //writer = new TWriter();
     }
 
+	
     DiskStream::DiskStream(char *fname, char *m)
       : hfile(INVALID_HANDLE_VALUE)
     {
       //lock();
-      reader = new task::file::ReadMessage;
-      writer = new task::file::WriteMessage;
+      //reader = new task::file::ReadMessage;
+      //writer = new task::file::WriteMessage;
       strncpy(this->filename,fname,DISKSTREAM_MAX_PATH);
       strncpy(this->mode,mode,DISKSTREAM_MAX_MODE);
       //unlock();
     }
     
+	
     DiskStream::~DiskStream()
-    { delete reader;
-      delete writer;
+    { //delete reader;
+      //delete writer;
     }
 
+	
     unsigned int DiskStream::attach(void)
     { DWORD desired_access, share_mode, creation_disposition, flags_and_attr;
       unsigned int sts = 1; //success
@@ -93,6 +96,7 @@ namespace fetch
       return sts;
     }
 
+	
     unsigned int DiskStream::detach(void)
     { unsigned int sts = 0; //error
 
@@ -134,7 +138,8 @@ namespace fetch
     { return detach();
     }
 
-    unsigned int DiskStream::open(char *filename, char *mode)
+    template<typename TReader,typename TWriter>
+    unsigned int DiskStreamSpecialized<TReader,TWriter>::open(char *filename, char *mode)
     { int   sts = 1; //success
 
       Guarded_Assert(strlen(filename)<DISKSTREAM_MAX_PATH);
@@ -152,10 +157,10 @@ namespace fetch
       switch (mode[0])
       {
         case 'r':
-          Guarded_Assert( arm(reader,DISKSTREAM_DEFAULT_TIMEOUT) );
+          Guarded_Assert( arm(&reader,DISKSTREAM_DEFAULT_TIMEOUT) );
         break;
         case 'w':
-          Guarded_Assert( arm(writer,DISKSTREAM_DEFAULT_TIMEOUT) );
+          Guarded_Assert( arm(&writer,DISKSTREAM_DEFAULT_TIMEOUT) );
         break;
         default:
           error("DiskStream::open() -- Couldn't interpret mode.  Got %s\r\n",
@@ -165,6 +170,13 @@ namespace fetch
       this->run();
       return sts;
     }
-
+    template<>
+        unsigned int
+        DiskStreamSpecialized<task::file::ReadMessage,task::file::WriteMessage>::
+        open(char *filename, char *mode);
+    template<>
+		    unsigned int
+		    DiskStreamSpecialized<task::file::ReadRaw,task::file::WriteRaw>::
+		    open(char *filename, char *mode);
   }
 }

@@ -200,7 +200,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Microscope.cpp"
+				RelativePath=".\ui\MicroscopeStateMenu.cpp"
 				>
 			</File>
 			<File
@@ -295,6 +295,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\devices\Microscope.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\devices\NIDAQAgent.cpp"
 					>
 				</File>
@@ -382,7 +386,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Microscope.h"
+				RelativePath=".\ui\MicroscopeStateMenu.h"
 				>
 			</File>
 			<File
@@ -482,6 +486,10 @@
 				</File>
 				<File
 					RelativePath=".\devices\LinearScanMirror.h"
+					>
+				</File>
+				<File
+					RelativePath=".\devices\Microscope.h"
 					>
 				</File>
 				<File
