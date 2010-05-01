@@ -16,11 +16,14 @@
 #define digitizer_task_fetch_forever_debug(...)
 #endif
 
+#define DIGITIZER_DEBUG_FAIL_WHEN_FULL
 
 namespace fetch
 { namespace task
   { namespace digitizer
     {
+      template class FetchForever<i8>;
+      template class FetchForever<i16>;
       
       template<typename T>
         static inline Frame_With_Interleaved_Planes
@@ -32,13 +35,13 @@ namespace fetch
         return fmt;
       }
 
-      template<>
+ /*     template<>
         static inline Frame_With_Interleaved_Planes
         _format_frame<i8>(ViInt32 record_length, ViInt32 nwfm );
 
       template<>
         static inline Frame_With_Interleaved_Planes
-        _format_frame<i16>(ViInt32 record_length, ViInt32 nwfm );
+        _format_frame<i16>(ViInt32 record_length, ViInt32 nwfm );*/
 
       template<typename TPixel>
         unsigned int
@@ -78,8 +81,6 @@ namespace fetch
           return 1;
         }
 
-      template<> unsigned int FetchForever<i8 >::config(device::Digitizer *dig);
-      template<> unsigned int FetchForever<i16>::config(device::Digitizer *dig);
 
       template<class TPixel>
         unsigned int
@@ -140,7 +141,7 @@ namespace fetch
                                             chan,          // (acquistion channels)
                                             0.0,           // Immediate
                                             nelem - ttl,   // Remaining space in buffer
-                                            frm->data + Bpp*ttl,   // Where to put the data
+                                            (TPixel*)frm->data + ttl,   // Where to put the data
                                             wfm);          // metadata for fetch
               if( delay > maxdelay )
               { maxdelay = delay;
@@ -153,7 +154,7 @@ namespace fetch
               }
               ++nfetches;     
               ttl += wfm->actualSamples;  // add the chunk size to the total samples count     
-              Asynq_Push( qwfm,(void**) &wfm, 0 );    // Push (swap) the info from the last fetch
+              Asynq_Push( qwfm,(void**) &wfm, nwfm*sizeof(struct niScope_wfmInfo), 0 );    // Push (swap) the info from the last fetch
             } while(ttl!=nelem);
             
             // Handle the full buffer
@@ -181,7 +182,7 @@ namespace fetch
               //        1.0/dt, dt, nelem/dt/1000000.0, nelem*sizeof(TPixel)*nwfm/1000000.0/dt,
               //        qdata->q->head - qdata->q->tail );
             }    
-          } while ( WAIT_OBJECT_0 != WaitForSingleObject(dig->notify_stop, 0) );
+          } while ( !dig->is_stopping() );
           digitizer_task_fetch_forever_debug("Digitizer Fetch_Forever - Running done -\r\n"
                 "Task done: normal exit\r\n");
           ret = 0; //success
@@ -198,8 +199,6 @@ namespace fetch
           CheckPanic( niScope_Abort(vi) );
           return ret;
         }
-      template<> unsigned int FetchForever<i8 >::run(device::Digitizer *dig);
-      template<> unsigned int FetchForever<i16>::run(device::Digitizer *dig);
 
     } // namespace digitizer
   }   // namespace task

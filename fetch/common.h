@@ -14,24 +14,12 @@
 #define DECLARE_USER_MESSAGE_STR(name,guid) \
      static const UINT name = ::RegisterWindowMessage( #name guid )
 
-UINT CreateUserWindowMessage( const char *name, size_t id )
-{ char s[1000],*t = s;
-  size_t n;
-  memset(s,0,1000);
-  n = strlen(name);
-  memcpy(s,name,n);
-  t+=n;
-  if( sizeof(size_t)==8 )
-    sprintf(t,"-%llu",id);
-  else
-    sprintf(t,"-%lu",id); 
-  return ::RegisterWindowMessage(t);
-}
+UINT MyCreateUserWindowMessage( const char *name, size_t id );
 
 #define DECLARE_USER_MESSAGE_INT(name,id) \
-     static const UINT name = ::CreateUserWindowMessage( #name, id )
+     static const UINT name = MyCreateUserWindowMessage( #name, id )
 #define DEFINE_USER_MESSAGE_INT__NON_STATIC(name,id) \
-     name = ::CreateUserWindowMessage( #name, id )
+     name = MyCreateUserWindowMessage( #name, id )
 
 // -----------------
 // fixed width types

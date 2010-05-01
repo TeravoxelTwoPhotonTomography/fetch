@@ -21,17 +21,15 @@ namespace fetch {
 
 	namespace ui {
 
-		class MicroscopeStateMenu: public fetch::ui::AgentStateMenu {
+		class MicroscopeStateMenu: public fetch::ui::AgentStateMenu
+		{
 		public:
 			MicroscopeStateMenu(device::Microscope *scope);
-	    protected:
+	  protected:
 	      UINT IDM_MICROSCOPE_TASK_0;
-	    };
-
-		MicroscopeStateMenu::_t_task_table MicroscopeStateMenu::_task_table[] =
-	        {
-	          { "&Interactive", -1, new task::microscope::Interaction },
-	          { NULL, NULL, NULL }, };
+	      
+	      static _t_task_table __tasktable[]; 
+	  };
 
 	}
 }

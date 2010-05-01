@@ -98,7 +98,7 @@ namespace fetch
   WorkAgent<TWorkTask,TParam>::apply(Agent *source, int ichan)
   { connect(this,ichan,source,ichan);
     TWorkTask::alloc_output_queues(this);// Task must implement this.  Must connect() first.  WorkTask has a default impl. that assumes in[0]->out[0]
-    arm(&task_instance,INFINITE);
+    arm(&__task_instance,INFINITE);
     run();
     return this;
   }

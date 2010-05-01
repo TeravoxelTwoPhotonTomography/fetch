@@ -26,6 +26,9 @@ namespace fetch
   namespace device
   {
 	
+	  template class DiskStreamSpecialized<task::file::ReadMessage,task::file::WriteMessage>;// DiskStreamMessage;
+    template class DiskStreamSpecialized<task::file::ReadRaw    ,task::file::WriteRaw>;    //     DiskStreamRaw;
+	
     DiskStream::DiskStream()
       : hfile(INVALID_HANDLE_VALUE)
     { //reader = new TReader();
@@ -170,13 +173,6 @@ namespace fetch
       this->run();
       return sts;
     }
-    template<>
-        unsigned int
-        DiskStreamSpecialized<task::file::ReadMessage,task::file::WriteMessage>::
-        open(char *filename, char *mode);
-    template<>
-		    unsigned int
-		    DiskStreamSpecialized<task::file::ReadRaw,task::file::WriteRaw>::
-		    open(char *filename, char *mode);
+
   }
 }

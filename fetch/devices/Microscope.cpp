@@ -25,7 +25,7 @@
     {}
     
     Microscope::~Microscope() 
-    {}
+    { }
 
     unsigned int
     Microscope::attach(void)

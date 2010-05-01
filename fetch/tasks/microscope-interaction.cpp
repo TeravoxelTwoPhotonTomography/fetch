@@ -13,7 +13,7 @@
 #pragma once
 #include "stdafx.h"
 #include "..\task.h"
-#include "..\devices\Microscope.h"
+#include "..\devices\microscope.h"
 #include "microscope-interaction.h"
 
 namespace fetch
@@ -21,7 +21,11 @@ namespace fetch
   { namespace microscope
     {      
       unsigned int Interaction::config(device::Microscope *agent)
-      { // TODO- assemble pipeline here
+      { //Assemble pipeline here
+	      Agent *cur;
+	      cur = &agent->scanner;
+	      cur =  agent->pixel_averager.apply(cur);
+	      cur =  agent->trash.apply(cur);
         return 0;
       }            
       

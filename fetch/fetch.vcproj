@@ -200,10 +200,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ui\MicroscopeStateMenu.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\renderer-colormap.cpp"
 				>
 			</File>
@@ -327,6 +323,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\ui\MicroscopeStateMenu.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\ui\pockels.cpp"
 					>
 				</File>
@@ -383,10 +383,6 @@
 			</File>
 			<File
 				RelativePath=".\logger.h"
-				>
-			</File>
-			<File
-				RelativePath=".\ui\MicroscopeStateMenu.h"
 				>
 			</File>
 			<File
@@ -518,6 +514,10 @@
 				</File>
 				<File
 					RelativePath=".\ui\DigitizerStateMenu.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ui\MicroscopeStateMenu.h"
 					>
 				</File>
 				<File

@@ -1,4 +1,4 @@
-#include <stdafx.h>
+#include "stdafx.h"
 #include "pockels.h"
 #include "../device/scanner.h"
 
@@ -13,19 +13,19 @@ namespace fetch
   {
     namespace pockels
     {
-
+    
       PockelsIntensitySpinControl::
       PockelsIntensitySpinControl(device::Pockels *pockels)
         : pockels(pockels)
       {}
 
-      static void
+      void
       PockelsIntensitySpinControl::
-      RegisterClass( HINSTANCE hInstance )
+      Spinner_RegisterClass( HINSTANCE hInstance )
       { WNDCLASSEX wcex;
         wcex.cbSize           = sizeof( WNDCLASSEX );
         wcex.style            = CS_HREDRAW | CS_VREDRAW;
-        wcex.lpfnWndProc      = ui::pockels::WndProc;
+        wcex.lpfnWndProc      = ui::pockels::PockelsIntensitySpinControl::Spinner_WndProc;
         wcex.cbClsExtra       = 0;
         wcex.cbWndExtra       = 0;
         wcex.hInstance        = hInstance;
@@ -40,7 +40,7 @@ namespace fetch
       
       void
       PockelsIntensitySpinControl::
-      CreateControl( HWND parent, int top, int left, unsigned identifier )
+      Spinner_CreateControl( HWND parent, int top, int left, unsigned identifier )
       { RECT rc = {left, top, left+100, top+100}, 
             trc;
         HWND hwnd;
@@ -213,7 +213,7 @@ namespace fetch
 
       LRESULT CALLBACK
       PockelsIntensitySpinControl::
-      WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
+      Spinner_WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
       { int wmId, wmEvent;
         PAINTSTRUCT ps;
         HDC hdc;

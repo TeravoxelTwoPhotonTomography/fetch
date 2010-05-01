@@ -54,7 +54,9 @@ namespace fetch
   { namespace scanner
     {
 
-
+      template class Video<i8 >;
+      template class Video<i16>;
+      
       template<class TPixel>
       void
       Video<TPixel>::_config_digitizer(device::Scanner2D *scanner)
@@ -122,8 +124,6 @@ namespace fetch
                                               NISCOPE_VAL_PFI_1 ));
         return;
       }
-      template<> void Video<i8 >::_config_digitizer(device::Scanner2D *scanner);
-      template<> void Video<i16>::_config_digitizer(device::Scanner2D *scanner);
 
       static void
       _setup_ao_chan(TaskHandle cur_task,
@@ -209,8 +209,6 @@ namespace fetch
 
         return;
       }
-      template void Video<i8 >::_config_daq(device::Scanner2D *scanner);
-      template void Video<i16>::_config_daq(device::Scanner2D *scanner);
 
 
       template<class TPixel>
@@ -222,8 +220,6 @@ namespace fetch
         debug("Scanner2D configured for Video\r\n");
         return 1; //success
       }
-      template unsigned int Video<i8 >::config(device::Scanner2D* d);
-      template unsigned int Video<i16>::config(device::Scanner2D* d);
 
 
       template<class TPixel>
@@ -244,6 +240,13 @@ namespace fetch
         return 1;
       }
 
+      template<typename T>
+      Frame_With_Interleaved_Lines
+      _describe_actual_frame(device::Scanner2D *d, ViInt32 *precordsize, ViInt32 *pnwfm);
+      
+      template Frame_With_Interleaved_Lines _describe_actual_frame<i8 >(device::Scanner2D*,ViInt32*,ViInt32*);
+      template Frame_With_Interleaved_Lines _describe_actual_frame<i16>(device::Scanner2D*,ViInt32*,ViInt32*);
+      
       template<typename T>
       Frame_With_Interleaved_Lines
       _describe_actual_frame(device::Scanner2D *d, ViInt32 *precordsize, ViInt32 *pnwfm)
@@ -269,8 +272,7 @@ namespace fetch
         *pnwfm       = nwfm;
         return format;
       }
-      template Frame_With_Interleaved_Lines _describe_actual_frame<i8 >(device::Scanner2D*,ViInt32*,ViInt32*);
-      template Frame_With_Interleaved_Lines _describe_actual_frame<i16>(device::Scanner2D*,ViInt32*,ViInt32*);
+      
 
       template<class TPixel>
       unsigned int
@@ -358,8 +360,6 @@ namespace fetch
       Error:
         goto Finalize;
       }
-      template unsigned int Video<i8 >::run(device::Scanner2D *d);
-      template unsigned int Video<i16>::run(device::Scanner2D *d);
       
     } //end namespace scanner
   }

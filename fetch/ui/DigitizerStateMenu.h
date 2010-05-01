@@ -33,14 +33,8 @@ namespace fetch
       UINT IDM_DIGITIZER_TASK_0;
       UINT IDM_DIGITIZER_TASK_1;
 
-      static _t_task_table _task_table[];
+      static _t_task_table __task_table[];
     };
-    
-    DigitizerStateMenu::_t_task_table DigitizerStateMenu::_task_table[] =
-        {
-          { "Fetch Forever  8-bit", -1, new task::digitizer::FetchForever<i8>() },
-          { "Fetch Forever 16-bit", -1, new task::digitizer::FetchForever<i16>() },
-          { NULL, NULL, NULL }, };
 
   }
 

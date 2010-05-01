@@ -49,7 +49,7 @@ namespace fetch
         char    mode[DISKSTREAM_MAX_PATH];
         HANDLE  hfile;
 
-      private:
+      protected:
         unsigned int attach(void);                              // use open() instead
     };
 

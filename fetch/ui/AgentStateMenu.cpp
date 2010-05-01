@@ -31,12 +31,13 @@ namespace fetch
 {
   namespace ui
   {
-    size_t AgentStateMenu::_instance_id = 0;
+    size_t AgentStateMenu::_instance_id = 0;;
   
     AgentStateMenu::AgentStateMenu(char *name, fetch::Agent *agent)
                    :_agent(agent),
                     _menu(0),
-                    _taskmenu(0)
+                    _taskmenu(0),
+                    _task_table(NULL)
     {
       assert(strlen(name)<sizeof(_name));
       memset(_name, 0, sizeof(_name));

@@ -110,7 +110,7 @@ namespace fetch {
 
       // State transition functions
       virtual unsigned int attach (void) = 0;                  // Returns 0 on success, nonzero otherwise.
-      virtual unsigned int detach (void) = 0;                  // Returns 0 on success, nonzero otherwise.  Should attempt to disarm if running.  Should not panic if possible.      
+      virtual unsigned int detach (void) {return 0;}           // Returns 0 on success, nonzero otherwise.  Should attempt to disarm if running.  Should not panic if possible.      
 
               unsigned int arm    (Task *t, DWORD timeout_ms); // Returns 0 on success, nonzero otherwise.
       virtual unsigned int disarm (DWORD timeout_ms);          // Returns 0 on success, nonzero otherwise.

@@ -79,17 +79,21 @@ namespace fetch
       };
       typedef _t_task_table _t_task_table_row;
 
-      static _t_task_table _task_table[];
+      _t_task_table *_task_table;            // children are responsible for filling this in during construction.
 
       HMENU _make_menu(void);
     };  
     
-/* Children classes should initialize the task table according to the following pattern:
+/* Children classes should initialize the task table. 
 
-    AgentStateMenu::_t_task_table AgentStateMenu::_task_table[] = 
+   One pattern is to create and initialize a static member according to the following pattern:
+
+    AgentStateMenuChild::_t_task_table AgentStateMenuChild::__tasktable[] = 
         {
           { NULL, NULL, NULL },
         }
+  
+   And then assign _task_table to the address of the static table.
  */; 
 
   }

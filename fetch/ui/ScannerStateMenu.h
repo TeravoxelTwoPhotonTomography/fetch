@@ -33,14 +33,8 @@ namespace fetch
       UINT IDM_SCANNER2D_TASK_0;
       UINT IDM_SCANNER2D_TASK_1;
 
-      static _t_task_table _task_table[];
+      static _t_task_table __task_table[];
     };
-    
-    ScannerStateMenu::_t_task_table ScannerStateMenu::_task_table[] =
-        {
-          { "Video  8-bit", -1, new task::scanner::Video<i8>() },
-          { "Video 16-bit", -1, new task::scanner::Video<i16>() },
-          { NULL, NULL, NULL }, };
 
   }
 

@@ -14,6 +14,23 @@
 #define DEBUG_TIC_TOC_TIMER
 #endif
 
+// -----------------
+// Windows utitities
+// -----------------
+
+UINT MyCreateUserWindowMessage( const char *name, size_t id )
+{ char s[1000],*t = s;
+  size_t n;
+  memset(s,0,1000);
+  n = strlen(name);
+  memcpy(s,name,n);
+  t+=n;
+  if( sizeof(size_t)==8 )
+    sprintf(t,"-%llu",id);
+  else
+    sprintf(t,"-%lu",id); 
+  return ::RegisterWindowMessage(t);
+}
 
 
 //
