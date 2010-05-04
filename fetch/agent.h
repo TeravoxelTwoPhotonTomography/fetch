@@ -91,6 +91,8 @@
 //    is that the device specify the number of queues and the number of buffers
 //    on each queue.
 //
+// 3. Children must impliment destructors that call detach() and handle any errors.
+//
 
 #define AGENT_DEFAULT_TIMEOUT INFINITE
 
@@ -110,7 +112,7 @@ namespace fetch {
 
       // State transition functions
       virtual unsigned int attach (void) = 0;                  // Returns 0 on success, nonzero otherwise.
-      virtual unsigned int detach (void) {return 0;}           // Returns 0 on success, nonzero otherwise.  Should attempt to disarm if running.  Should not panic if possible.      
+      virtual unsigned int detach (void) = 0;                  // Returns 0 on success, nonzero otherwise.  Should attempt to disarm if running.  Should not panic if possible.      
 
               unsigned int arm    (Task *t, DWORD timeout_ms); // Returns 0 on success, nonzero otherwise.
       virtual unsigned int disarm (DWORD timeout_ms);          // Returns 0 on success, nonzero otherwise.

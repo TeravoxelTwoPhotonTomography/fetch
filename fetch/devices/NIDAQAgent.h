@@ -36,6 +36,7 @@ namespace fetch
     {
     public:
       NIDAQAgent(char *name);
+      ~NIDAQAgent(void);
 
       unsigned int attach();
       unsigned int detach();

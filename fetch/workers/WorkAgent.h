@@ -55,22 +55,25 @@ namespace fetch
   { public:
       WorkAgent();                                           // Will configure only.  Use apply() to connect, arm, and run.  config is set to TParam().
       WorkAgent(TParam parameter);                           // Will configure only.  Use apply() to connect, arm, and run.
-      WorkAgent(Agent *source, int ichan, TParam parameter); // Will connect, configure, arm, and run      
+      WorkAgent(Agent *source, int ichan, TParam parameter); // Will connect, configure, arm, and run
+      ~WorkAgent();
 
       WorkAgent<TWorkTask,TParam>* apply(Agent *source, int ichan=0); // returns <this>
 
-      unsigned int attach(void) {this->set_available(); return 1/*success*/;}
-      unsigned int detach(void) {this->_is_available=0; return 1/*success*/;}
+      unsigned int attach(void);
+      unsigned int detach(void);
 
     public: //data
       TParam    config;
       TWorkTask __task_instance;
   };
 
+  ////////////////////////////////////////////////////////////////////////////
   //
   // Implementation
   //
-
+  ////////////////////////////////////////////////////////////////////////////
+  
   template<typename TWorkTask,typename TParam>
   WorkAgent<TWorkTask,TParam>::WorkAgent()
   : config(),
@@ -91,6 +94,34 @@ namespace fetch
     __task_instance = TWorkTask();       // a bit kludgey - the WorkAgent is only ever associated with a single task.
     arm(&task_instance,INFINITE);
     run();
+  }
+  
+  template<typename TWorkTask,typename TParam>
+  WorkAgent<TWorkTask,TParam>::~WorkAgent(void)
+  { if(this->detach()>0)
+      warning("Could not cleanly detach WorkAgent (task instance at 0x%p).\r\n",&this->__task_instance);
+  }
+  
+  template<typename TWorkTask,typename TParam>
+  unsigned int WorkAgent<TWorkTask,TParam>::
+  attach(void) 
+  { this->lock(); 
+    this->set_available(); 
+    this->unlock(); 
+    return 1; /*success*/
+  }
+  
+  template<typename TWorkTask,typename TParam>
+  unsigned int WorkAgent<TWorkTask,TParam>::
+  detach(void) 
+  { debug("Attempting WorkAgent::disarm() for task at 0x%p.\r\n",&this->__task_instance);
+    if( !this->disarm(WORKER_DEFAULT_TIMEOUT) )
+      warning("Could not cleanly detach WorkAgent (task instance at 0x%p).\r\n",&this->__task_instance);  
+      
+    this->lock();
+    this->_is_available=0;
+    this->unlock();
+    return 1; /*success*/
   }
   
   template<typename TWorkTask,typename TParam>

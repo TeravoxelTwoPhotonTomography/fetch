@@ -26,6 +26,11 @@ namespace fetch
       memset(_daqtaskname,0,sizeof(_daqtaskname));
       memcpy(_daqtaskname,name,n);
     }
+    
+    NIDAQAgent::~NIDAQAgent(void)
+    { if(this->detach()>0)
+        warning("Couldn't cleanly detach NIDAQAgent: %s\r\n.",this->_daqtaskname);
+    }
 
     unsigned int NIDAQAgent::detach(void)
     { unsigned int status=1; //success 0, failure 1

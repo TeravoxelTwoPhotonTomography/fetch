@@ -82,7 +82,7 @@
   <Class Name="fetch::device::NIDAQAgent">
     <Position X="6.5" Y="7.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAAAAgAAAAAAAAAAAAAAAAAAgACAAAAAAAABgAA=</HashCode>
+      <HashCode>AAAAAAAAAgAAAAAAAAAAAAAAAAAAoACAAAAAAAABgAA=</HashCode>
       <FileName>devices\NIDAQAgent.h</FileName>
     </TypeIdentifier>
   </Class>
@@ -132,7 +132,7 @@
       <FileName>workers\WorkAgent.h</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="fetch::device::Microscope" Collapsed="true">
+  <Class Name="fetch::device::Microscope">
     <Position X="14.75" Y="7.75" Width="2.5" />
     <TypeIdentifier>
       <HashCode>QAAEAAAAAgAAAAAAAAAAAAgAAAAAAACAAAAAAwAAYAA=</HashCode>

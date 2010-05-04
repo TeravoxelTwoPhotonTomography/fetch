@@ -22,7 +22,12 @@
       pixel_averager(4),
       trash(),
       disk()
-    {}   
+    {}  
+    
+    Microscope::~Microscope(void)
+    { if( this->detach()>0 )
+        warning("Could not detach microscope (address 0x%p).\r\n",this);
+    } 
 
     unsigned int
     Microscope::attach(void)

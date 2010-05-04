@@ -54,12 +54,17 @@ namespace fetch
                         nwfm*sizeof(struct niScope_wfmInfo)};
       _alloc_qs( &this->out, 2, _nbuf, sz );
     }
+  
+    Digitizer::~Digitizer(void)
+    { if( this->detach() > 0 )
+        warning("Could not cleanly detach. vi: %d\r\n", this->vi);
+    }
 
   unsigned int
     Digitizer::detach(void)
     { ViStatus status = 1; //error
       
-      digitizer_debug("Digitizer: Attempting to detach. vi: %d\r\n", this->vi);
+      digitizer_debug("Digitizer: Attempting to disarm. vi: %d\r\n", this->vi);
       if( !this->disarm( DIGITIZER_DEFAULT_TIMEOUT ) )
         warning("Could not cleanly disarm digitizer.\r\n");
 

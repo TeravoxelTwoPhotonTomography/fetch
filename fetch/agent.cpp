@@ -97,8 +97,8 @@ namespace fetch
 
     Agent::~Agent(void)
     {
-        if(this->detach() > 0)                                       // FIXME: This doesn't work
-            warning("~Agent : Attempt to detach() timed out.\r\n");
+        //if(this->detach() > 0)                                       // FIXME: This doesn't work
+        //    warning("~Agent : Attempt to detach() timed out.\r\n");
 
         if(this->num_waiting > 0)
             warning("~Agent : Agent has waiting tasks.\r\n         Try calling Agent::detach first.\r\n.");

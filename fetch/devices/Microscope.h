@@ -31,7 +31,8 @@ namespace fetch
   
     class Microscope : public virtual Agent
     { public:
-                        Microscope();
+        Microscope();
+        ~Microscope();
         
         unsigned int attach(void);
         unsigned int detach(void);

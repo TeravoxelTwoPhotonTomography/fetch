@@ -87,6 +87,7 @@ namespace fetch
     public:
       Digitizer();
       Digitizer(size_t nbuf, size_t nbytes_per_frame, size_t nwfm); // Inputs determine how output queues are initially allocated
+      ~Digitizer();
 
       unsigned int attach(void);
       unsigned int detach(void);
