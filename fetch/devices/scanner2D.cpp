@@ -34,7 +34,7 @@ namespace fetch
     }
 
     Scanner2D::~Scanner2D()
-    { if (!this->detach()>0)
+    { if (this->detach()>0)
         warning("Could not cleanly detach Scanner2D. (addr = 0x%p)\r\n",this);
       vector_f64_free(ao_workspace);
     }

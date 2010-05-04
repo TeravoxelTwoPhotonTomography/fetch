@@ -43,6 +43,7 @@ namespace fetch
         DAQJMP(DAQmxStopTask(daqtask));
         DAQJMP(DAQmxClearTask(daqtask));
       }
+      status = 0;
     Error:
       daqtask = NULL;
       this->_is_available=0;
@@ -51,11 +52,12 @@ namespace fetch
     }
 
     unsigned int NIDAQAgent::attach(void)
-    { unsigned int status = 0; //success 0, failure 1;
+    { unsigned int status = 1; //success 0, failure 1;
       Guarded_Assert(daqtask==NULL);
       this->lock();
       DAQJMP(status=DAQmxCreateTask(_daqtaskname,&daqtask))
       this->set_available();
+      status = 0;
     Error:
       this->unlock();
       return status;

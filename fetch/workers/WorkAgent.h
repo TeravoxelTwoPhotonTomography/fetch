@@ -108,7 +108,7 @@ namespace fetch
   { this->lock(); 
     this->set_available(); 
     this->unlock(); 
-    return 1; /*success*/
+    return 0; /*0 success, 1 failure*/
   }
   
   template<typename TWorkTask,typename TParam>
@@ -121,7 +121,7 @@ namespace fetch
     this->lock();
     this->_is_available=0;
     this->unlock();
-    return 1; /*success*/
+    return 0; /*0 success, 1 failure*/
   }
   
   template<typename TWorkTask,typename TParam>

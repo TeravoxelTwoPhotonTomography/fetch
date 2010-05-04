@@ -56,7 +56,7 @@ namespace fetch
 	
     unsigned int DiskStream::attach(void)
     { DWORD desired_access, share_mode, creation_disposition, flags_and_attr;
-      unsigned int sts = 1; //success
+      unsigned int sts = 0; //success
       switch (mode[0])
       {
         case 'r':
@@ -94,7 +94,7 @@ namespace fetch
         warning("Could not open file\r\n"
                "\tat %s\r\n"
                "\twith mode %c\r\n", filename, mode);
-        sts = 0; //failure
+        sts = 1; //failure
       } else
       { this->set_available();
         debug("Successfully opened file: %s\r\n",filename);
@@ -106,7 +106,7 @@ namespace fetch
 
 	
     unsigned int DiskStream::detach(void)
-    { unsigned int sts = 0; //error
+    { unsigned int sts = 1; //error
 
       debug("Disk Stream: %s\r\n"
             "\tAttempting to close file.\r\n", this->filename );
@@ -135,7 +135,7 @@ namespace fetch
         }
       }
 
-      sts = 1;  // success
+      sts = 0;  // success
       debug("Disk Stream: Detached %s\r\n",filename);
     Error:
       this->unlock();

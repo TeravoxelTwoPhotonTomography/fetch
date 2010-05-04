@@ -40,7 +40,7 @@ void ApplicationStart(HINSTANCE hInstance)
 {
   Logger_RegisterClass(hInstance);
   g_hwndLogger = Logger_InitInstance(hInstance, SW_HIDE );
-  g_hwndVideo = Video_Display_Attach(hInstance, SW_HIDE );
+  g_hwndVideo  = Video_Display_Attach(hInstance, SW_HIDE );
   Register_New_Shutdown_Callback(Video_Display_Release);
 
   Guarded_Assert( g_microscope.attach());
@@ -53,8 +53,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   UNREFERENCED_PARAMETER(hPrevInstance);
   UNREFERENCED_PARAMETER(lpCmdLine);
 
-  MSG msg =
-  { 0 };
+  MSG msg = { 0 };
   HACCEL hAccelTable;
 
   // Setup logging
