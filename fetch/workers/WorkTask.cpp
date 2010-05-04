@@ -18,7 +18,7 @@ namespace fetch
     { // Allocates an output queue on out[0] that has matching storage to in[0].
       agent->_alloc_qs_easy(&agent->out,
                             1,                                             // number of output channels to allocate
-                            agent->in->contents[0]->q->ring->count,        // copy number of output buffers from input queue
+                            agent->in->contents[0]->q->ring->nelem,        // copy number of output buffers from input queue
                             agent->in->contents[0]->q->buffer_size_bytes); // copy buffer size from input queue
     }
 

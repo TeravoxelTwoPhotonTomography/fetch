@@ -327,7 +327,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\ui\pockels.cpp"
+					RelativePath=".\ui\PockelsSpinnerControl.cpp"
 					>
 				</File>
 				<File
@@ -521,7 +521,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\ui\pockels.h"
+					RelativePath=".\ui\PockelsSpinnerControl.h"
 					>
 				</File>
 				<File

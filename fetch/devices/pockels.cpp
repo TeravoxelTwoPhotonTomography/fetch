@@ -3,7 +3,8 @@
  *
  *  Created on: Apr 19, 2010
  *      Author: Nathan Clack <clackn@janelia.hhmi.org>
- *//*
+ */
+ /*
  * Copyright 2010 Howard Hughes Medical Institute.
  * All rights reserved.
  * Use is subject to Janelia Farm Research Campus Software Copyright 1.1

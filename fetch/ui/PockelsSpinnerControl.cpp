@@ -1,6 +1,6 @@
 #include "stdafx.h"
-#include "pockels.h"
-#include "../device/scanner.h"
+#include "PockelsSpinnerControl.h"
+#include "../devices/scanner2D.h"
 
 #define _ID_POCKELS_SUBCONTROL_EDIT    1
 #define _ID_POCKELS_SUBCONTROL_STATIC  2
@@ -25,7 +25,7 @@ namespace fetch
       { WNDCLASSEX wcex;
         wcex.cbSize           = sizeof( WNDCLASSEX );
         wcex.style            = CS_HREDRAW | CS_VREDRAW;
-        wcex.lpfnWndProc      = ui::pockels::PockelsIntensitySpinControl::Spinner_WndProc;
+        wcex.lpfnWndProc      = &Spinner_WndProc;
         wcex.cbClsExtra       = 0;
         wcex.cbWndExtra       = 0;
         wcex.hInstance        = hInstance;
@@ -63,7 +63,7 @@ namespace fetch
                               parent,
                               (HMENU) identifier,          // child window identifier
                               hinst,                       // hinstance
-                              NULL );                      // lParam for WM_CREATE
+                              this );                      // lParam for WM_CREATE
         Guarded_Assert_WinErr( hwnd );
         this->self = hwnd;
 
@@ -183,7 +183,6 @@ namespace fetch
         
         Guarded_Assert_WinErr( MoveWindow( this->self, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, TRUE ));
 
-
         return;
       }
       
@@ -195,21 +194,17 @@ namespace fetch
         if(ok)
         { f64 volts = val/1000.0; 
           debug("Pockels edit change. Value: %f V\r\n", volts);
-          if(pockels->Is_Volts_In_Bounds(volts))
-            pockels->Set_Open_Val_Nonblocking(val/1000.0);
+          if(this->pockels->Is_Volts_In_Bounds(volts))
+            this->pockels->Set_Open_Val_Nonblocking(val/1000.0);
           else
           { warning("Value set for Pockels cell is out of bounds.\r\n");
             SetDlgItemInt(hWnd,
                           _ID_POCKELS_SUBCONTROL_EDIT,
-                          (UINT) (pockels->config.v_open*1000.0), //convert to mV
-                          FALSE );                                // unsigned
+                          (UINT) (this->pockels->config.v_open*1000.0), //convert to mV
+                          FALSE );                                      // unsigned
           }
         }
       }
-
-#ifndef CALLBACK
-#define CALLBACK
-#endif
 
       LRESULT CALLBACK
       PockelsIntensitySpinControl::
@@ -217,6 +212,15 @@ namespace fetch
       { int wmId, wmEvent;
         PAINTSTRUCT ps;
         HDC hdc;
+        PockelsIntensitySpinControl *self;
+
+        // Move "self" pointer to window user data, or get the "self" pointer.
+        if( message == WM_NCCREATE )
+        { LPCREATESTRUCT cs = (LPCREATESTRUCT) lParam; 
+          SetWindowLong(hWnd, GWL_USERDATA, (LONG) cs->lpCreateParams);
+        } else
+        { Guarded_Assert_WinErr( self = (PockelsIntensitySpinControl*) GetWindowLong(hWnd, GWL_USERDATA));         
+        }        
 
         switch( message )
         {        
@@ -240,7 +244,7 @@ namespace fetch
           {
           case _ID_POCKELS_SUBCONTROL_BUTTON:
             switch(wmEvent)
-            { case BN_CLICKED: this->OnButtonClicked(hWnd); break;
+            { case BN_CLICKED: self->OnButtonClicked(hWnd); break;
             }
             break;
 

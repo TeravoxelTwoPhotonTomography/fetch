@@ -32,7 +32,7 @@ namespace fetch
   namespace device
   {
     
-    class DiskStream: public virtual Agent
+    class DiskStream: public Agent
     {
       public:
         DiskStream();

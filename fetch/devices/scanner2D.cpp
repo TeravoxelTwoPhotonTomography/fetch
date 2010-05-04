@@ -68,8 +68,8 @@ namespace fetch
       unsigned int status = 0; // success 0, error 1
       if (!this->disarm(SCANNER2D_DEFAULT_TIMEOUT))
         warning("Could not cleanly disarm Scanner2D.\r\n");
-      status |= ((Shutter*)   this)->detach();
-      status |= ((Digitizer*) this)->detach();
+      status |= this->Shutter::detach();
+      status |= this->Digitizer::detach();
       this->lock();
       if (clk)
       {
@@ -96,8 +96,8 @@ namespace fetch
     Scanner2D::attach(void)
     {
       unsigned int status = 0; // success 0, error 1
-      return_val_if(status |= ((Shutter*)((this)))->attach(), status);
-      return_val_if(status |= ((Digitizer*)((this)))->attach(), status);
+      return_val_if(status |= this->Shutter::attach(),status);   //((Shutter*  )this)->attach(), status);
+      return_val_if(status |= this->Digitizer::attach(),status); //((Digitizer*)this)->attach(), status);
       this->lock();
       Guarded_Assert(ao == NULL);
       Guarded_Assert(clk == NULL);

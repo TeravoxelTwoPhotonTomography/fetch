@@ -9,7 +9,7 @@
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
 #pragma once
-#include "stdafx.h"
+#include "../stdafx.h"
 #include "../devices/pockels.h"
 
 namespace fetch
@@ -34,7 +34,7 @@ namespace fetch
           
           static void      Spinner_RegisterClass( HINSTANCE hInstance );
           void             Spinner_CreateControl( HWND parent, int top, int left, unsigned identifier );
-          LRESULT CALLBACK Spinner_WndProc      ( HWND, UINT, WPARAM, LPARAM ); // TODO: move this guy out of the interface and into the source.
+          static LRESULT CALLBACK Spinner_WndProc      ( HWND, UINT, WPARAM, LPARAM ); // TODO: move this guy out of the interface and into the source.
           
           void OnButtonClicked(HWND hWnd);
           

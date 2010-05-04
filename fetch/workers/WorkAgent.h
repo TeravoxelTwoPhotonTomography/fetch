@@ -51,7 +51,7 @@ namespace fetch
    * Agent *last = step2.apply(step1.apply(&src,0));
    */
   template<typename TWorkTask, typename TParam=void*>
-  class WorkAgent : public virtual fetch::Agent
+  class WorkAgent : public Agent
   { public:
       WorkAgent();                                           // Will configure only.  Use apply() to connect, arm, and run.  config is set to TParam().
       WorkAgent(TParam parameter);                           // Will configure only.  Use apply() to connect, arm, and run.

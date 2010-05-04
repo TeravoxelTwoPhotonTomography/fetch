@@ -64,12 +64,16 @@ namespace fetch
           share_mode           = FILE_SHARE_READ; //other processes can read
           creation_disposition = OPEN_EXISTING;
           flags_and_attr = 0;
+          _alloc_qs_easy(&out,1,4,1024);
+          debug("Attempting to open %s for reading.\r\n",filename);
         break;
         case 'w':
           desired_access       = GENERIC_WRITE;
-          share_mode           = 0; //don't share
+          share_mode           = 0;               //don't share
           creation_disposition = CREATE_ALWAYS;
           flags_and_attr       = FILE_ATTRIBUTE_NORMAL;
+          _alloc_qs_easy(&in,1,4,1024);
+          debug("Attempting to open %s for writing.\r\n",filename);
         break;
         default:
           error("DiskStream::attach() -- Couldn't interpret mode.  Got %s\r\n",
@@ -93,6 +97,7 @@ namespace fetch
         sts = 0; //failure
       } else
       { this->set_available();
+        debug("Successfully opened file: %s\r\n",filename);
       }
       this->unlock();
       
@@ -108,6 +113,7 @@ namespace fetch
 
       // Flush
       this->lock();
+      if(in)
       { asynq **beg =       in->contents,
               **cur = beg + in->nelem;
         while(cur-- > beg)
@@ -136,6 +142,7 @@ namespace fetch
       return sts;
     }
 
+    
     inline unsigned int
     DiskStream::close(void)
     { return detach();

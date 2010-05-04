@@ -25,13 +25,16 @@
     {}
     
     Microscope::~Microscope() 
-    { }
+    { detach(); }
 
     unsigned int
     Microscope::attach(void)
     { int sts = 0; // 0 success, 1 failure
       sts |= scanner.attach();
       sts |= disk.open("default.stream","w");
+      this->lock();
+      this->set_available();
+      this->unlock();
       return sts;  
     }
     
@@ -48,6 +51,7 @@
     unsigned int Microscope::disarm(DWORD timeout_ms)
     { unsigned int sts = 0; // success      
       sts |= scanner.disarm(timeout_ms);
+      sts |= this->disk.disarm(timeout_ms);
       
       sts |= Agent::disarm(timeout_ms);  
       return sts;

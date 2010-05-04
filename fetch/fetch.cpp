@@ -10,7 +10,7 @@
 #include "tasks/microscope-interaction.h"
 
 #include "window-video.h"
-#include "ui/pockels.h"
+#include "ui/PockelsSpinnerControl.h"
 #include "ui/DigitizerStateMenu.h"
 #include "ui/MicroscopeStateMenu.h"
 #include "ui/ScannerStateMenu.h"
@@ -44,7 +44,7 @@ void ApplicationStart(HINSTANCE hInstance)
   Register_New_Shutdown_Callback(Video_Display_Release);
 
   Guarded_Assert( g_microscope.attach());
-  Guarded_Assert( g_microscope.arm(&g_microscope_default_task,INFINITE));
+  Guarded_Assert( g_microscope.arm_nonblocking(&g_microscope_default_task,INFINITE));
 }
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
