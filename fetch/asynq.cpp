@@ -77,6 +77,7 @@ Asynq_Ref( asynq *self )
 }
 
 // Returns 1 on free and 0 otherwise
+// That is, returns 1 if ref count reached 0.
 int 
 Asynq_Unref( asynq *self )
 { return_val_if_fail( self, 0 );

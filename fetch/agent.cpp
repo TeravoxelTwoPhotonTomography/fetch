@@ -62,9 +62,11 @@ namespace fetch
         vector_PASYNQ *qs = *pqs;
         if( qs )
       { size_t n = qs->count;
+        int sts = 1;
         while(n--)
-          Asynq_Unref( qs->contents[n] );
-        vector_PASYNQ_free( qs );
+          sts &= Asynq_Unref( qs->contents[n] );      //qs[n] isn't necessarily deleted. Unref returns 0 if references remain
+        if(sts)
+          vector_PASYNQ_free( qs );
         *pqs = NULL;
       }
     }
@@ -95,7 +97,7 @@ namespace fetch
 
     Agent::~Agent(void)
     {
-        if(this->detach() > 0)
+        if(this->detach() > 0)                                       // FIXME: This doesn't work
             warning("~Agent : Attempt to detach() timed out.\r\n");
 
         if(this->num_waiting > 0)

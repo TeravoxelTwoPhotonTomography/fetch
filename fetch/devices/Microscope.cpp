@@ -41,6 +41,9 @@
       if(!disarm(MICROSCOPE_DEFAULT_TIMEOUT))
          warning("Microscope::detach(): Could not cleanly disarm microscope.\n");
       sts &= scanner.detach();
+      sts &= frame_averager.detach();
+      sts &= pixel_averager.detach();
+      sts &= trash.detach();
       sts &= disk.detach();
       this->_is_available = 0;
       return sts;  
