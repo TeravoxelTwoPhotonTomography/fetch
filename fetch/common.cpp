@@ -26,10 +26,10 @@ UINT MyCreateUserWindowMessage( const char *name, size_t id )
   memcpy(s,name,n);
   t+=n;
   if( sizeof(size_t)==8 )
-    sprintf(t,"-%llu",id);
+    sprintf(t,"_%llu",id);
   else
-    sprintf(t,"-%lu",id); 
-  return ::RegisterWindowMessage(t);
+    sprintf(t,"_%lu",id); 
+  return ::RegisterWindowMessage(s);
 }
 
 

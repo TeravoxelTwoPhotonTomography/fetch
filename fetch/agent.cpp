@@ -156,6 +156,10 @@ namespace fetch
       return this;
     }
 
+    unsigned int Agent::is_attached(void)
+    { return is_available() || this->task != NULL;
+    }
+
     unsigned int Agent::is_armed(void)
     {
         return this->task != NULL;
@@ -194,7 +198,7 @@ namespace fetch
     unsigned int Agent::arm(Task *task, DWORD timeout_ms)
     {
       this->lock(); // Source state can not be "armed" or "running"
-      if(!_request_available_unlocked(0, timeout_ms))// Blocks till agent is available
+      if(!_request_available_unlocked(0/*try?*/, timeout_ms))// Blocks till agent is available
       {
           warning("Agent unavailable.  Perhaps another task is running?\r\n\tAborting attempt to arm.\r\n");
           goto Error;

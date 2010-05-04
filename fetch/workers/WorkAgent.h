@@ -55,12 +55,12 @@ namespace fetch
   { public:
       WorkAgent();                                           // Will configure only.  Use apply() to connect, arm, and run.  config is set to TParam().
       WorkAgent(TParam parameter);                           // Will configure only.  Use apply() to connect, arm, and run.
-      WorkAgent(Agent *source, int ichan, TParam parameter); // Will connect, configure, arm, and run
+      WorkAgent(Agent *source, int ichan, TParam parameter); // Will connect, configure, arm, and run      
 
       WorkAgent<TWorkTask,TParam>* apply(Agent *source, int ichan=0); // returns <this>
 
-      unsigned int attach(void) {return 1/*success*/;}
-      unsigned int detach(void) {return 1/*success*/;}
+      unsigned int attach(void) {this->set_available(); return 1/*success*/;}
+      unsigned int detach(void) {this->_is_available=0; return 1/*success*/;}
 
     public: //data
       TParam    config;
@@ -75,13 +75,13 @@ namespace fetch
   WorkAgent<TWorkTask,TParam>::WorkAgent()
   : config(),
     __task_instance()
-  { }
+  { attach(); }
 
   template<typename TWorkTask,typename TParam>
   WorkAgent<TWorkTask,TParam>::WorkAgent(TParam parameter)
   : config(parameter),
     __task_instance()
-  { }
+  { attach(); }
 
   template<typename TWorkTask,typename TParam>
   WorkAgent<TWorkTask,TParam>::WorkAgent(Agent *source, int ichan, TParam parameter)

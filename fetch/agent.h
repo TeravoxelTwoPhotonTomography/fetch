@@ -124,8 +124,9 @@ namespace fetch {
       BOOL         run_nonblocking (void);
       BOOL        stop_nonblocking (DWORD timeout_ms);
 
-      // State query functions
-      unsigned int is_available(void); // returns 1 if "attached", 0 otherwise.  If 1, Agent is armable.
+      // State query functions      
+      unsigned int is_attached(void);  // True in all but the instanced state.
+      unsigned int is_available(void); // If 1, Agent is armable.  This is usually only when the Agent is in the "Holding" state.
       unsigned int is_armed(void);
       unsigned int is_runnable(void);
       unsigned int is_running(void);

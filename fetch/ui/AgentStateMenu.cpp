@@ -115,10 +115,10 @@ namespace fetch
             {
               Guarded_Assert_WinErr(-1!=
                   EnableMenuItem( hmenu, 1 /*Attach*/, MF_BYPOSITION
-                      | ( (_agent->is_available())?MF_GRAYED:MF_ENABLED) ));
+                      | ( (_agent->is_attached())?MF_GRAYED:MF_ENABLED) ));
               Guarded_Assert_WinErr(-1!=
                   EnableMenuItem( hmenu, 2 /*Tasks*/, MF_BYPOSITION
-                      | ( (_agent->is_available())?MF_ENABLED:MF_GRAYED) ));
+                      | ( (_agent->is_attached())?MF_ENABLED:MF_GRAYED) ));
               Guarded_Assert_WinErr(-1!=
                   CheckMenuItem( hmenu, 2 /*Tasks*/, MF_BYPOSITION
                       | ( _agent->is_runnable()?MF_CHECKED:MF_UNCHECKED) ));
@@ -133,8 +133,12 @@ namespace fetch
                       | ( _agent->is_running()?MF_ENABLED:MF_GRAYED) ));
               //DONE? update for running and stop
               Guarded_Assert(-1!= // Detect state
-                  CheckMenuRadioItem(_menu, // Toggle radio button to reflect
-                      0,1,((_agent->is_available())?1/*Hold*/:0/*Off*/), MF_BYPOSITION ) );
+                  CheckMenuRadioItem(_menu, // Toggle radio button to reflect state
+                                     0,                                             //first
+                                     1,                                             //last
+                                     ((_agent->is_attached())?1/*attached*/:0/*detached*/), //check?
+                                     MF_BYPOSITION                                  //flag
+                                     ));
             }
           else if (hmenu == _taskmenu)
             { // - Identify if any tasks are running.

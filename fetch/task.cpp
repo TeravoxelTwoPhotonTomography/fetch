@@ -14,34 +14,35 @@ namespace fetch
       d->_is_running = 0;  
       CloseHandle(d->thread);
       d->thread = INVALID_HANDLE_VALUE;
-      d->lock();
+      d->unlock();
       
       return result;  
     }
 
-#define VTREF(e,i) ((void*)(((size_t*) *(size_t*)&(e))[i]))
+// VTREF
+//    Queries an instances virtual table and returns the address of the
+//    function at the i'th entry.
+//
+// USAGE
+//    <e> expression evaluating to a pointer to an instance of a class with virtual methods.
+//
+//    <i> the index of the virtual method for which to get the address.
+#define VTREF(e,i) ( (void*) (((size_t*) *(size_t*)(e))[i]) )
 
-  bool                               // Checks to make sure
+// Task::eq
+//    Defines an equivilance class over objects deriving from Task.
+  bool                               //  Checks to make sure
   Task::eq(Task *a,Task *b)          //  config and run functions
-  { return VTREF(a,0)==VTREF(b,0) && //  refer to the same address.
-           VTREF(a,1)==VTREF(b,1);   //
+  {                                  //  refer to the same address.
+#if 0
+    debug("a[0] = 0x%p.\r\n",VTREF(a,0));
+    debug("b[0] = 0x%p.\r\n",VTREF(b,0));
+    debug("a[1] = 0x%p.\r\n",VTREF(a,1));
+    debug("b[1] = 0x%p.\r\n",VTREF(b,1));
+#endif
+  
+    return VTREF(a,0)==VTREF(b,0) && 
+           VTREF(a,1)==VTREF(b,1);
   }
 
-  // * DELETED
-  // * - Made "Updateable" aspect an interface so that an updatable task
-  // *   inherits from task and IUpdate.
-  // * - This means the update function won't get checked on a Task::eq check.
-  // * + The equivilence function is static...so we could define eq...
-  // * ? What's the vtable structure after multiple inheritance?
-  // * - I think I'd have to compose the eq operators with each operator working on
-  // *   it's own interface type.
-  // I don't think I actually need this operator; the Task equivelence operator is
-  // sufficient.
-  //bool
-  //UpdateableTask::eq(UpdateableTask *a, UpdateableTask *b)
-  //{ return VTREF(a,0)==VTREF(b,0) && // config
-  //         VTREF(a,1)==VTREF(b,1) && // run
-  //         VTREF(a,2)==VTREF(b,2);   // update
-  //}
-  
 }//end namespace fetch

@@ -22,10 +22,7 @@
       pixel_averager(4),
       trash(),
       disk()
-    {}
-    
-    Microscope::~Microscope() 
-    { detach(); }
+    {}   
 
     unsigned int
     Microscope::attach(void)
@@ -40,20 +37,21 @@
     
     unsigned int
     Microscope::detach(void)
-    { int sts = 0; // 0 success, 1 failure
-      if(disarm(MICROSCOPE_DEFAULT_TIMEOUT))
-         warning("Microscope::detach(): Could not cleanly disarm scanner.\n");
-      sts |= scanner.detach();
-      sts |= disk.detach();
+    { int sts = 1; // 1 success, 0 failure
+      if(!disarm(MICROSCOPE_DEFAULT_TIMEOUT))
+         warning("Microscope::detach(): Could not cleanly disarm microscope.\n");
+      sts &= scanner.detach();
+      sts &= disk.detach();
+      this->_is_available = 0;
       return sts;  
     }
     
     unsigned int Microscope::disarm(DWORD timeout_ms)
-    { unsigned int sts = 0; // success      
-      sts |= scanner.disarm(timeout_ms);
-      sts |= this->disk.disarm(timeout_ms);
+    { unsigned int sts = 1; // success      
+      sts &= scanner.disarm(timeout_ms);
+      sts &= this->disk.disarm(timeout_ms);
       
-      sts |= Agent::disarm(timeout_ms);  
+      sts &= Agent::disarm(timeout_ms);  
       return sts;
     }
     

@@ -63,7 +63,7 @@ namespace fetch
 
     class WorkTask : public fetch::Task
     { public:
-        unsigned int config(Agent *d) {return 0;} //?success?
+        unsigned int config(Agent *d) {return 1;} //success
 
         static void alloc_output_queues(Agent *agent);
     };
@@ -97,9 +97,11 @@ namespace fetch
             *qdst = d->out->contents[0];
       TMessage *fsrc =  (TMessage*)Asynq_Token_Buffer_Alloc(qsrc),
                *fdst =  (TMessage*)Asynq_Token_Buffer_Alloc(qdst);
+      size_t nbytes = qsrc->q->buffer_size_bytes;
       do
-      { while( Asynq_Pop_Try(qsrc, (void**)&fsrc, fsrc->size_bytes()) )
-        { fsrc->format(fdst);
+      { while( Asynq_Pop_Try(qsrc, (void**)&fsrc, nbytes) )
+        { nbytes = fsrc->size_bytes();
+          fsrc->format(fdst);
           goto_if_fail(
             work(d,fdst,fsrc),
             WorkFunctionFailure);

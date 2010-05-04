@@ -26,10 +26,10 @@ namespace fetch
 	      cur = &agent->scanner;
 	      cur =  agent->pixel_averager.apply(cur);
 	      cur =  agent->trash.apply(cur);
-        return 0;
+        return 1; //success
       }            
       
-      unsigned int Interaction::run(device::Microscope *agent) {return 0;} // do nothing
+      unsigned int Interaction::run(device::Microscope *agent) {return 1;} // do nothing
     }
   }
 }
