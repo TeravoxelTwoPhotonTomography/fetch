@@ -23,6 +23,25 @@ namespace fetch
 
   namespace device
   {
+  
+    Scanner2D::Config::Config()
+    :
+      frequency_Hz      (SCANNER2D_DEFAULT_RESONANT_FREQUENCY),                  // Resonant frequency (1/full period)
+      nscans            (SCANNER2D_DEFAULT_SCANS),                               // Number of bidirectional scans (full periods) per frame
+      line_duty_cycle   (SCANNER2D_DEFAULT_LINE_DUTY_CYCLE),                     // Acquire samples during this fraction of the full period
+      line_trigger_src  (SCANNER2D_DEFAULT_LINE_TRIGGER_SRC),                    // Digitizer channel corresponding to resonant velocity input.
+      nsamples          (SCANNER2D_DEFAULT_AO_SAMPLES)                           // DAQ AO: Samples per frame                         
+    { Guarded_Assert( sizeof(trigger ) >= sizeof(SCANNER2D_DEFAULT_LINE_TRIGGER  ) );
+      Guarded_Assert( sizeof(armstart) >= sizeof(SCANNER2D_DEFAULT_FRAME_ARMSTART) );
+      Guarded_Assert( sizeof(clock   ) >= sizeof(SCANNER2D_DEFAULT_DAQ_CLOCK     ) );
+      Guarded_Assert( sizeof(ctr     ) >= sizeof(SCANNER2D_DEFAULT_DAQ_CTR       ) );
+      Guarded_Assert( sizeof(ctr_alt ) >= sizeof(SCANNER2D_DEFAULT_DAQ_CTR_ALT   ) );
+      memcpy(trigger ,SCANNER2D_DEFAULT_LINE_TRIGGER  ,sizeof(trigger ));
+      memcpy(armstart,SCANNER2D_DEFAULT_FRAME_ARMSTART,sizeof(armstart));
+      memcpy(clock   ,SCANNER2D_DEFAULT_DAQ_CLOCK     ,sizeof(clock   ));
+      memcpy(ctr     ,SCANNER2D_DEFAULT_DAQ_CTR       ,sizeof(ctr     ));
+      memcpy(ctr_alt ,SCANNER2D_DEFAULT_DAQ_CTR_ALT   ,sizeof(ctr_alt ));
+    }
 
     Scanner2D::Scanner2D() :
       config(), ao(NULL), clk(NULL), ao_workspace(NULL)

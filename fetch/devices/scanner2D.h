@@ -116,7 +116,7 @@ namespace fetch
       unsigned int detach(void);                         // Returns 0 on success, 1 otherwise
 
     public:
-      typedef struct _t_scanner2d_config
+      struct Config
       {
         f64         frequency_Hz;                        // Resonant frequency (1/full period)
         u32         nscans;                              // Number of bidirectional scans (full periods) per frame
@@ -128,7 +128,9 @@ namespace fetch
         char        clock   [SCANNER2D_MAX_CHAN_STRING]; // DAQ   : Sample clock - typically set to a counter set up for finite pulse-train generation.
         char        ctr     [SCANNER2D_MAX_CHAN_STRING]; // DAQ   : The counter generating the sample clock.
         char        ctr_alt [SCANNER2D_MAX_CHAN_STRING]; // DAQ   : The implicit counter paired with the one used for the sample clock.
-      } Config;
+        
+        Config();
+      };
 
       Config      config;
       TaskHandle  ao,

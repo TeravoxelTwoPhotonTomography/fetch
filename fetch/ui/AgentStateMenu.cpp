@@ -216,7 +216,7 @@ namespace fetch
             _t_task_table_row * ttr;
             for (ttr = _task_table; ttr->menutext; ++ttr)
               if (wmId == ttr->messageid)
-                {
+                { _agent->disarm_nonblocking(AGENT_DEFAULT_TIMEOUT);
                   _agent->arm_nonblocking(ttr->task,AGENT_DEFAULT_TIMEOUT);
                   return 0;
                 }
