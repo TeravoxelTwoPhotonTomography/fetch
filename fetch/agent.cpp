@@ -4,6 +4,12 @@
 
 #define DEBUG_AGENT__HANDLE_WAIT_FOR_RESULT
 
+#if 0
+#define DBG(...) debug(__VA_ARGS__)
+#else
+#define DBG(...)
+#endif
+
 namespace fetch
 {
     TYPE_VECTOR_DEFINE( PASYNQ );
@@ -226,7 +232,7 @@ namespace fetch
                                   NULL )); // don't worry about the thread id
       this->_is_available = 0;
       this->unlock();
-      debug("Armed\r\n");
+      DBG("Armed 0x%p\r\n",this);
       return 1;
     Error:
       this->task = NULL;
@@ -281,7 +287,7 @@ namespace fetch
         this->task = NULL;
         this->set_available();
         this->unlock();
-        debug("Disarmed\r\n");
+        DBG("Disarmed 0x%p\r\n",this);
         return 1;
     }
     
@@ -346,13 +352,13 @@ namespace fetch
           Guarded_Assert_WinErr(
             SetThreadPriority( this->thread,
                                THREAD_PRIORITY_TIME_CRITICAL ));
-          debug("Run:4b\r\n");
+          DBG("Run:4b\r\n");
         }
       } else //(then not runnable)
       { warning("Attempted to run an unarmed or already running Agent.\r\n"
                 "\tAborting the run attempt.\r\n");
       }
-        debug("Agent Run: (%d) thread 0x%p\r\n", sts, this->thread);
+        DBG("Agent Run: 0x%p (sts %d) thread 0x%p\r\n", this, sts, this->thread);
         this->unlock();
         return sts;
     }
@@ -415,7 +421,7 @@ namespace fetch
         this->_is_running = 0;
       }
       this->unlock();
-      debug("Agent: Stopped\r\n");
+      DBG("Agent: Stopped 0x%p\r\n",this);
       return 1;
     }
 
@@ -510,7 +516,7 @@ namespace fetch
       vector_PASYNQ_request( src->out, src_channel );   // make space
       src->out->contents[src_channel] = Asynq_Ref( d );
     } else
-    { error("In Agent::connect: Neither channel exists\r\n");
+    { error("In Agent::connect: Neither channel exists.\r\n");
     }
   }
 

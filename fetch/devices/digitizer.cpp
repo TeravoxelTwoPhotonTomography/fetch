@@ -33,6 +33,7 @@ namespace fetch
   namespace device 
   {
     Digitizer::Digitizer(void)
+              :vi(0)
     { 
       // Setup output queues.
       // - Sizes determine initial allocations.

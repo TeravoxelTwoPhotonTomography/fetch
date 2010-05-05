@@ -27,7 +27,7 @@ TCHAR     szWindowClass[MAX_LOADSTRING]; // the main window class name
 HWND g_hwndLogger = NULL; // Logger window
 HWND g_hwndVideo = NULL;  // Video  window
 
-device::Microscope              g_microscope;
+device::Microscope*             gp_microscope;
 task::microscope::Interaction   g_microscope_default_task;
 
 // Forward declarations of functions included in this code module:
@@ -36,15 +36,28 @@ BOOL             InitInstance     (HINSTANCE, int);
 LRESULT CALLBACK WndProc          (HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK About            (HWND, UINT, WPARAM, LPARAM);
 
+unsigned int KillMicroscope(void)
+{ if(gp_microscope) delete gp_microscope;
+  return 0;
+}
+
 void ApplicationStart(HINSTANCE hInstance)
-{
+{ Register_New_Shutdown_Callback(Video_Display_Release);
+  Register_New_Shutdown_Callback(KillMicroscope);
+  
+  // Setup logging
+  Logger_Register_Default_Reporting();
+  Reporting_Setup_Log_To_VSDebugger_Console();
+  Reporting_Setup_Log_To_Filename("lastrun.log");
+
   Logger_RegisterClass(hInstance);
   g_hwndLogger = Logger_InitInstance(hInstance, SW_HIDE );
   g_hwndVideo  = Video_Display_Attach(hInstance, SW_HIDE );
-  Register_New_Shutdown_Callback(Video_Display_Release);
+  
 
-  Guarded_Assert( g_microscope.attach());
-  Guarded_Assert( g_microscope.arm_nonblocking(&g_microscope_default_task,INFINITE));
+  gp_microscope = new device::Microscope();  
+  Guarded_Assert( gp_microscope->attach());
+  Guarded_Assert( gp_microscope->arm_nonblocking(&g_microscope_default_task,INFINITE));
 }
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
@@ -56,11 +69,10 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   MSG msg = { 0 };
   HACCEL hAccelTable;
 
-  // Setup logging
-  Logger_Register_Default_Reporting();
-  Reporting_Setup_Log_To_VSDebugger_Console();
-  Reporting_Setup_Log_To_Filename("lastrun.log");
 
+  
+  ApplicationStart(hInstance);
+  
   // Initialize global strings
   LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
   LoadString(hInstance, IDC_FETCH, szWindowClass, MAX_LOADSTRING);
@@ -73,9 +85,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   {
     return FALSE;
   }
-
-  ApplicationStart(hInstance);
-
+ 
   hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_FETCH));
 
   // Main message loop    
@@ -192,9 +202,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
   static ui::ScannerStateMenu    *ctl_scanner    = NULL;  
   //static fetch::ui::digitizer::Menu digitizer_menu("&Digitizer", Digitizer()/*replace*/);
   if(ctl_microscope==NULL)
-  { ctl_microscope = new ui::MicroscopeStateMenu(&g_microscope);
-    ctl_scanner    = new ui::ScannerStateMenu(&g_microscope.scanner);
-    ctl_pockels    = new ui::pockels::PockelsIntensitySpinControl((device::Pockels*)&g_microscope.scanner);
+  { ctl_microscope = new ui::MicroscopeStateMenu(gp_microscope);
+    ctl_scanner    = new ui::ScannerStateMenu(&gp_microscope->scanner);
+    ctl_pockels    = new ui::pockels::PockelsIntensitySpinControl((device::Pockels*)&gp_microscope->scanner);
   }
 
   if (!command_menu)
