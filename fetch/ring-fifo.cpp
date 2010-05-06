@@ -4,7 +4,17 @@
 #define DEBUG_RINGFIFO_ALLOC
 #define DEBUG_RINGFIFO_EXPAND
 
+// warnings
 #if 1
+#define DEBUG_RING_FIFO_WARN_RESIZE_ON_PUSH  warning("Resized on push: *pbuf was smaller than nominal token buffer size. (%d < %d)\r\n",sz,self->buffer_size_bytes)
+#define DEBUG_RING_FIFO_WARN_RESIZE_ON_PEEK  warning("Resized on peek: *pbuf was smaller than nominal token buffer size. (%d < %d)\r\n",sz,self->buffer_size_bytes)
+#else
+#define DEBUG_RING_FIFO_WARN_RESIZE_ON_PUSH
+#define DEBUG_RING_FIFO_WARN_RESIZE_ON_PEEK
+#endif
+
+// debug
+#if 0
 #define DEBUG_RING_FIFO
 #define DEBUG_RING_FIFO_PUSH
 #else
@@ -109,12 +119,12 @@ RingFIFO_Resize(RingFIFO* self, size_t buffer_size_bytes)
          tail = MOD_UNSIGNED_POW2( self->tail, n ); // Read point (pop)  - points to a "live" buffer
   if (self->buffer_size_bytes < buffer_size_bytes)
   {
-    // Resize the buffers
-    for (i = head;MOD_UNSIGNED_POW2(i,n) != tail; ++i)
+    // Resize the buffers    
+    for(i=0;i<n;++i)
     { size_t idx;
       void *t;
       idx = MOD_UNSIGNED_POW2(i,n);
-      assert(t = realloc(r->contents+idx, buffer_size_bytes));
+      assert(t = realloc(r->contents[idx], buffer_size_bytes));
       r->contents[idx] = t;
     }
   }
@@ -138,19 +148,24 @@ unsigned int
 RingFIFO_Pop( RingFIFO *self, void **pbuf, size_t sz)
 { ringfifo_debug("- head: %-5d tail: %-5d size: %-5d\r\n",self->head, self->tail, self->head - self->tail);
   return_val_if( RingFIFO_Is_Empty(self), 1);
-  if( sz<self->buffer_size_bytes )
-    assert(*pbuf = realloc(*pbuf,self->buffer_size_bytes));
-  _swap( self, pbuf, self->tail++ );
+  if( sz<self->buffer_size_bytes )                          //small arg - police  - resize to larger before swap
+    assert(*pbuf = realloc(*pbuf,self->buffer_size_bytes)); //null  arg -         - also handled by this mechanism
+  _swap( self, pbuf, self->tail++ );                        //big   arg - ignored
   return 0;
 }
 
 extern inline 
 unsigned int
-RingFIFO_Peek( RingFIFO *self, void *buf)
+RingFIFO_Peek( RingFIFO *self, void **pbuf, size_t sz)
 { ringfifo_debug("o head: %-5d tail: %-5d size: %-5d\r\n",self->head, self->tail, self->head - self->tail);
   return_val_if( RingFIFO_Is_Empty(self), 1);
+  if( sz<self->buffer_size_bytes )                          //small arg - police  - resize to larger before swap
+  { assert(*pbuf = realloc(*pbuf,self->buffer_size_bytes)); //null  arg -         - also handled by this mechanism
+    DEBUG_RING_FIFO_WARN_RESIZE_ON_PEEK;
+  }
+  
   { vector_PVOID *r = self->ring;
-    memcpy( buf, 
+    memcpy( *pbuf, 
             r->contents[MOD_UNSIGNED_POW2(self->tail, r->nelem)],
             self->buffer_size_bytes );
   }
@@ -159,11 +174,16 @@ RingFIFO_Peek( RingFIFO *self, void *buf)
 
 extern inline 
 unsigned int
-RingFIFO_Peek_At( RingFIFO *self, void *buf, size_t index)
+RingFIFO_Peek_At( RingFIFO *self, void **pbuf, size_t sz, size_t index)
 { ringfifo_debug("o head: %-5d tail: %-5d size: %-5d\r\n",self->head, self->tail, self->head - self->tail);
-  return_val_if( RingFIFO_Is_Empty(self), 1);
+  return_val_if( RingFIFO_Is_Empty(self), 1);  
+  if( sz<self->buffer_size_bytes )                          //small arg - police  - resize to larger before swap
+  { assert(*pbuf = realloc(*pbuf,self->buffer_size_bytes)); //null  arg -         - also handled by this mechanism
+    DEBUG_RING_FIFO_WARN_RESIZE_ON_PEEK;
+  }
+    
   { vector_PVOID *r = self->ring;
-    memcpy( buf, 
+    memcpy( *pbuf, 
             r->contents[MOD_UNSIGNED_POW2(index, r->nelem)],
             self->buffer_size_bytes );
   }
@@ -173,11 +193,17 @@ RingFIFO_Peek_At( RingFIFO *self, void *buf, size_t index)
 extern inline 
 unsigned int
 RingFIFO_Push_Try( RingFIFO *self, void **pbuf, size_t sz)
-{ //ringfifo_debug("+ head: %-5d tail: %-5d size: %-5d TRY\r\n",self->head, self->tail, self->head - self->tail);
+{ //ringfifo_debug("+?head: %-5d tail: %-5d size: %-5d TRY\r\n",self->head, self->tail, self->head - self->tail);
   if( RingFIFO_Is_Full(self) )
     return 1;
-  if(sz>self->buffer_size_bytes) //if too big, resize.  if too small, ignore.
+      
+  if( sz<self->buffer_size_bytes )                          //small arg - police  - resize to larger before swap
+  { assert(*pbuf = realloc(*pbuf,self->buffer_size_bytes)); //null  arg -         - also handled by this mechanism
+    DEBUG_RING_FIFO_WARN_RESIZE_ON_PUSH;                    //big   arg - police  - resize queue storage.
+  }
+  if(sz>self->buffer_size_bytes)                            
     RingFIFO_Resize(self,sz);
+    
   _swap( self, pbuf, self->head++ );
   return 0;
 }
@@ -186,12 +212,17 @@ unsigned int
 RingFIFO_Push( RingFIFO *self, void **pbuf, size_t sz, int expand_on_full)
 { unsigned int retval = 0;
   ringfifo_debug("+ head: %-5d tail: %-5d size: %-5d\r\n",self->head, self->tail, self->head - self->tail);
+
   return_val_if( 0==RingFIFO_Push_Try(self, pbuf, sz), 0 );
   
   // Handle when full      
-  
-  if(sz>self->buffer_size_bytes) //if too big, resize.  if too small, ignore.
-    RingFIFO_Resize(self,sz);
+    
+  if( sz<self->buffer_size_bytes )                          //small arg - police  - resize to larger before swap
+  { assert(*pbuf = realloc(*pbuf,self->buffer_size_bytes)); //null  arg -         - also handled by this mechanism
+    DEBUG_RING_FIFO_WARN_RESIZE_ON_PUSH;                    //big   arg - police  - resize queue storage.
+  }
+  if(sz>self->buffer_size_bytes)                            
+    RingFIFO_Resize(self,sz);  
     
   if( expand_on_full )      // Expand
     RingFIFO_Expand(self);  

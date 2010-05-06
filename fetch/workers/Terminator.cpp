@@ -40,8 +40,10 @@ namespace fetch
       // main loop
       do
       {
-        Asynq_Pop_Try(q[i % n], buf + i%n,szs[i%n]);
-        szs[i%n] = q[i%n]->q->buffer_size_bytes;
+        if( Asynq_Pop_Try(q[i % n], buf + i%n,szs[i%n]) )
+        { debug("Task: Terminator: trashing buffer on queue %d (iter: %d)\r\n",i%n,i);
+          szs[i%n] = q[i%n]->q->buffer_size_bytes;
+        }
         i++;
       } while (!agent->is_stopping());
       

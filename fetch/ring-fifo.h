@@ -70,11 +70,11 @@ void        RingFIFO_Expand  ( RingFIFO *self );
 void        RingFIFO_Resize  ( RingFIFO *self, size_t buffer_size_bytes );
 void        RingFIFO_Free    ( RingFIFO *self );
 
-inline unsigned int RingFIFO_Pop       ( RingFIFO *self, void **pbuf, size_t sz);
-inline unsigned int RingFIFO_Peek      ( RingFIFO *self, void  *buf);
-inline unsigned int RingFIFO_Peek_At   ( RingFIFO *self, void  *buf,  size_t index);
-       unsigned int RingFIFO_Push      ( RingFIFO *self, void **pbuf, size_t sz, int expand_on_full);
-inline unsigned int RingFIFO_Push_Try  ( RingFIFO *self, void **pbuf, size_t sz);
+inline unsigned int RingFIFO_Pop       ( RingFIFO *self, void **pbuf, size_t sz);                    //                             *pbuf==NULL ok (allocs)
+inline unsigned int RingFIFO_Peek      ( RingFIFO *self, void **pbuf, size_t sz);                    // copies, might resize *pbuf, *pbuf==NULL ok (allocs)
+inline unsigned int RingFIFO_Peek_At   ( RingFIFO *self, void **pbuf, size_t sz, size_t index);      // copies, might resize *pbuf
+       unsigned int RingFIFO_Push      ( RingFIFO *self, void **pbuf, size_t sz, int expand_on_full);// might resize queue's bufs,  *pbuf==NULL ok (allocs)
+inline unsigned int RingFIFO_Push_Try  ( RingFIFO *self, void **pbuf, size_t sz);                    // might resize queue's bufs,  *pbuf==NULL ok (allocs)
 
 void*       RingFIFO_Alloc_Token_Buffer( RingFIFO *self );
 

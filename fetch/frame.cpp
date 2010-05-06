@@ -163,7 +163,7 @@ FrmFmt::size_bytes(void)
 
 void
 FrmFmt::format(Message* unformatted)
-{ memcpy( unformatted, this, this->self_size );           // Copy the format header
+{ memcpy( unformatted, this, this->self_size );           // Copy the format header (also copies vtable addr)
   unformatted->data = (u8*)unformatted + this->self_size; // Set the data section
 }
 

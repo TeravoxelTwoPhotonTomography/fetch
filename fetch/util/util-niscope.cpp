@@ -101,7 +101,7 @@ void niscope_debug_print_status( ViSession vi )
   ViInt32 mem = 0;
 
   DIGCHK( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_BACKLOG, &pts ));
-  debug("Digitizer Backlog: %4.1f MS\r\n",pts/1024.0/1024.0);
+  debug("Digitizer                              Backlog: %4.1f MS\r\n",pts/1024.0/1024.0);
 
   DIGCHK( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_ONBOARD_MEMORY_SIZE, &mem ));
   debug("Digitizer                          Buffer size: %4.1f MB\r\n",mem/1024.0/1024.0);

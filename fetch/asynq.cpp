@@ -240,7 +240,8 @@ _asynq_pop_unlocked(                         // Returns 1 on success, 0 otherwis
 static unsigned int                          // Copies data from tail.
 _asynq_peek_unlocked(                        // Returns 1 on success, 0 otherwise.
                       asynq *self,           // 
-                      void *buf,             // Destination buffer.
+                      void **buf,            // Destination buffer.
+                      size_t sz,             // size of *buf in bytes
                       int is_try,            // if true, push returns immediately whether successful or not.  Never waits.
                       DWORD timeout_ms )     // Time to wait for a self->notify_space event.  Set to INFINITE for no timeout.
 { RingFIFO* q = self->q;
@@ -250,7 +251,7 @@ _asynq_peek_unlocked(                        // Returns 1 on success, 0 otherwis
       if( RingFIFO_Is_Empty( q ) )
         return 0;
   }
-  return 0== RingFIFO_Peek( q, buf );  
+  return 0== RingFIFO_Peek( q, buf, sz );  
 }
 
 //
@@ -293,7 +294,7 @@ Asynq_Push_Try( asynq *self, void **pbuf, size_t sz)
 }
 
 unsigned int
-Asynq_Push_Timed( asynq *self, void **pbuf, size_t sz, DWORD timeout_ms )
+Asynq_Push_Timed( asynq *self, void **pbuf, size_t sz, DWORD timeout_ms ) // Returns 1 on success, 0 otherwise.
 { unsigned int result;
   Asynq_Lock(self);
   result = _asynq_push_unlocked(self, pbuf, sz,
@@ -360,19 +361,19 @@ Asynq_Pop_Timed( asynq *self, void **pbuf, size_t sz, DWORD timeout_ms )
 //
 
 unsigned int
-Asynq_Peek( asynq *self, void *buf)
+Asynq_Peek( asynq *self, void **buf, size_t sz)
 { unsigned int result;
   Asynq_Lock(self);
-  result = _asynq_peek_unlocked(self, buf, FALSE, INFINITE );
+  result = _asynq_peek_unlocked(self, buf, sz, FALSE, INFINITE );
   Asynq_Unlock(self);
   return result;
 }
 
 unsigned int
-Asynq_Peek_Try( asynq *self, void *buf )
+Asynq_Peek_Try( asynq *self, void **buf, size_t sz )
 { unsigned int result;
   Asynq_Lock(self);
-  result = _asynq_peek_unlocked(self, buf, 
+  result = _asynq_peek_unlocked(self, buf, sz, 
                                 TRUE,       // try
                                 INFINITE ); // timeout
   Asynq_Unlock(self);
@@ -380,10 +381,10 @@ Asynq_Peek_Try( asynq *self, void *buf )
 }
 
 unsigned int
-Asynq_Peek_Timed( asynq *self, void *buf, DWORD timeout_ms )
+Asynq_Peek_Timed( asynq *self, void **buf, size_t sz, DWORD timeout_ms )
 { unsigned  int result;
   Asynq_Lock(self);
-  result = _asynq_peek_unlocked(self, buf,
+  result = _asynq_peek_unlocked(self, buf, sz,
                                 FALSE,        // try
                                 timeout_ms ); // timeout
   Asynq_Unlock(self);
@@ -422,6 +423,14 @@ int Asynq_Is_Empty( asynq *self )
 //
 // Token buffer management
 //
+
+extern inline void
+Asynq_Resize_Buffers(asynq* self, size_t nbytes)
+{ Asynq_Lock(self);
+  RingFIFO_Resize(self->q,nbytes);
+  Asynq_Unlock(self);
+}
+
 void*  Asynq_Token_Buffer_Alloc( asynq *self )
 { return Guarded_Malloc( self->q->buffer_size_bytes, "Asynq_Token_Buffer_Alloc" );
 }

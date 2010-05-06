@@ -89,9 +89,9 @@ unsigned int Asynq_Pop_Try      ( asynq *self, void **pbuf, size_t sz );
 unsigned int Asynq_Pop_Copy_Try ( asynq *self, void  *buf , size_t sz );
 unsigned int Asynq_Pop_Timed    ( asynq *self, void **pbuf, size_t sz, DWORD timeout_ms );
 
-unsigned int Asynq_Peek       ( asynq *self, void  *buf );
-unsigned int Asynq_Peek_Try   ( asynq *self, void  *buf );
-unsigned int Asynq_Peek_Timed ( asynq *self, void  *buf, DWORD timeout_ms );
+unsigned int Asynq_Peek       ( asynq *self, void **pbuf, size_t sz );
+unsigned int Asynq_Peek_Try   ( asynq *self, void **pbuf, size_t sz );
+unsigned int Asynq_Peek_Timed ( asynq *self, void **pbuf, size_t sz, DWORD timeout_ms );
 
        void  Asynq_Flush_Waiting_Consumers( asynq *self );
 
@@ -100,6 +100,8 @@ inline void  Asynq_Unlock  ( asynq *self );
 
 int Asynq_Is_Full( asynq *self );
 int Asynq_Is_Empty( asynq *self );
+
+inline void   Asynq_Resize_Buffers(asynq* self, size_t nbytes);                            // when nbytes is less than current size, does nothing
 
 void*  Asynq_Token_Buffer_Alloc( asynq *self );
 void*  Asynq_Token_Buffer_Alloc_And_Copy ( asynq *self, void *src );

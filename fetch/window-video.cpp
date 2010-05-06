@@ -613,16 +613,19 @@ namespace fetch
       asynq                      *q = g_video.frame_source;
       static int  last_change_token = 0;
       static size_t           nchan = 0;
+      static size_t          nbytes = 0;
       
       if( q )
       { // create the source buffer
       
         if(!frm)
         { frm  = (Frame*) Asynq_Token_Buffer_Alloc( q );
+          nbytes = q->q->buffer_size_bytes;
         }
         
-        if( Asynq_Peek_Timed(q, frm, (DWORD) wait_time_ms ) )
-        { int i;   
+        if( Asynq_Peek_Timed(q, (void**)&frm, nbytes, (DWORD) wait_time_ms ) )
+        { int i;
+          nbytes = frm->size_bytes();
           if( !frm->is_equivalent(&lastfmt) )               // RESIZE!
           { RECT *rect = NULL;
             frm->format(&lastfmt);
