@@ -56,8 +56,10 @@ void ApplicationStart(HINSTANCE hInstance)
   
 
   gp_microscope = new device::Microscope();  
-  Guarded_Assert( gp_microscope->attach());
-  Guarded_Assert( gp_microscope->arm_nonblocking(&g_microscope_default_task,INFINITE));
+  Guarded_Assert( gp_microscope->attach());  
+  Guarded_Assert( gp_microscope->arm(&g_microscope_default_task,INFINITE));  // ok to do non-blocking here bc there's no way a task thread is running.
+  
+  Video_Display_Connect_Device( &gp_microscope->cast_to_i16, 0 );
 }
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,

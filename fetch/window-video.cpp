@@ -704,7 +704,7 @@ namespace fetch
     Guarded_Assert( source->out->nelem > data_channel ); // channel index must be valid
 
     q = Asynq_Ref( source->out->contents[data_channel] );// bind the queue  
-    if( g_video.frame_source )                         // if there's an old queue, unref it first
+    if( g_video.frame_source )                           // if there's an old queue, unref it first
       Asynq_Unref( g_video.frame_source );  
     g_video.frame_source = q;
     
