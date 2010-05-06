@@ -19,12 +19,22 @@
 namespace fetch
 { namespace task
   { namespace microscope
-    {      
+    {   
+      // Upcasting
+      unsigned int Interaction::config(Agent *d) {return config(dynamic_cast<device::Microscope*>(d));}
+      unsigned int Interaction::run   (Agent *d) {return run   (dynamic_cast<device::Microscope*>(d));}   
+      
+      
+      //
+      // Implementation
+      //
+      
       unsigned int Interaction::config(device::Microscope *agent)
       { //Assemble pipeline here
 	      Agent *cur;
 	      cur = &agent->scanner;
 	      cur =  agent->pixel_averager.apply(cur);
+	      cur =  agent->cast_to_i16.apply(cur);
 	      cur =  agent->trash.apply(cur);
         return 1; //success
       }            

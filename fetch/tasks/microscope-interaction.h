@@ -18,10 +18,14 @@ namespace fetch
 { namespace task
   { namespace microscope
     {
-      typedef UpcastTask<device::Microscope> MicroscopeTask;
+      //typedef UpcastTask<device::Microscope> MicroscopeTask;
+      typedef Task MicroscopeTask;
       
       class Interaction : public MicroscopeTask
       { public:
+          unsigned int config(Agent *d);
+          unsigned int    run(Agent *d);
+          
           unsigned int config(device::Microscope *agent);
           unsigned int    run(device::Microscope *agent);
       };

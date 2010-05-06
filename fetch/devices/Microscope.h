@@ -19,6 +19,7 @@
 #include "../workers/FrameAverage.h"
 #include "../workers/PixelWiseAverager.h"
 #include "../workers/Terminator.h"
+#include "../workers/FrameCaster.h"
 
 #include "DiskStream.h"
 
@@ -43,8 +44,9 @@ namespace fetch
         device::Scanner2D              scanner;
 
         worker::FrameAverageAgent 	   frame_averager;
-        worker::PixelWiseAveragerAgent pixel_averager;
-        worker::TerminalAgent		       trash;
+        worker::PixelWiseAveragerAgent pixel_averager;        
+        worker::FrameCastAgent_i16     cast_to_i16;
+        worker::TerminalAgent		       trash;                
 
         device::DiskStreamMessage      disk;
     };

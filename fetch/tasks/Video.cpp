@@ -27,6 +27,7 @@
 #include "Video.h"
 #include "../devices/scanner2D.h"
 #include "../util/util-nidaqmx.h"
+#include "../agent.h"
 
 #define SCANNER_VIDEO_TASK_FETCH_TIMEOUT  10.0 //10.0, //(-1=infinite) (0.0=immediate)
                                                 // Setting this to infinite can sometimes make the application difficult to quit
@@ -56,6 +57,10 @@ namespace fetch
 
       template class Video<i8 >;
       template class Video<i16>;
+      
+      template<class TPixel> unsigned int Video<TPixel>::config (Agent *d) {return config(dynamic_cast<device::Scanner2D*>(d));}
+      template<class TPixel> unsigned int Video<TPixel>::run    (Agent *d) {return run   (dynamic_cast<device::Scanner2D*>(d));}
+      template<class TPixel> unsigned int Video<TPixel>::update (Agent *d) {return update(dynamic_cast<device::Scanner2D*>(d));}
       
       template<class TPixel>
       void
@@ -188,10 +193,12 @@ namespace fetch
                        &((device::Pockels*)scanner)->config);
         this->update(scanner);
 
-        // set up counter for sample clock
+        // set up counter for sample clock;
+        DAQERR( DAQmxClearTask(scanner->clk) );                  // Once a DAQ task is started, it needs to be cleared before restarting
+        DAQERR( DAQmxCreateTask("scanner2d-clk",&scanner->clk)); //
         cur_task = scanner->clk;
         DAQERR( DAQmxCreateCOPulseChanFreq       ( cur_task,
-                                                   cfg->ctr,      // "Dev1/ctr1"
+                                                   cfg->ctr,     // "Dev1/ctr1"
                                                    "sample-clock",
                                                    DAQmx_Val_Hz,
                                                    DAQmx_Val_Low,
@@ -217,7 +224,7 @@ namespace fetch
       { _config_daq(d);
         _config_digitizer(d);
 
-        debug("Scanner2D configured for Video\r\n");
+        debug("Scanner2D configured for Video<%s>\r\n",TypeStr<TPixel>());
         return 1; //success
       }
 
@@ -327,8 +334,10 @@ namespace fetch
           //debug("\tGain: %f\r\n",wfm[0].gain);
 
           // Push the acquired data down the output pipes
+          debug("Task: Video<%s>: pushing wfm\r\n",TypeStr<TPixel>());
           Asynq_Push( qwfm,(void**) &wfm, nbytes_info, 0 );
       #ifdef SCANNER_DEBUG_FAIL_WHEN_FULL                     //"fail fast"
+          debug("Task: Video<%s>: pushing frame\r\n",TypeStr<TPixel>());
           if(  !Asynq_Push_Try( qdata,(void**) &frm,nbytes ))
       #elif defined( SCANNER_DEBUG_SPIN_WHEN_FULL )           //"fail proof" - overwrites when full
           if(  !Asynq_Push( qdata,(void**) &frm, nbytes, FALSE ))

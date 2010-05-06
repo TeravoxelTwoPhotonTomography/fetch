@@ -14,6 +14,7 @@
 #pragma once
 #include "../task.h"
 #include "../devices/scanner2D.h"
+#include "../agent.h"
 
 namespace fetch
 {
@@ -23,9 +24,13 @@ namespace fetch
     namespace scanner
     {
       template<class TPixel>
-      class Video : public UpcastTask<device::Scanner2D>, public IUpdateableCast<device::Scanner2D>
+      class Video : public Task, public IUpdateable//public UpcastTask<device::Scanner2D>, public IUpdateableCast<device::Scanner2D>
       {
         public:
+          unsigned int config (Agent *d);
+          unsigned int run    (Agent *d);
+          unsigned int update (Agent *d);
+          
           unsigned int config (device::Scanner2D *d);
           unsigned int run    (device::Scanner2D *d);
           unsigned int update (device::Scanner2D *d);

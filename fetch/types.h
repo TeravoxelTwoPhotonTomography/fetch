@@ -24,6 +24,10 @@ typedef struct _basic_type_attribute
 
 extern const Basic_Type_Attribute g_type_attributes[];
 
+//
+// TypeID<T>();
+//
+
 template<typename T> inline Basic_Type_ID TypeID(void);
 
 template<> inline Basic_Type_ID TypeID<u8 >(void) {return id_u8; }
@@ -36,3 +40,21 @@ template<> inline Basic_Type_ID TypeID<i32>(void) {return id_i32;}
 template<> inline Basic_Type_ID TypeID<i64>(void) {return id_i64;}
 template<> inline Basic_Type_ID TypeID<f32>(void) {return id_f32;}
 template<> inline Basic_Type_ID TypeID<f64>(void) {return id_f64;}
+
+//
+// To string
+//
+
+char *TypeStrFromID(Basic_Type_ID id);
+
+template<typename T> inline char* TypeStr(void);
+template<> inline char* TypeStr<u8 >(void) {return "u8"; }
+template<> inline char* TypeStr<u16>(void) {return "u16";}
+template<> inline char* TypeStr<u32>(void) {return "u32";}
+template<> inline char* TypeStr<u64>(void) {return "u64";}
+template<> inline char* TypeStr<i8 >(void) {return "i8"; }
+template<> inline char* TypeStr<i16>(void) {return "i16";}
+template<> inline char* TypeStr<i32>(void) {return "i32";}
+template<> inline char* TypeStr<i64>(void) {return "i64";}
+template<> inline char* TypeStr<f32>(void) {return "f32";}
+template<> inline char* TypeStr<f64>(void) {return "f64";}

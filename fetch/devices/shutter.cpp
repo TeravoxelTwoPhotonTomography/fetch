@@ -63,7 +63,9 @@ namespace fetch
     
     void
     Shutter::Bind(void)
-    { DAQERR( DAQmxCreateDOChan( daqtask,
+    { DAQERR( DAQmxClearTask(daqtask) );
+      DAQERR( DAQmxCreateTask(_daqtaskname,&daqtask));
+      DAQERR( DAQmxCreateDOChan( daqtask,
                                  config.do_channel,
                                  "shutter-command",
                                  DAQmx_Val_ChanPerLine ));

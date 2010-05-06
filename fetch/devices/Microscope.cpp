@@ -20,6 +20,7 @@
     : scanner(),
       frame_averager(4),
       pixel_averager(4),
+      cast_to_i16(),
       trash(),
       disk()
     {}  

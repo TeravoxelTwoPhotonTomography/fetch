@@ -186,11 +186,10 @@ class FrmFmt : public Message
     FrmFmt(u16 width, u16 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size);
 
     unsigned int   is_equivalent( FrmFmt *ref );
-    void           dump( const char *filename );
+    void           dump( const char *filename,... );                    // performs printf-style string formating on filename.  Thread-safe.
 
             size_t size_bytes      ( void );
             void   format          ( Message *unformatted );
-    inline  void   compute_pitches ( size_t pitch[4] );
 };
 
 class Frame : public FrmFmt
@@ -200,7 +199,9 @@ class Frame : public FrmFmt
     Frame(u16 width, u16 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size) : FrmFmt(width,height,nchan,type,id,self_size) {}
 
 
-    virtual void   copy_channel( void *dst, size_t rowpitch, size_t ichan ) = 0;
+    virtual void   copy_channel    ( void *dst, size_t rowpitch, size_t ichan ) = 0;
+    virtual void   compute_pitches ( size_t pitch[4] )                          = 0;
+    virtual void   get_shape       ( size_t n[3] )                              = 0;
     // Children also need to impliment (left over from Message):
     //             translate()
     //             format()    - but only if formatting data is added
@@ -213,6 +214,9 @@ class Frame_With_Interleaved_Pixels : public Frame
 
               void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
     static  size_t   translate    ( Message *dst, Message *src );
+    
+    virtual void   compute_pitches ( size_t pitch[4] );
+    virtual void   get_shape       ( size_t n[3] );
 };
 
 class Frame_With_Interleaved_Lines : public Frame
@@ -222,6 +226,9 @@ class Frame_With_Interleaved_Lines : public Frame
 
               void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
     static  size_t   translate    ( Message *dst, Message *src );
+    
+    virtual void   compute_pitches ( size_t pitch[4] );
+    virtual void   get_shape       ( size_t n[3] );
 };
 
 class Frame_With_Interleaved_Planes : public Frame
@@ -231,4 +238,7 @@ class Frame_With_Interleaved_Planes : public Frame
 
               void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
     static  size_t   translate    ( Message *dst, Message *src );
+    
+    virtual void   compute_pitches ( size_t pitch[4] );
+    virtual void   get_shape       ( size_t n[3] );
 };

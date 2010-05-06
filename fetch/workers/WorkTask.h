@@ -100,7 +100,8 @@ namespace fetch
       size_t nbytes = qsrc->q->buffer_size_bytes;
       do
       { while( Asynq_Pop_Try(qsrc, (void**)&fsrc, nbytes) )
-        { nbytes = fsrc->size_bytes();
+        { debug("In  OneToOneWorkTask::run - just popped\r\n");
+          nbytes = fsrc->size_bytes();
           fsrc->format(fdst);
           goto_if_fail(
             work(d,fdst,fsrc),

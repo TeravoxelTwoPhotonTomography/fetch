@@ -34,6 +34,31 @@
  * Agent arm's and disarm's) before run() is called.  Persistent resources
  * used by a task should be allocated in the Agent during the attach/detach
  * routines.
+ *
+ * Notes on "Cast" tasks
+ * ---------------------
+ * 
+ * Historical.  The code of interest here has been removed.
+ * 
+ * The Task interface is defined over abstract Agents.  In order to support
+ * runtime type checking of the interface for Agent children, a castable
+ * interface can be written using templates.  The config and run functions
+ * each dynamically upcast to the child and call another config or run 
+ * function with the correct type.
+ *
+ * There's a problem with this.  The Task::eq relation is broken with this
+ * technique.  That is, all classes deriving from UpcastTask are equivilent.
+ * This effectively makes the Task::eq useless for discriminating between
+ * task types.
+ *
+ * Discriminating between tasks is useful when one wants to compare the 
+ * armed task against a list of other tasks.  This happens in the user 
+ * interface, for example, to switch tasks.
+ *
+ * So casting tasks should be avoided.  The solution is to do the runtime
+ * cast in each of the child classes explicitly.  This adds repetitive
+ * code but supports Task::eq.
+ *
  */
 
 #ifndef WINAPI
@@ -52,22 +77,9 @@ namespace fetch
   
     static DWORD WINAPI thread_main(LPVOID lpParam);
 
-    static bool eq(Task *a, Task *b); // a eq b iff addresses of config and run virtual functions are the same
+    static bool eq(Task *a, Task *b); // a eq b iff addresses of config and run virtual functions share the same address
   };
   
-  /* UpcastTask
-   * ----------
-   * Provides a mechanism to ensure Task types that are only used with the appropriate Agent types.
-   */
-  template<typename TAgent>
-  class UpcastTask: public fetch::Task
-  { public:
-              unsigned int config (Agent *agent)              {return config(dynamic_cast<TAgent*>(agent));}
-              unsigned int run    (Agent *agent)              {return run   (dynamic_cast<TAgent*>(agent));}
-      virtual unsigned int config (TAgent *agent) = 0;
-      virtual unsigned int run    (TAgent *agent) = 0;
-  };
-
   /*
      IUpdateable
      --------------
@@ -88,11 +100,4 @@ namespace fetch
     virtual unsigned int update(Agent *d) = 0; //return 1 on success, 0 otherwise
   };
   
-  template<typename TAgent>
-  class IUpdateableCast: public IUpdateable
-  { public:
-            unsigned int update(Agent *d)  {return update(dynamic_cast<TAgent*>(d));}
-    virtual unsigned int update(TAgent *d) = 0;
-  };
-
 }

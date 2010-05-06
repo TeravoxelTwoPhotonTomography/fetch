@@ -24,28 +24,41 @@ namespace fetch
   {
     namespace file {
 
-      typedef UpcastTask<device::DiskStream> DiskStreamTask;
+      //typedef UpcastTask<device::DiskStream> DiskStreamTask;
+      typedef Task DiskStreamTask;
 
       class WriteRaw : public DiskStreamTask
       { public:
+          unsigned int config (Agent *d);
+          unsigned int run    (Agent *d);
+                    
           unsigned int config(device::DiskStream *agent);
           unsigned int run(device::DiskStream *agent);
       };
 
       class ReadRaw : public DiskStreamTask
       { public:
+          unsigned int config (Agent *d);
+          unsigned int run    (Agent *d);
+            
           unsigned int config(device::DiskStream *agent);
           unsigned int run(device::DiskStream *agent);
       };
 
       class WriteMessage : public DiskStreamTask
-      { public:
+      { public:  
+          unsigned int config (Agent *d);
+          unsigned int run    (Agent *d);
+            
           unsigned int config(device::DiskStream *agent);
           unsigned int run(device::DiskStream *agent);
       };
 
       class ReadMessage : public DiskStreamTask
       { public:
+          unsigned int config (Agent *d);
+          unsigned int run    (Agent *d);
+            
           unsigned int config(device::DiskStream *agent);
           unsigned int run(device::DiskStream *agent);
       };

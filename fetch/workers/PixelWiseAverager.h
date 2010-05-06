@@ -20,11 +20,11 @@ namespace fetch
 
   namespace task
   {
-
+    
     class PixelWiseAverager : public OneToOneWorkTask<Frame>
     { public:
         unsigned int work(Agent *agent, Frame *dst, Frame *src);
-    };
+    };    
   }
 
   namespace worker

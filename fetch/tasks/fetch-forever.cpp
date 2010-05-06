@@ -25,6 +25,9 @@ namespace fetch
       template class FetchForever<i8>;
       template class FetchForever<i16>;
       
+      template<class T> unsigned int FetchForever<T>::config (Agent *d) {return config(dynamic_cast<device::Digitizer*>(d));}
+      template<class T> unsigned int FetchForever<T>::run    (Agent *d) {return run   (dynamic_cast<device::Digitizer*>(d));}
+      
       template<typename T>
         static inline Frame_With_Interleaved_Planes
         _format_frame(ViInt32 record_length, ViInt32 nwfm )
@@ -34,14 +37,6 @@ namespace fetch
                                                 TypeID<T>() );       // pixel type
         return fmt;
       }
-
- /*     template<>
-        static inline Frame_With_Interleaved_Planes
-        _format_frame<i8>(ViInt32 record_length, ViInt32 nwfm );
-
-      template<>
-        static inline Frame_With_Interleaved_Planes
-        _format_frame<i16>(ViInt32 record_length, ViInt32 nwfm );*/
 
       template<typename TPixel>
         unsigned int

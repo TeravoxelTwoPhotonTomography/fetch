@@ -26,11 +26,26 @@ namespace task {
 namespace file {
 
 
+  // Upcasting
+  unsigned int ReadRaw::config      (Agent *d) {return config(dynamic_cast<device::DiskStream*>(d));}
+  unsigned int ReadRaw::run         (Agent *d) {return run   (dynamic_cast<device::DiskStream*>(d));}
+  
+  unsigned int WriteRaw::config     (Agent *d) {return config(dynamic_cast<device::DiskStream*>(d));}
+  unsigned int WriteRaw::run        (Agent *d) {return run   (dynamic_cast<device::DiskStream*>(d));}
+  
+  unsigned int ReadMessage::config  (Agent *d) {return config(dynamic_cast<device::DiskStream*>(d));}
+  unsigned int ReadMessage::run     (Agent *d) {return run   (dynamic_cast<device::DiskStream*>(d));}
+  
+  unsigned int WriteMessage::config (Agent *d) {return config(dynamic_cast<device::DiskStream*>(d));}
+  unsigned int WriteMessage::run    (Agent *d) {return run   (dynamic_cast<device::DiskStream*>(d));}
+
+  //
+  // Implementation
+  //
+  
   unsigned int
   ReadRaw::config(device::DiskStream *agent)
   {return 1;}
-
-
 
   unsigned int
   ReadRaw::run(device::DiskStream *agent)
