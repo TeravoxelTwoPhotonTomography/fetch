@@ -25,6 +25,33 @@
 
  The circular store is always sized as a power of two (non-zero).  Expand
  will cause the store to grow exponentially.
+
+ Interface Notes
+ ---------------
+ Alloc
+   <buffer_count>       The requested number of buffers.  Must be a power of 2.
+   <buffer_size_bytes>  The requested size of each buffer.
+
+ Expand
+   Add's more buffers to the queue.  Does not resize the buffers.  Sizes the
+   queue to the next power of two.
+
+ Resize
+   Changes the size of enqueued buffers.  Operates by realloc'ing buffers in
+   the "dead" part of the queue and changing the <buffer_size_bytes> property.
+   Pop operations police the buffers that get swapped on to the queue to ensure
+   under-sized buffers are resized.
+
+ Pop
+ Push
+ Push_Try
+   Return 0 on success.
+   Operate by swapping a token buffer passed as an argument.
+
+ Peek
+ Peek_At
+   Operate by copying data out of the read point into a passed buffer.
+
 */
 
 typedef void* PVOID;
@@ -40,13 +67,14 @@ typedef struct _ring_fifo
 
 RingFIFO*   RingFIFO_Alloc   ( size_t buffer_count, size_t buffer_size_bytes );
 void        RingFIFO_Expand  ( RingFIFO *self );
+void        RingFIFO_Resize  ( RingFIFO *self, size_t buffer_size_bytes );
 void        RingFIFO_Free    ( RingFIFO *self );
 
-inline unsigned int RingFIFO_Pop       ( RingFIFO *self, void **pbuf);
-inline unsigned int RingFIFO_Peek      ( RingFIFO *self, void  *buf);
-inline unsigned int RingFIFO_Peek_At   ( RingFIFO *self, void  *buf,  size_t index);
-       unsigned int RingFIFO_Push      ( RingFIFO *self, void **pbuf, int expand_on_full);
-inline unsigned int RingFIFO_Push_Try  ( RingFIFO *self, void **pbuf);
+inline unsigned int RingFIFO_Pop       ( RingFIFO *self, void **pbuf, size_t sz);                    //                             *pbuf==NULL ok (allocs)
+inline unsigned int RingFIFO_Peek      ( RingFIFO *self, void **pbuf, size_t sz);                    // copies, might resize *pbuf, *pbuf==NULL ok (allocs)
+inline unsigned int RingFIFO_Peek_At   ( RingFIFO *self, void **pbuf, size_t sz, size_t index);      // copies, might resize *pbuf
+       unsigned int RingFIFO_Push      ( RingFIFO *self, void **pbuf, size_t sz, int expand_on_full);// might resize queue's bufs,  *pbuf==NULL ok (allocs)
+inline unsigned int RingFIFO_Push_Try  ( RingFIFO *self, void **pbuf, size_t sz);                    // might resize queue's bufs,  *pbuf==NULL ok (allocs)
 
 void*       RingFIFO_Alloc_Token_Buffer( RingFIFO *self );
 

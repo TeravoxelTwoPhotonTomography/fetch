@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "frame.h"
-#include "util-file.h"
-#include "util-image.h"
+#include "util/util-file.h"
+#include "util/util-image.h"
 
 /*
  * MESSAGE
@@ -12,7 +12,7 @@ Message::to_file(FILE *fp)                                     // Writing to a f
 { size_t sz  = this->size_bytes(),                             // -----------------------------                                           
          off = (u8*)this->data - (u8*)this;                    // 0. Compute the size of the formating data
   Guarded_Assert( 1 == fwrite( &sz,  sizeof(size_t), 1, fp )); // 1. The size (in bytes) is written to the stream.
-  Guarded_Assert( 1 == fwrite( &off, sizeof(size_t), 1, fp )); // 2. Write out the size of the formating data.
+  Guarded_Assert( 1 == fwrite( &off, sizeof(size_t), 1, fp )); // 2. WriteRaw out the size of the formating data.
   Guarded_Assert( 1 == fwrite( this, 1, sz, fp ));             // 3. A block of data from <this> to <this+size> is written to the stream. 
 }
 
@@ -109,15 +109,48 @@ FrmFmt::is_equivalent( FrmFmt *ref )
       (ref->rtti   == this->rtti    ) ) return 1;
   return 0;
 }
+
+LPCRITICAL_SECTION g_p_frmfmtdump_critical_section = NULL;
     
+static LPCRITICAL_SECTION _get_frmfmtdump_critical_section(void)
+{ static CRITICAL_SECTION gcs;
+  if(!g_p_frmfmtdump_critical_section)
+  { InitializeCriticalSectionAndSpinCount( &gcs, 0x80000400 ); // don't assert - Release builds will optimize this out.
+    g_p_frmfmtdump_critical_section = &gcs;
+  }
+  return g_p_frmfmtdump_critical_section;
+}    
+
+#include <stdarg.h>    
 void
-FrmFmt::dump( const char *filename )
-{ size_t  n = this->width * 
-              this->height*
-              this->nchan;
-  FILE *fp = fopen(filename,"wb");
-  fwrite(this->data, this->Bpp, n, fp );
-  fclose(fp);
+FrmFmt::dump( const char *fmt,...)
+{ EnterCriticalSection( _get_frmfmtdump_critical_section() );
+  {
+    size_t  n = this->width * 
+                this->height*
+                this->nchan;
+    size_t len;    
+    va_list     argList;
+    static      vector_char vbuf = VECTOR_EMPTY;
+
+    // render formated string
+    va_start( argList, fmt );
+      len = _vscprintf(fmt,argList) + 1;
+      vector_char_request( &vbuf, len );
+      memset  ( vbuf.contents, 0, len );
+  #pragma warning( push )
+  #pragma warning( disable:4996 )
+  #pragma warning( disable:4995 )
+      vsprintf( vbuf.contents, fmt, argList);
+  #pragma warning( pop )
+    va_end( argList );  
+    
+    
+    FILE *fp = fopen(vbuf.contents,"wb");
+    fwrite(this->data, this->Bpp, n, fp );
+    fclose(fp);
+  }
+  LeaveCriticalSection( _get_frmfmtdump_critical_section() );
 }
 
 size_t
@@ -130,9 +163,10 @@ FrmFmt::size_bytes(void)
 
 void
 FrmFmt::format(Message* unformatted)
-{ memcpy( unformatted, this, this->self_size );           // Copy the format header
+{ memcpy( unformatted, this, this->self_size );           // Copy the format header (also copies vtable addr)
   unformatted->data = (u8*)unformatted + this->self_size; // Set the data section
 }
+
 
 /*
  * Frame_With_Interleaved_Pixels
@@ -215,6 +249,18 @@ Frame_With_Interleaved_Pixels::
   return sz;
 }
 
+void
+Frame_With_Interleaved_Pixels::compute_pitches( size_t pitch[4] )
+{ Compute_Pitch( pitch, this->height, this->width, this->nchan, this->Bpp );
+}
+
+void
+Frame_With_Interleaved_Pixels::get_shape( size_t n[3] )
+{ n[0] = this->height;
+  n[1] = this->width;
+  n[2] = this->nchan;
+}
+
 /*
  * Frame_With_Interleaved_Planes
  *
@@ -292,6 +338,18 @@ Frame_With_Interleaved_Lines::
       return 0; // no translation
   }
   return sz;
+}
+
+void
+Frame_With_Interleaved_Lines::compute_pitches( size_t pitch[4] )
+{ Compute_Pitch( pitch, this->height, this->nchan, this->width, this->Bpp );
+}
+
+void
+Frame_With_Interleaved_Lines::get_shape( size_t n[3] )
+{ n[0] = this->height;
+  n[1] = this->nchan;
+  n[2] = this->width;
 }
 
 /*
@@ -373,4 +431,16 @@ Frame_With_Interleaved_Planes::
       return 0; // no translation
   }
   return sz;
+}
+
+void
+Frame_With_Interleaved_Planes::compute_pitches( size_t pitch[4] )
+{ Compute_Pitch( pitch, this->nchan, this->height, this->width, this->Bpp );
+}
+
+void
+Frame_With_Interleaved_Planes::get_shape( size_t n[3] )
+{ n[0] = this->nchan;
+  n[1] = this->height;
+  n[2] = this->width;
 }

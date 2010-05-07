@@ -1,3 +1,13 @@
+/*
+ * Author: Nathan Clack <clackn@janelia.hhmi.org>
+ *   Date: Apr 26, 2010
+ */
+/*
+ * Copyright 2010 Howard Hughes Medical Institute.
+ * All rights reserved.
+ * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
+ * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
+ */
 #pragma once
 
 #include "stdafx.h"
@@ -7,10 +17,10 @@
  AsynQ
  -----
 
- This is a threadsafe asynchronous queue.  It can be used from multiple threads
+ This is a thread-safe asynchronous queue.  It can be used from multiple threads
  without explicit locking.
 
- The implimentation wraps a FIFO queue implimented on a circular store of
+ The implementation wraps a FIFO queue implemented on a circular store of
  pointers that address distinct, pre-allocated buffers.  
 
  There are three basic operations: pop, push and peek. Push and pop use a swap
@@ -59,7 +69,7 @@ typedef struct _asynq
   u32 waiting_producers;
   u32 waiting_consumers;
   
-  CRITICAL_SECTION   lock;            // mutex
+  CRITICAL_SECTION   _lock;           // mutex
   HANDLE             notify_space;    // triggered when queue is not full (has available space)
   HANDLE             notify_data;     // triggered when queue is not empty (has available data).
   HANDLE             notify_abort;    // triggered to abort any pending operations (e.g. for shutdown).
@@ -69,19 +79,19 @@ asynq *Asynq_Alloc   ( size_t buffer_count, size_t buffer_size_bytes );
 asynq *Asynq_Ref     ( asynq *self );
 int    Asynq_Unref   ( asynq *self );
 
-unsigned int Asynq_Push       ( asynq *self, void **pbuf, int expand_on_full ); // on overflow, may overwrite or expand
-unsigned int Asynq_Push_Copy  ( asynq *self, void  *buf,  int expand_on_full ); // on overflow, same as push
-unsigned int Asynq_Push_Try   ( asynq *self, void **pbuf );                     // on overflow, fails immediatly
-unsigned int Asynq_Push_Timed ( asynq *self, void **pbuf, DWORD timeout_ms );   // on overflow, waits.  Fails after timeout.
+unsigned int Asynq_Push       ( asynq *self, void **pbuf, size_t sz, int expand_on_full ); // on overflow, may overwrite or expand
+unsigned int Asynq_Push_Copy  ( asynq *self, void  *buf,  size_t sz, int expand_on_full ); // on overflow, same as push
+unsigned int Asynq_Push_Try   ( asynq *self, void **pbuf, size_t sz );                     // on overflow, fails immediatly
+unsigned int Asynq_Push_Timed ( asynq *self, void **pbuf, size_t sz, DWORD timeout_ms );   // on overflow, waits.  Fails after timeout.
 
-unsigned int Asynq_Pop          ( asynq *self, void **pbuf );                   // on onderflow, waits forever.
-unsigned int Asynq_Pop_Try      ( asynq *self, void **pbuf );
-unsigned int Asynq_Pop_Copy_Try ( asynq *self, void  *buf  );
-unsigned int Asynq_Pop_Timed    ( asynq *self, void **pbuf, DWORD timeout_ms );
+unsigned int Asynq_Pop          ( asynq *self, void **pbuf, size_t sz );                   // on underflow, waits forever.
+unsigned int Asynq_Pop_Try      ( asynq *self, void **pbuf, size_t sz );
+unsigned int Asynq_Pop_Copy_Try ( asynq *self, void  *buf , size_t sz );
+unsigned int Asynq_Pop_Timed    ( asynq *self, void **pbuf, size_t sz, DWORD timeout_ms );
 
-unsigned int Asynq_Peek       ( asynq *self, void  *buf );
-unsigned int Asynq_Peek_Try   ( asynq *self, void  *buf );
-unsigned int Asynq_Peek_Timed ( asynq *self, void  *buf, DWORD timeout_ms );
+unsigned int Asynq_Peek       ( asynq *self, void **pbuf, size_t sz );
+unsigned int Asynq_Peek_Try   ( asynq *self, void **pbuf, size_t sz );
+unsigned int Asynq_Peek_Timed ( asynq *self, void **pbuf, size_t sz, DWORD timeout_ms );
 
        void  Asynq_Flush_Waiting_Consumers( asynq *self );
 
@@ -90,6 +100,8 @@ inline void  Asynq_Unlock  ( asynq *self );
 
 int Asynq_Is_Full( asynq *self );
 int Asynq_Is_Empty( asynq *self );
+
+inline void   Asynq_Resize_Buffers(asynq* self, size_t nbytes);                            // when nbytes is less than current size, does nothing
 
 void*  Asynq_Token_Buffer_Alloc( asynq *self );
 void*  Asynq_Token_Buffer_Alloc_And_Copy ( asynq *self, void *src );

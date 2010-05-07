@@ -14,6 +14,23 @@
 #define DEBUG_TIC_TOC_TIMER
 #endif
 
+// -----------------
+// Windows utitities
+// -----------------
+
+UINT MyCreateUserWindowMessage( const char *name, size_t id )
+{ char s[1000],*t = s;
+  size_t n;
+  memset(s,0,1000);
+  n = strlen(name);
+  memcpy(s,name,n);
+  t+=n;
+  if( sizeof(size_t)==8 )
+    sprintf(t,"_%llu",id);
+  else
+    sprintf(t,"_%lu",id); 
+  return ::RegisterWindowMessage(s);
+}
 
 
 //
@@ -491,8 +508,8 @@ void debug(const char* fmt, ...)
     static vector_char vbuf = VECTOR_EMPTY;
 
     static int lock = 0;
-    assert( lock == 0 ); // One of the logging functions generated a log message
-    lock = 1;
+    assert( lock == 0 ); // One of the logging callback functions generated a log message (not kosher).
+    lock = 1;            // The "lock" flag blocks recursion.  Note that the recursion causes an exit.
 
     // render formated string
     va_start( argList, fmt );

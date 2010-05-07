@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "niScope.h"
-
 #include "niModInst.h"
 
 #define DIGCHK( expr ) (niscope_chk( vi, expr, #expr, error   ))
@@ -102,7 +101,7 @@ void niscope_debug_print_status( ViSession vi )
   ViInt32 mem = 0;
 
   DIGCHK( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_BACKLOG, &pts ));
-  debug("Digitizer Backlog: %4.1f MS\r\n",pts/1024.0/1024.0);
+  debug("Digitizer                              Backlog: %4.1f MS\r\n",pts/1024.0/1024.0);
 
   DIGCHK( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_ONBOARD_MEMORY_SIZE, &mem ));
   debug("Digitizer                          Buffer size: %4.1f MB\r\n",mem/1024.0/1024.0);
@@ -144,3 +143,32 @@ double niscope_get_backlog( ViSession vi )
   DIGCHK( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_BACKLOG, &pts ));  
   return pts;
 }
+
+
+template<class TPixel> 
+ ViStatus Fetch (ViSession vi,
+                              ViConstString channellist,
+                              ViReal64 timeout,
+                              ViInt32 numsamples,
+                              TPixel* data,
+                              struct niScope_wfmInfo *info);
+// niScope fetch function alias
+template<> 
+ViStatus Fetch< i8> ( ViSession vi,
+                      ViConstString channellist,
+                      ViReal64 timeout,
+                      ViInt32 numsamples,
+                      i8* data,
+                      struct niScope_wfmInfo *info) 
+{return niScope_FetchBinary8(vi,channellist,timeout,numsamples,(ViInt8*)data,info);
+}
+
+template<> 
+ViStatus Fetch<i16> ( ViSession vi,
+                      ViConstString channellist,
+                      ViReal64 timeout,
+                      ViInt32 numsamples,
+                      i16* data,
+                      struct niScope_wfmInfo *info) 
+{return niScope_FetchBinary16(vi,channellist,timeout, numsamples,(ViInt16*)data,info);
+}  

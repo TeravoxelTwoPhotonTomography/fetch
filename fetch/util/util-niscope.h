@@ -22,3 +22,12 @@ void niscope_debug_print_status( ViSession vi );
 void niscope_cfg_rtsi_default( ViSession vi );
 
 double niscope_get_backlog( ViSession vi );
+
+template<class TPixel> 
+ViStatus Fetch (ViSession vi,
+                ViConstString channellist,
+                ViReal64 timeout,
+                ViInt32 numsamples,
+                TPixel* data,
+                struct niScope_wfmInfo *info);
+                            

@@ -209,7 +209,7 @@ int Scanner_Pockels_Set_Open_Val(f64 volts, int time)        // Returns the time
     { int run = Device_Is_Running( gp_scanner_device );
       if(run)
         Device_Stop( gp_scanner_device, SCANNER_DEFAULT_TIMEOUT );
-      DeviceTask_Scanner_Video_Write_Waveforms( &g_scanner );
+      DeviceTask_Scanner_Video_Write_Waveforms( &g_scanner ); //commit
       debug("\tChanged Pockels to %f V at open.\r\n",volts);
       if( run )
         Device_Run( gp_scanner_device ); 

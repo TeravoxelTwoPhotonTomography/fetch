@@ -22,6 +22,7 @@
 #define SCANNER_DEFAULT_GALVO_V_MAX                10.0   // V - Maximum permissible value
 #define SCANNER_DEFAULT_GALVO_V_MIN               -10.0   // V - Minimum permissible value
 #define SCANNER_DEFAULT_GALVO_CHANNEL        "/Dev1/ao0"  // DAQ terminal: should be connected to command input on galvo controller
+
 #define SCANNER_DEFAULT_GALVO_TRIGGER            "APFI0"  // DAQ terminal: should be connected to resonant velocity output
 #define SCANNER_DEFAULT_GALVO_ARMSTART           "RTSI2"  // DAQ terminal: should be connected to "ReadyForStart" event output from digitizer
 #define SCANNER_DEFAULT_GALVO_CLOCK "Ctr1InternalOutput"  // DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock
@@ -54,6 +55,7 @@ typedef struct _scanner_config
   f64         galvo_v_lim_max;
   f64         galvo_v_lim_min;
   char        galvo_channel [SCANNER_MAX_CHAN_STRING];
+
   char        galvo_trigger [SCANNER_MAX_CHAN_STRING];
   char        galvo_armstart[SCANNER_MAX_CHAN_STRING];
   char        galvo_clock   [SCANNER_MAX_CHAN_STRING];

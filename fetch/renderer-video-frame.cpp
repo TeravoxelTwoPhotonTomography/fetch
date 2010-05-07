@@ -2,8 +2,8 @@
 #include "renderer-video-frame.h"
 #include <d3d10.h>
 #include <d3dx10.h>
-#include "util-dx10.h"
-#include "util-image.h"
+#include "util/util-dx10.h"
+#include "util/util-image.h"
 
 Video_Frame_Resource*
 Video_Frame_Resource_Alloc(void)

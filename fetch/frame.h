@@ -1,8 +1,16 @@
 #pragma once
 /*
  * TODO - change tokens
- * TODO - on implimentation side, use rtti field to call proper templated copy
+ * TODO - on implementation side, use rtti field to call proper template copy
  *        functions.
+ */
+
+/*
+ * NOTES
+ * -----
+ * - preliminary implementation doesn't uses neither "translate" nor
+ *   serialization. So they're basically untested.  It's also not clear
+ *   how useful they are.
  */
 
 /*
@@ -16,7 +24,7 @@
  *  0. Memory is managed by the queue.  It's assumed that the queue provides an
  *     allocated storage space for the entire Message.
  *
- *     Importantly, this means **storage is allocated outside this object.**
+ *     Importantly, this means **data storage is allocated outside this object.**
  *
  *     However, the formating of the buffer is up to the Message object.
  *     Typically data will be organized as:
@@ -26,7 +34,8 @@
  *     ^                ^
  *     0                sizeof( message object )
  *
- *     The message object acts as a head with the appropriate formatting data.
+ *     The message object acts as a header with the appropriate formatting
+ *     data.
  *
  *
  *  Producer side
@@ -55,18 +64,18 @@
  *  2. Call translate() using the appropriate format id.
  *  3. Cast the returned pointer to a pointer for the desired Message subclass.
  *  4. ...
- *  5. profit
+ *  5. Profit
  *
  * ## SERIALIZING ##
  *
  *  Any instance of a class deriving from Message can be written to file.  The
- *  file assumed to consist of a series of messages seperated by a few bytes
+ *  file assumed to consist of a series of messages separated by a few bytes
  *  describing the size of each chunk.
  *
  *  Reading from a file/byte stream
  *  -------------------------------
  *  There are a couple different methods.  Both revolve around how memory is
- *  allocated for the buffer meant to recieve the loaded message.
+ *  allocated for the receiving buffer.
  *
  *  A. Determine required buffer size, allocate and read.
  *     0. Get the required size with: sz = Message::from_file(file,NULL,0);
@@ -76,7 +85,7 @@
  *
  *  B. Determine max buffer size on first pass through file and push onto a
  *     queue.
- *     0. with maxsize = 0
+ *     0. With maxsize = 0
  *        while not end of file
  *           sz = Message::from_file(file,NULL,0); // get size of this message
  *           fseek(file, sz, SEEK_CUR);            // jump to next message
@@ -87,7 +96,7 @@
  *     4. Call Message::from_file(file, buffer, buffersize ).
  *        It should return zero this time.
  *     5. Push token buffer onto the queue.
- *     6. repeat 4-5 till end of file.
+ *     6. Repeat 4-5 till end of file.
  *
  *
  *  Now it can be shipped off (pushed on a queue, for example) and translated
@@ -99,13 +108,11 @@
  *
  *    m->to_file(fp);
  *
- *  That's it!
- *
- *  Compatibility Issues
+ *  Compatibility Issues 
  *  --------------------
  *
  *  I think most of these issues could be accounted for with an appropriate
- *  file-level header that specifies endianess, whether the system is 32 or
+ *  file-level header that specifies endianness, whether the system is 32 or
  *  64 bits, and an overall version identifier.
  *
  *  - endianness is not accounted for.
@@ -179,10 +186,10 @@ class FrmFmt : public Message
     FrmFmt(u16 width, u16 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size);
 
     unsigned int   is_equivalent( FrmFmt *ref );
-    void           dump( const char *filename );
+    void           dump( const char *filename,... );                    // performs printf-style string formating on filename.  Thread-safe.
 
-            size_t size_bytes  ( void );
-            void   format      ( Message *unformatted );
+            size_t size_bytes      ( void );
+            void   format          ( Message *unformatted );
 };
 
 class Frame : public FrmFmt
@@ -191,7 +198,10 @@ class Frame : public FrmFmt
     Frame(u16 width, u16 height, u8 nchan, Basic_Type_ID type)                                       : FrmFmt(width,height,nchan,type) {}
     Frame(u16 width, u16 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size) : FrmFmt(width,height,nchan,type,id,self_size) {}
 
-    virtual void   copy_channel( void *dst, size_t rowpitch, size_t ichan ) = 0;
+
+    virtual void   copy_channel    ( void *dst, size_t rowpitch, size_t ichan ) = 0;
+    virtual void   compute_pitches ( size_t pitch[4] )                          = 0;
+    virtual void   get_shape       ( size_t n[3] )                              = 0;
     // Children also need to impliment (left over from Message):
     //             translate()
     //             format()    - but only if formatting data is added
@@ -204,6 +214,9 @@ class Frame_With_Interleaved_Pixels : public Frame
 
               void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
     static  size_t   translate    ( Message *dst, Message *src );
+    
+    virtual void   compute_pitches ( size_t pitch[4] );
+    virtual void   get_shape       ( size_t n[3] );
 };
 
 class Frame_With_Interleaved_Lines : public Frame
@@ -213,6 +226,9 @@ class Frame_With_Interleaved_Lines : public Frame
 
               void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
     static  size_t   translate    ( Message *dst, Message *src );
+    
+    virtual void   compute_pitches ( size_t pitch[4] );
+    virtual void   get_shape       ( size_t n[3] );
 };
 
 class Frame_With_Interleaved_Planes : public Frame
@@ -222,4 +238,7 @@ class Frame_With_Interleaved_Planes : public Frame
 
               void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
     static  size_t   translate    ( Message *dst, Message *src );
+    
+    virtual void   compute_pitches ( size_t pitch[4] );
+    virtual void   get_shape       ( size_t n[3] );
 };

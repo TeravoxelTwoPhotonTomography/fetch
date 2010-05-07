@@ -8,8 +8,18 @@
 // Windows utitities
 // -----------------
 
-#define DECLARE_USER_MESSAGE(name,guid) \
+#define DECLARE_USER_MESSAGE__NON_STATIC(name) \
+       UINT #name
+
+#define DECLARE_USER_MESSAGE_STR(name,guid) \
      static const UINT name = ::RegisterWindowMessage( #name guid )
+
+UINT MyCreateUserWindowMessage( const char *name, size_t id );
+
+#define DECLARE_USER_MESSAGE_INT(name,id) \
+     static const UINT name = MyCreateUserWindowMessage( #name, id )
+#define DEFINE_USER_MESSAGE_INT__NON_STATIC(name,id) \
+     name = MyCreateUserWindowMessage( #name, id )
 
 // -----------------
 // fixed width types
