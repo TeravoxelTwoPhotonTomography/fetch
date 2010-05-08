@@ -12,11 +12,10 @@
 #include "asynq.h"
 
 
-#if 1
+#if 0
 #define DEBUG_ASYNQ_HANDLE_WAIT_FOR_RESULT
 #define DEBUG_ASYNQ_FLUSH_WAITING_CONSUMERS
 #define DEBUG_ASYNQ_UNREF
-
 #endif
 
 //

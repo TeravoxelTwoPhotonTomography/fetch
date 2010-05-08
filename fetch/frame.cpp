@@ -3,6 +3,8 @@
 #include "util/util-file.h"
 #include "util/util-image.h"
 
+#define FRAME_WARN_ON_DUMP
+
 /*
  * MESSAGE
  */
@@ -145,7 +147,9 @@ FrmFmt::dump( const char *fmt,...)
   #pragma warning( pop )
     va_end( argList );  
     
-    
+#ifdef FRAME_WARN_ON_DUMP
+    warning("Frame::Dump() - Writing %s\r\n", vbuf.contents);
+#endif
     FILE *fp = fopen(vbuf.contents,"wb");
     fwrite(this->data, this->Bpp, n, fp );
     fclose(fp);

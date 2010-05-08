@@ -89,9 +89,9 @@ namespace fetch
   template<typename TWorkTask,typename TParam>
   WorkAgent<TWorkTask,TParam>::WorkAgent(Agent *source, int ichan, TParam parameter)
   { config = parameter;
-    connect(this,ichan,source,ichan);
-    TWorkTask::alloc_output_queues(this);// Task must implement this.  Must connect() first.  WorkTask has a default impl. that assumes in[0]->out[0]
-    __task_instance = TWorkTask();       // a bit kludgey - the WorkAgent is only ever associated with a single task.
+    connect(this,ichan,source,ichan);    
+    __task_instance = TWorkTask();            // a bit kludgey - the WorkAgent is only ever associated with a single task.
+    __task_instance.alloc_output_queues(this);// Task must implement this.  Must connect() first.  WorkTask has a default impl. that assumes in[0]->out[0]
     arm(&task_instance,INFINITE);
     run();
   }
@@ -128,7 +128,7 @@ namespace fetch
   WorkAgent<TWorkTask,TParam>*
   WorkAgent<TWorkTask,TParam>::apply(Agent *source, int ichan)
   { connect(this,ichan,source,ichan);
-    TWorkTask::alloc_output_queues(this);// Task must implement this.  Must connect() first.  WorkTask has a default impl. that assumes in[0]->out[0]
+    __task_instance.alloc_output_queues(this);// Task must implement this.  Must connect() first.  WorkTask has a default impl. that assumes in[0]->out[0]
     arm(&__task_instance,INFINITE);
     run();
     return this;

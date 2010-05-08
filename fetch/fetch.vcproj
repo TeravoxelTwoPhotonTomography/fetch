@@ -307,7 +307,15 @@
 					>
 				</File>
 				<File
+					RelativePath=".\devices\Scanner3D.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\devices\shutter.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\devices\ZPiezo.cpp"
 					>
 				</File>
 			</Filter>
@@ -501,7 +509,15 @@
 					>
 				</File>
 				<File
+					RelativePath=".\devices\Scanner3D.h"
+					>
+				</File>
+				<File
 					RelativePath=".\devices\shutter.h"
+					>
+				</File>
+				<File
+					RelativePath=".\devices\ZPiezo.h"
 					>
 				</File>
 			</Filter>

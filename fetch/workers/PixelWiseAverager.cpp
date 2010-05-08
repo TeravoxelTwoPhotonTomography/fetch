@@ -22,7 +22,7 @@ namespace fetch
       f32  *acc_cur,
            *acc = (f32*)dst,
             norm = (f32)ntimes;
-      memset(acc, 0, nelem*sizeof(f32));         // initialize accumulator
+      memset(acc, 0, nelem*sizeof(f32)/ntimes);  // initialize accumulator
       acc_cur = acc;                             // accumulate and average
       for (src_cur = buf; src_cur < buf + nelem;)
       { for (int i = 0; i < ntimes; ++i)

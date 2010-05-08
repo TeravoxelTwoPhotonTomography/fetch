@@ -23,7 +23,7 @@ namespace fetch
     class Terminator : public WorkTask
     { public:
         unsigned int run                (Agent *agent);
-        static  void alloc_output_queues(Agent *agent);//noop
+        virtual  void alloc_output_queues(Agent *agent);//noop
     };
   }
 

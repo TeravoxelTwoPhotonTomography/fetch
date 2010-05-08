@@ -65,7 +65,7 @@ namespace fetch
     { public:
         unsigned int config(Agent *d) {return 1;} //success
 
-        static void alloc_output_queues(Agent *agent);
+        virtual void alloc_output_queues(Agent *agent);
     };
 
     //class UpdateableWorkTask : public fetch::UpdateableTask

@@ -104,7 +104,7 @@ namespace fetch
               ao);
         DAQJMP( DAQmxStopTask(  ao ));
         DAQJMP( DAQmxClearTask( ao ));
-      }
+      }      
     Error:
       this->unlock();
       ao = NULL;

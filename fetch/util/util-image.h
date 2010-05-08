@@ -1,4 +1,5 @@
 #pragma once
+#include "../stdafx.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -30,53 +31,79 @@
 //   
 //  n[] = { 256, 512, 3 };
 
+#ifdef __cplusplus
+#define mydeclspec extern "C"
+#else
+#define mydeclspec
+#endif
+
+mydeclspec
 void Compute_Pitch( size_t pitch[4], size_t d2, size_t d1, size_t d0, size_t pixel_pitch);
 
 int _pitch_first_mismatch( size_t dst_pitch[4], size_t src_pitch[4] );
 
-// cast and copy - always uses a slow copy to guarantee casting
+#ifdef __cplusplus
+// cast and copy - always uses a slow copy to gaurantee casting
+//
+// - divide pitches by sizeof types since the copy/indexing implicitly
+//   accounts for this step size.
 template<class Tdst,class Tsrc>
 void
 imCastCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n[3] )
-{ size_t i = n[0], 
-         b = sizeof(Tsrc),
-         vols[3] = { n[2]*n[1]*n[0]*b,  // in bytes.  used in block copies
-                          n[1]*n[0]*b, 
-                               n[0]*b},
-          v  = vols[2],
-          dp0 = dst_pitch[1], // the biggest jump
-          dp1 = dst_pitch[2],
-          dp2 = dst_pitch[3], // the smallest jump
-          sp0 = src_pitch[1],
-          sp1 = src_pitch[2],
-          sp2 = src_pitch[3];
-    while(i--)
-    { size_t j = n[1];
-      Tdst *dc0 = dst + dp0 * i;
-      Tsrc *sc0 = src + sp0 * i;
-      while(j--)
-      { size_t k = n[2]; 
-        Tdst *dc1 = dc0 + dp1 * j;
-        Tsrc *sc1 = sc0 + sp1 * j;
-        while(k--)
-        { Tdst *dc2 = dc1 + dp2 * k;
-          Tsrc *sc2 = sc1 + sp2 * k;
-          *dc2 = (Tdst) (*sc2);       // Cast
-        }
-      }
-    }
+{ size_t i,j,k,
+          bs = sizeof(Tsrc),
+          bd = sizeof(Tdst),
+          dp0 = dst_pitch[1]/bd, // the biggest jump
+          dp1 = dst_pitch[2]/bd,
+          dp2 = dst_pitch[3]/bd, // the smallest jump
+          sp0 = src_pitch[1]/bs,
+          sp1 = src_pitch[2]/bs,
+          sp2 = src_pitch[3]/bs;
+  for(i=0;i<n[0];++i)
+    for(j=0;j<n[1];++j)
+      for(k=0;k<n[2];++k)
+        dst[dp0*i + dp1*j + dp2*k] = (Tdst) src[sp0*i + sp1*j + sp2*k];
 }
+#endif // #ifdef __cplusplus
+
+#define DECL_IMCASTCOPY(Tdstlbl,Tdst,Tsrclbl,Tsrc) \
+  mydeclspec void imCastCopy_##Tdstlbl##_##Tsrclbl( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n[3] );
 
 
+#define DECL_IMCASTCOPY_BY_DEST(Tdstlbl,Tdst) \
+  DECL_IMCASTCOPY(Tdstlbl,Tdst ,u8 ,u8  );\
+  DECL_IMCASTCOPY(Tdstlbl,Tdst ,u16,u16 );\
+  DECL_IMCASTCOPY(Tdstlbl,Tdst ,u32,u32 );\
+  DECL_IMCASTCOPY(Tdstlbl,Tdst ,u64,u64 );\
+  DECL_IMCASTCOPY(Tdstlbl,Tdst ,i8 , i8  );\
+  DECL_IMCASTCOPY(Tdstlbl,Tdst ,i16, i16 );\
+  DECL_IMCASTCOPY(Tdstlbl,Tdst ,i32, i32 );\
+  DECL_IMCASTCOPY(Tdstlbl,Tdst ,i64, i64 );\
+  DECL_IMCASTCOPY(Tdstlbl,Tdst ,f32, f32   );\
+  DECL_IMCASTCOPY(Tdstlbl,Tdst ,f64, f64  );
+
+DECL_IMCASTCOPY_BY_DEST( u8 ,u8  );
+DECL_IMCASTCOPY_BY_DEST( u16,u16 );
+DECL_IMCASTCOPY_BY_DEST( u32,u32 );
+DECL_IMCASTCOPY_BY_DEST( u64,u64 );
+DECL_IMCASTCOPY_BY_DEST( i8 , i8  );
+DECL_IMCASTCOPY_BY_DEST( i16, i16 );
+DECL_IMCASTCOPY_BY_DEST( i32, i32 );
+DECL_IMCASTCOPY_BY_DEST( i64, i64 );
+DECL_IMCASTCOPY_BY_DEST( f32, f32   );
+DECL_IMCASTCOPY_BY_DEST( f64, f64  );
+
+#ifdef __cplusplus
 // copies - casting not gauranteed
 template<class Tdst, class Tsrc>
 void
 imCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n[3] )
 { int mismatch = _pitch_first_mismatch(dst_pitch, src_pitch);
-  size_t b = sizeof(Tsrc),
-         vols[3] = { n[0]*n[1]*n[2]*b,  // in bytes.  used in block copies
-                          n[1]*n[2]*b, 
-                               n[2]*b};
+  size_t bs = sizeof(Tsrc),
+         bd = sizeof(Tdst),         
+         vols[3] = { n[0]*n[1]*n[2]*bs,  // in bytes.  used in block copies
+                          n[1]*n[2]*bs, 
+                               n[2]*bs};
   if( sizeof(Tdst) != sizeof(Tsrc) )
     mismatch = 3; //a mismatch on the pixel level will force the pixel by pixel copy
 
@@ -86,66 +113,75 @@ imCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n
       memcpy( dst, src, vols[0] );
       break;
     case  1:                        // "planes" as chunks
-      { size_t i = n[0],            // number of planes
+      { size_t i,                   // number of planes
                v = vols[1],         // number of elements in a chunk
                dp = dst_pitch[1],   // plane pitch
                sp = src_pitch[1];   //
-        while(i--)
-        { Tdst *dc = dst + dp * i;
-          Tsrc *sc = src + sp * i;
-          memcpy( dc, sc, v );
-        }
+        for(i=0;i<n[0];++i)
+          memcpy(dst+dp*i,src+sp*i,v);
       }
       break;
     case  2:                        // "line" as chunks
-      { size_t i = n[0],            // number of planes
+      { size_t i,j,                 // number of planes
                v   = vols[2],       // number of elements in a chunk
                dp0 = dst_pitch[1],  // plane pitch
                dp1 = dst_pitch[2],  // line pitch
                sp0 = src_pitch[1],  // plane pitch
                sp1 = src_pitch[2];  // line pitch
-        while(i--)
-        { size_t j = n[1];          // number of lines
-          Tdst *dc0 = dst + dp0 * i;// plane addresses
-          Tsrc *sc0 = src + sp0 * i;
-          while(j--)
-          { Tdst *dc1 = dc0 + dp1 * j;// line addresses
-            Tsrc *sc1 = sc0 + sp1 * j;
-            memcpy( dc1, sc1, v );
-          }
-        }
+        for(i=0;i<n[0];++i)
+          for(j=0;j<n[1];++j)
+            memcpy(dst+dp0*i+dp1*j,
+                   src+sp0*i+sp1*j,
+                   v);
       }
       break;
     case  3:                        // pixel copy
     default:
-      { size_t i = n[0],            // number of planes
-               dp0 = dst_pitch[1],  // plane pitch
-               dp1 = dst_pitch[2],  // line  pitch
-               dp2 = dst_pitch[3],  // pixel pitch
-               sp0 = src_pitch[1],
-               sp1 = src_pitch[2],
-               sp2 = src_pitch[3];
-        while(i--)
-        { size_t j = n[1];                // number of lines
-          Tdst *dc0 = dst + dp0 * i;      // plane address
-          Tsrc *sc0 = src + sp0 * i;
-          while(j--)
-          { size_t k = n[2];              // number of pixels
-            Tdst *dc1 = dc0 + dp1 * j;    // line address
-            Tsrc *sc1 = sc0 + sp1 * j;
-            while(k--)
-            { Tdst *dc2 = dc1 + dp2 * k;  // pixel address
-              Tsrc *sc2 = sc1 + sp2 * k;
-              *dc2 = (Tdst) (*sc2);       // Cast
-            }
-          }
-        }
+      { size_t k,j,i = n[0],        // number of planes
+               dp0 = dst_pitch[1]/bd,  // plane pitch - device these by pixel size since copy op implicitly includes pixel step
+               dp1 = dst_pitch[2]/bd,  // line  pitch
+               dp2 = dst_pitch[3]/bd,  // pixel pitch
+               sp0 = src_pitch[1]/bs,
+               sp1 = src_pitch[2]/bs,
+               sp2 = src_pitch[3]/bs;
+        for(i=0;i<n[0];++i)
+          for(j=0;j<n[1];++j)
+            for(k=0;k<n[2];++k)
+#pragma warning( push )
+#pragma warning( disable:4244 )
+              dst[dp0*i + dp1*j + dp2*k] = src[sp0*i + sp1*j + sp2*k];
+#pragma warning( pop )              
       }
       break;
   }
 }
+#endif //#ifdef __cplusplus
 
+#define DECL_IMCOPY(Tdstlbl,Tdst,Tsrclbl,Tsrc) \
+  mydeclspec void imCopy_##Tdstlbl##_##Tsrclbl( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n[3] );
 
+#define DECL_IMCOPY_BY_DEST(Tdstlbl,Tdst) \
+  DECL_IMCOPY(Tdstlbl,Tdst ,u8 ,u8  );\
+  DECL_IMCOPY(Tdstlbl,Tdst ,u16,u16 );\
+  DECL_IMCOPY(Tdstlbl,Tdst ,u32,u32 );\
+  DECL_IMCOPY(Tdstlbl,Tdst ,u64,u64 );\
+  DECL_IMCOPY(Tdstlbl,Tdst ,i8 , i8  );\
+  DECL_IMCOPY(Tdstlbl,Tdst ,i16, i16 );\
+  DECL_IMCOPY(Tdstlbl,Tdst ,i32, i32 );\
+  DECL_IMCOPY(Tdstlbl,Tdst ,i64, i64 );\
+  DECL_IMCOPY(Tdstlbl,Tdst ,f32, f32   );\
+  DECL_IMCOPY(Tdstlbl,Tdst ,f64, f64  );
+
+DECL_IMCOPY_BY_DEST( u8 ,u8  );
+DECL_IMCOPY_BY_DEST( u16,u16 );
+DECL_IMCOPY_BY_DEST( u32,u32 );
+DECL_IMCOPY_BY_DEST( u64,u64 );
+DECL_IMCOPY_BY_DEST( i8 , i8  );
+DECL_IMCOPY_BY_DEST( i16, i16 );
+DECL_IMCOPY_BY_DEST( i32, i32 );
+DECL_IMCOPY_BY_DEST( i64, i64 );
+DECL_IMCOPY_BY_DEST( f32, f32   );
+DECL_IMCOPY_BY_DEST( f64, f64  );
 
 // Copy Transpose
 //
@@ -157,7 +193,43 @@ imCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n
 //         that is, before transposition.  It's returned
 //         in the destination (transposed) space.
 //
+//  <src_pitch> should specifies the source dimensions.  See Compute_Pitch.
+//  <dst_pitch> should specifies the dest   dimensions.
+//
 
+// This works as follows:
+//
+// A positional vector, r, in {whole numbers}^N gets mapped to an index with a
+// liear projection.  For example, in the <src> array the value at r is:
+//
+//   src[p.r]
+//
+// where p is the projection for <src>.
+//
+// We might want to copy values from a <src> array to a <dst> array.
+//
+//   dst[p'.r'] = src[p.r]
+//
+// where p' is the <dst> projection and r' is some other position.
+//
+// For a transpose, T, we have:
+//
+//   r' = T.r
+//
+// so
+//
+//   dst[(p'.T).r] = src[p.r]
+//
+// but p'.T is just another projection.  In fact, if T swaps dimensions <i> and
+// <j>, then p'.T swaps the i'th and j'th elements in p'.  By replacing p' with
+// p'.T, the copy operation doesn't need to know anything about T itself; it
+// just iterates over the domain of r using the respective projections to
+// perform the mapping.
+//
+// In principle, this is true for any linear transform over the addressing
+// vector space.
+//
+#ifdef __cplusplus
 template<class Tdst, class Tsrc>
 void
 imCopyTranspose( Tdst *dst, size_t dst_pitch[4], 
@@ -180,4 +252,30 @@ imCopyTranspose( Tdst *dst, size_t dst_pitch[4],
   shape[i] = shape[j];
   shape[j] = ti;
 }
+#endif //#ifdef __cplusplus
 
+#define DECL_IMCOPYTRANSPOSE(Tdstlbl,Tdst,Tsrclbl,Tsrc) \
+  mydeclspec void imCopyTranspose_##Tdstlbl##_##Tsrclbl( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n[3], int i, int j );
+
+#define DECL_IMCOPYTRANSPOSE_BY_DEST(Tdstlbl,Tdst) \
+  DECL_IMCOPYTRANSPOSE(Tdstlbl,Tdst ,u8 ,u8  );\
+  DECL_IMCOPYTRANSPOSE(Tdstlbl,Tdst ,u16,u16 );\
+  DECL_IMCOPYTRANSPOSE(Tdstlbl,Tdst ,u32,u32 );\
+  DECL_IMCOPYTRANSPOSE(Tdstlbl,Tdst ,u64,u64 );\
+  DECL_IMCOPYTRANSPOSE(Tdstlbl,Tdst ,i8 , i8  );\
+  DECL_IMCOPYTRANSPOSE(Tdstlbl,Tdst ,i16, i16 );\
+  DECL_IMCOPYTRANSPOSE(Tdstlbl,Tdst ,i32, i32 );\
+  DECL_IMCOPYTRANSPOSE(Tdstlbl,Tdst ,i64, i64 );\
+  DECL_IMCOPYTRANSPOSE(Tdstlbl,Tdst ,f32, f32   );\
+  DECL_IMCOPYTRANSPOSE(Tdstlbl,Tdst ,f64, f64  );
+
+DECL_IMCOPYTRANSPOSE_BY_DEST( u8 ,u8  );
+DECL_IMCOPYTRANSPOSE_BY_DEST( u16,u16 );
+DECL_IMCOPYTRANSPOSE_BY_DEST( u32,u32 );
+DECL_IMCOPYTRANSPOSE_BY_DEST( u64,u64 );
+DECL_IMCOPYTRANSPOSE_BY_DEST( i8 , i8  );
+DECL_IMCOPYTRANSPOSE_BY_DEST( i16, i16 );
+DECL_IMCOPYTRANSPOSE_BY_DEST( i32, i32 );
+DECL_IMCOPYTRANSPOSE_BY_DEST( i64, i64 );
+DECL_IMCOPYTRANSPOSE_BY_DEST( f32, f32   );
+DECL_IMCOPYTRANSPOSE_BY_DEST( f64, f64  );

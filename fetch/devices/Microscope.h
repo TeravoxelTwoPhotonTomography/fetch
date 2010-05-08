@@ -14,7 +14,7 @@
 
 #include "../agent.h"
 #include "../task.h"
-#include "scanner2D.h"
+#include "scanner3D.h"
 
 #include "../workers/FrameAverage.h"
 #include "../workers/PixelWiseAverager.h"

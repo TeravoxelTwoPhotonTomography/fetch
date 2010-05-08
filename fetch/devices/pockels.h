@@ -75,15 +75,6 @@
 
 #define POCKELS_MAX_CHAN_STRING               32
 
-#define POCKELS_CONFIG_DEFAULT \
-        ({ POCKELS_DEFAULT_V_MAX,\
-          POCKELS_DEFAULT_V_MIN,\
-          POCKELS_DEFAULT_V_OPEN,\
-          POCKELS_DEFAULT_V_CLOSED,\
-          POCKELS_DEFAULT_AO_CHANNEL,\
-          POCKELS_DEFAULT_AI_CHANNEL,\
-        })
-
 namespace fetch
 {
 

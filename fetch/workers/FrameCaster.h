@@ -39,6 +39,8 @@ namespace fetch
     {
       public:
         unsigned int work(Agent *agent, Frame *fdst, Frame *fsrc);
+        
+        virtual void alloc_output_queues(Agent *agent);
     };
 
     /*
@@ -46,7 +48,8 @@ namespace fetch
      */
     template<typename Tdst>
     inline unsigned int
-    FrameCast<Tdst>::work(Agent *fca, Frame *fdst, Frame *fsrc)
+    FrameCast<Tdst>::
+    work(Agent *fca, Frame *fdst, Frame *fsrc)
     { WorkAgent<task::FrameCast<Tdst>,int> *agent = dynamic_cast<WorkAgent<task::FrameCast<Tdst>,int>*>(fca); //upcast
       void  *s;
       Tdst  *d;
@@ -82,6 +85,17 @@ namespace fetch
       fdst->dump("FrameCast-dst.%s",TypeStrFromID(fdst->rtti));
       
       return 1; // success
+    }
+    
+    template<typename Tdst>
+    void
+    FrameCast<Tdst>::
+    alloc_output_queues(Agent *agent)
+    { // Allocates an output queue on out[0] that has matching storage to in[0].
+      agent->_alloc_qs_easy(&agent->out,
+                            1,                                               // number of output channels to allocate
+                            agent->in->contents[0]->q->ring->nelem,          // copy number of output buffers from input queue
+                            agent->in->contents[0]->q->buffer_size_bytes*sizeof(Tdst)); // copy buffer size from input queue - prepare for worst case
     }
   } 
       
