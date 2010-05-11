@@ -61,195 +61,15 @@ namespace fetch
       template<class TPixel> unsigned int Video<TPixel>::config (Agent *d) {return config(dynamic_cast<device::Scanner2D*>(d));}
       template<class TPixel> unsigned int Video<TPixel>::run    (Agent *d) {return run   (dynamic_cast<device::Scanner2D*>(d));}
       template<class TPixel> unsigned int Video<TPixel>::update (Agent *d) {return update(dynamic_cast<device::Scanner2D*>(d));}
-      
-      template<class TPixel>
-      void
-      Video<TPixel>::_config_digitizer(device::Scanner2D *scanner)
-      { device::Scanner2D::Config *scn_cfg = &(scanner->config);
-        device::Digitizer::Config *dig_cfg = &((device::Digitizer*)scanner)->config;
-        ViSession                       vi = ((device::Digitizer*)scanner)->vi;
-
-        device::Digitizer::Channel_Config* line_trigger_cfg;
-
-        ViReal64   refPosition         = 0.0;
-        ViReal64   verticalOffset      = 0.0;
-        ViReal64   probeAttenuation    = 1.0;
-        ViBoolean  enforceRealtime     = NISCOPE_VAL_TRUE;
-
-        // Select the trigger channel
-        line_trigger_cfg = dig_cfg->channels + scn_cfg->line_trigger_src;
-        Guarded_Assert( line_trigger_cfg->enabled );
-
-        // Configure vertical for line-trigger channel
-        niscope_cfg_rtsi_default( vi );
-        DIGERR( niScope_ConfigureVertical(vi,
-                                          line_trigger_cfg->name,       // channelName
-                                          line_trigger_cfg->range,
-                                          0.0,
-                                          line_trigger_cfg->coupling,
-                                          probeAttenuation,
-                                          NISCOPE_VAL_TRUE));          // enabled
-
-        // Configure vertical of other channels
-        { int ichan = dig_cfg->num_channels;
-          while( ichan-- )
-          { if( ichan != scn_cfg->line_trigger_src )
-            { device::Digitizer::Channel_Config *c = dig_cfg->channels + ichan;
-              DIGERR( niScope_ConfigureVertical(vi,
-                                                c->name,       // channelName
-                                                c->range,
-                                                0.0,
-                                                c->coupling,
-                                                probeAttenuation,
-                                                c->enabled));
-            }
-          }
-        }
-
-        // Configure horizontal -
-        DIGERR( niScope_ConfigureHorizontalTiming(vi,
-                                                  dig_cfg->sample_rate,
-                                                  scanner->_compute_record_size(),
-                                                  refPosition,
-                                                  scn_cfg->nscans,
-                                                  enforceRealtime));
-
-        // Analog trigger for bidirectional scans
-        DIGERR( niScope_ConfigureTriggerEdge (vi,
-                                              line_trigger_cfg->name,    // channelName
-                                              0.0,                       // triggerLevel
-                                              NISCOPE_VAL_POSITIVE,      // triggerSlope
-                                              line_trigger_cfg->coupling,// triggerCoupling
-                                              0.0,                       // triggerHoldoff
-                                              0.0 ));                    // triggerDelay
-        // Wait for start trigger (frame sync) on PFI1
-        DIGERR( niScope_SetAttributeViString( vi,
-                                              "",
-                                              NISCOPE_ATTR_ACQ_ARM_SOURCE,
-                                              NISCOPE_VAL_PFI_1 ));
-        return;
-      }
-
-      static void
-      _setup_ao_chan(TaskHandle cur_task,
-                     double     freq,
-                     device::Scanner2D::Config        *cfg,
-                     device::LinearScanMirror::Config *lsm_cfg,
-                     device::Pockels::Config          *pock_cfg)
-      {
-        char aochan[POCKELS_MAX_CHAN_STRING + LINEAR_SCAN_MIRROR__MAX_CHAN_STRING + 1];
-
-        memset(aochan, 0, sizeof(aochan));
-        strcat(aochan, lsm_cfg->channel);
-        strcat(aochan, ",");
-        strcat(aochan, pock_cfg->ao_chan);
-
-        DAQERR( DAQmxCreateAOVoltageChan(cur_task,
-                aochan,                        //eg: "/Dev1/ao0,/Dev1/ao2"
-                "vert-mirror-out,pockels-out", //name to assign to channel
-                MIN( lsm_cfg->v_lim_min, pock_cfg->v_lim_min ), //Volts eg: -10.0
-                MAX( lsm_cfg->v_lim_max, pock_cfg->v_lim_max ), //Volts eg:  10.0
-                DAQmx_Val_Volts,               //Units
-                NULL));                        //Custom scale (none)
-
-        DAQERR( DAQmxCfgAnlgEdgeStartTrig(cur_task,
-                cfg->trigger,
-                DAQmx_Val_Rising,
-                0.0));
-
-        DAQERR( DAQmxCfgSampClkTiming(cur_task,
-                cfg->clock,          // "Ctr1InternalOutput",
-                freq,
-                DAQmx_Val_Rising,
-                DAQmx_Val_ContSamps, // use continuous output so that counter stays in control
-                cfg->nsamples));
-      }
-
-      template<class TPixel>
-      void
-      Video<TPixel>::_config_daq(device::Scanner2D *scanner)
-      { device::Scanner2D::Config  *cfg = &scanner->config;
-        TaskHandle             cur_task = 0;
-
-        ViInt32   N          = cfg->nsamples;
-        float64   frame_time = cfg->nscans / cfg->frequency_Hz;      //  512 records / (7920 records/sec)
-        float64   freq       = N/frame_time;                         // 4096 samples / 64 ms = 63 kS/s
 
 
-        //
-        // VERTICAL
-        //
-
-        // set up ao task - vertical
-        cur_task = scanner->ao;
-
-        // Setup AO channels
-        DAQERR( DAQmxClearTask(scanner->ao) );                   // Once a DAQ task is started, it needs to be cleared before restarting
-        DAQERR( DAQmxCreateTask( "scanner2d-ao", &scanner->ao)); //
-        _setup_ao_chan(scanner->ao,
-                       freq,
-                       &scanner->config,
-                       &((device::LinearScanMirror*)scanner)->config,
-                       &((device::Pockels*)scanner)->config);
-        this->update(scanner);
-
-        // set up counter for sample clock
-        // - A finite pulse sequence is generated by a pair of onboard counters.
-        //   In testing, it appears that after the device is reset, initializing 
-        //   the counter task doesn't work quite right.  First, I have to start the
-        //   task with the paired counter once.  Then, I can set things up normally.
-        //   After initializing with the paired counter once, things work fine until
-        //   the device (or computer) is reset.  My guess is this is a fault of the
-        //   board or driver software.
-        // - below, we just cycle the counters when config gets called.  This ensures
-        //   everything configures correctly the first time, even after a device 
-        //   reset or cold start.
-        
-        // The "fake" initialization
-        DAQERR( DAQmxClearTask(scanner->clk) );                  // Once a DAQ task is started, it needs to be cleared before restarting
-        DAQERR( DAQmxCreateTask("scanner2d-clk",&scanner->clk)); //
-        cur_task = scanner->clk;
-        DAQERR( DAQmxCreateCOPulseChanFreq       ( cur_task,
-                                                   cfg->ctr_alt,     // "Dev1/ctr0"
-                                                   "sample-clock",
-                                                   DAQmx_Val_Hz,
-                                                   DAQmx_Val_Low,
-                                                   0.0,
-                                                   freq,
-                                                   0.5 ));
-        DAQERR( DAQmxStartTask(cur_task) );
-        
-        // The "real" initialization
-        DAQERR( DAQmxClearTask(scanner->clk) );                  // Once a DAQ task is started, it needs to be cleared before restarting
-        DAQERR( DAQmxCreateTask("scanner2d-clk",&scanner->clk)); //
-        cur_task = scanner->clk;                                                   
-        DAQERR( DAQmxCreateCOPulseChanFreq       ( cur_task,
-                                                   cfg->ctr,     // "Dev1/ctr1"
-                                                   "sample-clock",
-                                                   DAQmx_Val_Hz,
-                                                   DAQmx_Val_Low,
-                                                   0.0,
-                                                   freq,
-                                                   0.5 ));
-                                                   
-        DAQERR( DAQmxCfgImplicitTiming           ( cur_task, DAQmx_Val_FiniteSamps, N ));
-        DAQERR( DAQmxCfgDigEdgeStartTrig         ( cur_task, "AnalogComparisonEvent", DAQmx_Val_Rising ));
-        DAQERR( DAQmxSetArmStartTrigType         ( cur_task, DAQmx_Val_DigEdge ));
-        DAQERR( DAQmxSetDigEdgeArmStartTrigSrc   ( cur_task, cfg->armstart ));
-        DAQERR( DAQmxSetDigEdgeArmStartTrigEdge  ( cur_task, DAQmx_Val_Rising ));
-
-        // Set up the shutter control
-        ((device::Shutter*)scanner)->Bind();
-
-        return;
-      }
 
 
       template<class TPixel>
       unsigned int
       Video<TPixel>::config(device::Scanner2D *d)
-      { _config_daq(d);
-        _config_digitizer(d);
+      { d->_config_daq();
+        d->_config_digitizer();
 
         debug("Scanner2D configured for Video<%s>\r\n",TypeStr<TPixel>());
         return 1; //success
@@ -259,18 +79,7 @@ namespace fetch
       template<class TPixel>
       unsigned int
       Video<TPixel>::update(device::Scanner2D *scanner)
-      { int32 written,
-                    N = scanner->config.nsamples;
-        scanner->_generate_ao_waveforms();
-        DAQERR( DAQmxWriteAnalogF64(scanner->ao,
-                                    N,
-                                    0,                           // autostart?
-                                    0.0,                         // timeout (s) - to write - 0 causes write to fail if blocked at all
-                                    DAQmx_Val_GroupByChannel,
-                                    scanner->ao_workspace->contents,
-                                   &written,
-                                    NULL));
-        Guarded_Assert( written == N );
+      { scanner->_generate_ao_waveforms();
         return 1;
       }
 
@@ -346,10 +155,10 @@ namespace fetch
         //
         ref.format(frm);
 
-        d->Open(); // Open shutter: FIXME: Ambiguous function name.
+        d->Shutter::Open(); // Open shutter: FIXME: Ambiguous function name.
         DAQJMP( DAQmxStartTask (ao_task));
         do
-        {
+        { d->_write_ao();
           DAQJMP( DAQmxStartTask (clk_task));
           DIGJMP( niScope_InitiateAcquisition(vi));
 
@@ -393,7 +202,7 @@ namespace fetch
         status = 0;
         debug("Scanner - Video task completed normally.\r\n");
       Finalize:
-        d->Close(); // Close the shutter. FIXME: Ambiguous function name.
+        d->Shutter::Close(); // Close the shutter. FIXME: Ambiguous function name.
         free( frm );
         free( wfm );
         niscope_debug_print_status(vi);

@@ -24,7 +24,7 @@ namespace fetch
     namespace scanner
     {
       template<class TPixel>
-      class Video : public Task, public IUpdateable//public UpcastTask<device::Scanner2D>, public IUpdateableCast<device::Scanner2D>
+      class Video : public Task, public IUpdateable
       {
         public:
           unsigned int config (Agent *d);
@@ -34,10 +34,6 @@ namespace fetch
           unsigned int config (device::Scanner2D *d);
           unsigned int run    (device::Scanner2D *d);
           unsigned int update (device::Scanner2D *d);
-
-        protected:
-          void    _config_digitizer(device::Scanner2D *scanner);
-          void    _config_daq(device::Scanner2D *scanner);          // TODO: replace DeviceTask_Scanner_Video_Write_Waveforms
       };
 
     }

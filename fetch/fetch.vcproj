@@ -359,6 +359,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\tasks\StackAcquisition.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\tasks\Video.cpp"
 					>
 				</File>
@@ -442,6 +446,10 @@
 				</File>
 				<File
 					RelativePath=".\tasks\microscope-interaction.h"
+					>
+				</File>
+				<File
+					RelativePath=".\tasks\StackAcquisition.h"
 					>
 				</File>
 				<File

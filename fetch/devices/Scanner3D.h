@@ -1,5 +1,5 @@
 /*
- * Scanner2D.h
+ * Scanner3D.h
  *
  *  Created on: Apr 19, 2010
  *      Author: Nathan Clack <clackn@janelia.hhmi.org>
@@ -65,6 +65,13 @@ namespace fetch
       
       unsigned int attach(void); // Returns 0 on success, 1 otherwise
       unsigned int detach(void); // Returns 0 on success, 1 otherwise
+
+    public:
+      virtual void _generate_ao_waveforms(f64 z_um=0.0f);// fills ao_workspace with data for analog output
+      virtual void _config_daq(void);
+
+    protected:
+      static  void _compute_zpiezo_waveform_step(ZPiezo::Config *cfg, f64 z_um, f64 *data, f64 N);
     };
   
   }

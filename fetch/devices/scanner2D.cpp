@@ -14,6 +14,9 @@
 #include "scanner2D.h"
 #include "../frame.h"
 
+#define DIGWRN( expr )  (niscope_chk( vi, expr, #expr, warning ))
+#define DIGERR( expr )  (niscope_chk( vi, expr, #expr, error   ))
+#define DIGJMP( expr )  goto_if_fail(VI_SUCCESS == niscope_chk( vi, expr, #expr, warning ), Error)
 #define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, warning))
 #define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, error  ))
 #define DAQJMP( expr )        goto_if_fail( 0==DAQWRN(expr), Error)
@@ -121,8 +124,8 @@ namespace fetch
       this->lock();
       Guarded_Assert(ao == NULL);
       Guarded_Assert(clk == NULL);
-      DAQJMP( status = DAQmxCreateTask( "scanner2d-ao", &ao ));
-      DAQJMP( status = DAQmxCreateTask( "scannner2d-clk", &clk));
+      DAQJMP( status = DAQmxCreateTask( "scanner-ao", &ao ));
+      DAQJMP( status = DAQmxCreateTask( "scanner-clk", &clk));
       this->set_available();    
     Error:
       this->unlock();
@@ -130,12 +133,77 @@ namespace fetch
     }
     
     void
-    _compute_galvo_waveform__constant_zero( Scanner2D::Config *cfg, float64 *data, double N )
+    Scanner2D::_config_digitizer()
+    { device::Digitizer::Config *dig_cfg = &this->Digitizer::config;
+      ViSession                       vi =  this->Digitizer::vi;
+      device::Digitizer::Channel_Config* line_trigger_cfg;
+
+      ViReal64   refPosition         = 0.0;
+      ViReal64   verticalOffset      = 0.0;
+      ViReal64   probeAttenuation    = 1.0;
+      ViBoolean  enforceRealtime     = NISCOPE_VAL_TRUE;
+
+      // Select the trigger channel
+      line_trigger_cfg = dig_cfg->channels + config.line_trigger_src;
+      Guarded_Assert( line_trigger_cfg->enabled );
+
+      // Configure vertical for line-trigger channel
+      niscope_cfg_rtsi_default( vi );
+      DIGERR( niScope_ConfigureVertical(vi,
+                                        line_trigger_cfg->name,       // channelName
+                                        line_trigger_cfg->range,
+                                        0.0,
+                                        line_trigger_cfg->coupling,
+                                        probeAttenuation,
+                                        NISCOPE_VAL_TRUE));          // enabled
+
+      // Configure vertical of other channels
+      { int ichan = dig_cfg->num_channels;
+        while( ichan-- )
+        { if( ichan != config.line_trigger_src )
+          { device::Digitizer::Channel_Config *c = dig_cfg->channels + ichan;
+            DIGERR( niScope_ConfigureVertical(vi,
+                                              c->name,       // channelName
+                                              c->range,
+                                              0.0,
+                                              c->coupling,
+                                              probeAttenuation,
+                                              c->enabled));
+          }
+        }
+      }
+
+      // Configure horizontal -
+      DIGERR( niScope_ConfigureHorizontalTiming(vi,
+                                                dig_cfg->sample_rate,
+                                                this->_compute_record_size(),
+                                                refPosition,
+                                                config.nscans,
+                                                enforceRealtime));
+
+      // Analog trigger for bidirectional scans
+      DIGERR( niScope_ConfigureTriggerEdge (vi,
+                                            line_trigger_cfg->name,    // channelName
+                                            0.0,                       // triggerLevel
+                                            NISCOPE_VAL_POSITIVE,      // triggerSlope
+                                            line_trigger_cfg->coupling,// triggerCoupling
+                                            0.0,                       // triggerHoldoff
+                                            0.0 ));                    // triggerDelay
+      // Wait for start trigger (frame sync) on PFI1
+      DIGERR( niScope_SetAttributeViString( vi,
+                                            "",
+                                            NISCOPE_ATTR_ACQ_ARM_SOURCE,
+                                            NISCOPE_VAL_PFI_1 ));
+      return;
+    }
+
+    void
+    Scanner2D::_compute_galvo_waveform__constant_zero( Scanner2D::Config *cfg, float64 *data, double N )
     { memset(data,0, ((size_t)N*sizeof(float64)));
     }
 
     void
-    _compute_linear_scan_mirror_waveform__sawtooth( LinearScanMirror::Config *cfg, float64 *data, double N )
+    Scanner2D::_compute_linear_scan_mirror_waveform__sawtooth( LinearScanMirror::Config *cfg, float64 *data, double N )
     { int i=(int)N;
       float64 A = cfg->vpp;
       while(i--)
@@ -144,7 +212,7 @@ namespace fetch
     }
 
     void
-    _compute_pockels_vertical_blanking_waveform( Pockels::Config *cfg, float64 *data, double N )
+    Scanner2D::_compute_pockels_vertical_blanking_waveform( Pockels::Config *cfg, float64 *data, double N )
     { int i=(int)N;
       float64 max = cfg->v_open,
               min = cfg->v_closed;
@@ -157,13 +225,145 @@ namespace fetch
     Scanner2D::_generate_ao_waveforms(void)
     { int N = config.nsamples;
       f64 *m,*p;
+      lock();
       vector_f64_request(ao_workspace, 2*N - 1 /*max index*/);
       m = ao_workspace->contents; // first the mirror data
       p = m + N;                  // then the pockels data
       _compute_linear_scan_mirror_waveform__sawtooth( &((LinearScanMirror*)this)->config, m, N);
       _compute_pockels_vertical_blanking_waveform(    &(         (Pockels*)this)->config, p, N);
+      unlock();
+    }
+
+
+
+    static void
+    _setup_ao_chan(TaskHandle cur_task,
+                   double     freq,
+                   device::Scanner2D::Config        *cfg,
+                   device::LinearScanMirror::Config *lsm_cfg,
+                   device::Pockels::Config          *pock_cfg)
+    {
+      char aochan[POCKELS_MAX_CHAN_STRING + LINEAR_SCAN_MIRROR__MAX_CHAN_STRING + 1];
+
+      // concatenate the channel names
+      memset(aochan, 0, sizeof(aochan));
+      strcat(aochan, lsm_cfg->channel);
+      strcat(aochan, ",");
+      strcat(aochan, pock_cfg->ao_chan);
+
+      DAQERR( DAQmxCreateAOVoltageChan(cur_task,
+              aochan,                        //eg: "/Dev1/ao0,/Dev1/ao2"
+              "vert-mirror-out,pockels-out", //name to assign to channel
+              MIN( lsm_cfg->v_lim_min, pock_cfg->v_lim_min ), //Volts eg: -10.0
+              MAX( lsm_cfg->v_lim_max, pock_cfg->v_lim_max ), //Volts eg:  10.0
+              DAQmx_Val_Volts,               //Units
+              NULL));                        //Custom scale (none)
+
+      DAQERR( DAQmxCfgAnlgEdgeStartTrig(cur_task,
+              cfg->trigger,
+              DAQmx_Val_Rising,
+              0.0));
+
+      DAQERR( DAQmxCfgSampClkTiming(cur_task,
+              cfg->clock,          // "Ctr1InternalOutput",
+              freq,
+              DAQmx_Val_Rising,
+              DAQmx_Val_ContSamps, // use continuous output so that counter stays in control
+              cfg->nsamples));
+    }
+
+    void
+    Scanner2D::_config_daq()
+    { TaskHandle             cur_task = 0;
+
+      ViInt32   N          = config.nsamples;
+      float64   frame_time = config.nscans / config.frequency_Hz;  //  512 records / (7920 records/sec)
+      float64   freq       = N/frame_time;                         // 4096 samples / 64 ms = 63 kS/s
+
+      //
+      // VERTICAL
+      //
+
+      // set up ao task - vertical
+      cur_task = this->ao;
+
+      // Setup AO channels
+      DAQERR( DAQmxClearTask(this->ao) );                   // Once a DAQ task is started, it needs to be cleared before restarting
+      DAQERR( DAQmxCreateTask( "scanner2d-ao", &this->ao)); //
+      _setup_ao_chan(this->ao,
+                     freq,
+                     &this->config,
+                     &this->LinearScanMirror::config,
+                     &this->Pockels::config);
+      this->_generate_ao_waveforms();
+
+      // set up counter for sample clock
+      // - A finite pulse sequence is generated by a pair of onboard counters.
+      //   In testing, it appears that after the device is reset, initializing
+      //   the counter task doesn't work quite right.  First, I have to start the
+      //   task with the paired counter once.  Then, I can set things up normally.
+      //   After initializing with the paired counter once, things work fine until
+      //   the device (or computer) is reset.  My guess is this is a fault of the
+      //   board or driver software.
+      // - below, we just cycle the counters when config gets called.  This ensures
+      //   everything configures correctly the first time, even after a device
+      //   reset or cold start.
+
+      // The "fake" initialization
+      DAQERR( DAQmxClearTask(this->clk) );                  // Once a DAQ task is started, it needs to be cleared before restarting
+      DAQERR( DAQmxCreateTask("scanner2d-clk",&this->clk)); //
+      cur_task = this->clk;
+      DAQERR( DAQmxCreateCOPulseChanFreq       ( cur_task,
+                                                 config.ctr_alt,     // "Dev1/ctr0"
+                                                 "sample-clock",
+                                                 DAQmx_Val_Hz,
+                                                 DAQmx_Val_Low,
+                                                 0.0,
+                                                 freq,
+                                                 0.5 ));
+      DAQERR( DAQmxStartTask(cur_task) );
+
+      // The "real" initialization
+      DAQERR( DAQmxClearTask(this->clk) );                  // Once a DAQ task is started, it needs to be cleared before restarting
+      DAQERR( DAQmxCreateTask("scanner2d-clk",&this->clk)); //
+      cur_task = this->clk;
+      DAQERR( DAQmxCreateCOPulseChanFreq       ( cur_task,
+                                                 config.ctr,     // "Dev1/ctr1"
+                                                 "sample-clock",
+                                                 DAQmx_Val_Hz,
+                                                 DAQmx_Val_Low,
+                                                 0.0,
+                                                 freq,
+                                                 0.5 ));
+
+      DAQERR( DAQmxCfgImplicitTiming           ( cur_task, DAQmx_Val_FiniteSamps, N ));
+      DAQERR( DAQmxCfgDigEdgeStartTrig         ( cur_task, "AnalogComparisonEvent", DAQmx_Val_Rising ));
+      DAQERR( DAQmxSetArmStartTrigType         ( cur_task, DAQmx_Val_DigEdge ));
+      DAQERR( DAQmxSetDigEdgeArmStartTrigSrc   ( cur_task, config.armstart ));
+      DAQERR( DAQmxSetDigEdgeArmStartTrigEdge  ( cur_task, DAQmx_Val_Rising ));
+
+      // Set up the shutter control
+      this->Shutter::Bind();
+
+      return;
+    }
+
+    void
+    Scanner2D::_write_ao(void)
+    { int32 written,
+                  N = this->config.nsamples;
+      //DAQERR( DAQmxSetWriteNextWriteIsLast(scanner->ao,true) );
+      DAQERR( DAQmxWriteAnalogF64(this->ao,
+                                  N,
+                                  0,                           // autostart?
+                                  0.0,                         // timeout (s) - to write - 0 causes write to fail if blocked at all
+                                  DAQmx_Val_GroupByChannel,
+                                  this->ao_workspace->contents,
+                                 &written,
+                                  NULL));
+      Guarded_Assert( written == N );
+      return;
     }
 
   }
-
 }

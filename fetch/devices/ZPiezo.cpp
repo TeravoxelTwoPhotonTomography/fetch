@@ -25,7 +25,7 @@ namespace fetch
             v_lim_max( DEFAULT_ZPIEZO_V_MAX    ),
             v_lim_min( DEFAULT_ZPIEZO_V_MIN    ),
             v_offset ( DEFAULT_ZPIEZO_V_OFFSET )
-    { Guarded_Assert( DEFAULT_ZPIEZO_CHANNEL, sizeof(DEFAULT_ZPIEZO_CHANNEL ) < sizeof(channel) );
+    { Guarded_Assert( sizeof(DEFAULT_ZPIEZO_CHANNEL ) < sizeof(channel) );
       memcpy(channel, DEFAULT_ZPIEZO_CHANNEL, sizeof(DEFAULT_ZPIEZO_CHANNEL));
     }
 

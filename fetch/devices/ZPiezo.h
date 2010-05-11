@@ -42,7 +42,7 @@ namespace fetch
         f64 v_lim_max;
         f64 v_lim_min;
         f64 v_offset;
-        f64 channel[ZPIEZO_MIRROR__MAX_CHAN_STRING];
+        char channel[ZPIEZO_MIRROR__MAX_CHAN_STRING];
         
         Config();      
       };

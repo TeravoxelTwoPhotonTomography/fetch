@@ -137,10 +137,20 @@ namespace fetch
                   clk;
       vector_f64 *ao_workspace;
 
-    public:
+    public: //Section: protected with Tasks as friends.
       ViInt32                      _compute_record_size(void);   // determines the number of elements acquired with each digitizer record
       Frame_With_Interleaved_Lines _describe_frame(void);        // determines frame format from configuration
-      void                         _generate_ao_waveforms(void); // fills ao_workspace with data for analog output
+
+      virtual void                 _config_digitizer(void);
+      virtual void                 _config_daq(void);
+
+      virtual void                 _generate_ao_waveforms(void); // fills ao_workspace with data for analog output
+      virtual void                 _write_ao(void);
+
+    protected: //Section: generators for ao waveforms
+      static  void _compute_galvo_waveform__constant_zero        ( Scanner2D::Config *cfg, float64 *data, double N );
+      static  void _compute_linear_scan_mirror_waveform__sawtooth( LinearScanMirror::Config *cfg, float64 *data, double N );
+      static  void _compute_pockels_vertical_blanking_waveform   ( Pockels::Config *cfg, float64 *data, double N );
     };
 
   } // end namespace device
