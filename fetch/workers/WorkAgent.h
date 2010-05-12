@@ -89,11 +89,8 @@ namespace fetch
   template<typename TWorkTask,typename TParam>
   WorkAgent<TWorkTask,TParam>::WorkAgent(Agent *source, int ichan, TParam parameter)
   { config = parameter;
-    connect(this,ichan,source,ichan);    
     __task_instance = TWorkTask();            // a bit kludgey - the WorkAgent is only ever associated with a single task.
-    __task_instance.alloc_output_queues(this);// Task must implement this.  Must connect() first.  WorkTask has a default impl. that assumes in[0]->out[0]
-    arm(&task_instance,INFINITE);
-    run();
+    apply(source,ichan);
   }
   
   template<typename TWorkTask,typename TParam>
@@ -128,9 +125,11 @@ namespace fetch
   WorkAgent<TWorkTask,TParam>*
   WorkAgent<TWorkTask,TParam>::apply(Agent *source, int ichan)
   { connect(this,ichan,source,ichan);
-    __task_instance.alloc_output_queues(this);// Task must implement this.  Must connect() first.  WorkTask has a default impl. that assumes in[0]->out[0]
-    arm(&__task_instance,INFINITE);
-    run();
+    if( out==NULL )
+      __task_instance.alloc_output_queues(this);// Task must implement this.  Must connect() first.  WorkTask has a default impl. that assumes in[0]->out[0].  These should handle pre-existing queues (by freecycling).
+    Guarded_Assert( disarm(WORKER_DEFAULT_TIMEOUT));
+    Guarded_Assert( arm(&__task_instance,WORKER_DEFAULT_TIMEOUT));
+    Guarded_Assert( run());
     return this;
   }
 

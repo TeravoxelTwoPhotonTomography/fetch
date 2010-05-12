@@ -138,7 +138,7 @@ void
 Video_Frame_From_Frame( Video_Frame_Resource *self, Frame *src )
 { size_t ichan;
 
-  src->dump("src.raw");
+  //src->dump("src.raw");
   
   vector_u8_request( self->buf, src->size_bytes() );
   for(ichan=0; ichan<self->nchan; ichan++ )

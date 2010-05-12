@@ -352,7 +352,7 @@ namespace fetch
     Scanner2D::_write_ao(void)
     { int32 written,
                   N = this->config.nsamples;
-      //DAQERR( DAQmxSetWriteNextWriteIsLast(scanner->ao,true) );
+      
       DAQERR( DAQmxWriteAnalogF64(this->ao,
                                   N,
                                   0,                           // autostart?

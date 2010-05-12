@@ -27,6 +27,7 @@ namespace fetch {
 			MicroscopeStateMenu(device::Microscope *scope);
 	  protected:
 	      UINT IDM_MICROSCOPE_TASK_0;
+	      UINT IDM_MICROSCOPE_TASK_1;
 	      
 	      static _t_task_table __tasktable[]; 
 	  };

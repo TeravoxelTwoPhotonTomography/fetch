@@ -16,14 +16,30 @@
 #include "../stdafx.h"
 #include "../task.h"
 #include "../devices/Scanner3d.h"
+#include "../devices/Microscope.h"
 
-#define SCANNER_STACKACQ_TASK_FETCH_TIMEOUT INFINITE
+#define SCANNER_STACKACQ_TASK_FETCH_TIMEOUT 15.0
 
 namespace fetch
 {
 
   namespace task
   {
+    namespace microscope {
+
+      typedef Task MicroscopeTask;
+
+      class StackAcquisition : public MicroscopeTask
+      {
+        public:
+          unsigned int config(Agent *d);
+          unsigned int    run(Agent *d);
+
+          unsigned int config(device::Microscope *agent);
+          unsigned int    run(device::Microscope *agent);
+      };
+
+    }  // namespace microscope
 
     namespace scanner
     {
@@ -40,7 +56,7 @@ namespace fetch
         unsigned int update (device::Scanner3D *d);
       };
 
-    }
+    }  // namespace scanner
 
   }
 

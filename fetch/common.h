@@ -187,7 +187,8 @@ void RequestStorageLog2( void** array,           // Pointer to array
   vector_##type *vector_##type##_alloc   ( size_t nelem );\
   void           vector_##type##_request ( vector_##type *self, size_t idx );\
   void           vector_##type##_request_pow2 ( vector_##type *self, size_t idx );\
-  void           vector_##type##_free    ( vector_##type *self )
+  void           vector_##type##_free    ( vector_##type *self );\
+  void           vector_##type##_dump    ( vector_##type *self, char* filename );  
 
 #define VECTOR_EMPTY { NULL, 0, 0, 0 }
 
@@ -237,6 +238,13 @@ void vector_##type##_free_contents( vector_##type *self ) \
     self->nelem = 0;                             \
     self->count = 0;                             \
   }                                              \
+} \
+  \
+void vector_##type##_dump( vector_##type *self, char* filename ) \
+{ FILE *fp;                                                      \
+  Guarded_Assert(fp = fopen(filename,"r"));                      \
+  fwrite(self->contents,sizeof(type),self->nelem,fp);            \
+  fclose(fp);                                                    \
 }
 
 TYPE_VECTOR_DECLARE(char);

@@ -60,8 +60,8 @@ namespace fetch
       fsrc->compute_pitches(src_pitch);
       fsrc->get_shape(n);
       
-      debug("In FrameCast::work.\r\n");      
-      fsrc->dump("FrameCast-src.%s",TypeStrFromID(fsrc->rtti));
+      //debug("In FrameCast::work.\r\n");      
+      //fsrc->dump("FrameCast-src.%s",TypeStrFromID(fsrc->rtti));
       
       s = fsrc->data;
       d = (Tdst*)fdst->data;
@@ -82,7 +82,7 @@ namespace fetch
           break;
       }
       
-      fdst->dump("FrameCast-dst.%s",TypeStrFromID(fdst->rtti));
+      //fdst->dump("FrameCast-dst.%s",TypeStrFromID(fdst->rtti));
       
       return 1; // success
     }
@@ -91,7 +91,7 @@ namespace fetch
     void
     FrameCast<Tdst>::
     alloc_output_queues(Agent *agent)
-    { // Allocates an output queue on out[0] that has matching storage to in[0].
+    { // Allocates an output queue on out[0] that has matching storage to in[0].      
       agent->_alloc_qs_easy(&agent->out,
                             1,                                               // number of output channels to allocate
                             agent->in->contents[0]->q->ring->nelem,          // copy number of output buffers from input queue

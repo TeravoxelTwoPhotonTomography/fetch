@@ -15,7 +15,7 @@
 #define SCANNERSTATEMENU_H_
 
 #include "../stdafx.h"
-#include "../devices/scanner2d.h"
+#include "../devices/scanner3d.h"
 #include "../tasks/Video.h"
 #include "AgentStateMenu.h"
 
@@ -28,10 +28,12 @@ namespace fetch
     class ScannerStateMenu : public fetch::ui::AgentStateMenu
     {
     public:
-      ScannerStateMenu(device::Scanner2D *scanner);
+      ScannerStateMenu(device::Scanner3D *scanner);
     protected:
       UINT IDM_SCANNER2D_TASK_0;
       UINT IDM_SCANNER2D_TASK_1;
+      UINT IDM_SCANNER2D_TASK_2;
+      UINT IDM_SCANNER2D_TASK_3;
 
       static _t_task_table __task_table[];
     };

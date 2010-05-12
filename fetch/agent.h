@@ -152,6 +152,8 @@ namespace fetch {
       //   constructs all <n> queues with <nbuf> buffers, each buffer with the
       //   same initial size, <nbytes>.
       //
+      //   These free existing queues before allocing.
+      //
       // _free_qs
       //   Safe for calling with *<qs>==NULL. <qs> must not be NULL.
       //   Sets *qs to NULL after releasing queues.
@@ -161,14 +163,15 @@ namespace fetch {
       static void _free_qs       (vector_PASYNQ **qs);
       
     protected:
+      friend class Task;
+      
       void   lock(void);
       void unlock(void);
 
       void set_available(void);
 
-    protected:
-      friend class Task;
-
+    public: // Section (Data): treat as protected, friended to children of Task
+      
       HANDLE           thread,
                        notify_available,
                        notify_stop;

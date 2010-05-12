@@ -58,7 +58,10 @@
     unsigned int Microscope::disarm(DWORD timeout_ms)
     { unsigned int sts = 1; // success      
       sts &= scanner.disarm(timeout_ms);
-      sts &= this->disk.disarm(timeout_ms);
+      sts &= frame_averager.disarm(timeout_ms);
+      sts &= pixel_averager.disarm(timeout_ms);
+      sts &= trash.disarm(timeout_ms);
+      sts &= disk.disarm(timeout_ms);
       
       sts &= Agent::disarm(timeout_ms);  
       return sts;

@@ -51,11 +51,11 @@ namespace fetch
       lock();
       vector_f64_request(ao_workspace, 3*N - 1 /*max index*/);
       m = ao_workspace->contents; // first the mirror data
-      p = m + N;                  // then the pockels data
-      z = p + N;                  // then the zpiezo  data
+      z = m + N;                  // then the zpiezo  data
+      p = z + N;                  // then the pockels data
       _compute_linear_scan_mirror_waveform__sawtooth( &this->LinearScanMirror::config, m, N);
-      _compute_pockels_vertical_blanking_waveform(    &this->Pockels::config         , p, N);
       _compute_zpiezo_waveform_step(                  &this->ZPiezo::config    , z_um, z, N);
+      _compute_pockels_vertical_blanking_waveform(    &this->Pockels::config         , p, N);
       unlock();
     }
 
@@ -77,18 +77,25 @@ namespace fetch
       memset(aochan, 0, sizeof(aochan));
       strcat(aochan, lsm_cfg->channel);
       strcat(aochan, ",");
-      strcat(aochan, pock_cfg->ao_chan);
-      strcat(aochan, ",");
       strcat(aochan, zpiezo_cfg->channel);
+      strcat(aochan, ",");
+      strcat(aochan, pock_cfg->ao_chan);
 
       vmin = MIN( lsm_cfg->v_lim_min, pock_cfg->v_lim_min );
       vmin = MIN( vmin, zpiezo_cfg->v_lim_min );
       vmax = MAX( lsm_cfg->v_lim_max, pock_cfg->v_lim_max );
       vmax = MAX( vmax, zpiezo_cfg->v_lim_max );
+      { f64 v[4];
+        // NI DAQ's typically have multiple voltage ranges capable of achieving different precisions.
+        // The 6259 has 2 ranges.
+        DAQERR(DAQmxGetDevAOVoltageRngs("Dev1",v,4));        // FIXME: HACK - need to get device name
+        vmin = MAX(vmin,v[2]);        
+        vmax = MIN(vmax,v[3]);        
+      }
 
       DAQERR( DAQmxCreateAOVoltageChan(cur_task,
               aochan,                                  //eg: "/Dev1/ao0,/Dev1/ao2,/Dev1/ao1"
-              "vert-mirror-out,pockels-out,zpiezo-out",//name to assign to channel
+              "vert-mirror-out,zpiezo-out,pockels-out",//name to assign to channel
               vmin,                                    //Volts eg: -10.0
               vmax,                                    //Volts eg:  10.0
               DAQmx_Val_Volts,                         //Units
@@ -161,7 +168,7 @@ namespace fetch
 
       // The "real" initialization
       DAQERR( DAQmxClearTask(this->clk) );                  // Once a DAQ task is started, it needs to be cleared before restarting
-      DAQERR( DAQmxCreateTask("scanner2d-clk",&this->clk)); //
+      DAQERR( DAQmxCreateTask("scanner3d-clk",&this->clk)); //
       cur_task = this->clk;
       DAQERR( DAQmxCreateCOPulseChanFreq       ( cur_task,
                                                  this->Scanner2D::config.ctr,     // "Dev1/ctr1"
@@ -204,7 +211,7 @@ namespace fetch
       f64 A = cfg->um_step * cfg->um2v,
               off = z_um * cfg->um2v;
       while(i--)
-        data[i] = A*(i/N)+off; // linear ramp from off to off+A
+        data[i] = A*(i/(N-1))+off; // linear ramp from off to off+A
     }
 
   }

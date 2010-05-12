@@ -97,17 +97,21 @@ namespace fetch
             *qdst = d->out->contents[0];
       TMessage *fsrc =  (TMessage*)Asynq_Token_Buffer_Alloc(qsrc),
                *fdst =  (TMessage*)Asynq_Token_Buffer_Alloc(qdst);
-      size_t nbytes = qsrc->q->buffer_size_bytes;
+      size_t nbytes_in  = qsrc->q->buffer_size_bytes,
+             nbytes_out = qdst->q->buffer_size_bytes,
+             sz;
       do
-      { while( Asynq_Pop_Try(qsrc, (void**)&fsrc, nbytes) )
-        { debug("In  OneToOneWorkTask::run - just popped\r\n");
-          nbytes = fsrc->size_bytes();
+      { while( Asynq_Pop_Try(qsrc, (void**)&fsrc, nbytes_in) )
+        { //debug("In  OneToOneWorkTask::run - just popped\r\n");
+          nbytes_in = fsrc->size_bytes();
           fsrc->format(fdst);
           goto_if_fail(
             work(d,fdst,fsrc),
             WorkFunctionFailure);
+          sz = fdst->size_bytes();                           
+          nbytes_out = MAX( qdst->q->buffer_size_bytes, sz ); // XXX - awkward
           goto_if_fail(
-            Asynq_Push_Timed( qdst, (void**)&fdst, fdst->size_bytes(), WORKER_DEFAULT_TIMEOUT ),
+            Asynq_Push_Timed( qdst, (void**)&fdst, nbytes_out, WORKER_DEFAULT_TIMEOUT ),
             OutputQueueTimeoutError);
         }
       } while(!d->is_stopping());

@@ -41,7 +41,7 @@ namespace fetch
         unsigned int disarm(DWORD timeout_ms);
         
       public:
-        device::Scanner2D              scanner;
+        device::Scanner3D              scanner;
 
         worker::FrameAverageAgent 	   frame_averager;
         worker::PixelWiseAveragerAgent pixel_averager;        

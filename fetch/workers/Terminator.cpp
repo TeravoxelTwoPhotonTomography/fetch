@@ -13,6 +13,12 @@
 #include "stdafx.h"
 #include "Terminator.h"
 
+#if 0
+#define DBG(...) debug(__VA_ARGS__);
+#else
+#define DBG(...)
+#endif
+
 namespace fetch
 {
   namespace task
@@ -41,7 +47,7 @@ namespace fetch
       do
       {
         if( Asynq_Pop_Try(q[i % n], buf + i%n,szs[i%n]) )
-        { debug("Task: Terminator: trashing buffer on queue %d (iter: %d)\r\n",i%n,i);
+        { DBG("Task: Terminator: trashing buffer on queue %d (iter: %d)\r\n",i%n,i);
           szs[i%n] = q[i%n]->q->buffer_size_bytes;
         }
         i++;

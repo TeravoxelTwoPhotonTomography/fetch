@@ -4,7 +4,7 @@
 
 #define DEBUG_AGENT__HANDLE_WAIT_FOR_RESULT
 
-#if 0
+#if 1
 #define DBG(...) debug(__VA_ARGS__)
 #else
 #define DBG(...)
@@ -65,15 +65,16 @@ namespace fetch
     
     void Agent::_free_qs(vector_PASYNQ **pqs)
     {
-        vector_PASYNQ *qs = *pqs;
-        if( qs )
+      vector_PASYNQ *qs = *pqs;
+      if( qs )
       { size_t n = qs->count;
         int sts = 1;
         while(n--)
           sts &= Asynq_Unref( qs->contents[n] );      //qs[n] isn't necessarily deleted. Unref returns 0 if references remain
         if(sts)
-          vector_PASYNQ_free( qs );
-        *pqs = NULL;
+        { vector_PASYNQ_free( qs );
+          *pqs = NULL;
+        }
       }
     }
 
@@ -349,9 +350,11 @@ namespace fetch
                                         this,               // arguments
                                         0,                  // run immediately
                                         NULL ));            // don't worry about the threadid
+#if 0
           Guarded_Assert_WinErr(
             SetThreadPriority( this->thread,
                                THREAD_PRIORITY_TIME_CRITICAL ));
+#endif
           DBG("Run:4b\r\n");
         }
       } else //(then not runnable)
@@ -490,10 +493,7 @@ namespace fetch
   // and replaced by the source channel (which gets ref'd).
   void
     Agent::connect(Agent *dst, size_t dst_channel, Agent *src, size_t src_channel)
-  { // ensure channel indexes are valid
-    asynq  *s,*d;
-
-    // alloc in/out channels if neccessary
+  { // alloc in/out channels if neccessary
     if( src->out == NULL )
       src->out = vector_PASYNQ_alloc(src_channel + 1);
     if( dst->in == NULL )
@@ -501,18 +501,19 @@ namespace fetch
     Guarded_Assert( src->out && dst->in );
 
     if( src_channel < src->out->nelem )                // source channel exists
-    { s = src->out->contents[src_channel];
+    { asynq *s = src->out->contents[src_channel];
 
       if( dst_channel < dst->in->nelem )
       { asynq **d = dst->in->contents + dst_channel;
-        Asynq_Unref( *d );
-        *d = Asynq_Ref( s );
+        Asynq_Ref(s);
+        Asynq_Unref(*d);
+        *d=s;
       } else
       { vector_PASYNQ_request( dst->in, dst_channel );  // make space
         dst->in->contents[ dst_channel ] = Asynq_Ref( s );
       }
-    } else if( dst_channel < dst->in->nelem ) // dst exists, but not src
-    { d = dst->in->contents[dst_channel];
+    } else if( dst_channel < dst->in->nelem )           // dst exists, but not src
+    { asynq *d = dst->in->contents[dst_channel];
       vector_PASYNQ_request( src->out, src_channel );   // make space
       src->out->contents[src_channel] = Asynq_Ref( d );
     } else

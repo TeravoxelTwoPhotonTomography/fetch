@@ -75,7 +75,7 @@
 #define SCANNER2D_DEFAULT_LINE_DUTY_CYCLE           0.95f // Fraction of resonant period to acquire (must be less than one)
 #define SCANNER2D_DEFAULT_LINE_TRIGGER_SRC              1 // Digitizer channel corresponding to resonant velocity input
                                                           // the channel should be appropriately configured in the digitizer config
-#define SCANNER2D_DEFAULT_AO_SAMPLES                 4096 // samples per waveform
+#define SCANNER2D_DEFAULT_AO_SAMPLES               8*4096 // samples per waveform
 #define SCANNER2D_DEFAULT_LINE_TRIGGER             "APFI0"// DAQ terminal: should be connected to resonant velocity output
 #define SCANNER2D_DEFAULT_FRAME_ARMSTART           "RTSI2"// DAQ terminal: should be connected to "ReadyForStart" event output from digitizer
 #define SCANNER2D_DEFAULT_DAQ_CLOCK   "Ctr1InternalOutput"// DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock

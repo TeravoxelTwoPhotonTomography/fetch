@@ -9,6 +9,12 @@
 #include "WorkAgent.h"
 #include "PixelWiseAverager.h"
 
+#if 0
+#define DBG(...) debug(__VA_ARGS__)
+#else
+#define DBG
+#endif
+
 using namespace fetch::worker;
 
 namespace fetch
@@ -45,8 +51,8 @@ namespace fetch
       fdst->width /= N;      // Adjust output format
       fdst->rtti   = id_f32;
       fdst->Bpp    = 4;
-      debug("In PixelWiseAverager::work.\r\n");      
-      fsrc->dump("PixelWiseAverager-src.%s",TypeStrFromID(fsrc->rtti));
+      DBG("In PixelWiseAverager::work.\r\n");      
+      //fsrc->dump("PixelWiseAverager-src.%s",TypeStrFromID(fsrc->rtti));
       switch(fsrc->rtti)
       { 
         case id_u8 : pwa<u8 >(fdst->data,fsrc->data,N,nelem); break;
@@ -62,7 +68,7 @@ namespace fetch
         default:
           error("Unrecognized source type (id=%d).\r\n",fsrc->rtti);        
       }
-      fdst->dump("PixelWiseAverager-dst.%s",TypeStrFromID(fdst->rtti));
+      //fdst->dump("PixelWiseAverager-dst.%s",TypeStrFromID(fdst->rtti));
       return 1; // success
     }
 

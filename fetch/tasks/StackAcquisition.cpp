@@ -4,8 +4,20 @@
  *  Created on: May 10, 2010
  *      Author: Nathan Clack <clackn@janelia.hhmi.org>
  */
+/*
+ * Copyright 2010 Howard Hughes Medical Institute.
+ * All rights reserved.
+ * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
+ * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
+ */
 #include "stdafx.h"
 #include "StackAcquisition.h"
+
+#if 0
+#define DBG(...) debug(__VA_ARGS__);
+#else
+#define DBG(...)
+#endif
 
 #define DIGWRN( expr )  (niscope_chk( vi, expr, #expr, warning ))
 #define DIGERR( expr )  (niscope_chk( vi, expr, #expr, error   ))
@@ -14,11 +26,88 @@
 #define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, error  ))
 #define DAQJMP( expr )  goto_if_fail( 0==DAQWRN(expr), Error)
 
+#if 1
+#define SCANNER_DEBUG_FAIL_WHEN_FULL
+#else
+#define SCANNER_DEBUG_SPIN_WHEN_FULL
+#endif
+
 namespace fetch
 {
 
   namespace task
   {
+
+    //
+    // StackAcquisition -  microscope task
+    //
+
+    namespace microscope {
+
+      //Upcasting
+      unsigned int StackAcquisition::config(Agent *d) {return config(dynamic_cast<device::Microscope*>(d));}
+      unsigned int StackAcquisition::run   (Agent *d) {return run   (dynamic_cast<device::Microscope*>(d));}
+
+      unsigned int StackAcquisition::config(device::Microscope *agent)
+      { static task::scanner::ScanStack<i8> grabstack;
+
+        //Assemble pipeline here
+        Agent *cur;
+        cur = &agent->scanner;
+        cur =  agent->pixel_averager.apply(cur);
+        cur =  agent->cast_to_i16.apply(cur);
+        cur =  agent->trash.apply(cur);
+
+        agent->scanner.arm_nonblocking(&grabstack,INFINITE);
+
+        return 1; //success
+      }
+
+      static int _handle_wait_for_result(DWORD result, const char *msg)
+      {
+          return_val_if( result == WAIT_OBJECT_0  , 0 );
+          return_val_if( result == WAIT_OBJECT_0+1, 1 );
+          Guarded_Assert_WinErr( result != WAIT_FAILED );
+          if(result == WAIT_ABANDONED_0)
+              warning("Agent: Wait 0 abandoned\r\n\t%s\r\n", msg);
+          if(result == WAIT_ABANDONED_0+1)
+              warning("Agent: Wait 1 abandoned\r\n\t%s\r\n", msg);
+
+          if(result == WAIT_TIMEOUT)
+              warning("Agent: Wait timeout\r\n\t%s\r\n", msg);
+
+          Guarded_Assert_WinErr( result != WAIT_FAILED );
+
+          return -1;
+      }
+
+      unsigned int StackAcquisition::run(device::Microscope *agent) {
+        agent->scanner.run();
+
+        { HANDLE hs[] = {agent->scanner.thread,          
+                         agent->notify_stop};
+          DWORD res;
+          int   t;
+          res = WaitForMultipleObjects(2,hs,FALSE,INFINITE);
+          t = _handle_wait_for_result(res,"StackAcquisition::run - Wait for scanner to finish.");
+          switch(t)
+          { case 0:     // in this case, the scanner thread stopped.  Nothing left to do.
+              return 1; // success
+            case 1:     // in this case, the stop event triggered and must be propigated.
+              return agent->scanner.stop(SCANNER_STACKACQ_TASK_FETCH_TIMEOUT);              
+            default:    // in this case, there was a timeout or abandoned wait
+              return 0; //failure
+          }
+          
+        }
+        return 1;
+      }
+
+    }  // namespace microscope
+
+    //
+    // ScanStack - scanner task
+    //
 
     namespace scanner
     {
@@ -37,6 +126,7 @@ namespace fetch
         config(device::Scanner3D *d)
         {
           d->_config_daq();
+          DAQERR(DAQmxSetWriteRegenMode(d->Scanner2D::ao,DAQmx_Val_DoNotAllowRegen));
           d->_config_digitizer();
 
           debug("Scanner3D configured for StackAcquisition<%s>\r\n", TypeStr<TPixel> ());
@@ -126,7 +216,7 @@ namespace fetch
             DIGJMP(niScope_InitiateAcquisition(vi));
 
             dt_out = toc(&outer_clock);
-            //debug("iter: %d\ttime: %5.3g [out] %5.3g [in]\tbacklog: %9.0f Bytes\r\n",i, dt_out, dt_in, sizeof(TPixel)*niscope_get_backlog(vi) );
+            //DBG("iter: %d\ttime: %5.3g [out] %5.3g [in]\tbacklog: %9.0f Bytes\r\n",i, dt_out, dt_in, sizeof(TPixel)*niscope_get_backlog(vi) );
             toc(&inner_clock);
 #if 1
             DIGJMP(Fetch<TPixel> (vi, chan, SCANNER_STACKACQ_TASK_FETCH_TIMEOUT,//10.0, //(-1=infinite) (0.0=immediate) // seconds
@@ -135,12 +225,12 @@ namespace fetch
                                   wfm));
 #endif
 
-            //debug("\tGain: %f\r\n",wfm[0].gain);
+            //DBG("\tGain: %f\r\n",wfm[0].gain);
 
             // Push the acquired data down the output pipes
-            debug("Task: StackAcquisition<%s>: pushing wfm\r\n", TypeStr<TPixel> ());
+            DBG("Task: StackAcquisition<%s>: pushing wfm\r\n", TypeStr<TPixel> ());
             Asynq_Push(qwfm, (void**) &wfm, nbytes_info, 0);
-            debug("Task: StackAcquisition<%s>: pushing frame\r\n", TypeStr<TPixel> ());
+            DBG("Task: StackAcquisition<%s>: pushing frame\r\n", TypeStr<TPixel> ());
 #ifdef SCANNER_DEBUG_FAIL_WHEN_FULL                     //"fail fast"
             if( !Asynq_Push_Try( qdata,(void**) &frm,nbytes ))
 #elif defined( SCANNER_DEBUG_SPIN_WHEN_FULL )           //"fail proof" - overwrites when full
@@ -162,16 +252,19 @@ namespace fetch
           };
 
           status = 0;
-          debug("Scanner - Stack Acquisition task completed normally.\r\n");
-          Finalize: d->Shutter::Close(); // Close the shutter. FIXME: Ambiguous function name.
+          DBG("Scanner - Stack Acquisition task completed normally.\r\n");
+Finalize: 
+          d->Shutter::Close(); // Close the shutter. FIXME: Ambiguous function name.
           free(frm);
           free(wfm);
-          niscope_debug_print_status(vi);
+          niscope_debug_print_status(vi);          
           DAQERR(DAQmxStopTask(ao_task)); // FIXME: ??? These will deadlock on a panic.
           DAQERR(DAQmxStopTask(clk_task));
+          DAQERR(DAQmxResetWriteRegenMode (ao_task));
           DIGERR(niScope_Abort(vi));
           return status;
-          Error: goto Finalize;
+Error: 
+          goto Finalize;
         }
 
     }
