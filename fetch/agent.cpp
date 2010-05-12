@@ -415,7 +415,7 @@ namespace fetch
 
           // Handle a timeout on the wait.  
           if( !_handle_wait_for_result(res, "Agent stop: Wait for thread."))
-          { warning("Timed out waiting for task thread to stop.  Forcing termination.\r\n");
+          { warning("Timed out waiting for task thread (0x%p) to stop.  Forcing termination.\r\n",this->thread);
             Guarded_Assert_WinErr(TerminateThread(this->thread,127)); // Force the thread to stop
           } 
           CloseHandle(this->thread);

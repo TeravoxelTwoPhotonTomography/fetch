@@ -242,9 +242,10 @@ void vector_##type##_free_contents( vector_##type *self ) \
   \
 void vector_##type##_dump( vector_##type *self, char* filename ) \
 { FILE *fp;                                                      \
-  Guarded_Assert(fp = fopen(filename,"r"));                      \
+  Guarded_Assert(fp = fopen(filename,"wb"));                     \
   fwrite(self->contents,sizeof(type),self->nelem,fp);            \
   fclose(fp);                                                    \
+  warning("Wrote %s\r\n",filename);                              \
 }
 
 TYPE_VECTOR_DECLARE(char);

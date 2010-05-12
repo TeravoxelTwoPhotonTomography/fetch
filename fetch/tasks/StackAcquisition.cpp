@@ -69,12 +69,12 @@ namespace fetch
           return_val_if( result == WAIT_OBJECT_0+1, 1 );
           Guarded_Assert_WinErr( result != WAIT_FAILED );
           if(result == WAIT_ABANDONED_0)
-              warning("Agent: Wait 0 abandoned\r\n\t%s\r\n", msg);
+              warning("StackAcquisition: Wait 0 abandoned\r\n\t%s\r\n", msg);
           if(result == WAIT_ABANDONED_0+1)
-              warning("Agent: Wait 1 abandoned\r\n\t%s\r\n", msg);
+              warning("StackAcquisition: Wait 1 abandoned\r\n\t%s\r\n", msg);
 
           if(result == WAIT_TIMEOUT)
-              warning("Agent: Wait timeout\r\n\t%s\r\n", msg);
+              warning("StackAcquisition: Wait timeout\r\n\t%s\r\n", msg);
 
           Guarded_Assert_WinErr( result != WAIT_FAILED );
 
@@ -94,7 +94,7 @@ namespace fetch
           { case 0:     // in this case, the scanner thread stopped.  Nothing left to do.
               return 1; // success
             case 1:     // in this case, the stop event triggered and must be propigated.
-              return agent->scanner.stop(SCANNER_STACKACQ_TASK_FETCH_TIMEOUT);              
+              return agent->scanner.stop(SCANNER2D_DEFAULT_TIMEOUT);              
             default:    // in this case, there was a timeout or abandoned wait
               return 0; //failure
           }
@@ -125,8 +125,7 @@ namespace fetch
         ScanStack<TPixel>::
         config(device::Scanner3D *d)
         {
-          d->_config_daq();
-          DAQERR(DAQmxSetWriteRegenMode(d->Scanner2D::ao,DAQmx_Val_DoNotAllowRegen));
+          d->_config_daq();          
           d->_config_digitizer();
 
           debug("Scanner3D configured for StackAcquisition<%s>\r\n", TypeStr<TPixel> ());
@@ -137,7 +136,7 @@ namespace fetch
         unsigned int
         ScanStack<TPixel>::
         update(device::Scanner3D *scanner)
-        { scanner->_generate_ao_waveforms();
+        { scanner->_generate_ao_waveforms(); // updates pockels, but sets z-piezo to 0 um          
           return 1;
         }
 
@@ -210,7 +209,7 @@ namespace fetch
           d->Shutter::Open(); // Open shutter: FIXME: Ambiguous function name.
           DAQJMP(DAQmxStartTask(ao_task));
           for(z_um=ummin;z_um<ummax && !d->is_stopping();z_um+=umstep)
-          { d->_generate_ao_waveforms(z_um);
+          { d->_generate_ao_waveforms(0);
             d->_write_ao();
             DAQJMP(DAQmxStartTask(clk_task));
             DIGJMP(niScope_InitiateAcquisition(vi));
@@ -260,7 +259,6 @@ Finalize:
           niscope_debug_print_status(vi);          
           DAQERR(DAQmxStopTask(ao_task)); // FIXME: ??? These will deadlock on a panic.
           DAQERR(DAQmxStopTask(clk_task));
-          DAQERR(DAQmxResetWriteRegenMode (ao_task));
           DIGERR(niScope_Abort(vi));
           return status;
 Error: 

@@ -290,6 +290,7 @@ namespace fetch
       // Setup AO channels
       DAQERR( DAQmxClearTask(this->ao) );                   // Once a DAQ task is started, it needs to be cleared before restarting
       DAQERR( DAQmxCreateTask( "scanner2d-ao", &this->ao)); //
+      DAQERR( DAQmxSetWriteRegenMode(this->ao,DAQmx_Val_DoNotAllowRegen));
       _setup_ao_chan(this->ao,
                      freq,
                      &this->config,
