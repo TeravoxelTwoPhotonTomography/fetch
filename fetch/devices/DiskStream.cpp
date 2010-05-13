@@ -64,7 +64,8 @@ namespace fetch
           share_mode           = FILE_SHARE_READ; //other processes can read
           creation_disposition = OPEN_EXISTING;
           flags_and_attr = 0;
-          _alloc_qs_easy(&out,1,4,1024);
+          if(out==NULL)
+            _alloc_qs_easy(&out,1,4,1024);
           debug("Attempting to open %s for reading.\r\n",filename);
         break;
         case 'w':
@@ -72,7 +73,8 @@ namespace fetch
           share_mode           = 0;               //don't share
           creation_disposition = CREATE_ALWAYS;
           flags_and_attr       = FILE_ATTRIBUTE_NORMAL;
-          _alloc_qs_easy(&in,1,4,1024);
+          if(in==NULL)
+            _alloc_qs_easy(&in,1,4,1024);
           debug("Attempting to open %s for writing.\r\n",filename);
         break;
         default:
@@ -143,7 +145,7 @@ namespace fetch
     }
 
     
-    inline unsigned int
+    unsigned int
     DiskStream::close(void)
     { return detach();
     }

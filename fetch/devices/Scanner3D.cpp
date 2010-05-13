@@ -156,8 +156,7 @@ namespace fetch
       // - below, we just cycle the counters when config gets called.  This ensures
       //   everything configures correctly the first time, even after a device
       //   reset or cold start.
-
-      // The "fake" initialization
++      // The "fake" initialization
       DAQERR( DAQmxClearTask(this->clk) );                  // Once a DAQ task is started, it needs to be cleared before restarting
       DAQERR( DAQmxCreateTask("scanner3d-clk",&this->clk)); //
       cur_task = this->clk;

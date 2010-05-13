@@ -16,6 +16,16 @@
  
  namespace fetch
 { namespace device {
+
+    Microscope::Config::Config()
+    : file_iter_id(0)
+    {    
+      Guarded_Assert(sizeof(MICROSCOPE_DEFAULT_DEST_PATH)<sizeof(path));
+      Guarded_Assert(sizeof(MICROSCOPE_DEFAULT_FILE_NAME_TEMPLATE)<sizeof(filename_template));
+      memcpy(path,MICROSCOPE_DEFAULT_DEST_PATH,sizeof(MICROSCOPE_DEFAULT_DEST_PATH));
+      memcpy(filename_template,MICROSCOPE_DEFAULT_FILE_NAME_TEMPLATE,sizeof(MICROSCOPE_DEFAULT_FILE_NAME_TEMPLATE));
+    }
+
     Microscope::Microscope()
     : scanner(),
       frame_averager(4),
@@ -65,6 +75,23 @@
       
       sts &= Agent::disarm(timeout_ms);  
       return sts;
+    }
+    
+    void Microscope::next_filename(char *dest)
+    { static char fn[MAX_PATH];
+      char *c;
+      size_t sz;
+      lock();
+      { memset(fn,0,sizeof(fn));
+        c = fn;
+        sz = strlen(this->config.path);
+        memcpy(c,this->config.path,sz);
+        c+=sz;
+        sz = strlen(this->config.filename_template);
+        memcpy(c,this->config.filename_template,sz);
+        sprintf(dest,fn,this->config.file_iter_id++);
+      }
+      unlock();
     }
     
   } // end namespace device  

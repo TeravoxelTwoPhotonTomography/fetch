@@ -48,15 +48,22 @@ namespace fetch
       unsigned int StackAcquisition::config(Agent *d) {return config(dynamic_cast<device::Microscope*>(d));}
       unsigned int StackAcquisition::run   (Agent *d) {return run   (dynamic_cast<device::Microscope*>(d));}
 
-      unsigned int StackAcquisition::config(device::Microscope *agent)
+      unsigned int StackAcquisition::config(device::Microscope *agent) // todo change "agent" to "scope"
       { static task::scanner::ScanStack<i8> grabstack;
+        static char filename[MAX_PATH];
 
         //Assemble pipeline here
         Agent *cur;
         cur = &agent->scanner;
         cur =  agent->pixel_averager.apply(cur);
         cur =  agent->cast_to_i16.apply(cur);
-        cur =  agent->trash.apply(cur);
+                
+        agent->next_filename(filename);
+        Guarded_Assert( agent->disk.close()==0 );
+        Agent::connect(&agent->disk,0,cur,0);
+        Guarded_Assert( agent->disk.open(filename,"w"));
+        
+        //cur =  agent->trash.apply(cur);
 
         agent->scanner.arm_nonblocking(&grabstack,INFINITE);
 
@@ -81,26 +88,37 @@ namespace fetch
           return -1;
       }
 
-      unsigned int StackAcquisition::run(device::Microscope *agent) {
-        agent->scanner.run();
+      unsigned int StackAcquisition::run(device::Microscope *agent)
+      { 
+        unsigned int sts = 0; // success
+        sts |= agent->scanner.run();
 
         { HANDLE hs[] = {agent->scanner.thread,          
                          agent->notify_stop};
           DWORD res;
+          static char filename[MAX_PATH];
           int   t;
           res = WaitForMultipleObjects(2,hs,FALSE,INFINITE);
           t = _handle_wait_for_result(res,"StackAcquisition::run - Wait for scanner to finish.");
           switch(t)
           { case 0:     // in this case, the scanner thread stopped.  Nothing left to do.
-              return 0; // success
+              sts |= 0; // success
+              break; 
             case 1:     // in this case, the stop event triggered and must be propigated.
-              return agent->scanner.stop(SCANNER2D_DEFAULT_TIMEOUT) != 1;              
+              sts |= agent->scanner.stop(SCANNER2D_DEFAULT_TIMEOUT) != 1;
+              break;
             default:    // in this case, there was a timeout or abandoned wait
-              return 1; //failure
+              sts |= 1; //failure              
           }
           
+          // Increment file          
+          sts |= agent->disk.close();
+          agent->next_filename(filename);          
+          Agent::connect(&agent->disk,0,&agent->cast_to_i16,0);
+          sts |= agent->disk.open(filename,"w");
+          
         }
-        return 1;
+        return sts;
       }
 
     }  // namespace microscope

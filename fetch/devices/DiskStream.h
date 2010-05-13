@@ -40,8 +40,8 @@ namespace fetch
         ~DiskStream();
 
         virtual unsigned int open  (char *filename, char *mode) = 0;
-        inline  unsigned int close (void);                       //synonymous with detach()
-                unsigned int detach(void);
+                unsigned int close (void);                           //synonymous with detach()
+                unsigned int detach(void);                        
 
       public:        
 
@@ -50,8 +50,8 @@ namespace fetch
         HANDLE  hfile;
 
       protected:
-        unsigned int attach(void);                              // use open() instead
-    };
+        unsigned int attach(void);                                   // use open() instead
+    };                                                               
 
     template<typename TReader,typename TWriter>
     class DiskStreamSpecialized : public DiskStream
