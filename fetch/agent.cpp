@@ -46,7 +46,7 @@ namespace fetch
         // initially unsignalled
         Guarded_Assert_WinErr(  
         this->notify_stop      = CreateEvent( NULL,   // default security attr
-                                              FALSE,  // manual reset
+                                              TRUE,   // manual reset
                                               FALSE,  // initially unsignalled
                                               NULL ));
         Guarded_Assert_WinErr(
@@ -412,6 +412,7 @@ namespace fetch
           this->unlock();
           res = WaitForSingleObject(this->thread, timeout_ms); // wait for running thread to stop
           this->lock();
+          ResetEvent(this->notify_stop);
 
           // Handle a timeout on the wait.  
           if( !_handle_wait_for_result(res, "Agent stop: Wait for thread."))

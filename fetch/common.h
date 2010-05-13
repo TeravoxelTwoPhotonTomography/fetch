@@ -143,6 +143,12 @@ void debug  (const char* fmt, ...);
   { ReportLastWindowsError();\
     error("Windows call failed: %s\n\tIn %s (line: %u)\n", #expression, __FILE__ , __LINE__ );\
   }
+  
+#define Guarded_Assert_WinErr__NoPanic(expression) \
+  if(!(expression))\
+  { ReportLastWindowsError();\
+    warning("Windows call failed: %s\n\tIn %s (line: %u)\n", #expression, __FILE__ , __LINE__ );\
+  }  
 
 #define return_if_fail( cond )          { if(!(cond)) return; }
 #define return_if( cond )               { if( (cond)) return; }

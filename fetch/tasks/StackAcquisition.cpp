@@ -92,11 +92,11 @@ namespace fetch
           t = _handle_wait_for_result(res,"StackAcquisition::run - Wait for scanner to finish.");
           switch(t)
           { case 0:     // in this case, the scanner thread stopped.  Nothing left to do.
-              return 1; // success
+              return 0; // success
             case 1:     // in this case, the stop event triggered and must be propigated.
-              return agent->scanner.stop(SCANNER2D_DEFAULT_TIMEOUT);              
+              return agent->scanner.stop(SCANNER2D_DEFAULT_TIMEOUT) != 1;              
             default:    // in this case, there was a timeout or abandoned wait
-              return 0; //failure
+              return 1; //failure
           }
           
         }
@@ -206,11 +206,14 @@ namespace fetch
           ummax  = d->ZPiezo::config.um_max;
           umstep = d->ZPiezo::config.um_step;
 
-          d->Shutter::Open(); // Open shutter: FIXME: Ambiguous function name.
+          
+          d->_generate_ao_waveforms__z_ramp_step(ummin);
+          d->_write_ao();
+          d->Shutter::Open();
           DAQJMP(DAQmxStartTask(ao_task));
-          for(z_um=ummin;z_um<ummax && !d->is_stopping();z_um+=umstep)
-          { d->_generate_ao_waveforms(0);
-            d->_write_ao();
+          for(z_um=ummin+umstep;z_um<ummax && !d->is_stopping();z_um+=umstep)
+          { 
+            //d->_write_ao();
             DAQJMP(DAQmxStartTask(clk_task));
             DIGJMP(niScope_InitiateAcquisition(vi));
 
@@ -247,6 +250,9 @@ namespace fetch
             DAQJMP(DAQmxWaitUntilTaskDone(clk_task, DAQmx_Val_WaitInfinitely)); // FIXME: Takes forever.
 
             DAQJMP(DAQmxStopTask(clk_task));
+            debug("Generating AO for z = %f\r\n.",z_um);
+            d->_generate_ao_waveforms__z_ramp_step(z_um);
+            d->_write_ao();
             ++i;
           };
 

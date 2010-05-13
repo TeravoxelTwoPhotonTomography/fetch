@@ -156,9 +156,10 @@ namespace fetch
         ref.format(frm);
 
         d->Shutter::Open(); // Open shutter: FIXME: Ambiguous function name.
+        d->_write_ao();
         DAQJMP( DAQmxStartTask (ao_task));
         do
-        { d->_write_ao();
+        { 
           DAQJMP( DAQmxStartTask (clk_task));
           DIGJMP( niScope_InitiateAcquisition(vi));
 
@@ -193,9 +194,12 @@ namespace fetch
           ref.format(frm);
           dt_in  = toc(&inner_clock);
                    toc(&outer_clock);
-          DAQJMP( DAQmxWaitUntilTaskDone (clk_task,DAQmx_Val_WaitInfinitely)); // FIXME: Takes forever.
+                   
+          goto_if_fail(d->_wait_for_daq(SCANNER2D_DEFAULT_TIMEOUT),Error);
+          //DAQJMP( DAQmxWaitUntilTaskDone (clk_task,DAQmx_Val_WaitInfinitely)); // FIXME: Takes forever.
 
           DAQJMP(DAQmxStopTask(clk_task));
+          d->_write_ao();
           ++i;
         } while ( !d->is_stopping() );
         
@@ -211,6 +215,7 @@ namespace fetch
         DIGERR( niScope_Abort(vi) );
         return status;
       Error:
+        warning("Error occured during Video<%s> task.\r\n",TypeStr<TPixel>());
         goto Finalize;
       }
       

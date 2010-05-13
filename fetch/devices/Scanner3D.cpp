@@ -54,9 +54,29 @@ namespace fetch
       z = m + N;                  // then the zpiezo  data
       p = z + N;                  // then the pockels data
       _compute_linear_scan_mirror_waveform__sawtooth( &this->LinearScanMirror::config, m, N);
-      _compute_zpiezo_waveform_step(                  &this->ZPiezo::config    , z_um, z, N);
+      _compute_zpiezo_waveform_const(                 &this->ZPiezo::config    , z_um, z, N);
       _compute_pockels_vertical_blanking_waveform(    &this->Pockels::config         , p, N);
-#if 1
+#if 0
+      vector_f64_dump(ao_workspace,"out.f64");
+#endif
+      unlock();
+    }
+
+    void
+    Scanner3D::
+    _generate_ao_waveforms__z_ramp_step(f64 z_um)
+    {
+      int N = this->Scanner2D::config.nsamples;
+      f64 *m,*p, *z;
+      lock();
+      vector_f64_request(ao_workspace, 3*N - 1 /*max index*/);
+      m = ao_workspace->contents; // first the mirror data
+      z = m + N;                  // then the zpiezo  data
+      p = z + N;                  // then the pockels data
+      _compute_linear_scan_mirror_waveform__sawtooth( &this->LinearScanMirror::config, m, N);
+      _compute_zpiezo_waveform_ramp(                  &this->ZPiezo::config    , z_um, z, N);
+      _compute_pockels_vertical_blanking_waveform(    &this->Pockels::config         , p, N);
+#if 0
       vector_f64_dump(ao_workspace,"out.f64");
 #endif
       unlock();
@@ -169,7 +189,13 @@ namespace fetch
       DAQERR( DAQmxSetArmStartTrigType         ( cur_task, DAQmx_Val_DigEdge ));
       DAQERR( DAQmxSetDigEdgeArmStartTrigSrc   ( cur_task, this->Scanner2D::config.armstart ));
       DAQERR( DAQmxSetDigEdgeArmStartTrigEdge  ( cur_task, DAQmx_Val_Rising ));
-
+#if 0
+      { f64 rate;
+        DAQWRN( DAQmxGetCOCtrTimebaseRate(cur_task,this->Scanner2D::config.ctr,&rate));
+        debug("Ctr Timebase: %f\r\n",rate);        
+      }
+#endif
+      
       //
       // VERTICAL
       //
@@ -188,7 +214,8 @@ namespace fetch
                      &this->ZPiezo::config);
       DAQERR( DAQmxSetWriteRegenMode(this->ao,DAQmx_Val_DoNotAllowRegen));
       this->_generate_ao_waveforms();
-
+      this->_register_daq_event();
+      
       // Set up the shutter control
       this->Shutter::Bind();
 
@@ -196,7 +223,7 @@ namespace fetch
     }
 
     /*
-     * Compute ZPiezo Waveform Step:
+     * Compute ZPiezo Waveform Ramp:
      * ----------------------------
      *
      *           0    N
@@ -210,12 +237,28 @@ namespace fetch
      *  Notice that N-1 is equiv. to z_step - z_step/N
      */
     void
-    Scanner3D::_compute_zpiezo_waveform_step( ZPiezo::Config *cfg, f64 z_um, f64 *data, f64 N )
+    Scanner3D::_compute_zpiezo_waveform_ramp( ZPiezo::Config *cfg, f64 z_um, f64 *data, f64 N )
     { int i=(int)N;
       f64 A = cfg->um_step * cfg->um2v,
               off = z_um * cfg->um2v;
       while(i--)
         data[i] = A*(i/(N-1))+off; // linear ramp from off to off+A
+    }
+
+    /*
+     * Compute ZPiezo Waveform Constant:
+     * ----------------------------
+     *         0     N
+     *         |     |
+     *          ____________________ ,- z_um
+     *  _______|                     ,- z previous
+     */
+    void
+    Scanner3D::_compute_zpiezo_waveform_const( ZPiezo::Config *cfg, f64 z_um, f64 *data, f64 N )
+    { int i=(int)N;
+      f64 off = z_um * cfg->um2v;
+      while(i--)
+        data[i] = off; // linear ramp from off to off+A
     }
 
   }

@@ -70,12 +70,12 @@
 #define SCANNER2D_QUEUE_NUM_FRAMES                   32
 
 #define SCANNER2D_DEFAULT_RESONANT_FREQUENCY         7920.0 // Hz
-#define SCANNER2D_DEFAULT_SCANS                      512  // Number of full resonant periods that make up a frame
+#define SCANNER2D_DEFAULT_SCANS                      256  // Number of full resonant periods that make up a frame
                                                           //        image height = 2 x scans
 #define SCANNER2D_DEFAULT_LINE_DUTY_CYCLE           0.95f // Fraction of resonant period to acquire (must be less than one)
 #define SCANNER2D_DEFAULT_LINE_TRIGGER_SRC              1 // Digitizer channel corresponding to resonant velocity input
                                                           // the channel should be appropriately configured in the digitizer config
-#define SCANNER2D_DEFAULT_AO_SAMPLES               8*4096 // samples per waveform
+#define SCANNER2D_DEFAULT_AO_SAMPLES               4*4096 // samples per waveform
 #define SCANNER2D_DEFAULT_LINE_TRIGGER             "APFI0"// DAQ terminal: should be connected to resonant velocity output
 #define SCANNER2D_DEFAULT_FRAME_ARMSTART           "RTSI2"// DAQ terminal: should be connected to "ReadyForStart" event output from digitizer
 #define SCANNER2D_DEFAULT_DAQ_CLOCK   "Ctr1InternalOutput"// DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock
@@ -135,6 +135,7 @@ namespace fetch
       Config      config;
       TaskHandle  ao,
                   clk;
+      HANDLE      notify_daq_done;
       vector_f64 *ao_workspace;
 
     public: //Section: protected with Tasks as friends.
@@ -146,6 +147,11 @@ namespace fetch
 
       virtual void                 _generate_ao_waveforms(void); // fills ao_workspace with data for analog output
       virtual void                 _write_ao(void);
+      
+      virtual void                 _register_daq_event(void);
+      virtual unsigned int         _wait_for_daq(DWORD timeout_ms); // returns 1 on succes, 0 otherwise
+      
+      //static  int32 CVICALLBACK    _daq_event_callback(TaskHandle taskHandle, int32 type, int32 nsamples, void *callbackData);
 
     protected: //Section: generators for ao waveforms
       static  void _compute_galvo_waveform__constant_zero        ( Scanner2D::Config *cfg, float64 *data, double N );

@@ -67,11 +67,15 @@ namespace fetch
       unsigned int detach(void); // Returns 0 on success, 1 otherwise
 
     public:
-      virtual void _generate_ao_waveforms(f64 z_um=0.0f);// fills ao_workspace with data for analog output
+      // fills ao_workspace with data for analog output
+      virtual void _generate_ao_waveforms             (f64 z_um=0.0f); // constant z
+      virtual void _generate_ao_waveforms__z_ramp_step(f64 z_um=0.0f); // ramp from z to z + z_step
+
       virtual void _config_daq(void);
 
     protected:
-      static  void _compute_zpiezo_waveform_step(ZPiezo::Config *cfg, f64 z_um, f64 *data, f64 N);
+      static  void _compute_zpiezo_waveform_ramp(ZPiezo::Config *cfg, f64 z_um, f64 *data, f64 N);
+      static  void _compute_zpiezo_waveform_const(ZPiezo::Config *cfg, f64 z_um, f64 *data, f64 N);
     };
   
   }
