@@ -21,6 +21,8 @@
 #define DEFAULT_SHUTTER_OPEN                     0
 #define DEFAULT_SHUTTER_CLOSED                   1
 
+#define SHUTTER_DEFAULT_OPEN_DELAY_MS           50
+
 //#define SHUTTER_DEFAULT_CONFIG \
 //        { DEFAULT_SHUTTER_CHANNEL,\
 //          DEFAULT_SHUTTER_OPEN,\

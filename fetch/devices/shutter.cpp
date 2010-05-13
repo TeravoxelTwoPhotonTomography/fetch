@@ -54,6 +54,7 @@ namespace fetch
     void
     Shutter::Open(void)
     { Set(config.open);
+      Sleep( SHUTTER_DEFAULT_OPEN_DELAY_MS );  // ensures shutter fully opens before an acquisition starts
     }
 
     void
