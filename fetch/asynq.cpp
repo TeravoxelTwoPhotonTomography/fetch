@@ -38,7 +38,8 @@ Asynq_Alloc(size_t buffer_count, size_t buffer_size_bytes )
   
   self->ref_count         = 1;
   self->waiting_producers = 0;
-  self->waiting_consumers = 0;
+  self->waiting_poppers   = 0;
+  self->waiting_peekers   = 0;
 
   // For spin count,
   //    set high bit to preallocate event used in EnterCriticalSection for W2K
@@ -48,13 +49,15 @@ Asynq_Alloc(size_t buffer_count, size_t buffer_size_bytes )
                                             0x80000400 ) 
   );
   
-  { HANDLE  *es[3] = { &self->notify_data,
+  { HANDLE  *es[]  = { &self->notify_data,
+                       &self->notify_peek,
                        &self->notify_space,
                        &self->notify_abort};
-    BOOL states[3] = { FALSE,
+    BOOL states[]  = { FALSE,
+                       FALSE,
                        TRUE,
                        FALSE };
-    int i = 3;
+    int i = sizeof(states)/sizeof(BOOL);
     while(i--)
       Guarded_Assert_WinErr(
         *es[i] = CreateEvent(NULL,       // default security attributes
@@ -83,12 +86,13 @@ Asynq_Unref( asynq *self )
   return_val_if_fail( self->ref_count > 0, 0 );
   
   if( Interlocked_Dec_And_Test_u32( (LONG*) &self->ref_count ) ) // Free when last reference is released
-  { if(self->waiting_consumers>0 || self->waiting_producers>0)
+  { if(self->waiting_poppers>0 || self->waiting_producers>0 || self->waiting_peekers>0 )
     { SetEvent( self->notify_abort );
       return 0;
     }  
     DeleteCriticalSection( &self->_lock );
     if( !CloseHandle( self->notify_data  )) ReportLastWindowsError();
+    if( !CloseHandle( self->notify_peek  )) ReportLastWindowsError();
     if( !CloseHandle( self->notify_space )) ReportLastWindowsError();
     if( !CloseHandle( self->notify_abort )) ReportLastWindowsError();
     if( self->q )
@@ -179,17 +183,45 @@ _asynq_wait_for_space( asynq *self, DWORD timeout_ms, const char* msg )
 }
 
 static inline unsigned
-_asynq_wait_for_data( asynq *self, DWORD timeout_ms, const char* msg )
+_asynq_wait_for_data__pop( asynq *self, DWORD timeout_ms, const char* msg )
 { HANDLE notify[2] = {self->notify_data, self->notify_abort};
   DWORD res;
   
   Guarded_Assert_WinErr( ResetEvent( notify[0] ) );
-  self->waiting_consumers++;    
+  self->waiting_poppers++;
   Asynq_Unlock(self);
   res = WaitForMultipleObjects(2, notify, FALSE/*any*/,timeout_ms );
-  Asynq_Lock(self);    
-  self->waiting_consumers--;
+  Asynq_Lock(self);
+  self->waiting_poppers--;
   
+  return _handle_wait_for_multiple_result(res,2,msg);
+}
+
+static inline unsigned
+_asynq_wait_for_peek( asynq *self, DWORD timeout_ms, const char* msg )
+{ HANDLE notify[2] = {self->notify_peek, self->notify_abort};
+  DWORD res;
+  
+  Guarded_Assert_WinErr( ResetEvent( notify[0] ) );
+  if( self->waiting_peekers>0 )           // give peek() priority
+  { Asynq_Unlock(self);
+    res = WaitForMultipleObjects(2, notify, FALSE/*any*/,timeout_ms );    
+    Asynq_Lock(self);                        // after a peek, the wait will release but block here till the peek actually completes.    
+  }
+  return _handle_wait_for_multiple_result(res,2,msg);
+}
+
+static inline unsigned
+_asynq_wait_for_data__peek( asynq *self, DWORD timeout_ms, const char* msg )
+{ HANDLE  notify[2] = {self->notify_data, self->notify_abort};
+  DWORD res;
+
+  Guarded_Assert_WinErr( ResetEvent( notify[0] ) );
+  self->waiting_peekers++;
+  Asynq_Unlock(self);
+  res = WaitForMultipleObjects(2, notify, FALSE/*any*/,timeout_ms );
+  Asynq_Lock(self);
+  self->waiting_peekers--;    
   return _handle_wait_for_multiple_result(res,2,msg);
 }
 
@@ -205,13 +237,13 @@ _asynq_push_unlocked(                        // Returns 1 on success, 0 otherwis
 { RingFIFO* q = self->q;
   if( RingFIFO_Is_Full( q ))
   { if(is_try) return 0;
-    if( block_on_full || self->waiting_consumers>0 )
+    if( block_on_full || self->waiting_poppers>0 )
       if( !_asynq_wait_for_space(self, timeout_ms, "Asynq Push") )
         if( RingFIFO_Is_Full( q ) )
           return 0;    
-  }
+  }  
   RingFIFO_Push( q, pbuf, sz, expand_on_full );
-  if( self->waiting_consumers )
+  if( self->waiting_poppers || self->waiting_peekers)
     SetEvent( self->notify_data );
   return 1;
 }
@@ -226,10 +258,11 @@ _asynq_pop_unlocked(                         // Returns 1 on success, 0 otherwis
 { RingFIFO* q = self->q;
   if( RingFIFO_Is_Empty( q ))
   { if(is_try) return 0;
-    if( !_asynq_wait_for_data(self, timeout_ms, "Asynq Pop") )
+    if( !_asynq_wait_for_data__pop(self, timeout_ms, "Asynq Pop") )
       if( RingFIFO_Is_Empty( q ) )
         return 0;
   }
+  _asynq_wait_for_peek(self,timeout_ms, "Asynq Push - Wait for a waiting peek");
   return_val_if( RingFIFO_Pop( q, pbuf, sz ), 0 ); // Fail if the queue is empty
   if( self->waiting_producers )
     SetEvent( self->notify_space );
@@ -246,10 +279,11 @@ _asynq_peek_unlocked(                        // Returns 1 on success, 0 otherwis
 { RingFIFO* q = self->q;
   if( RingFIFO_Is_Empty( q ))
   { if(is_try) return 0;
-    if( !_asynq_wait_for_data(self, timeout_ms, "Asynq Peek") )          
+    if( !_asynq_wait_for_data__peek(self, timeout_ms, "Asynq Peek") )
       if( RingFIFO_Is_Empty( q ) )
         return 0;
   }
+  SetEvent(self->notify_peek);               // at this point, definitely going to peek.  so signal.
   return 0== RingFIFO_Peek( q, buf, sz );  
 }
 

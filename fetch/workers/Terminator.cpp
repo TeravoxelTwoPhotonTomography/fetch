@@ -14,7 +14,7 @@
 #include "Terminator.h"
 
 #if 0
-#define DBG(...) debug(__VA_ARGS__);
+#define DBG(...) debug(__VA_ARGS__)
 #else
 #define DBG(...)
 #endif
@@ -45,7 +45,10 @@ namespace fetch
 
       // main loop
       do
-      {
+      { 
+#if 0
+        if( !Asynq_Is_Empty(q[0]) ) DBG("Convenient break point\r\n");
+#endif
         if( Asynq_Pop_Try(q[i % n], buf + i%n,szs[i%n]) )
         { DBG("Task: Terminator: trashing buffer on queue %d (iter: %d)\r\n",i%n,i);
           szs[i%n] = q[i%n]->q->buffer_size_bytes;

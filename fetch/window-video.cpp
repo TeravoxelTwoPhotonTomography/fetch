@@ -606,7 +606,7 @@ namespace fetch
   {   TicTocTimer clock = tic();
       static Frame                  *frm = NULL;
       static FrmFmt              lastfmt;
-      static float          wait_time_ms = 1000.0f/60.0f,
+      static float          wait_time_ms = 100.0, // Time to wait to peek for data.  The main thread is blocked by this amount of time when there's no data, so don't set it too long.  Too short and peek will spin a few times before catching data.
                   efficiency_accumulator = 0.0f,
                         efficiency_count = 0.0f;
 
@@ -625,6 +625,7 @@ namespace fetch
         
         if( Asynq_Peek_Timed(q, (void**)&frm, nbytes, (DWORD) wait_time_ms ) )
         { int i;
+          //debug("[ ] PEEKED\r\n");
           nbytes = frm->size_bytes();
           if( !frm->is_equivalent(&lastfmt) )               // RESIZE!
           { RECT *rect = NULL;
@@ -655,13 +656,9 @@ namespace fetch
           } // end if change
           i = nchan;
           Video_Frame_From_Frame( g_video.vframe, frm);
-          Video_Frame_Resource_Commit( g_video.vframe );
-            
-          efficiency_accumulator++;
-        } // end if try peek
-        efficiency_count++;
+          Video_Frame_Resource_Commit( g_video.vframe );                     
+        }
       } // end if q (if anything is connected)
-      // [ ] TODO: Frame rate govenor
       
       //
       // Clear the back buffer
@@ -690,9 +687,7 @@ namespace fetch
       // Present our back buffer to our front buffer
       //
       Guarded_Assert(SUCCEEDED(  g_video.swap_chain->Present( 0, 0 ) ));
-      //// XXX: dx10 swap chain has it's own performance metrics
-      //double dt = toc(&clock);
-      //debug("FPS: %5.1f Efficiency: %g\r\n",1.0/dt, efficiency_accumulator/efficiency_count);
+      //// XXX: dx10 swap chain has it's own performance metrics      
   }
 
   //--------------------------------------------------------------------------------------

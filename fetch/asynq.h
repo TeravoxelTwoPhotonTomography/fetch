@@ -67,11 +67,13 @@ typedef struct _asynq
 
   u32 ref_count;
   u32 waiting_producers;
-  u32 waiting_consumers;
+  u32 waiting_poppers;
+  u32 waiting_peekers;
   
   CRITICAL_SECTION   _lock;           // mutex
   HANDLE             notify_space;    // triggered when queue is not full (has available space)
   HANDLE             notify_data;     // triggered when queue is not empty (has available data).
+  HANDLE             notify_peek;     // triggered after a peek.  Notifies a pop to proceed.
   HANDLE             notify_abort;    // triggered to abort any pending operations (e.g. for shutdown).
 } asynq;
 
