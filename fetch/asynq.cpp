@@ -173,6 +173,7 @@ _asynq_wait_for_space( asynq *self, DWORD timeout_ms, const char* msg )
   DWORD res;
   
   Guarded_Assert_WinErr( ResetEvent( notify[0] ) );
+  Guarded_Assert_WinErr( ResetEvent( notify[1] ) );
   self->waiting_producers++;    
   Asynq_Unlock(self);
   res = WaitForMultipleObjects(2, notify, FALSE /*any*/, timeout_ms );
@@ -188,6 +189,7 @@ _asynq_wait_for_data__pop( asynq *self, DWORD timeout_ms, const char* msg )
   DWORD res;
   
   Guarded_Assert_WinErr( ResetEvent( notify[0] ) );
+  Guarded_Assert_WinErr( ResetEvent( notify[1] ) );
   self->waiting_poppers++;
   Asynq_Unlock(self);
   res = WaitForMultipleObjects(2, notify, FALSE/*any*/,timeout_ms );
@@ -203,6 +205,7 @@ _asynq_wait_for_peek( asynq *self, DWORD timeout_ms, const char* msg )
   DWORD res;
   
   Guarded_Assert_WinErr( ResetEvent( notify[0] ) );
+  Guarded_Assert_WinErr( ResetEvent( notify[1] ) );
   if( self->waiting_peekers>0 )           // give peek() priority
   { Asynq_Unlock(self);
     res = WaitForMultipleObjects(2, notify, FALSE/*any*/,timeout_ms );    
@@ -217,6 +220,7 @@ _asynq_wait_for_data__peek( asynq *self, DWORD timeout_ms, const char* msg )
   DWORD res;
 
   Guarded_Assert_WinErr( ResetEvent( notify[0] ) );
+  Guarded_Assert_WinErr( ResetEvent( notify[1] ) );
   self->waiting_peekers++;
   Asynq_Unlock(self);
   res = WaitForMultipleObjects(2, notify, FALSE/*any*/,timeout_ms );
@@ -429,7 +433,9 @@ Asynq_Peek_Timed( asynq *self, void **buf, size_t sz, DWORD timeout_ms )
 //
 
 void Asynq_Flush_Waiting_Consumers( asynq *self )
-{ SetEvent( self->notify_abort );
+{ Asynq_Lock(self);               // don't set the event if someone else has the lock
+  SetEvent( self->notify_abort );
+  Asynq_Unlock(self);
 }
 
 //

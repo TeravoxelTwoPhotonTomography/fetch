@@ -68,7 +68,8 @@ namespace fetch
 
     public:
       // fills ao_workspace with data for analog output
-      virtual void _generate_ao_waveforms             (f64 z_um=0.0f); // constant z
+      virtual void _generate_ao_waveforms(void);                       // be sure to override Scanner2D::_generate_ao_waveforms
+      virtual void _generate_ao_waveforms             (f64 z_um);      // constant z
       virtual void _generate_ao_waveforms__z_ramp_step(f64 z_um=0.0f); // ramp from z to z + z_step
 
       virtual void _config_daq(void);

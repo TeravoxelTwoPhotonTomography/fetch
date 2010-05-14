@@ -114,7 +114,7 @@ namespace fetch
           // Increment file          
           sts |= agent->disk.close();
           agent->next_filename(filename);          
-          Agent::connect(&agent->disk,0,&agent->cast_to_i16,0);
+          Agent::connect(&agent->disk,0,&agent->scanner,0);
           sts |= agent->disk.open(filename,"w");
           
         }

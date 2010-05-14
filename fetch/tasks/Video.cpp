@@ -152,7 +152,7 @@ namespace fetch
         //
         ref.format(frm);
 
-        d->Shutter::Open(); // Open shutter: FIXME: Ambiguous function name.
+        d->Shutter::Open(); // Open shutter: FIXME: Ambiguous function name.        
         d->_write_ao();
         DAQJMP( DAQmxStartTask (ao_task));
         do
