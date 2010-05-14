@@ -264,10 +264,9 @@ namespace fetch
             }
             ref.format(frm);
             dt_in = toc(&inner_clock);
-            toc(&outer_clock);
-            DAQJMP(DAQmxWaitUntilTaskDone(clk_task, DAQmx_Val_WaitInfinitely)); // FIXME: Takes forever.
-
-            DAQJMP(DAQmxStopTask(clk_task));
+            toc(&outer_clock);            
+            goto_if_fail(d->_wait_for_daq(SCANNER2D_DEFAULT_TIMEOUT),Error);          
+            DAQmxStopTask(clk_task); // Ignore error/warning check here.  Under normal operation, as used here, it will give a warning for each frame.            
             debug("Generating AO for z = %f\r\n.",z_um);
             d->_generate_ao_waveforms__z_ramp_step(z_um);
             d->_write_ao();

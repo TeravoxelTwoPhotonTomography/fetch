@@ -31,10 +31,10 @@
 
 #define SCANNER_VIDEO_TASK_FETCH_TIMEOUT  10.0  //10.0, //(-1=infinite) (0.0=immediate)
                                                 // Setting this to infinite can sometimes make the application difficult to quit
-#if 1
-#define scanner_debug(...) debug(__VA_ARGS__)
+#if 0
+#define DBG(...) debug(__VA_ARGS__)
 #else
-#define scanner_debug(...)
+#define DBG(...)
 #endif
 
 #define DIGWRN( expr )  (niscope_chk( vi, expr, #expr, warning ))
@@ -42,7 +42,7 @@
 #define DIGJMP( expr )  goto_if_fail(VI_SUCCESS == niscope_chk( vi, expr, #expr, warning ), Error)
 #define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, warning))
 #define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, error  ))
-#define DAQJMP( expr )  goto_if_fail( 0==DAQWRN(expr), Error)
+#define DAQJMP( expr )  goto_if( DAQmxFailed(DAQWRN(expr)), Error)
 
 #if 1
 #define SCANNER_DEBUG_FAIL_WHEN_FULL
@@ -61,9 +61,6 @@ namespace fetch
       template<class TPixel> unsigned int Video<TPixel>::config (Agent *d) {return config(dynamic_cast<device::Scanner2D*>(d));}
       template<class TPixel> unsigned int Video<TPixel>::run    (Agent *d) {return run   (dynamic_cast<device::Scanner2D*>(d));}
       template<class TPixel> unsigned int Video<TPixel>::update (Agent *d) {return update(dynamic_cast<device::Scanner2D*>(d));}
-
-
-
 
       template<class TPixel>
       unsigned int
@@ -178,9 +175,9 @@ namespace fetch
           //debug("\tGain: %f\r\n",wfm[0].gain);
 
           // Push the acquired data down the output pipes
-          debug("Task: Video<%s>: pushing wfm\r\n",TypeStr<TPixel>());
+          DBG("Task: Video<%s>: pushing wfm\r\n",TypeStr<TPixel>());
           Asynq_Push( qwfm,(void**) &wfm, nbytes_info, 0 );
-          debug("Task: Video<%s>: pushing frame\r\n",TypeStr<TPixel>());
+          DBG("Task: Video<%s>: pushing frame\r\n",TypeStr<TPixel>());
       #ifdef SCANNER_DEBUG_FAIL_WHEN_FULL                     //"fail fast"          
           if(  !Asynq_Push_Try( qdata,(void**) &frm,nbytes ))
       #elif defined( SCANNER_DEBUG_SPIN_WHEN_FULL )           //"fail proof" - overwrites when full
@@ -195,16 +192,14 @@ namespace fetch
           dt_in  = toc(&inner_clock);
                    toc(&outer_clock);
                    
-          goto_if_fail(d->_wait_for_daq(SCANNER2D_DEFAULT_TIMEOUT),Error);
-          //DAQJMP( DAQmxWaitUntilTaskDone (clk_task,DAQmx_Val_WaitInfinitely)); // FIXME: Takes forever.
-
-          DAQJMP(DAQmxStopTask(clk_task));
+          goto_if_fail(d->_wait_for_daq(SCANNER2D_DEFAULT_TIMEOUT),Error);          
+          DAQmxStopTask(clk_task); // Ignore error/warning check here.  Under normal operation, as used here, it will give a warning for each frame.
           d->_write_ao();
           ++i;
         } while ( !d->is_stopping() );
         
         status = 0;
-        debug("Scanner - Video task completed normally.\r\n");
+        DBG("Scanner - Video task completed normally.\r\n");
       Finalize:
         d->Shutter::Close(); // Close the shutter. FIXME: Ambiguous function name.
         free( frm );
