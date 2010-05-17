@@ -267,6 +267,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\workers\ResonantWrap.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\workers\Terminator.cpp"
 					>
 				</File>
@@ -360,6 +364,10 @@
 				</File>
 				<File
 					RelativePath=".\tasks\StackAcquisition.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\util\util-wrap.cpp"
 					>
 				</File>
 				<File
@@ -473,6 +481,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\workers\ResonantWrap.h"
+					>
+				</File>
+				<File
 					RelativePath=".\workers\Terminator.h"
 					>
 				</File>
@@ -575,6 +587,10 @@
 				</File>
 				<File
 					RelativePath=".\util\util-niscope.h"
+					>
+				</File>
+				<File
+					RelativePath=".\util\util-wrap.h"
 					>
 				</File>
 			</Filter>
