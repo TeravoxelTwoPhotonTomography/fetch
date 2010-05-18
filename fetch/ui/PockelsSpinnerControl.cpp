@@ -69,6 +69,7 @@ namespace fetch
 
         //
         // make the pockels control
+        // - child controls are positioned reletive to hwnd
         //
         
         // Static control
@@ -79,7 +80,7 @@ namespace fetch
                               WS_CHILD
                               | WS_VISIBLE
                               | SS_RIGHT,
-                              left,top,
+                              0,0,
                               10,10,             // width, height guess.  This will be corrected soon.
                               this->self,
                               (HMENU) _ID_POCKELS_SUBCONTROL_STATIC,
@@ -91,13 +92,13 @@ namespace fetch
         { HDC hdc = GetDC(hwnd);
           SIZE sz;
           GetTextExtentPoint32( hdc, lbl, sizeof(lbl), &sz );
-          MoveWindow( hwnd, left, top,sz.cx,sz.cy,TRUE );
+          MoveWindow( hwnd, rc.left-left, rc.top-top,sz.cx,sz.cy,TRUE );
           ReleaseDC(hwnd,hdc);
         }
         SetWindowText( hwnd, lbl );      
         GetClientRect( hwnd, &trc );
-        rc.bottom = trc.bottom;
-        rc.right  = trc.right;
+        rc.bottom = trc.bottom + rc.top;
+        rc.right  = trc.right + rc.left;
         
         // edit box
         hwnd = NULL;
@@ -109,9 +110,9 @@ namespace fetch
                                 | WS_VISIBLE
                                 | ES_CENTER
                                 | WS_TABSTOP,
-                                rc.right, top,
+                                rc.right-left, 0,
                                 50, 20,                   // pos and dims (approx.  These get reset next).
-                                this->self,                 // parent
+                                this->self,               // parent
                                 (HMENU) _ID_POCKELS_SUBCONTROL_EDIT, // child window identifier
                                 hinst,
                                 NULL ));
@@ -120,13 +121,13 @@ namespace fetch
         { HDC hdc = GetDC(hwnd);
           SIZE sz;
           GetTextExtentPoint32( hdc, "MMMM", 4, &sz );
-          MoveWindow( hwnd, trc.right, top ,(int)(sz.cx*1.1),(int)(sz.cy*1.1),TRUE );
+          MoveWindow( hwnd, trc.right-left, 0 ,(int)(sz.cx*1.1),(int)(sz.cy*1.1),TRUE );
           ReleaseDC(hwnd,hdc);
         }
         this->edit = hwnd;
         GetClientRect( hwnd, &trc );
-        rc.bottom = MAX(rc.bottom,trc.bottom);
-        rc.right += trc.right;
+        rc.bottom = MAX(rc.bottom-rc.top,trc.bottom) + rc.top;
+        rc.right += trc.right + rc.left;
         
         // spinner
         hwnd = NULL;
@@ -138,7 +139,7 @@ namespace fetch
                                       | UDS_ARROWKEYS
                                       | UDS_HOTTRACK
                                       | UDS_SETBUDDYINT,
-                                      rc.right+10, top,
+                                      rc.right-left+10, 0,
                                       10, 0,
                                       this->self,            //parent
                                       _ID_POCKELS_SUBCONTROL_SPINNER, // child id
@@ -149,7 +150,7 @@ namespace fetch
                                       0 ));                // initial value (off is safest)
         this->spin = hwnd;
         GetClientRect( hwnd, &trc );
-        rc.bottom = MAX(rc.bottom,trc.bottom);
+        rc.bottom = MAX(rc.bottom-rc.top,trc.bottom)+rc.top;
         //rc.right += trc.right;
 
         // Button
@@ -174,12 +175,12 @@ namespace fetch
         { HDC hdc = GetDC(hwnd);
           SIZE sz;
           GetTextExtentPoint32( hdc, "Apply", 5, &sz );
-          MoveWindow( hwnd, rc.right, top ,(int)(sz.cx*1.1),(int)(sz.cy*1.1),TRUE );
+          MoveWindow( hwnd, rc.right-left, 0 ,(int)(sz.cx*1.1),(int)(sz.cy*1.1),TRUE );
           ReleaseDC(hwnd,hdc);
         }
         GetClientRect( hwnd, &trc );
-        rc.bottom = MAX(rc.bottom,trc.bottom);
-        rc.right += trc.right;
+        rc.bottom = MAX(rc.bottom-rc.top,trc.bottom) + rc.top;
+        rc.right += trc.right + rc.left;
         
         Guarded_Assert_WinErr( MoveWindow( this->self, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, TRUE ));
 

@@ -38,6 +38,7 @@ namespace fetch
 	      cur = &agent->scanner;
 	      cur =  agent->pixel_averager.apply(cur);
 	      cur =  agent->cast_to_i16.apply(cur);
+	      cur =  agent->wrap.apply(cur);
 	      cur =  agent->trash.apply(cur);
 	      
 	      agent->scanner.arm_nonblocking(&focus,INFINITE);

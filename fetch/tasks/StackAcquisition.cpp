@@ -57,7 +57,8 @@ namespace fetch
         cur = &agent->scanner;
         cur =  agent->pixel_averager.apply(cur);
         cur =  agent->cast_to_i16.apply(cur);
-                
+        cur =  agent->wrap.apply(cur);
+
         agent->next_filename(filename);
         Guarded_Assert( agent->disk.close()==0 );
         Agent::connect(&agent->disk,0,cur,0);

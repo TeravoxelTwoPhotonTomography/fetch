@@ -343,6 +343,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\ui\ResonantWrapSpinnerControl.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\ui\ScannerStateMenu.cpp"
 					>
 				</File>
@@ -558,6 +562,10 @@
 				</File>
 				<File
 					RelativePath=".\ui\PockelsSpinnerControl.h"
+					>
+				</File>
+				<File
+					RelativePath=".\ui\ResonantWrapSpinnerControl.h"
 					>
 				</File>
 				<File

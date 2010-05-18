@@ -65,10 +65,18 @@ Message::from_file(HANDLE hfile, Message* workspace, size_t size_workspace)
 }
 
 size_t
+Message::copy_data(Message *dst, Message *src)
+{ size_t srcbytes = src->size_bytes() - src->self_size;
+  size_t dstbytes = dst->size_bytes() - dst->self_size;
+  Guarded_Assert(srcbytes==dstbytes);
+  memcpy(dst->data,src->data,srcbytes);
+  return srcbytes;
+}
+
+size_t
 Message::translate( Message *dst, Message *src )
-{ size_t sz = src->size_bytes();
-  if(dst) memcpy(dst,src,sz);
-  return sz;
+{ src->format(dst);
+  return Message::copy_data(dst,src);
 }
   
 /*

@@ -20,6 +20,7 @@
 #include "../workers/PixelWiseAverager.h"
 #include "../workers/Terminator.h"
 #include "../workers/FrameCaster.h"
+#include "../workers/ResonantWrap.h"
 
 #include "DiskStream.h"
 
@@ -53,6 +54,7 @@ namespace fetch
         worker::FrameAverageAgent 	   frame_averager;
         worker::PixelWiseAveragerAgent pixel_averager;        
         worker::FrameCastAgent_i16     cast_to_i16;
+        worker::ResonantWrapAgent      wrap;
         worker::TerminalAgent		       trash;                
 
         device::DiskStreamMessage      disk;

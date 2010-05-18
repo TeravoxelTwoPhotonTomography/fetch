@@ -21,6 +21,7 @@
 #define IDR_MAINFRAME                   128
 
 #define IDC_POCKELS                     129
+#define IDC_RESONANT_WRAP               130
 
 #define ID_COMMAND_VIDEODISPLAY         32771
 #define ID_CONTROL_VIDEO                32775
@@ -31,7 +32,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        129
+#define _APS_NEXT_RESOURCE_VALUE        131
 #define _APS_NEXT_COMMAND_VALUE         32780
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           117

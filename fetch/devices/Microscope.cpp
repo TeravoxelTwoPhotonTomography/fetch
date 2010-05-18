@@ -31,6 +31,7 @@
       frame_averager(4),
       pixel_averager(4),
       cast_to_i16(),
+      wrap(),
       trash(),
       disk()
     {}  

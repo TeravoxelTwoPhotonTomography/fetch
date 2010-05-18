@@ -167,7 +167,9 @@ class Message
     static size_t    from_file  ( FILE *fp,     Message* workspace, size_t size_workspace);
     static size_t    from_file  ( HANDLE hfile, Message* workspace, size_t size_workspace);
 
-    // Override these in implimenting classes.
+    static size_t    copy_data  ( Message *dst, Message *src ); // returns #bytes copied
+
+    // Override these in implementing classes.
     virtual size_t   size_bytes ( void ) = 0;
     virtual void     format     ( Message *unformatted ) = 0;           // This should simply copy the format metadata from "this" to "unformatted."
     static  size_t   translate  ( Message *dst, Message *src );         // The sub-class determines the destination.

@@ -18,15 +18,6 @@ namespace fetch
   {
     namespace pockels
     { 
-  
-    //struct UIControl
-    //  { HWND self,
-    //          lbl,
-    //        edit,
-    //        spin,
-    //          btn;
-    //  };
-
       
       class PockelsIntensitySpinControl
       { public:
