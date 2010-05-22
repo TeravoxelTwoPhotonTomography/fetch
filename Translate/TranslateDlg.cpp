@@ -6,6 +6,7 @@
 #include "TranslateDlg.h"
 
 #include "devices/DiskStream.h"
+#include "frame.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -93,6 +94,27 @@ HCURSOR CTranslateDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+void map_file_name(asynq *sourceq, char *outname, char *inname)
+  // * agent that fill sourceq must already be running
+{ //create terminal part of modified filename and extension.
+  char endpart[MAX_PATH];
+  { size_t n[3];
+    Frame *buf = (Frame*)Asynq_Token_Buffer_Alloc(sourceq);
+    Asynq_Peek(sourceq,(void**)&buf,sourceq->q->buffer_size_bytes); // a bit inefficient.  Copies the whole frame just to get the header.    
+    buf->get_shape(n);
+    sprintf(endpart,"_%dx%dx%d.%s",n[2],n[1],n[0],TypeStrFromID(buf->rtti));
+    Asynq_Token_Buffer_Free(buf);
+  }
+
+  // assemble output filename
+  char *cur,*end = inname + strlen(inname);
+  cur = end;
+  while(cur-->inname && *cur!='.');      // rindex - looking for first extension 
+  if(cur!=inname) *cur = '\0';
+  strcpy(outname,inname);
+  strcat(outname,endpart);
+}
+
 DWORD WINAPI readproc(LPVOID lparam)
 { USES_CONVERSION;
   struct T {TCHAR name[MAX_PATH];};
@@ -104,11 +126,18 @@ DWORD WINAPI readproc(LPVOID lparam)
   }
   
   { // work  
+    char* inname = T2A(args.name);
+    char outname[MAX_PATH] = {'\0'};
     fetch::device::DiskStreamMessage in;
     fetch::device::DiskStreamRaw     out;
     in.open(T2A(args.name),"r");
+    map_file_name(in.out->contents[0],outname,inname);
+    fetch::Agent::connect(&out,0,&in,0);
+    Guarded_Assert(out.open(outname,"w"));
     if( !in.wait_till_stopped(INFINITE) )
       warning("%s(%d): Wait for read - timed out\r\n",__FILE__,__LINE__);
+    out.close();
+    in.close();
   }
   return 0;
 }

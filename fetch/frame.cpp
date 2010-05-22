@@ -53,7 +53,7 @@ Message::from_file(HANDLE hfile, Message* workspace, size_t size_workspace)
   i64  bookmark = w32file::getpos(hfile);
   Guarded_Assert_WinErr(    ReadFile( hfile,      &sz, sizeof(size_t), &bytes_read, NULL ));  
 
-  if( !workspace ||  size_workspace >= sz )
+  if( !workspace ||  size_workspace < sz )
   { w32file::setpos(hfile,bookmark,FILE_BEGIN);
     return sz;                                       // failure.  Indicates the required storage size.
   }
@@ -78,7 +78,18 @@ Message::translate( Message *dst, Message *src )
 { src->format(dst);
   return Message::copy_data(dst,src);
 }
-  
+
+void
+  Message::cast(void)
+{ switch( this->id )
+  { case FRAME_INTERLEAVED_PLANES: __cast<Frame_With_Interleaved_Planes>(); break;
+    case FRAME_INTERLEAVED_LINES:  __cast<Frame_With_Interleaved_Lines>();  break;
+    case FRAME_INTERLEAVED_PIXELS: __cast<Frame_With_Interleaved_Pixels>(); break;
+    default:
+      break; //do nothing          
+  }
+}
+
 /*
  * FrmFmt
  */

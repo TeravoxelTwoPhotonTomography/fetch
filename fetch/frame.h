@@ -153,6 +153,10 @@ enum MessageFormatID
   FRAME_INTERLEAVED_PIXELS,
 };
 
+
+
+
+
 class Message
 { public:
     MessageFormatID id;
@@ -172,7 +176,11 @@ class Message
     // Override these in implementing classes.
     virtual size_t   size_bytes ( void ) = 0;
     virtual void     format     ( Message *unformatted ) = 0;           // This should simply copy the format metadata from "this" to "unformatted."
-    static  size_t   translate  ( Message *dst, Message *src );         // The sub-class determines the destination.
+    static  size_t   translate  ( Message *dst, Message *src );         // The calling class determines the destination type
+  
+              void   cast(void);  // Update the virtual table according to the type id.  
+  private:
+    template<class MT> void __cast(void) { MT eg; memcpy(this,&eg,sizeof(void*));} // overwrites the virtual table pointer with the example's pointer
 };                                                                 
 
 class FrmFmt : public Message

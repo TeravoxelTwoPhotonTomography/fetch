@@ -23,7 +23,13 @@ namespace w32file {
     return out.QuadPart;
   }
 
+  // Will return -1 if current position is past end of file.
+  // Should work with files larger than 2GB
   i64 getpos( HANDLE hf )
   { return setpos(hf,0,FILE_CURRENT);
+  }
+
+  int eof( HANDLE hf )
+  { return getpos(hf)<0;
   }
 }

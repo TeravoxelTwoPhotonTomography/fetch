@@ -111,6 +111,8 @@ namespace file {
   ReadMessage::config(device::DiskStream *agent)
   {return 1;}
 
+
+
   unsigned int
   ReadMessage::run(device::DiskStream *agent)
   { asynq   *q   = agent->out->contents[0];
@@ -121,26 +123,40 @@ namespace file {
 
     // Scan file to find max buffer size required
     { maxsize=0;
-      do
-      { sz = Message::from_file(agent->hfile, NULL, 0);          // get size of this message
+      sz = 0;
+      TicTocTimer t = tic();
+      while (w32file::setpos(agent->hfile, sz, FILE_CURRENT)>=0) // jump to next message
+      { sz = Message::from_file(agent->hfile, NULL, 0);          // get size of this message        
         maxsize = max( maxsize, sz );                            // update the max size
-      } while (w32file::setpos(agent->hfile, sz, FILE_BEGIN)>0); // jump to next message
+      } 
       w32file::setpos(agent->hfile,0,FILE_BEGIN);                // rewind
+      debug("Max buffer size of %lld found in %f seconds\r\n",maxsize,toc(&t));  
     }
     Asynq_Resize_Buffers(q,(size_t)maxsize);                     // Make sure the queue's sized right
     buf = (Message*)Asynq_Token_Buffer_Alloc(q);                 // get the first container
 
     // Producer loop
     TicTocTimer t = tic();
-    while ( nbytes && !agent->is_stopping() );
+    FrmFmt eg;
+    nbytes = (DWORD) maxsize;
+    while ( nbytes && !agent->is_stopping() && !w32file::eof(agent->hfile) )
     { double dt;
       Guarded_Assert( Message::from_file(agent->hfile,NULL,0));                                // get size
-      Guarded_Assert( Message::from_file(agent->hfile,buf,maxsize)==0);                        // read data
-      Guarded_Assert( Asynq_Push_Timed(q, (void**)&buf, maxsize, DISKSTREAM_DEFAULT_TIMEOUT)); // push
+      Guarded_Assert( Message::from_file(agent->hfile,buf,nbytes)==0);                         // read data
+      // FIXME:
+      // a) it looks like I inadvertantly serialize the virtual table pointers for each Message
+      // b) should rebuild the virtual table for each type before sending it out?  Any virtual
+      //    methods are invalid otherwise.
+      // I think the conclusion here is that this was a bad approach.  Should use a "real"
+      // format.  That is, ideally, tiff.  This should still work for limited serialization
+      // of Messages so I won't take it out yet.  Maybe I can still convert data I've already
+      // taken.
+      buf->cast(); // dark magic - casts to specific message class correspondng to buf->id.      
+      Guarded_Assert( Asynq_Push_Timed(q, (void**)&buf, nbytes, DISKSTREAM_DEFAULT_TIMEOUT));  // push
       dt = toc(&t);
       debug("Read %s bytes: %d\r\n"
-            "\t%-7.1f bytes per second (dt: %f)\r\n",
-            agent->filename, nbytes, nbytes/dt, dt );
+        "\t%-7.1f bytes per second (dt: %f)\r\n",
+        agent->filename, nbytes, nbytes/dt, dt );
     }
     Asynq_Token_Buffer_Free(buf);
     return 0; // success

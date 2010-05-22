@@ -191,7 +191,8 @@ namespace fetch
     }
     
     unsigned int Agent::is_stopping(void)
-    { return WAIT_OBJECT_0 == WaitForSingleObject(notify_stop, 0);
+    { DWORD res = WaitForSingleObject(notify_stop, 0);
+      return WAIT_OBJECT_0 == res; 
     }
 
     void Agent::set_available(void)
@@ -205,11 +206,12 @@ namespace fetch
     }
 
     unsigned int Agent::wait_till_stopped(DWORD timeout_ms)
-    { unsigned int sts = 0;
-      lock();
-      if( this->thread != INVALID_HANDLE_VALUE )
-        sts = WaitForSingleObject(this->thread,timeout_ms) == WAIT_OBJECT_0;
-      unlock();
+    { unsigned int sts = 0;      
+      if( this->thread != INVALID_HANDLE_VALUE )      
+        // thread could still become invalidated between if and wait, but need to enter wait unlocked
+        // I expect Wait will return WAIT_FAILED immediately if that's the case, so this isn't really
+        // a problem.
+		    sts = WaitForSingleObject(this->thread,timeout_ms) == WAIT_OBJECT_0;      
       return sts;
     }
 
