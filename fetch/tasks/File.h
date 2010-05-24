@@ -27,6 +27,17 @@ namespace fetch
       //typedef UpcastTask<device::DiskStream> DiskStreamTask;
       typedef Task DiskStreamTask;
 
+      /*
+      WriteRaw
+        Writes all the bytes popped from the queue to disk.
+        The buffer size of the input queue determines the 
+        size of the chunk written to disk in a single call.
+        
+      ReadRaw
+        Reads raw data to disk and pushes it onto an output
+        queue.  The amount of data requested on each read
+        is determined by the output queue size.
+      */
       class WriteRaw : public DiskStreamTask
       { public:
           unsigned int config (Agent *d);
@@ -56,6 +67,16 @@ namespace fetch
 
       class ReadMessage : public DiskStreamTask
       { public:
+          unsigned int config (Agent *d);
+          unsigned int run    (Agent *d);
+            
+          unsigned int config(device::DiskStream *agent);
+          unsigned int run(device::DiskStream *agent);
+      }; 
+      
+      // Extracts data from messages and writes just the data to disk.
+      class WriteMessageAsRaw : public DiskStreamTask
+      { public:  
           unsigned int config (Agent *d);
           unsigned int run    (Agent *d);
             

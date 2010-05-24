@@ -66,7 +66,7 @@ void Logger_Update_Nonblocking( void )
 HWND Logger_InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    HWND hWnd;   
-   TCHAR        szTitle[MAX_LOADSTRING] = "Log: ";  // The title bar text
+   TCHAR        szTitle[MAX_LOADSTRING] = _T("Log: ");  // The title bar text
 	 
    LoadString(hInstance, IDS_APP_TITLE, szTitle+5, MAX_LOADSTRING-5);
 
@@ -93,18 +93,19 @@ HWND Logger_InitInstance(HINSTANCE hInstance, int nCmdShow)
    return hWnd;
 }
 
-void Logger_Push_Text( const TCHAR* msg )
-{ size_t  len    = _tcslen(msg); 
+void Logger_Push_Text( const char* _msg )
+{ USES_CONVERSION;
+  TCHAR *msg = A2T(_msg);          // dynamically allocates msg on the stack...cleaned up on function exit
+  size_t  len    = _tcslen(msg);
+  
 
   vector_TCHAR_request( &g_Logger_Buffer, 
                          g_Logger_Buffer.count + len );
-#pragma warning( push )
-#pragma warning( disable:4996 )
-  //Requires compiling with Multiple byte character set (not unicode)
-  strncpy( g_Logger_Buffer.contents + g_Logger_Buffer.count,          
+
+  _tcsncpy( g_Logger_Buffer.contents + g_Logger_Buffer.count,          
            msg,
            len+1 );                // copy the null termination
-#pragma warning( pop )
+
   g_Logger_Buffer.count += len;    // but don't add the null termination to the count
 
 #ifdef DEBUG_LOGGER_USE_BLOCKING_UPDATES
@@ -204,7 +205,7 @@ LRESULT CALLBACK Logger_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
           DeleteObject( hfDefault );
         hfDefault = CreateFont( h, 0, // height and width
                                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                "Lucida Console" );
+                                _T("Lucida Console") );
         if( !SendMessage( hEdit, WM_SETFONT, (WPARAM) hfDefault, TRUE ) )
           warning("Could not set font in logger edit control.\r\n");
           
@@ -257,7 +258,7 @@ LRESULT CALLBACK Logger_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
         }
         break;
       case IDM_LOG_SAVE:
-        { OPENFILENAME ofn;
+        { OPENFILENAMEA ofn;
           char filename[MAX_PATH] = "\0";
 #ifdef DEBUG_LOGGER_CONTROL
           debug("Got save command in logger\r\n");
@@ -278,13 +279,13 @@ LRESULT CALLBACK Logger_WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
                          | OFN_OVERWRITEPROMPT;
           ofn.lpstrDefExt = "log";
 
-          if( GetSaveFileName(&ofn) )
+          if( GetSaveFileNameA(&ofn) )
           { 
 #pragma warning(push)
 #pragma warning( disable:4996 )
             FILE *fp = fopen(ofn.lpstrFile, "w");
 #pragma warning(pop)
-            fprintf( fp, g_Logger_Buffer.contents );
+            _ftprintf( fp, g_Logger_Buffer.contents );
             fclose(fp);
 #ifdef DEBUG_LOGGER_CONTROL
             debug("\tWrote to file: %s\r\n", ofn.lpstrFile );

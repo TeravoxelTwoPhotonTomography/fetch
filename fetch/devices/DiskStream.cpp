@@ -83,19 +83,19 @@ namespace fetch
       }
       
       this->lock();
-      hfile = CreateFile(filename,
-                         desired_access,
-                         share_mode,
-                         NULL,
-                         creation_disposition,
-                         flags_and_attr,
-                         NULL );
+      hfile = CreateFileA(filename,
+                          desired_access,
+                          share_mode,
+                          NULL,
+                          creation_disposition,
+                          flags_and_attr,
+                          NULL );
       if (hfile == INVALID_HANDLE_VALUE)
       {
         ReportLastWindowsError();
         warning("Could not open file\r\n"
                "\tat %s\r\n"
-               "\twith mode %c\r\n", filename, mode);
+               "\twith mode %c. \r\n", filename, mode);
         sts = 1; //failure
       } else
       { this->set_available();
@@ -162,7 +162,8 @@ namespace fetch
       this->unlock();
 
       this->detach(); // allows open() to be called from any state
-      this->attach(); // open's the file handle
+      if( this->attach()!=0 )  // open's the file handle
+        return 0;// failure to open                      
 
       // Open the file
       // Associate read/write task

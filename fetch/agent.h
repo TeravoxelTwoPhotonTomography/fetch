@@ -134,6 +134,8 @@ namespace fetch {
       unsigned int is_running(void);
       unsigned int is_stopping(void);  // use this for testing for main-loop termination in Tasks.
                                        // FIXME: not clear from name that is_stopping is very different from is_running
+                                       
+      unsigned int wait_till_stopped(DWORD timeout_ms);                                       
                                              
       // Queue manipulation
       static void connect(Agent *dst, size_t dst_chan, Agent *src, size_t src_chan);

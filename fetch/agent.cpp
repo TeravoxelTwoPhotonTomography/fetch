@@ -204,6 +204,15 @@ namespace fetch
         ;
     }
 
+    unsigned int Agent::wait_till_stopped(DWORD timeout_ms)
+    { unsigned int sts = 0;
+      lock();
+      if( this->thread != INVALID_HANDLE_VALUE )
+        sts = WaitForSingleObject(this->thread,timeout_ms) == WAIT_OBJECT_0;
+      unlock();
+      return sts;
+    }
+
     unsigned int Agent::arm(Task *task, DWORD timeout_ms)
     {
       this->lock(); // Source state can not be "armed" or "running"

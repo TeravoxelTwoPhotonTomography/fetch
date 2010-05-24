@@ -2,7 +2,7 @@
 
 #include "resource.h"
 
-#define LOGGER_CLASS_NAME "LOGGER"
+#define LOGGER_CLASS_NAME _T("LOGGER")
 
 ATOM Logger_RegisterClass              ( HINSTANCE hInstance );
 HWND Logger_InitInstance               ( HINSTANCE hInstance, int nCmdShow);

@@ -14,10 +14,15 @@
 #define DEBUG_TIC_TOC_TIMER
 #endif
 
+
+
+
 // -----------------
 // Windows utitities
 // -----------------
-
+#pragma warning(push)
+#pragma warning(disable : 4995) //deprication warning
+#pragma warning(disable : 4996) //security    warning
 UINT MyCreateUserWindowMessage( const char *name, size_t id )
 { char s[1000],*t = s;
   size_t n;
@@ -29,9 +34,9 @@ UINT MyCreateUserWindowMessage( const char *name, size_t id )
     sprintf(t,"_%llu",id);
   else
     sprintf(t,"_%lu",id); 
-  return ::RegisterWindowMessage(s);
+  return ::RegisterWindowMessageA(s);
 }
-
+#pragma warning(pop)
 
 //
 // Utility functions
@@ -317,7 +322,7 @@ void Warning_Reporting_Remove_All_Callbacks(void)
 //
 
 void _reporting_log_to_vs_console_callback( const char *msg )
-{ OutputDebugString((TCHAR*)msg);
+{ OutputDebugStringA(msg);
 }
 
 void Reporting_Setup_Log_To_VSDebugger_Console(void)
