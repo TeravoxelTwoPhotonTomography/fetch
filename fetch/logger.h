@@ -6,5 +6,5 @@
 
 ATOM Logger_RegisterClass              ( HINSTANCE hInstance );
 HWND Logger_InitInstance               ( HINSTANCE hInstance, int nCmdShow);
-void Logger_Push_Text                  ( const TCHAR* msg );
+void Logger_Push_Text                  ( const char* msg );
 void Logger_Register_Default_Reporting ( void);

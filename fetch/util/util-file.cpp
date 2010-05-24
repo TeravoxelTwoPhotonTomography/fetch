@@ -9,7 +9,7 @@ namespace w32file {
   // Should be ok with very large files
   i64 setpos( HANDLE hf, i64 pos, DWORD method )
   { LARGE_INTEGER in,out;
-    BOOL sts;
+    //BOOL sts;
     in.QuadPart = pos;
     Guarded_Assert_WinErr( 
       SetFilePointerEx( hf,

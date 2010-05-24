@@ -93,9 +93,10 @@ HWND Logger_InitInstance(HINSTANCE hInstance, int nCmdShow)
    return hWnd;
 }
 
-void Logger_Push_Text( const char* _msg )
-{ USES_CONVERSION;
-  TCHAR *msg = A2T(_msg);          // dynamically allocates msg on the stack...cleaned up on function exit
+void Logger_Push_Text(const char* _msg )
+{ 
+  USES_CONVERSION;
+  TCHAR *msg = A2T((char*)_msg);          // dynamically allocates msg on the stack...cleaned up on function exit
   size_t  len    = _tcslen(msg);
   
 

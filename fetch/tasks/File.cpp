@@ -14,7 +14,7 @@
 #include "../devices/DiskStream.h"
 #include "../frame.h"
 #include "File.h"
-#include "util/util-file.h"
+#include "../util/util-file.h"
 #if 0
 #define disk_stream_debug(...) debug(__VA_ARGS__)
 #else

@@ -150,6 +150,7 @@ void CTranslateDlg::OnBnClickedCommandTranslate()
     int nFiles = ctl_in_list.GetCount();
     CString name;
     
+    if(nFiles==0) return;
     if(!q)
       q = Asynq_Alloc(nFiles,sizeof(T));
     
