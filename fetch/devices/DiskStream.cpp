@@ -26,8 +26,9 @@ namespace fetch
   namespace device
   {
 	
-	  template class DiskStreamSpecialized<task::file::ReadMessage,task::file::WriteMessage>;// DiskStreamMessage;
-    template class DiskStreamSpecialized<task::file::ReadRaw    ,task::file::WriteRaw>;    //     DiskStreamRaw;
+	  template class DiskStreamSpecialized<task::file::ReadMessage,task::file::WriteMessage>;      // DiskStreamMessage;
+    template class DiskStreamSpecialized<task::file::ReadRaw    ,task::file::WriteRaw>;          // DiskStreamRaw;    
+    template class DiskStreamSpecialized<task::file::ReadRaw    ,task::file::WriteMessageAsRaw>; // DiskStreamMessageAsRaw;
 	
     DiskStream::DiskStream()
       : hfile(INVALID_HANDLE_VALUE)

@@ -61,8 +61,9 @@ namespace fetch
         
         unsigned int open(char *filename, char *mode);
     };
-    typedef DiskStreamSpecialized<task::file::ReadMessage,task::file::WriteMessage> DiskStreamMessage;
-    typedef DiskStreamSpecialized<task::file::ReadRaw    ,task::file::WriteRaw>         DiskStreamRaw;
+    typedef DiskStreamSpecialized<task::file::ReadMessage,task::file::WriteMessage>      DiskStreamMessage;
+    typedef DiskStreamSpecialized<task::file::ReadRaw    ,task::file::WriteRaw>          DiskStreamRaw;
+    typedef DiskStreamSpecialized<task::file::ReadRaw    ,task::file::WriteMessageAsRaw> DiskStreamMessageAsRaw;
 
   }
 

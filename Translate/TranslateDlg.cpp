@@ -128,8 +128,8 @@ DWORD WINAPI readproc(LPVOID lparam)
   { // work  
     char* inname = T2A(args.name);
     char outname[MAX_PATH] = {'\0'};
-    fetch::device::DiskStreamMessage in;
-    fetch::device::DiskStreamRaw     out;
+    fetch::device::DiskStreamMessage      in;
+    fetch::device::DiskStreamMessageAsRaw out;
     in.open(T2A(args.name),"r");
     map_file_name(in.out->contents[0],outname,inname);
     fetch::Agent::connect(&out,0,&in,0);
