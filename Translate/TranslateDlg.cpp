@@ -152,7 +152,7 @@ void CTranslateDlg::OnBnClickedCommandTranslate()
     
     if(nFiles==0) return;
     if(!q)
-      q = Asynq_Alloc(nFiles,sizeof(T));
+      q = Asynq_Alloc(32,sizeof(T));
     
     for(int i=0; i<nFiles; ++i)
     { T args;
@@ -163,6 +163,7 @@ void CTranslateDlg::OnBnClickedCommandTranslate()
       }
       Guarded_Assert_WinErr( QueueUserWorkItem(&readproc, (void*)q, NULL /*default flags*/));      
     }
+    while( ctl_in_list.DeleteString(0) );
   }
 
 void CTranslateDlg::OnDropFiles(HDROP hDropInfo)
