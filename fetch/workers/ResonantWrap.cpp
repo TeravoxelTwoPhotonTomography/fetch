@@ -43,7 +43,7 @@ namespace fetch
       if(!get_dim(iw,ih,turn,&ow,&oh) || ow<0.1*iw) // output width must be >= 10% of input width
       { // turn parameter out-of-bounds
         Frame::copy_data(fdst,fsrc);     // just pass the data through - if fsrc and fdst were pointers to pointers we could avoid this copy
-        warning("task: ResonantWrap: turn parameter out of bounds.  turn = %f\r\n",turn);
+        //warning("task: ResonantWrap: turn parameter out of bounds.  turn = %f\r\n",turn);
         agent->SetIsInBounds(false);
         return 1; //return success - [ ] what happens if I return fail here?
       } else

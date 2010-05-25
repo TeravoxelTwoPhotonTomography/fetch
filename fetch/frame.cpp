@@ -55,7 +55,7 @@ Message::from_file(HANDLE hfile, Message* workspace, size_t size_workspace)
 
   if( !workspace ||  size_workspace < sz )
   { w32file::setpos(hfile,bookmark,FILE_BEGIN);
-    return sz;                                       // failure.  Indicates the required storage size.
+    return sz+2*sizeof(size_t);               // failure.  Indicates the step size to the next message.
   }
 
   Guarded_Assert_WinErr(    ReadFile( hfile,      &off, sizeof(size_t), &bytes_read, NULL ));  

@@ -24,7 +24,7 @@
 
 #include "DiskStream.h"
 
-#define MICROSCOPE_DEFAULT_DEST_PATH           "E:\\microscope\\data\\2010-05-13\\"
+#define MICROSCOPE_DEFAULT_DEST_PATH           "E:\\microscope\\data\\2010-05-24\\6\\"
 #define MICROSCOPE_DEFAULT_FILE_NAME_TEMPLATE  "Stack_%03d.stream"
 #define MICROSCOPE_DEFAULT_INITIAL_FILE_ID     0
 

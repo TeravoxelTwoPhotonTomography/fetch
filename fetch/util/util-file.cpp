@@ -17,7 +17,7 @@ namespace w32file {
                        &out,
                         method));
     Guarded_Assert_WinErr(GetFileSizeEx(hf,&in));
-    if(out.QuadPart>in.QuadPart) //past end of file
+    if(out.QuadPart>=in.QuadPart) //past end of file
       return -1;
     
     return out.QuadPart;
