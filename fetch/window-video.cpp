@@ -350,7 +350,7 @@ namespace fetch
     g_video.maxs = (float*) Guarded_Malloc( sizeof(float)*nchan, "window-video:_InitDevice():alloc maxs" );
     { UINT i = nchan;
       while(i--)
-      { g_video.mins[i] = 0.0;
+      { g_video.mins[i] = 0.5;
         g_video.maxs[i] = 1.0;
       }
     }
@@ -556,7 +556,7 @@ namespace fetch
           case WM_KEYDOWN:
               if( (lParam & 0xf) == 1 ) // if repeat count is one
               { switch( wParam )
-                { case 0x30: // "0" key
+                { case 0x30: // "0" key                
                   case 0x31: // "1" key
                   case 0x32: // "2" key
                   { size_t ichan = wParam - 0x30;                  
@@ -567,7 +567,19 @@ namespace fetch
                       Colormap_Resource_Commit( g_video.cmaps );
                     }
                     break;
-                  }                  
+                  }  
+                  case VK_BACK:
+                  { // Reset colormaps to [0.5, 1] (good for signed where 0 is in the middle of the range)
+                    size_t ichan;
+                    for(ichan=0;ichan<g_video.vframe->nchan;ichan++)
+                    { g_video.mins[ichan] = 0.5f;
+                      g_video.maxs[ichan] = 1.0f;
+                      debug("Reset colormap range %d - [%4.3f, %4.3f]\r\n", ichan, g_video.mins[ichan], g_video.maxs[ichan]);
+                    }  
+                    Colormap_Autosetup( g_video.cmaps, g_video.mins, g_video.maxs );
+                    Colormap_Resource_Commit( g_video.cmaps );
+                  }                
+                  break;
                   default:
                     break;
                 }            

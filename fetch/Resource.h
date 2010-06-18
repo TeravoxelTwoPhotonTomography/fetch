@@ -25,7 +25,7 @@
 
 #define ID_COMMAND_VIDEODISPLAY         32771
 #define ID_CONTROL_VIDEO                32775
-//#define IDC_STATIC                      -1
+#define IDC_STATIC                      -1
 
 // Next default values for new objects
 // 

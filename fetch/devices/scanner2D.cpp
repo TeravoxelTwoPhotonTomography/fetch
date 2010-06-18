@@ -385,6 +385,8 @@ namespace fetch
     void 
     Scanner2D::_register_daq_event(void)
     { int32 N = this->config.nsamples; 
+    
+#if 0
       DAQERR( DAQmxRegisterEveryNSamplesEvent(
                   this->ao,                          // task handle
                   DAQmx_Val_Transferred_From_Buffer, // event type
@@ -392,11 +394,13 @@ namespace fetch
                   0,                                 // run the callback in a DAQmx thread
                   &_daq_event_callback,              // callback
                   (void*)this));                     // data passed to callback                                                
-      //DAQERR( DAQmxRegisterDoneEvent (
-      //            this->clk,                         //task handle
-      //            0,                                 //run the callback in a DAQmx thread
-      //            &_daq_event_done_callback,         //callback
-      //            (void*)this));                     //data passed to callback 
+#else
+      DAQERR( DAQmxRegisterDoneEvent (
+                  this->clk,                         //task handle
+                  0,                                 //run the callback in a DAQmx thread
+                  &_daq_event_done_callback,         //callback
+                  (void*)this));                     //data passed to callback 
+#endif
     }
     
     unsigned int 

@@ -21,10 +21,11 @@
 #include "../workers/Terminator.h"
 #include "../workers/FrameCaster.h"
 #include "../workers/ResonantWrap.h"
+#include "../workers/FrameInvert.h"
 
 #include "DiskStream.h"
 
-#define MICROSCOPE_DEFAULT_DEST_PATH           "E:\\microscope\\data\\2010-05-24\\6\\"
+#define MICROSCOPE_DEFAULT_DEST_PATH           "E:\\microscope\\data\\2010-06-17\\3\\"
 #define MICROSCOPE_DEFAULT_FILE_NAME_TEMPLATE  "Stack_%03d.stream"
 #define MICROSCOPE_DEFAULT_INITIAL_FILE_ID     0
 
@@ -52,8 +53,9 @@ namespace fetch
         device::Scanner3D              scanner;
 
         worker::FrameAverageAgent 	   frame_averager;
-        worker::PixelWiseAveragerAgent pixel_averager;        
+        worker::PixelWiseAveragerAgent pixel_averager;
         worker::FrameCastAgent_i16     cast_to_i16;
+        worker::FrameInvertAgent       inverter;
         worker::ResonantWrapAgent      wrap;
         worker::TerminalAgent		       trash;                
 

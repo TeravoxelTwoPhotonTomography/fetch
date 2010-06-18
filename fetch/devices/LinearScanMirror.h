@@ -15,7 +15,7 @@
 #include "NIDAQAgent.h"
 #include "../agent.h"
 
-#define DEFAULT_LINEARSCANMIRROR_VPP                  20.0   // V - peak-to-peak
+#define DEFAULT_LINEARSCANMIRROR_VPP                  10.0   // V - peak-to-peak
 #define DEFAULT_LINEARSCANMIRROR_V_MAX                10.0   // V - Maximum permissible value
 #define DEFAULT_LINEARSCANMIRROR_V_MIN               -10.0   // V - Minimum permissible value
 #define DEFAULT_LINEARSCANMIRROR_CHANNEL        "/Dev1/ao0"  // DAQ terminal: should be connected to command input on galvo controller

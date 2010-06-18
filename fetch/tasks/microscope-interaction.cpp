@@ -31,12 +31,14 @@ namespace fetch
       //
       
       unsigned int Interaction::config(device::Microscope *agent)
-      { static task::scanner::Video<i8> focus;
+      { static task::scanner::Video<i16> focus;
       
         //Assemble pipeline here
 	      Agent *cur;
 	      cur = &agent->scanner;
 	      cur =  agent->pixel_averager.apply(cur);
+	      //cur =  agent->frame_averager.apply(cur);
+	      cur =  agent->inverter.apply(cur);
 	      cur =  agent->cast_to_i16.apply(cur);
 	      cur =  agent->wrap.apply(cur);
 	      cur =  agent->trash.apply(cur);

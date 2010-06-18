@@ -49,13 +49,14 @@ namespace fetch
       unsigned int StackAcquisition::run   (Agent *d) {return run   (dynamic_cast<device::Microscope*>(d));}
 
       unsigned int StackAcquisition::config(device::Microscope *agent) // todo change "agent" to "scope"
-      { static task::scanner::ScanStack<i8> grabstack;
+      { static task::scanner::ScanStack<i16> grabstack;
         static char filename[MAX_PATH];
 
         //Assemble pipeline here
         Agent *cur;
         cur = &agent->scanner;
         cur =  agent->pixel_averager.apply(cur);
+        cur =  agent->inverter.apply(cur);
         cur =  agent->cast_to_i16.apply(cur);
         cur =  agent->wrap.apply(cur);
 

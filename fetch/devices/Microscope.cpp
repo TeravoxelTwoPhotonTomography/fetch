@@ -30,6 +30,7 @@
     : scanner(),
       frame_averager(4),
       pixel_averager(4),
+      inverter(0),
       cast_to_i16(),
       wrap(),
       trash(),
@@ -60,6 +61,7 @@
       sts |= scanner.detach();
       sts |= frame_averager.detach();
       sts |= pixel_averager.detach();
+      sts |= inverter.detach();
       sts |= trash.detach();
       sts |= disk.detach();
       this->_is_available = 0;
@@ -71,6 +73,7 @@
       sts &= scanner.disarm(timeout_ms);
       sts &= frame_averager.disarm(timeout_ms);
       sts &= pixel_averager.disarm(timeout_ms);
+      sts &= inverter.disarm(timeout_ms);
       sts &= trash.disarm(timeout_ms);
       sts &= disk.disarm(timeout_ms);
       
