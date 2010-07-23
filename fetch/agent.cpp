@@ -425,9 +425,9 @@ namespace fetch
             if(this->in)
               for(i=0;i<this->in->nelem;++i) 
                 Guarded_Assert_WinErr(SetEvent(this->in->contents[i]->notify_abort));
-            if(this->out)
-              for(i=0;i<this->out->nelem;++i)
-                Guarded_Assert_WinErr(SetEvent(this->out->contents[i]->notify_abort));
+//          if(this->out)                                                                // Only notify input queues.  This way output queues will be drained if those agents are still running.
+//            for(i=0;i<this->out->nelem;++i)
+//              Guarded_Assert_WinErr(SetEvent(this->out->contents[i]->notify_abort));
           }
           this->unlock();
           res = WaitForSingleObject(this->thread, timeout_ms); // wait for running thread to stop
@@ -437,9 +437,9 @@ namespace fetch
             if(this->in)
               for(i=0;i<this->in->nelem;++i) 
                 Guarded_Assert_WinErr(ResetEvent(this->in->contents[i]->notify_abort));
-            if(this->out)
-              for(i=0;i<this->out->nelem;++i) 
-                Guarded_Assert_WinErr(ResetEvent(this->out->contents[i]->notify_abort));
+//          if(this->out)
+//            for(i=0;i<this->out->nelem;++i) 
+//              Guarded_Assert_WinErr(ResetEvent(this->out->contents[i]->notify_abort));
           }
           
 
