@@ -419,11 +419,29 @@ namespace fetch
       this->lock();
       if( this->_is_running )
       { if( this->thread != INVALID_HANDLE_VALUE)
-        { SetEvent(this->notify_stop);
+        { SetEvent(this->notify_stop);                  // Signal task to stop
+          {                                             // Signal push/pop/peeks on waiting queues to abort
+            unsigned i;
+            if(this->in)
+              for(i=0;i<this->in->nelem;++i) 
+                Guarded_Assert_WinErr(SetEvent(this->in->contents[i]->notify_abort));
+            if(this->out)
+              for(i=0;i<this->out->nelem;++i)
+                Guarded_Assert_WinErr(SetEvent(this->out->contents[i]->notify_abort));
+          }
           this->unlock();
           res = WaitForSingleObject(this->thread, timeout_ms); // wait for running thread to stop
           this->lock();
           ResetEvent(this->notify_stop);
+          { int i;
+            if(this->in)
+              for(i=0;i<this->in->nelem;++i) 
+                Guarded_Assert_WinErr(ResetEvent(this->in->contents[i]->notify_abort));
+            if(this->out)
+              for(i=0;i<this->out->nelem;++i) 
+                Guarded_Assert_WinErr(ResetEvent(this->out->contents[i]->notify_abort));
+          }
+          
 
           // Handle a timeout on the wait.  
           if( !_handle_wait_for_result(res, "Agent stop: Wait for thread."))

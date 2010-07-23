@@ -106,8 +106,8 @@ namespace fetch
       size_t nbytes_in  = qsrc->q->buffer_size_bytes,
              nbytes_out = qdst->q->buffer_size_bytes,
              sz;
-      do
-      { while( Asynq_Pop_Try(qsrc, (void**)&fsrc, nbytes_in) )
+      
+      while( !d->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, nbytes_in) )
         { //debug("In  OneToOneWorkTask::run - just popped\r\n");
           nbytes_in = fsrc->size_bytes();
           fsrc->format(fdst);
@@ -119,8 +119,7 @@ namespace fetch
           goto_if_fail(
             Asynq_Push_Timed( qdst, (void**)&fdst, nbytes_out, WORKER_DEFAULT_TIMEOUT ),
             OutputQueueTimeoutError);
-        }
-      } while(!d->is_stopping());
+        }      
 
     Finalize:
       Asynq_Token_Buffer_Free(fsrc);
@@ -146,8 +145,8 @@ namespace fetch
             *qdst = d->out->contents[0];
       TMessage *fsrc =  (TMessage*)Asynq_Token_Buffer_Alloc(qsrc);
       size_t nbytes_in  = qsrc->q->buffer_size_bytes;
-      do
-      { while( Asynq_Pop_Try(qsrc, (void**)&fsrc, nbytes_in) )
+      
+      while(!d->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, nbytes_in) )
         { //debug("In  OneToOneWorkTask::run - just popped\r\n");
           nbytes_in = fsrc->size_bytes();
           goto_if_fail(
@@ -158,7 +157,7 @@ namespace fetch
             Asynq_Push_Timed( qdst, (void**)&fsrc, nbytes_in, WORKER_DEFAULT_TIMEOUT ),
             OutputQueueTimeoutError);
         }
-      } while(!d->is_stopping());
+      
 
     Finalize:
       Asynq_Token_Buffer_Free(fsrc);

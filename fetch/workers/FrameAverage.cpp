@@ -41,7 +41,7 @@ namespace fetch
                      nelem = nbytes / sizeof(f32);
 
           // First one
-          if( Asynq_Pop_Try(qsrc,(void**)&fsrc,src_bytes))
+          if(!agent->is_stopping() && Asynq_Pop(qsrc,(void**)&fsrc,src_bytes))
           {
             if(fsrc->size_bytes()>dst_bytes)
               Guarded_Assert(fdst = (Frame*) realloc(fdst,dst_bytes = fsrc->size_bytes()));
@@ -53,7 +53,7 @@ namespace fetch
             continue;
 
           // The rest
-          while( Asynq_Pop_Try(qsrc, (void**)&fsrc, fsrc->size_bytes()) )
+          while(!agent->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, fsrc->size_bytes()) )
           { buf = (f32*) fsrc->data;
 
             ++count;

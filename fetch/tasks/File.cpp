@@ -87,8 +87,8 @@ namespace file {
           written;
 
     TicTocTimer t = tic();
-    do
-    { while( Asynq_Pop_Try(q, &buf, nbytes) )
+    
+    while( !agent->is_stopping() && Asynq_Pop(q, &buf, nbytes) )
       { double dt = toc(&t);
         nbytes = q->q->buffer_size_bytes;
         disk_stream_debug("FPS: %3.1f Frame time: %5.4f            MB/s: %3.1f Q: %3d Write %8d bytes to %s\r\n",
@@ -97,7 +97,7 @@ namespace file {
         Guarded_Assert_WinErr( WriteFile( agent->hfile, buf, nbytes, &written, NULL ));
         Guarded_Assert( written == nbytes );
       }
-    } while (!agent->is_stopping());
+    
     Asynq_Token_Buffer_Free(buf);
     return 0; // success
   }
@@ -177,8 +177,7 @@ namespace file {
     DWORD nbytes = q->q->buffer_size_bytes;
 
     TicTocTimer t = tic();
-    do
-    { while( Asynq_Pop_Try(q, &buf, nbytes) )
+    while( !agent->is_stopping() && Asynq_Pop(q, &buf, nbytes) )
       { double dt = toc(&t);
         nbytes = ((Message*)buf)->size_bytes();
         disk_stream_debug("FPS: %3.1f Frame time: %5.4f            MB/s: %3.1f Q: %3d Write %8d bytes to %s\r\n",
@@ -186,7 +185,6 @@ namespace file {
                 q->q->head - q->q->tail,nbytes, agent->path );
         ((Message*)buf)->to_file(agent->hfile);
       }
-    } while ( !agent->is_stopping() );
     Asynq_Token_Buffer_Free(buf);
     return 0; // success
   }
@@ -207,8 +205,7 @@ namespace file {
     DWORD written;
 
     TicTocTimer t = tic();
-    do
-    { while( Asynq_Pop_Try(q, (void**)&buf, nbytes) )
+    while(!agent->is_stopping() && Asynq_Pop(q, (void**)&buf, nbytes) )
       { double dt = toc(&t);
         nbytes = buf->size_bytes() - buf->self_size;
         disk_stream_debug("FPS: %3.1f Frame time: %5.4f            MB/s: %3.1f Q: %3d Write %8d bytes to %s\r\n",
@@ -217,7 +214,6 @@ namespace file {
         Guarded_Assert_WinErr( WriteFile( agent->hfile, buf->data, nbytes, &written, NULL ));
         Guarded_Assert( written == nbytes );
       }
-    } while ( !agent->is_stopping() );
     Asynq_Token_Buffer_Free(buf);
     return 0; // success
   }

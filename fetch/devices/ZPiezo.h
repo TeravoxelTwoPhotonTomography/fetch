@@ -14,9 +14,9 @@
 #include "NIDAQAgent.h"
 
 #define DEFAULT_ZPIEZO_UM2V                0.025   // V/um - approximate micron to volts converstion (for control output). e.g. 1 um = 0.025 V = 25 mV
-#define DEFAULT_ZPIEZO_UM_MAX               200   // um   - end of travel for a scan
+#define DEFAULT_ZPIEZO_UM_MAX                 20   // um   - end of travel for a scan
 #define DEFAULT_ZPIEZO_UM_MIN                0.0   // um   - beg of travel for a scan
-#define DEFAULT_ZPIEZO_UM_STEP               0.5   // um   - step to take during a vertical scan
+#define DEFAULT_ZPIEZO_UM_STEP               0.1   // um   - step to take during a vertical scan
 #define DEFAULT_ZPIEZO_V_MAX                12.0   // V    - Maximum permissible value
 #define DEFAULT_ZPIEZO_V_MIN                -3.0   // V    - Minimum permissible value
 #define DEFAULT_ZPIEZO_V_OFFSET              0.0   // V    - Voltage corresponding to the spatial zero point
