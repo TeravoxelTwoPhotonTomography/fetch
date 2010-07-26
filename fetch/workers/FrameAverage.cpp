@@ -32,6 +32,15 @@ namespace fetch
             *fdst = (Frame*) Asynq_Token_Buffer_Alloc(qdst);
       f32 *buf, *acc = NULL;
       size_t dst_bytes = qdst->q->buffer_size_bytes;
+      
+      if(every<=1)
+      // Do nothing, just pass through
+      { while(!agent->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, qsrc->q->buffer_size_bytes) )
+          goto_if_fail(  //   push - wait till successful
+                Asynq_Push_Timed( qdst, (void**)&fsrc, fsrc->size_bytes(), WORKER_DEFAULT_TIMEOUT ),
+                OutputQueueTimeoutError);
+      
+      } else            
       { unsigned int i,count=0;
 
         do
