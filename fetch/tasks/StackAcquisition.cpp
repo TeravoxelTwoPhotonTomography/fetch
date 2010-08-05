@@ -56,6 +56,7 @@ namespace fetch
         Agent *cur;
         cur = &agent->scanner;
         cur =  agent->pixel_averager.apply(cur);
+	      cur =  agent->frame_averager.apply(cur);
         cur =  agent->inverter.apply(cur);
         cur =  agent->cast_to_i16.apply(cur);
         cur =  agent->wrap.apply(cur);

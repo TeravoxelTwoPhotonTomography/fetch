@@ -28,7 +28,7 @@
 
     Microscope::Microscope()
     : scanner(),
-      frame_averager(4),
+      frame_averager(20),
       pixel_averager(4),
       inverter(0),
       cast_to_i16(),
