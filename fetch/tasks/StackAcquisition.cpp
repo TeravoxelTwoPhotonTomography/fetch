@@ -49,15 +49,18 @@ namespace fetch
       unsigned int StackAcquisition::run   (Agent *d) {return run   (dynamic_cast<device::Microscope*>(d));}
 
       unsigned int StackAcquisition::config(device::Microscope *agent) // todo change "agent" to "scope"
-      { static task::scanner::ScanStack<i8> grabstack;
+      { static task::scanner::ScanStack<i16> grabstack;
         static char filename[MAX_PATH];
 
         //Assemble pipeline here
         Agent *cur;
         cur = &agent->scanner;
         cur =  agent->pixel_averager.apply(cur);
+	      cur =  agent->frame_averager.apply(cur);
+        cur =  agent->inverter.apply(cur);
         cur =  agent->cast_to_i16.apply(cur);
-                
+        cur =  agent->wrap.apply(cur);
+
         agent->next_filename(filename);
         Guarded_Assert( agent->disk.close()==0 );
         Agent::connect(&agent->disk,0,cur,0);
@@ -114,7 +117,7 @@ namespace fetch
           // Increment file          
           sts |= agent->disk.close();
           agent->next_filename(filename);          
-          Agent::connect(&agent->disk,0,&agent->scanner,0);
+          Agent::connect(&agent->disk,0,&agent->wrap,0);
           sts |= agent->disk.open(filename,"w");
           
         }

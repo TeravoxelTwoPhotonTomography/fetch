@@ -191,7 +191,8 @@ namespace fetch
     }
     
     unsigned int Agent::is_stopping(void)
-    { return WAIT_OBJECT_0 == WaitForSingleObject(notify_stop, 0);
+    { DWORD res = WaitForSingleObject(notify_stop, 0);
+      return WAIT_OBJECT_0 == res; 
     }
 
     void Agent::set_available(void)
@@ -202,6 +203,16 @@ namespace fetch
         Guarded_Assert_WinErr(
           SetEvent( this->notify_available ) )
         ;
+    }
+
+    unsigned int Agent::wait_till_stopped(DWORD timeout_ms)
+    { unsigned int sts = 0;      
+      if( this->thread != INVALID_HANDLE_VALUE )      
+        // thread could still become invalidated between if and wait, but need to enter wait unlocked
+        // I expect Wait will return WAIT_FAILED immediately if that's the case, so this isn't really
+        // a problem.
+		    sts = WaitForSingleObject(this->thread,timeout_ms) == WAIT_OBJECT_0;      
+      return sts;
     }
 
     unsigned int Agent::arm(Task *task, DWORD timeout_ms)
@@ -408,11 +419,29 @@ namespace fetch
       this->lock();
       if( this->_is_running )
       { if( this->thread != INVALID_HANDLE_VALUE)
-        { SetEvent(this->notify_stop);
+        { SetEvent(this->notify_stop);                  // Signal task to stop
+          {                                             // Signal push/pop/peeks on waiting queues to abort
+            unsigned i;
+            if(this->in)
+              for(i=0;i<this->in->nelem;++i) 
+                Guarded_Assert_WinErr(SetEvent(this->in->contents[i]->notify_abort));
+//          if(this->out)                                                                // Only notify input queues.  This way output queues will be drained if those agents are still running.
+//            for(i=0;i<this->out->nelem;++i)
+//              Guarded_Assert_WinErr(SetEvent(this->out->contents[i]->notify_abort));
+          }
           this->unlock();
           res = WaitForSingleObject(this->thread, timeout_ms); // wait for running thread to stop
           this->lock();
           ResetEvent(this->notify_stop);
+          { int i;
+            if(this->in)
+              for(i=0;i<this->in->nelem;++i) 
+                Guarded_Assert_WinErr(ResetEvent(this->in->contents[i]->notify_abort));
+//          if(this->out)
+//            for(i=0;i<this->out->nelem;++i) 
+//              Guarded_Assert_WinErr(ResetEvent(this->out->contents[i]->notify_abort));
+          }
+          
 
           // Handle a timeout on the wait.  
           if( !_handle_wait_for_result(res, "Agent stop: Wait for thread."))

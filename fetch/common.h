@@ -55,6 +55,8 @@ inline u32    _next_pow2_u32   (u32 v);
 inline u64    _next_pow2_u64   (u64 v);
 inline size_t _next_pow2_size_t(size_t v);
 
+long int lroundf(float x);
+
 //void Copy_Lines          ( void *dst, size_t dst_stride,                            // DEPRICATED - see util-image.h copy functions
 //                           void *src, size_t src_stride,
 //                           size_t nlines );

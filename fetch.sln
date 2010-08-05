@@ -16,11 +16,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDAQ", "TestDAQ\TestDAQ.vcxproj", "{EA03F0E0-1DF3-45BE-BFCF-CEB1234A510C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDigiDaq", "TestDigiDaq\TestDigiDaq.vcxproj", "{1E400563-5323-4C55-99E7-B4A590BCA15A}"
-<<<<<<< Updated upstream
-=======
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Translate", "Translate\Translate.vcxproj", "{0752F3D6-5619-49A6-AD05-F17F3E2FA869}"
->>>>>>> Stashed changes
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -60,6 +57,10 @@ Global
 		{1E400563-5323-4C55-99E7-B4A590BCA15A}.Debug|Win32.Build.0 = Debug|Win32
 		{1E400563-5323-4C55-99E7-B4A590BCA15A}.Release|Win32.ActiveCfg = Release|Win32
 		{1E400563-5323-4C55-99E7-B4A590BCA15A}.Release|Win32.Build.0 = Release|Win32
+		{0752F3D6-5619-49A6-AD05-F17F3E2FA869}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0752F3D6-5619-49A6-AD05-F17F3E2FA869}.Debug|Win32.Build.0 = Debug|Win32
+		{0752F3D6-5619-49A6-AD05-F17F3E2FA869}.Release|Win32.ActiveCfg = Release|Win32
+		{0752F3D6-5619-49A6-AD05-F17F3E2FA869}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

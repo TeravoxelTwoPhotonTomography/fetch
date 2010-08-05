@@ -136,8 +136,10 @@ _handle_wait_for_result(DWORD result, const char* msg)
 
 /* Returns 1 on success, 0 otherwise.
  * Possibly generates a panic shutdown.
+ * Success indicates one of the objects being waited on triggered.
  * Lack of success could indicate the lock was
- *   abandoned or a timeout elapsed.
+ *    - abandoned
+ *    - a timeout elapsed.
  * A warning will be generated if the lock was
  *   abandoned.
  * Return of 0 indicates a timeout or an 
@@ -180,7 +182,11 @@ _asynq_wait_for_space( asynq *self, DWORD timeout_ms, const char* msg )
   Asynq_Lock(self);    
   self->waiting_producers--;
   
-  return _handle_wait_for_multiple_result(res,2,msg);
+  if(  _handle_wait_for_multiple_result(res,2,msg)==0 ||  /* checks for timeout/abandoned */
+       res==WAIT_OBJECT_0+1 )                             /* the abort event notified...  */
+    return 0;
+  else
+    return 1;
 }
 
 static inline unsigned
@@ -196,7 +202,11 @@ _asynq_wait_for_data__pop( asynq *self, DWORD timeout_ms, const char* msg )
   Asynq_Lock(self);
   self->waiting_poppers--;
   
-  return _handle_wait_for_multiple_result(res,2,msg);
+  if(  _handle_wait_for_multiple_result(res,2,msg)==0 ||  /* checks for timeout/abandoned */
+       res==WAIT_OBJECT_0+1 )                             /* the abort event notified...  */
+    return 0;
+  else
+    return 1;
 }
 
 static inline unsigned
@@ -211,7 +221,12 @@ _asynq_wait_for_peek( asynq *self, DWORD timeout_ms, const char* msg )
     res = WaitForMultipleObjects(2, notify, FALSE/*any*/,timeout_ms );    
     Asynq_Lock(self);                        // after a peek, the wait will release but block here till the peek actually completes.    
   }
-  return _handle_wait_for_multiple_result(res,2,msg);
+  
+  if(  _handle_wait_for_multiple_result(res,2,msg)==0 ||  /* checks for timeout/abandoned */
+       res==WAIT_OBJECT_0+1 )                             /* the abort event notified...  */
+    return 0;
+  else
+    return 1;
 }
 
 static inline unsigned
@@ -226,7 +241,12 @@ _asynq_wait_for_data__peek( asynq *self, DWORD timeout_ms, const char* msg )
   res = WaitForMultipleObjects(2, notify, FALSE/*any*/,timeout_ms );
   Asynq_Lock(self);
   self->waiting_peekers--;    
-  return _handle_wait_for_multiple_result(res,2,msg);
+  
+  if(  _handle_wait_for_multiple_result(res,2,msg)==0 ||  /* checks for timeout/abandoned */
+       res==WAIT_OBJECT_0+1 )                             /* the abort event notified...  */
+    return 0;
+  else
+    return 1;  
 }
 
 static unsigned int                          // Pushes to head.
@@ -263,10 +283,13 @@ _asynq_pop_unlocked(                         // Returns 1 on success, 0 otherwis
   if( RingFIFO_Is_Empty( q ))
   { if(is_try) return 0;
     if( !_asynq_wait_for_data__pop(self, timeout_ms, "Asynq Pop") )
-      if( RingFIFO_Is_Empty( q ) )
+      if( RingFIFO_Is_Empty( q ) )           // something went wrong with the wait...if the queue's not empty just try anyway
         return 0;
   }
-  _asynq_wait_for_peek(self,timeout_ms, "Asynq Push - Wait for a waiting peek");
+  _asynq_wait_for_peek(self,timeout_ms, "Asynq Pop - Wait for a waiting peek");   // Waiting peeks must be satisfied first.
+                                                                                  // [Note] Queue state can change because locks get reacquired in
+                                                                                  // [Bug?] arbitrary order.  This wait should probably happen
+                                                                                  //        before the Is_Empty query.
   return_val_if( RingFIFO_Pop( q, pbuf, sz ), 0 ); // Fail if the queue is empty
   if( self->waiting_producers )
     SetEvent( self->notify_space );

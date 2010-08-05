@@ -70,7 +70,7 @@
 #define SCANNER2D_QUEUE_NUM_FRAMES                   32
 
 #define SCANNER2D_DEFAULT_RESONANT_FREQUENCY         7920.0 // Hz
-#define SCANNER2D_DEFAULT_SCANS                      256  // Number of full resonant periods that make up a frame
+#define SCANNER2D_DEFAULT_SCANS                      512  // Number of full resonant periods that make up a frame
                                                           //        image height = 2 x scans
 #define SCANNER2D_DEFAULT_LINE_DUTY_CYCLE           0.95f // Fraction of resonant period to acquire (must be less than one)
 #define SCANNER2D_DEFAULT_LINE_TRIGGER_SRC              1 // Digitizer channel corresponding to resonant velocity input

@@ -157,7 +157,7 @@ namespace fetch
         DAQJMP( DAQmxStartTask (ao_task));
         do
         { 
-          DAQJMP( DAQmxStartTask (clk_task));
+          DAQJMP( DAQmxStartTask (clk_task));          
           DIGJMP( niScope_InitiateAcquisition(vi));
 
           dt_out = toc(&outer_clock);

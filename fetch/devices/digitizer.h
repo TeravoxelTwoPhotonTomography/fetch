@@ -42,42 +42,6 @@
 #define DIGITIZER_BUFFER_NUM_FRAMES       4        // must be a power of two
 #define DIGITIZER_DEFAULT_TIMEOUT         INFINITE // ms
 
-//#define DIGITIZER_CHANNEL_CONFIG_EMPTY {NULL,0.0,NISCOPE_VAL_DC,VI_FALSE}
-//#define DIGITIZER_CONFIG_EMPTY \
-//                      {NULL,\
-//                        0.0,\
-//                          0,\
-//                          0,\
-//                        0.0,\
-//                        " ",\
-//                        DIGITIZER_MAX_NUM_CHANNELS,\
-//                        {DIGITIZER_CHANNEL_CONFIG_EMPTY,\
-//                        DIGITIZER_CHANNEL_CONFIG_EMPTY,\
-//                        DIGITIZER_CHANNEL_CONFIG_EMPTY,\
-//                        DIGITIZER_CHANNEL_CONFIG_EMPTY,\
-//                        DIGITIZER_CHANNEL_CONFIG_EMPTY,\
-//                        DIGITIZER_CHANNEL_CONFIG_EMPTY,\
-//                        DIGITIZER_CHANNEL_CONFIG_EMPTY,\
-//                        DIGITIZER_CHANNEL_CONFIG_EMPTY}\
-//                        }
-//
-//#define DIGITIZER_CONFIG_DEFAULT \
-//                      { DIGITIZER_DEVICE_NAME,\
-//                        DIGITIZER_MAX_SAMPLE_RATE,\
-//                        DIGITIZER_DEFAULT_RECORD_LENGTH,\
-//                        DIGITIZER_DEFAULT_RECORD_NUM,\
-//                        0.0,\
-//                        "0\0",\
-//                        DIGITIZER_MAX_NUM_CHANNELS,\
-//                        {{"0\0",  0.20,NISCOPE_VAL_DC,VI_TRUE},\
-//                          {"1\0",  2.0,NISCOPE_VAL_DC,VI_TRUE},\
-//                          {"2\0",  5.0,NISCOPE_VAL_DC,VI_FALSE},\
-//                          {"3\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\
-//                          {"4\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\
-//                          {"5\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\
-//                          {"6\0", 10.0,NISCOPE_VAL_DC,VI_FALSE},\
-//                          {"7\0", 10.0,NISCOPE_VAL_DC,VI_FALSE}}\
-//                        }
 namespace fetch
 {
   namespace device

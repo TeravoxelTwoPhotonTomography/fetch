@@ -83,6 +83,12 @@ namespace fetch
         virtual unsigned int work(Agent *agent, TMessage *dst, TMessage *src) = 0;
     };
 
+    template<typename TMessage>
+    class InPlaceWorkTask : public WorkTask
+    { public:
+                unsigned int run(Agent *d);
+        virtual unsigned int work(Agent *agent, TMessage *src) = 0;
+    };
 
 
 // 
@@ -100,8 +106,8 @@ namespace fetch
       size_t nbytes_in  = qsrc->q->buffer_size_bytes,
              nbytes_out = qdst->q->buffer_size_bytes,
              sz;
-      do
-      { while( Asynq_Pop_Try(qsrc, (void**)&fsrc, nbytes_in) )
+      
+      while( !d->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, nbytes_in) )
         { //debug("In  OneToOneWorkTask::run - just popped\r\n");
           nbytes_in = fsrc->size_bytes();
           fsrc->format(fdst);
@@ -113,12 +119,48 @@ namespace fetch
           goto_if_fail(
             Asynq_Push_Timed( qdst, (void**)&fdst, nbytes_out, WORKER_DEFAULT_TIMEOUT ),
             OutputQueueTimeoutError);
-        }
-      } while(!d->is_stopping());
+        }      
 
     Finalize:
       Asynq_Token_Buffer_Free(fsrc);
       Asynq_Token_Buffer_Free(fdst);
+      return sts;
+    // Error handling
+    WorkFunctionFailure:
+      warning("Work function failed.\r\n");
+      sts = 1;
+      goto Finalize;
+    OutputQueueTimeoutError:
+      warning("Pushing to output queue timed out.\r\n");
+      sts = 1;
+      goto Finalize;
+    }
+    
+    
+    template<typename TMessage>
+    unsigned int
+    InPlaceWorkTask<TMessage>::run(Agent *d)
+    { unsigned int sts = 0; // success=0, fail=1
+      asynq *qsrc = d->in->contents[0],
+            *qdst = d->out->contents[0];
+      TMessage *fsrc =  (TMessage*)Asynq_Token_Buffer_Alloc(qsrc);
+      size_t nbytes_in  = qsrc->q->buffer_size_bytes;
+      
+      while(!d->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, nbytes_in) )
+        { //debug("In  OneToOneWorkTask::run - just popped\r\n");
+          nbytes_in = fsrc->size_bytes();
+          goto_if_fail(
+            work(d,fsrc),
+            WorkFunctionFailure);                           
+          nbytes_in = MAX( qdst->q->buffer_size_bytes, nbytes_in ); // XXX - awkward
+          goto_if_fail(
+            Asynq_Push_Timed( qdst, (void**)&fsrc, nbytes_in, WORKER_DEFAULT_TIMEOUT ),
+            OutputQueueTimeoutError);
+        }
+      
+
+    Finalize:
+      Asynq_Token_Buffer_Free(fsrc);
       return sts;
     // Error handling
     WorkFunctionFailure:

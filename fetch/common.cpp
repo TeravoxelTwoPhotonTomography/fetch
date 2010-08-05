@@ -14,10 +14,15 @@
 #define DEBUG_TIC_TOC_TIMER
 #endif
 
+
+
+
 // -----------------
 // Windows utitities
 // -----------------
-
+#pragma warning(push)
+#pragma warning(disable : 4995) //deprication warning
+#pragma warning(disable : 4996) //security    warning
 UINT MyCreateUserWindowMessage( const char *name, size_t id )
 { char s[1000],*t = s;
   size_t n;
@@ -29,9 +34,9 @@ UINT MyCreateUserWindowMessage( const char *name, size_t id )
     sprintf(t,"_%llu",id);
   else
     sprintf(t,"_%lu",id); 
-  return ::RegisterWindowMessage(s);
+  return ::RegisterWindowMessageA(s);
 }
-
+#pragma warning(pop)
 
 //
 // Utility functions
@@ -81,6 +86,13 @@ inline size_t _next_pow2_size_t(size_t v)
 #endif
   v++;
   return v;
+}
+
+long int lroundf(float x)
+{
+   if (x - (long int)x >= 0.5)
+      return (long int)(x + 1);
+   return (long int)x;
 }
 
 void Copy_Lines( void *dst, size_t dst_stride, void *src, size_t src_stride, size_t nlines )
@@ -310,7 +322,7 @@ void Warning_Reporting_Remove_All_Callbacks(void)
 //
 
 void _reporting_log_to_vs_console_callback( const char *msg )
-{ OutputDebugString((TCHAR*)msg);
+{ OutputDebugStringA(msg);
 }
 
 void Reporting_Setup_Log_To_VSDebugger_Console(void)

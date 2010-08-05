@@ -14,6 +14,8 @@
 #include <commctrl.h>
 #include <Windowsx.h>
 
+#include "atlconv.h" // for USES_CONVERSION
+
 // C RunTime Header Files
 #include <stdlib.h>
 #include <malloc.h>

@@ -14,6 +14,7 @@
 #include "ui/DigitizerStateMenu.h"
 #include "ui/MicroscopeStateMenu.h"
 #include "ui/ScannerStateMenu.h"
+#include "ui/ResonantWrapSpinnerControl.h"
 
 #define MAX_LOADSTRING 100
 
@@ -59,7 +60,7 @@ void ApplicationStart(HINSTANCE hInstance)
   Guarded_Assert( gp_microscope->attach());  
   Guarded_Assert( gp_microscope->arm(&g_microscope_default_task,INFINITE));  // ok to do non-blocking here bc there's no way a task thread is running.
   
-  Video_Display_Connect_Device( &gp_microscope->cast_to_i16, 0 );
+  Video_Display_Connect_Device( &gp_microscope->wrap, 0 );
 }
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
@@ -81,6 +82,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
   MyRegisterClass(hInstance);
 
   fetch::ui::pockels::PockelsIntensitySpinControl::Spinner_RegisterClass(hInstance);
+  fetch::ui::ResonantWrapSpinnerControl::RegisterControl(hInstance);
 
   // Perform application initialization:
   if (!InitInstance(hInstance, nCmdShow))
@@ -198,15 +200,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
   PAINTSTRUCT ps;
   HDC hdc;
   static HMENU command_menu = 0;
-  //  static fetch::ui::pockels::UIControl ctl_pock = { 0, 0, 0, 0 };
   static ui::pockels::PockelsIntensitySpinControl *ctl_pockels = NULL;
+  static ui::ResonantWrapSpinnerControl *ctl_resonant_wrap = NULL;
   static ui::MicroscopeStateMenu *ctl_microscope = NULL;
   static ui::ScannerStateMenu    *ctl_scanner    = NULL;  
   //static fetch::ui::digitizer::Menu digitizer_menu("&Digitizer", Digitizer()/*replace*/);
   if(ctl_microscope==NULL)
-  { ctl_microscope = new ui::MicroscopeStateMenu(gp_microscope);
-    ctl_scanner    = new ui::ScannerStateMenu(&gp_microscope->scanner);
-    ctl_pockels    = new ui::pockels::PockelsIntensitySpinControl((device::Pockels*)&gp_microscope->scanner);
+  { ctl_microscope    = new ui::MicroscopeStateMenu(gp_microscope);
+    ctl_scanner       = new ui::ScannerStateMenu(&gp_microscope->scanner);
+    ctl_pockels       = new ui::pockels::PockelsIntensitySpinControl((device::Pockels*)&gp_microscope->scanner);
+    ctl_resonant_wrap = new ui::ResonantWrapSpinnerControl(&gp_microscope->wrap);
   }
 
   if (!command_menu)
@@ -233,9 +236,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
       //digitizer_menu->Insert( menu, GetMenuItemCount(menu)-1, MF_BYPOSITION );
 
       //
-      // make the pockels control
+      // make controls
       //
+
       ctl_pockels->Spinner_CreateControl(hWnd, 0, 0, IDC_POCKELS );
+
+      { RECT rect;
+        GetClientRect(ctl_pockels->self,&rect);
+        ctl_resonant_wrap->CreateControl(hWnd,rect.bottom+11,rect.left,IDC_RESONANT_WRAP);
+      }
+
     }
       break;
     case WM_INITMENU:
