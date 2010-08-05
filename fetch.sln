@@ -1,21 +1,26 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fetch", "fetch\fetch.vcproj", "{46D200B2-EA96-4400-98B5-084A8C189842}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fetch", "fetch\fetch.vcxproj", "{46D200B2-EA96-4400-98B5-084A8C189842}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestTicTocTimer", "TestTicTocTimer\TestTicTocTimer.vcproj", "{4617B7FE-7036-4A82-ADF8-4D1CD59392FB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestTicTocTimer", "TestTicTocTimer\TestTicTocTimer.vcxproj", "{4617B7FE-7036-4A82-ADF8-4D1CD59392FB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestRingFIFO", "TestRingFIFO\TestRingFIFO.vcproj", "{F914125A-71CA-40B1-BA15-E89297A1E8E5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestRingFIFO", "TestRingFIFO\TestRingFIFO.vcxproj", "{F914125A-71CA-40B1-BA15-E89297A1E8E5}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestAsynQ", "TestAsynQ\TestAsynQ.vcproj", "{728D29C7-8997-4079-A998-1754FB9C2EE3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestAsynQ", "TestAsynQ\TestAsynQ.vcxproj", "{728D29C7-8997-4079-A998-1754FB9C2EE3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestVideoDisplay", "TestVideoDisplay\TestVideoDisplay.vcproj", "{4895BEF9-F8C5-4352-A6EA-B3C9C07980CB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestVideoDisplay", "TestVideoDisplay\TestVideoDisplay.vcxproj", "{4895BEF9-F8C5-4352-A6EA-B3C9C07980CB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDigitizer", "TestDigitizer\TestDigitizer.vcproj", "{6B8520E4-49E2-477F-9A82-9B4F7125B438}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDigitizer", "TestDigitizer\TestDigitizer.vcxproj", "{6B8520E4-49E2-477F-9A82-9B4F7125B438}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDAQ", "TestDAQ\TestDAQ.vcproj", "{EA03F0E0-1DF3-45BE-BFCF-CEB1234A510C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDAQ", "TestDAQ\TestDAQ.vcxproj", "{EA03F0E0-1DF3-45BE-BFCF-CEB1234A510C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDigiDaq", "TestDigiDaq\TestDigiDaq.vcproj", "{1E400563-5323-4C55-99E7-B4A590BCA15A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDigiDaq", "TestDigiDaq\TestDigiDaq.vcxproj", "{1E400563-5323-4C55-99E7-B4A590BCA15A}"
+<<<<<<< Updated upstream
+=======
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Translate", "Translate\Translate.vcxproj", "{0752F3D6-5619-49A6-AD05-F17F3E2FA869}"
+>>>>>>> Stashed changes
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
