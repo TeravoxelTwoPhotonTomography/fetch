@@ -433,7 +433,7 @@ namespace fetch
           res = WaitForSingleObject(this->thread, timeout_ms); // wait for running thread to stop
           this->lock();
           ResetEvent(this->notify_stop);
-          { int i;
+          { size_t i;
             if(this->in)
               for(i=0;i<this->in->nelem;++i) 
                 Guarded_Assert_WinErr(ResetEvent(this->in->contents[i]->notify_abort));
