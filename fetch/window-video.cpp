@@ -164,7 +164,7 @@ namespace fetch
     };
     UINT numDriverTypes = sizeof( driverTypes ) / sizeof( driverTypes[0] );  
     HRESULT hr = S_OK;
-    UINT msaa_quality = 1, msaa_levels = 4;
+    UINT msaa_quality = 1, msaa_levels = 1;
     
   #ifdef _DEBUG
     createDeviceFlags |= D3D10_CREATE_DEVICE_DEBUG;
@@ -185,22 +185,43 @@ namespace fetch
     sd.SampleDesc.Quality                       = msaa_quality;
     sd.Windowed                                 = TRUE;
 
+    // Create device
     for( UINT driverTypeIndex = 0; driverTypeIndex < numDriverTypes; driverTypeIndex++ )
     { g_video.driver_type = driverTypes[driverTypeIndex];
       if( SUCCEEDED(
-        hr = D3D10CreateDeviceAndSwapChain( NULL, 
-                                            g_video.driver_type,
-                                            NULL,
-                                            createDeviceFlags,                                        
-                                            D3D10_SDK_VERSION,
-                                            &sd,
-                                            &g_video.swap_chain,
-                                            &g_video.device ) ))
+        hr = D3D10CreateDevice( NULL,                // IDXGIAdapter - pick the display: NULL -> set to first in EnumAdapters
+                                g_video.driver_type, // driver type (hardware or reference)
+                                NULL,                // Software.  Reserved, set to NULL.
+                                createDeviceFlags,   // Flags see: D3D10_CREATE_DEVICE_FLAG
+                                D3D10_SDK_VERSION,   // SDK version
+                                &g_video.device ) )) // device pointer
         break;    
     }
     Guarded_Assert( SUCCEEDED(hr) );
-    
-    g_video.device->CheckMultisampleQualityLevels( DXGI_FORMAT_R8G8B8A8_UNORM, msaa_levels, &msaa_quality );
+
+    // pick the best msaa
+    { UINT count,quality=0;
+      for(count=1;count<=
+      32;++count)
+      { Guarded_Assert(SUCCEEDED(
+          g_video.device->CheckMultisampleQualityLevels(sd.BufferDesc.Format,count,&quality)));
+        if(quality>0)
+        { msaa_levels = count;
+          msaa_quality = quality;
+        }
+      }      
+    }   
+
+    // Create the swap chain
+    { IDXGIDevice  *pDXGIDevice;
+      IDXGIAdapter *pDXGIAdapter;
+      IDXGIFactory *pIDXGIFactory;
+      Guarded_Assert(SUCCEEDED( g_video.device->QueryInterface(__uuidof(IDXGIDevice),(void**)&pDXGIDevice)));            
+      Guarded_Assert(SUCCEEDED( pDXGIDevice->GetParent(__uuidof(IDXGIAdapter), (void **)&pDXGIAdapter)));      
+      Guarded_Assert(SUCCEEDED( pDXGIAdapter->GetParent(__uuidof(IDXGIFactory), (void **)&pIDXGIFactory)));
+      Guarded_Assert(SUCCEEDED( pIDXGIFactory->CreateSwapChain(pDXGIDevice,&sd,&g_video.swap_chain)));
+    }
+ 
     debug("MSAA: %d quality %d\r\n",msaa_levels, msaa_quality );
     
     // Create a render target view - binds the swap chain (and hWnd) to the Output Merger stage.
