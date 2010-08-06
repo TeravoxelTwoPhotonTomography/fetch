@@ -65,7 +65,7 @@
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
@@ -101,12 +101,17 @@
     <ClCompile Include="agent.cpp" />
     <ClCompile Include="asynq.cpp" />
     <ClCompile Include="common.cpp" />
+    <ClCompile Include="digitizer.pb.cc" />
     <ClCompile Include="fetch.cpp" />
     <ClCompile Include="frame.cpp" />
+    <ClCompile Include="linear_scan_mirror.pb.cc" />
     <ClCompile Include="logger.cpp" />
+    <ClCompile Include="pockels.pb.cc" />
     <ClCompile Include="renderer-colormap.cpp" />
     <ClCompile Include="renderer-video-frame.cpp" />
     <ClCompile Include="ring-fifo.cpp" />
+    <ClCompile Include="scanner2d.pb.cc" />
+    <ClCompile Include="shutter.pb.cc" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="task.cpp" />
     <ClCompile Include="types.cpp" />
@@ -146,6 +151,21 @@
     <ClCompile Include="tasks\Video.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <CustomBuild Include="proto\digitizer.proto">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="proto\linear_scan_mirror.proto">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="proto\pockels.proto">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="proto\scanner2d.proto">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="proto\shutter.proto">
+      <FileType>Document</FileType>
+    </CustomBuild>
     <None Include="shader.fx" />
     <None Include="fetch.ico" />
     <None Include="small.ico" />
@@ -158,13 +178,18 @@
     <ClInclude Include="agent.h" />
     <ClInclude Include="asynq.h" />
     <ClInclude Include="common.h" />
+    <ClInclude Include="digitizer.pb.h" />
     <ClInclude Include="fetch.h" />
     <ClInclude Include="frame.h" />
+    <ClInclude Include="linear_scan_mirror.pb.h" />
     <ClInclude Include="logger.h" />
+    <ClInclude Include="pockels.pb.h" />
     <ClInclude Include="renderer-colormap.h" />
     <ClInclude Include="renderer-video-frame.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ring-fifo.h" />
+    <ClInclude Include="scanner2d.pb.h" />
+    <ClInclude Include="shutter.pb.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="task.h" />

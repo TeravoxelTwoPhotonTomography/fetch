@@ -1,0 +1,11 @@
+package fetch.cfg.device;
+
+message Pockels
+{ 
+  optional  double    v_lim_max   = 1 [default=2.0];          // safety limit - high value
+  optional  double    v_lim_min   = 2 [default=0.0];          // safety limit - low  value
+  optional  double    v_open      = 3 [default=0.0];          // control voltage when pockels is maximally transmissive
+  optional  double    v_closed    = 4 [default=0.0];          // control voltage when pockels is minimally transmissive
+  optional  string    ao_channel  = 5 [default="/Dev1/ao2"];  // control channel
+  optional  string    ai_channel  = 6 [default="/Dev1/ai16"]; // channel for reading off transmission
+}

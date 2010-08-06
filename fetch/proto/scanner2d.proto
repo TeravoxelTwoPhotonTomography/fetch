@@ -1,0 +1,24 @@
+package fetch.cfg.device;
+
+import "digitizer.proto";
+import "pockels.proto";
+import "shutter.proto";
+import "linear_scan_mirror.proto";
+
+message Scanner2D
+{
+  optional double    frequency_Hz     = 1 [default=7920.0];              // Hz                                                                                                            
+  optional uint32    nscans           = 2 [default=512];                 // Number of full resonant periods that make up a frame                                                       
+  optional float     line_duty_cycle  = 3 [default=0.95];                // Fraction of resonant period to acquire (must be less than one)                                                
+  optional uint32    line_trigger_src = 4 [default=1];                   // Digitizer channel corresponding to resonant velocity input                                                    
+  optional string    trigger          = 5 [default="APFI0"];             // DAQ terminal: should be connected to resonant velocity output                                                 
+  optional string    armstart         = 6 [default="RTSI2"];             // DAQ terminal: should be connected to "ReadyForStart" event output from digitizer                              
+  optional string    clocker          = 7 [default="Ctr1InternalOutput"];// DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock                     
+  optional string    ctr              = 8 [default="/Dev1/ctr1"];        // DAQ terminal: A finite pulse train is generated so that this counter may be used as a sample clock.           
+  optional string    ctr_alt          = 9 [default="/Dev1/ctr0"];        // DAQ terminal: Finite pulse train generation requires a pair of counters.  This is the implicitly used one.    
+
+  optional Digitizer        digitizer          = 10;
+  optional Pockels          pockels            = 11;
+  optional Shutter          shutter            = 12;
+  optional LinearScanMirror linear_scan_mirror = 13;
+}

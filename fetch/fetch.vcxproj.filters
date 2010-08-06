@@ -44,6 +44,16 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="Resource Files\Proto">
+      <UniqueIdentifier>{3375b9f5-bdcc-4acc-900d-401563cd06f6}</UniqueIdentifier>
+      <Extensions>proto</Extensions>
+    </Filter>
+    <Filter Include="Source Files\proto">
+      <UniqueIdentifier>{28440a21-4892-441d-b1d1-7924ea4f419e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\proto">
+      <UniqueIdentifier>{9a803dce-9b34-46c5-99f3-c5e31a8d2d2f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="agent.cpp">
@@ -183,6 +193,21 @@
     </ClCompile>
     <ClCompile Include="tasks\Video.cpp">
       <Filter>Source Files\tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="linear_scan_mirror.pb.cc">
+      <Filter>Source Files\proto</Filter>
+    </ClCompile>
+    <ClCompile Include="pockels.pb.cc">
+      <Filter>Source Files\proto</Filter>
+    </ClCompile>
+    <ClCompile Include="scanner2d.pb.cc">
+      <Filter>Source Files\proto</Filter>
+    </ClCompile>
+    <ClCompile Include="shutter.pb.cc">
+      <Filter>Source Files\proto</Filter>
+    </ClCompile>
+    <ClCompile Include="digitizer.pb.cc">
+      <Filter>Source Files\proto</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -351,6 +376,21 @@
     <ClInclude Include="util\util-wrap.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
+    <ClInclude Include="scanner2d.pb.h">
+      <Filter>Header Files\proto</Filter>
+    </ClInclude>
+    <ClInclude Include="shutter.pb.h">
+      <Filter>Header Files\proto</Filter>
+    </ClInclude>
+    <ClInclude Include="digitizer.pb.h">
+      <Filter>Header Files\proto</Filter>
+    </ClInclude>
+    <ClInclude Include="linear_scan_mirror.pb.h">
+      <Filter>Header Files\proto</Filter>
+    </ClInclude>
+    <ClInclude Include="pockels.pb.h">
+      <Filter>Header Files\proto</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="fetch.rc">
@@ -359,5 +399,22 @@
     <ResourceCompile Include="logger.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="proto\scanner2d.proto">
+      <Filter>Resource Files\Proto</Filter>
+    </CustomBuild>
+    <CustomBuild Include="proto\pockels.proto">
+      <Filter>Resource Files\Proto</Filter>
+    </CustomBuild>
+    <CustomBuild Include="proto\linear_scan_mirror.proto">
+      <Filter>Resource Files\Proto</Filter>
+    </CustomBuild>
+    <CustomBuild Include="proto\shutter.proto">
+      <Filter>Resource Files\Proto</Filter>
+    </CustomBuild>
+    <CustomBuild Include="proto\digitizer.proto">
+      <Filter>Resource Files\Proto</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

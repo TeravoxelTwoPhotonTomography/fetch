@@ -1,0 +1,9 @@
+package fetch.cfg.device;
+
+message LinearScanMirror  
+{ 
+  optional  double    v_lim_max   = 1 [default= 10.0];       // safety limit - high value
+  optional  double    v_lim_min   = 2 [default=-10.0];       // safety limit - low  value
+  optional  double    vpp         = 3 [default= 10.0];       // 
+  optional  string    ao_channel  = 4 [default="/Dev1/ao0"]; // control channel
+}                                   
