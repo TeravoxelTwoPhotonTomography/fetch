@@ -88,6 +88,7 @@ namespace fetch
       unlock();
     }
 
+    #define MAX_CHAN_STRING 1024
     static void
     _setup_ao_chan(TaskHandle cur_task,
                    double     freq,
@@ -96,24 +97,25 @@ namespace fetch
                    device::Pockels::Config          *pock_cfg,
                    device::ZPiezo::Config           *zpiezo_cfg)
     {
-      char aochan[ POCKELS_MAX_CHAN_STRING
-                  +LINEAR_SCAN_MIRROR__MAX_CHAN_STRING
-                  +ZPIEZO_MIRROR__MAX_CHAN_STRING
-                  +1];
+      char aochan[MAX_CHAN_STRING];
       f64 vmin,vmax;
 
       // concatenate the channel names
+      assert( POCKELS_MAX_CHAN_STRING
+             +LINEAR_SCAN_MIRROR__MAX_CHAN_STRING
+             +zpiezo_cfg->channel().size()
+             +2 < MAX_CHAN_STRING);
       memset(aochan, 0, sizeof(aochan));
       strcat(aochan, lsm_cfg->channel);
       strcat(aochan, ",");
-      strcat(aochan, zpiezo_cfg->channel);
+      strcat(aochan, zpiezo_cfg->channel().c_str());
       strcat(aochan, ",");
       strcat(aochan, pock_cfg->ao_chan);
 
       vmin = MIN( lsm_cfg->v_lim_min, pock_cfg->v_lim_min );
-      vmin = MIN( vmin, zpiezo_cfg->v_lim_min );
+      vmin = MIN( vmin, zpiezo_cfg->v_lim_min() );
       vmax = MAX( lsm_cfg->v_lim_max, pock_cfg->v_lim_max );
-      vmax = MAX( vmax, zpiezo_cfg->v_lim_max );
+      vmax = MAX( vmax, zpiezo_cfg->v_lim_max() );
       { f64 v[4];
         // NI DAQ's typically have multiple voltage ranges capable of achieving different precisions.
         // The 6259 has 2 ranges.
@@ -244,8 +246,8 @@ namespace fetch
     void
     Scanner3D::_compute_zpiezo_waveform_ramp( ZPiezo::Config *cfg, f64 z_um, f64 *data, f64 N )
     { int i=(int)N;
-      f64 A = cfg->um_step * cfg->um2v,
-              off = z_um * cfg->um2v;
+      f64 A = cfg->um_step() * cfg->um2v(),
+              off = z_um * cfg->um2v();
       while(i--)
         data[i] = A*(i/(N-1))+off; // linear ramp from off to off+A
     }
@@ -261,7 +263,7 @@ namespace fetch
     void
     Scanner3D::_compute_zpiezo_waveform_const( ZPiezo::Config *cfg, f64 z_um, f64 *data, f64 N )
     { int i=(int)N;
-      f64 off = z_um * cfg->um2v;
+      f64 off = z_um * cfg->um2v();
       while(i--)
         data[i] = off; // linear ramp from off to off+A
     }

@@ -223,9 +223,9 @@ namespace fetch
           //
           ref.format(frm);
 
-          ummin  = d->ZPiezo::config.um_min;
-          ummax  = d->ZPiezo::config.um_max;
-          umstep = d->ZPiezo::config.um_step;
+          ummin  = d->ZPiezo::config.um_min();
+          ummax  = d->ZPiezo::config.um_max();
+          umstep = d->ZPiezo::config.um_step();
 
           
           d->_generate_ao_waveforms__z_ramp_step(ummin);

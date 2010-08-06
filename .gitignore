@@ -21,3 +21,6 @@ fetch/default.stream
 fetch/fetch.aps
 fetch/lastrun.log
 
+fetch/*.pb.h
+fetch/*.pb.cc
+

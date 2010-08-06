@@ -209,6 +209,9 @@
     <ClCompile Include="digitizer.pb.cc">
       <Filter>Source Files\proto</Filter>
     </ClCompile>
+    <ClCompile Include="zpiezo.pb.cc">
+      <Filter>Source Files\proto</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="shader.fx">
@@ -391,6 +394,9 @@
     <ClInclude Include="pockels.pb.h">
       <Filter>Header Files\proto</Filter>
     </ClInclude>
+    <ClInclude Include="zpiezo.pb.h">
+      <Filter>Header Files\proto</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="fetch.rc">
@@ -414,6 +420,9 @@
       <Filter>Resource Files\Proto</Filter>
     </CustomBuild>
     <CustomBuild Include="proto\digitizer.proto">
+      <Filter>Resource Files\Proto</Filter>
+    </CustomBuild>
+    <CustomBuild Include="proto\zpiezo.proto">
       <Filter>Resource Files\Proto</Filter>
     </CustomBuild>
   </ItemGroup>
