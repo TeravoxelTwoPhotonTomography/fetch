@@ -43,8 +43,8 @@ namespace fetch
       size_t Bpp    = 2, //bytes per pixel to initially allocated for
              nbuf[2] = {DIGITIZER_BUFFER_NUM_FRAMES,
                         DIGITIZER_BUFFER_NUM_FRAMES},
-               sz[2] = { config.num_records * config.record_length * config.num_channels * Bpp,
-                         config.num_records * sizeof(struct niScope_wfmInfo)};
+               sz[2] = { config.num_records() * config.record_length() * config.num_channels() * Bpp,
+                         config.num_records() * sizeof(struct niScope_wfmInfo)};
       _alloc_qs( &this->out, 2, nbuf, sz );
     }
 
@@ -55,7 +55,25 @@ namespace fetch
                         nwfm*sizeof(struct niScope_wfmInfo)};
       _alloc_qs( &this->out, 2, _nbuf, sz );
     }
-  
+
+    Digitizer::Digitizer( const Config& cfg )
+    { config.MergeFrom(cfg);
+      Guarded_Assert(config.IsInitialized());
+      // Setup output queues.
+      // - Sizes determine initial allocations.
+      // - out[0] receives raw data     from each niScope_Fetch call.
+      // - out[1] receives the metadata from each niScope_Fetch call.
+      //
+      size_t
+        Bpp = 2, //bytes per pixel to initially allocated for
+        nbuf[2] = {DIGITIZER_BUFFER_NUM_FRAMES,
+                   DIGITIZER_BUFFER_NUM_FRAMES},
+        sz[2] = { config.num_records() * config.record_length * config.num_channels * Bpp,
+                  config.num_records() * sizeof(struct niScope_wfmInfo)};
+      _alloc_qs( &this->out, 2, nbuf, sz );
+    }
+
+
     Digitizer::~Digitizer(void)
     { if( this->detach() > 0 )
         warning("Could not cleanly detach. vi: %d\r\n", this->vi);

@@ -47,23 +47,23 @@ namespace fetch
           int nchan = 0;
           
           // Vertical
-          for(i=0; i<cfg.num_channels; i++)
-          { device::Digitizer::Channel_Config ch = cfg.channels[i];
+          for(i=0; i<cfg.channel_size(); i++)
+          { const device::Digitizer::Config::Channel& ch = cfg.channel(i);          
             CheckPanic(niScope_ConfigureVertical (vi, 
-                                                  ch.name,     //channelName, 
-                                                  ch.range,    //verticalRange, 
-                                                  0.0,         //verticalOffset, 
-                                                  ch.coupling, //verticalCoupling, 
-                                                  1.0,         //probeAttenuation, 
-                                                  ch.enabled));//enabled?
-            nchan += ch.enabled;
+                                                  ch.name().c_str(), //channelName, 
+                                                  ch.range(),        //verticalRange, 
+                                                  0.0,               //verticalOffset, 
+                                                  ch.coupling(),     //verticalCoupling, 
+                                                  1.0,               //probeAttenuation, 
+                                                  ch.enabled()));    //enabled?
+            nchan += ch.enabled();
           }
           // Horizontal
           CheckPanic (niScope_ConfigureHorizontalTiming (vi, 
-                                                        cfg.sample_rate,       // sample rate (S/s)
+                                                        cfg.sample_rate(),     // sample rate (S/s)
                                                         cfg.record_length,     // record length (S)
                                                         cfg.reference_position,// reference position (% units???)
-                                                        cfg.num_records,       // number of records to fetch per acquire
+                                                        cfg.num_records(),     // number of records to fetch per acquire
                                                         NISCOPE_VAL_TRUE));    // enforce real time?
           // Configure software trigger, but never send the trigger.
           // This starts an infinite acquisition, until you call niScope_Abort
