@@ -5,6 +5,19 @@ fetch/Debug
 
 Release/
 fetch/Release/
+ipch/
+_UpgradeReport_Files/
 
 *.user
 *.raw
+*.XML
+*.opensdf
+*.sln.old
+*.suo.old
+
+.gitignore.swp
+fetch.sdf
+fetch/default.stream
+fetch/fetch.aps
+fetch/lastrun.log
+

@@ -1,0 +1,216 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{46D200B2-EA96-4400-98B5-084A8C189842}</ProjectGuid>
+    <RootNamespace>fetch</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="NIDAQmx.props" />
+    <Import Project="NIScope.props" />
+    <Import Project="DisableWarnings.props" />
+    <Import Project="..\CommonControls.props" />
+    <Import Project="directx.props" />
+    <Import Project="..\AddFetchPaths.props" />
+    <Import Project="..\GoogleProtobufDebug32.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="NIDAQmx.props" />
+    <Import Project="NIScope.props" />
+    <Import Project="DisableWarnings.props" />
+    <Import Project="..\CommonControls.props" />
+    <Import Project="directx.props" />
+    <Import Project="..\AddFetchPaths.props" />
+    <Import Project="..\GoogleProtobufDebug32.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>d3d10.lib;d3dx10d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>d3d10.lib;d3dx10d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="agent.cpp" />
+    <ClCompile Include="asynq.cpp" />
+    <ClCompile Include="common.cpp" />
+    <ClCompile Include="fetch.cpp" />
+    <ClCompile Include="frame.cpp" />
+    <ClCompile Include="logger.cpp" />
+    <ClCompile Include="renderer-colormap.cpp" />
+    <ClCompile Include="renderer-video-frame.cpp" />
+    <ClCompile Include="ring-fifo.cpp" />
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="task.cpp" />
+    <ClCompile Include="types.cpp" />
+    <ClCompile Include="window-video.cpp" />
+    <ClCompile Include="util\util-dx10.cpp" />
+    <ClCompile Include="util\util-file.cpp" />
+    <ClCompile Include="util\util-image.cpp" />
+    <ClCompile Include="util\util-nidaqmx.cpp" />
+    <ClCompile Include="util\util-niscope.cpp" />
+    <ClCompile Include="workers\FrameAverage.cpp" />
+    <ClCompile Include="workers\FrameInvert.cpp" />
+    <ClCompile Include="workers\PixelWiseAverager.cpp" />
+    <ClCompile Include="workers\ResonantWrap.cpp" />
+    <ClCompile Include="workers\Terminator.cpp" />
+    <ClCompile Include="workers\WorkTask.cpp" />
+    <ClCompile Include="devices\digitizer.cpp" />
+    <ClCompile Include="devices\DiskStream.cpp" />
+    <ClCompile Include="devices\LinearScanMirror.cpp" />
+    <ClCompile Include="devices\Microscope.cpp" />
+    <ClCompile Include="devices\NIDAQAgent.cpp" />
+    <ClCompile Include="devices\pockels.cpp" />
+    <ClCompile Include="devices\scanner2D.cpp" />
+    <ClCompile Include="devices\Scanner3D.cpp" />
+    <ClCompile Include="devices\shutter.cpp" />
+    <ClCompile Include="devices\ZPiezo.cpp" />
+    <ClCompile Include="ui\AgentStateMenu.cpp" />
+    <ClCompile Include="ui\DigitizerStateMenu.cpp" />
+    <ClCompile Include="ui\MicroscopeStateMenu.cpp" />
+    <ClCompile Include="ui\PockelsSpinnerControl.cpp" />
+    <ClCompile Include="ui\ResonantWrapSpinnerControl.cpp" />
+    <ClCompile Include="ui\ScannerStateMenu.cpp" />
+    <ClCompile Include="tasks\fetch-forever.cpp" />
+    <ClCompile Include="tasks\File.cpp" />
+    <ClCompile Include="tasks\microscope-interaction.cpp" />
+    <ClCompile Include="tasks\StackAcquisition.cpp" />
+    <ClCompile Include="util\util-wrap.cpp" />
+    <ClCompile Include="tasks\Video.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shader.fx" />
+    <None Include="fetch.ico" />
+    <None Include="small.ico" />
+    <None Include="Agents.cd" />
+    <None Include="MessageTypes.cd" />
+    <None Include="ReadMe.txt" />
+    <None Include="Tasks.cd" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="agent.h" />
+    <ClInclude Include="asynq.h" />
+    <ClInclude Include="common.h" />
+    <ClInclude Include="fetch.h" />
+    <ClInclude Include="frame.h" />
+    <ClInclude Include="logger.h" />
+    <ClInclude Include="renderer-colormap.h" />
+    <ClInclude Include="renderer-video-frame.h" />
+    <ClInclude Include="Resource.h" />
+    <ClInclude Include="ring-fifo.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="task.h" />
+    <ClInclude Include="types.h" />
+    <ClInclude Include="window-video.h" />
+    <ClInclude Include="tasks\fetch-forever.h" />
+    <ClInclude Include="tasks\File.h" />
+    <ClInclude Include="tasks\microscope-interaction.h" />
+    <ClInclude Include="tasks\StackAcquisition.h" />
+    <ClInclude Include="tasks\Video.h" />
+    <ClInclude Include="workers\FrameAverage.h" />
+    <ClInclude Include="workers\FrameCaster.h" />
+    <ClInclude Include="workers\FrameInvert.h" />
+    <ClInclude Include="workers\PixelWiseAverager.h" />
+    <ClInclude Include="workers\ResonantWrap.h" />
+    <ClInclude Include="workers\Terminator.h" />
+    <ClInclude Include="workers\WorkAgent.h" />
+    <ClInclude Include="workers\WorkTask.h" />
+    <ClInclude Include="devices\digitizer.h" />
+    <ClInclude Include="devices\DiskStream.h" />
+    <ClInclude Include="devices\LinearScanMirror.h" />
+    <ClInclude Include="devices\Microscope.h" />
+    <ClInclude Include="devices\NIDAQAgent.h" />
+    <ClInclude Include="devices\pockels.h" />
+    <ClInclude Include="devices\scanner2D.h" />
+    <ClInclude Include="devices\Scanner3D.h" />
+    <ClInclude Include="devices\shutter.h" />
+    <ClInclude Include="devices\ZPiezo.h" />
+    <ClInclude Include="ui\AgentStateMenu.h" />
+    <ClInclude Include="ui\DigitizerStateMenu.h" />
+    <ClInclude Include="ui\MicroscopeStateMenu.h" />
+    <ClInclude Include="ui\PockelsSpinnerControl.h" />
+    <ClInclude Include="ui\ResonantWrapSpinnerControl.h" />
+    <ClInclude Include="ui\ScannerStateMenu.h" />
+    <ClInclude Include="util\util-dx10.h" />
+    <ClInclude Include="util\util-file.h" />
+    <ClInclude Include="util\util-image.h" />
+    <ClInclude Include="util\util-nidaqmx.h" />
+    <ClInclude Include="util\util-niscope.h" />
+    <ClInclude Include="util\util-wrap.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="fetch.rc" />
+    <ResourceCompile Include="logger.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
