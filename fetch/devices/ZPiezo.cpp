@@ -18,13 +18,21 @@ namespace fetch
   {
 
     ZPiezo::ZPiezo(void)
-           : NIDAQAgent("ZPiezo")
+           : NIDAQAgent("ZPiezo"),
+             config(&_default_config)
     {}
 
     ZPiezo::ZPiezo(const Config &cfg)
-           : NIDAQAgent("ZPiezo")
-    { config.MergeFrom(cfg);
+      : NIDAQAgent("ZPiezo"),
+        config(&_default_config)
+    { config->CopyFrom(cfg);
     }
-  
+
+    ZPiezo::ZPiezo( Config *cfg )
+      : NIDAQAgent("ZPiezo"),
+        config(cfg)
+    {}
+
+
   }
 }

@@ -52,16 +52,16 @@ namespace fetch
     Scanner3D::
     _generate_ao_waveforms(f64 z_um)
     { 
-      int N = this->Scanner2D::config.nsamples;
+      int N = this->Scanner2D::config->ao_samples_per_frame();
       f64 *m,*p, *z;
       lock();      
       vector_f64_request(ao_workspace, 3*N - 1 /*max index*/);
       m = ao_workspace->contents; // first the mirror data
       z = m + N;                  // then the zpiezo  data
       p = z + N;                  // then the pockels data
-      _compute_linear_scan_mirror_waveform__sawtooth( &this->LinearScanMirror::config, m, N);
-      _compute_zpiezo_waveform_const(                 &this->ZPiezo::config    , z_um, z, N);
-      _compute_pockels_vertical_blanking_waveform(    &this->Pockels::config         , p, N);
+      _compute_linear_scan_mirror_waveform__sawtooth( this->LinearScanMirror::config, m, N);
+      _compute_zpiezo_waveform_const(                 this->ZPiezo::config    , z_um, z, N);
+      _compute_pockels_vertical_blanking_waveform(    this->Pockels::config         , p, N);
 #if 0
       vector_f64_dump(ao_workspace,"out.f64");
 #endif
@@ -72,16 +72,16 @@ namespace fetch
     Scanner3D::
     _generate_ao_waveforms__z_ramp_step(f64 z_um)
     {
-      int N = this->Scanner2D::config.nsamples;
+      int N = this->Scanner2D::config->ao_samples_per_frame();
       f64 *m,*p, *z;
       lock();
       vector_f64_request(ao_workspace, 3*N - 1 /*max index*/);
       m = ao_workspace->contents; // first the mirror data
       z = m + N;                  // then the zpiezo  data
       p = z + N;                  // then the pockels data
-      _compute_linear_scan_mirror_waveform__sawtooth( &this->LinearScanMirror::config, m, N);
-      _compute_zpiezo_waveform_ramp(                  &this->ZPiezo::config    , z_um, z, N);
-      _compute_pockels_vertical_blanking_waveform(    &this->Pockels::config         , p, N);
+      _compute_linear_scan_mirror_waveform__sawtooth( this->LinearScanMirror::config, m, N);
+      _compute_zpiezo_waveform_ramp(                  this->ZPiezo::config    , z_um, z, N);
+      _compute_pockels_vertical_blanking_waveform(    this->Pockels::config         , p, N);
 #if 0
       vector_f64_dump(ao_workspace,"out.f64");
 #endif
@@ -106,15 +106,15 @@ namespace fetch
              +zpiezo_cfg->channel().size()
              +2 < MAX_CHAN_STRING);
       memset(aochan, 0, sizeof(aochan));
-      strcat(aochan, lsm_cfg->channel);
+      strcat(aochan, lsm_cfg->ao_channel().c_str());
       strcat(aochan, ",");
       strcat(aochan, zpiezo_cfg->channel().c_str());
       strcat(aochan, ",");
-      strcat(aochan, pock_cfg->ao_chan);
+      strcat(aochan, pock_cfg->ao_channel().c_str());
 
-      vmin = MIN( lsm_cfg->v_lim_min, pock_cfg->v_lim_min );
+      vmin = MIN( lsm_cfg->v_lim_min(), pock_cfg->v_lim_min() );
       vmin = MIN( vmin, zpiezo_cfg->v_lim_min() );
-      vmax = MAX( lsm_cfg->v_lim_max, pock_cfg->v_lim_max );
+      vmax = MAX( lsm_cfg->v_lim_max(), pock_cfg->v_lim_max() );
       vmax = MAX( vmax, zpiezo_cfg->v_lim_max() );
       { f64 v[4];
         // NI DAQ's typically have multiple voltage ranges capable of achieving different precisions.
@@ -133,24 +133,24 @@ namespace fetch
               NULL));                                  //Custom scale (none)
 
       DAQERR( DAQmxCfgAnlgEdgeStartTrig(cur_task,
-              cfg->trigger,
+              cfg->trigger().c_str(),
               DAQmx_Val_Rising,
               0.0));
 
       DAQERR( DAQmxCfgSampClkTiming(cur_task,
-              cfg->clock,          // "Ctr1InternalOutput",
+              cfg->clock().c_str(),          // "Ctr1InternalOutput",
               freq,
               DAQmx_Val_Rising,
               DAQmx_Val_ContSamps, // use continuous output so that counter stays in control
-              cfg->nsamples));
+              cfg->ao_samples_per_frame()));
     }
 
     void
     Scanner3D::_config_daq()
     { TaskHandle             cur_task = 0;
 
-      ViInt32   N          = Scanner2D::config.nsamples;
-      float64   frame_time = Scanner2D::config.nscans / Scanner2D::config.frequency_Hz;  //  512 records / (7920 records/sec)
+      ViInt32   N          = Scanner2D::config->ao_samples_per_frame();
+      float64   frame_time = Scanner2D::config->nscans() / Scanner2D::config->frequency_hz();  //  512 records / (7920 records/sec)
       float64   freq       = N/frame_time;                         // 4096 samples / 64 ms = 63 kS/s
 
       // set up counter for sample clock
@@ -169,7 +169,7 @@ namespace fetch
       DAQERR( DAQmxCreateTask("scanner3d-clk",&this->clk)); //
       cur_task = this->clk;
       DAQERR( DAQmxCreateCOPulseChanFreq       ( cur_task,
-                                                 this->Scanner2D::config.ctr_alt,     // "Dev1/ctr0"
+                                                 this->Scanner2D::config->ctr_alt().c_str(),     // "Dev1/ctr0"
                                                  "sample-clock",
                                                  DAQmx_Val_Hz,
                                                  DAQmx_Val_Low,
@@ -183,7 +183,7 @@ namespace fetch
       DAQERR( DAQmxCreateTask("scanner3d-clk",&this->clk)); //
       cur_task = this->clk;
       DAQERR( DAQmxCreateCOPulseChanFreq       ( cur_task,
-                                                 this->Scanner2D::config.ctr,     // "Dev1/ctr1"
+                                                 this->Scanner2D::config->ctr().c_str(),     // "Dev1/ctr1"
                                                  "sample-clock",
                                                  DAQmx_Val_Hz,
                                                  DAQmx_Val_Low,
@@ -194,11 +194,11 @@ namespace fetch
       DAQERR( DAQmxCfgImplicitTiming           ( cur_task, DAQmx_Val_FiniteSamps, N ));
       DAQERR( DAQmxCfgDigEdgeStartTrig         ( cur_task, "AnalogComparisonEvent", DAQmx_Val_Rising ));
       DAQERR( DAQmxSetArmStartTrigType         ( cur_task, DAQmx_Val_DigEdge ));
-      DAQERR( DAQmxSetDigEdgeArmStartTrigSrc   ( cur_task, this->Scanner2D::config.armstart ));
+      DAQERR( DAQmxSetDigEdgeArmStartTrigSrc   ( cur_task, this->Scanner2D::config->armstart().c_str() ));
       DAQERR( DAQmxSetDigEdgeArmStartTrigEdge  ( cur_task, DAQmx_Val_Rising ));
 #if 0
       { f64 rate;
-        DAQWRN( DAQmxGetCOCtrTimebaseRate(cur_task,this->Scanner2D::config.ctr,&rate));
+        DAQWRN( DAQmxGetCOCtrTimebaseRate(cur_task,this->Scanner2D::config->ctr().c_str(),&rate));
         debug("Ctr Timebase: %f\r\n",rate);        
       }
 #endif
@@ -215,10 +215,10 @@ namespace fetch
       DAQERR( DAQmxCreateTask( "scanner3d-ao", &this->ao)); //
       _setup_ao_chan(this->ao,
                      freq,
-                     &this->Scanner2D::config,
-                     &this->LinearScanMirror::config,
-                     &this->Pockels::config,
-                     &this->ZPiezo::config);
+                     this->Scanner2D::config,
+                     this->LinearScanMirror::config,
+                     this->Pockels::config,
+                     this->ZPiezo::config);
       DAQERR( DAQmxSetWriteRegenMode(this->ao,DAQmx_Val_DoNotAllowRegen));
       this->_generate_ao_waveforms();
       this->_register_daq_event();

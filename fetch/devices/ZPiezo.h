@@ -25,9 +25,12 @@ namespace fetch
 
       ZPiezo(void);
       ZPiezo(const Config &cfg);
-
+      ZPiezo(Config *cfg);
     public:      
-      Config config;
+      Config *config;
+
+    private:
+      Config _default_config;
     };
       
   }

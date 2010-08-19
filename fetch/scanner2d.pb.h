@@ -96,7 +96,7 @@ class Scanner2D : public ::google::protobuf::Message {
   
   // accessors -------------------------------------------------------
   
-  // optional double frequency_Hz = 1 [default = 7920];
+  // optional double frequency_hz = 1 [default = 7920];
   inline bool has_frequency_hz() const;
   inline void clear_frequency_hz();
   static const int kFrequencyHzFieldNumber = 1;
@@ -144,15 +144,15 @@ class Scanner2D : public ::google::protobuf::Message {
   inline void set_armstart(const char* value, size_t size);
   inline ::std::string* mutable_armstart();
   
-  // optional string clocker = 7 [default = "Ctr1InternalOutput"];
-  inline bool has_clocker() const;
-  inline void clear_clocker();
-  static const int kClockerFieldNumber = 7;
-  inline const ::std::string& clocker() const;
-  inline void set_clocker(const ::std::string& value);
-  inline void set_clocker(const char* value);
-  inline void set_clocker(const char* value, size_t size);
-  inline ::std::string* mutable_clocker();
+  // optional string clock = 7 [default = "Ctr1InternalOutput"];
+  inline bool has_clock() const;
+  inline void clear_clock();
+  static const int kClockFieldNumber = 7;
+  inline const ::std::string& clock() const;
+  inline void set_clock(const ::std::string& value);
+  inline void set_clock(const char* value);
+  inline void set_clock(const char* value, size_t size);
+  inline ::std::string* mutable_clock();
   
   // optional string ctr = 8 [default = "/Dev1/ctr1"];
   inline bool has_ctr() const;
@@ -174,31 +174,38 @@ class Scanner2D : public ::google::protobuf::Message {
   inline void set_ctr_alt(const char* value, size_t size);
   inline ::std::string* mutable_ctr_alt();
   
-  // optional .fetch.cfg.device.Digitizer digitizer = 10;
+  // optional uint32 ao_samples_per_frame = 10 [default = 16384];
+  inline bool has_ao_samples_per_frame() const;
+  inline void clear_ao_samples_per_frame();
+  static const int kAoSamplesPerFrameFieldNumber = 10;
+  inline ::google::protobuf::uint32 ao_samples_per_frame() const;
+  inline void set_ao_samples_per_frame(::google::protobuf::uint32 value);
+  
+  // optional .fetch.cfg.device.Digitizer digitizer = 11;
   inline bool has_digitizer() const;
   inline void clear_digitizer();
-  static const int kDigitizerFieldNumber = 10;
+  static const int kDigitizerFieldNumber = 11;
   inline const ::fetch::cfg::device::Digitizer& digitizer() const;
   inline ::fetch::cfg::device::Digitizer* mutable_digitizer();
   
-  // optional .fetch.cfg.device.Pockels pockels = 11;
+  // optional .fetch.cfg.device.Pockels pockels = 12;
   inline bool has_pockels() const;
   inline void clear_pockels();
-  static const int kPockelsFieldNumber = 11;
+  static const int kPockelsFieldNumber = 12;
   inline const ::fetch::cfg::device::Pockels& pockels() const;
   inline ::fetch::cfg::device::Pockels* mutable_pockels();
   
-  // optional .fetch.cfg.device.Shutter shutter = 12;
+  // optional .fetch.cfg.device.Shutter shutter = 13;
   inline bool has_shutter() const;
   inline void clear_shutter();
-  static const int kShutterFieldNumber = 12;
+  static const int kShutterFieldNumber = 13;
   inline const ::fetch::cfg::device::Shutter& shutter() const;
   inline ::fetch::cfg::device::Shutter* mutable_shutter();
   
-  // optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 13;
+  // optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
   inline bool has_linear_scan_mirror() const;
   inline void clear_linear_scan_mirror();
-  static const int kLinearScanMirrorFieldNumber = 13;
+  static const int kLinearScanMirrorFieldNumber = 14;
   inline const ::fetch::cfg::device::LinearScanMirror& linear_scan_mirror() const;
   inline ::fetch::cfg::device::LinearScanMirror* mutable_linear_scan_mirror();
   
@@ -215,12 +222,13 @@ class Scanner2D : public ::google::protobuf::Message {
   static const ::std::string _default_trigger_;
   ::std::string* armstart_;
   static const ::std::string _default_armstart_;
-  ::std::string* clocker_;
-  static const ::std::string _default_clocker_;
+  ::std::string* clock_;
+  static const ::std::string _default_clock_;
   ::std::string* ctr_;
   static const ::std::string _default_ctr_;
   ::std::string* ctr_alt_;
   static const ::std::string _default_ctr_alt_;
+  ::google::protobuf::uint32 ao_samples_per_frame_;
   ::fetch::cfg::device::Digitizer* digitizer_;
   ::fetch::cfg::device::Pockels* pockels_;
   ::fetch::cfg::device::Shutter* shutter_;
@@ -229,7 +237,7 @@ class Scanner2D : public ::google::protobuf::Message {
   friend void protobuf_AssignDesc_scanner2d_2eproto();
   friend void protobuf_ShutdownFile_scanner2d_2eproto();
   
-  ::google::protobuf::uint32 _has_bits_[(13 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(14 + 31) / 32];
   
   // WHY DOES & HAVE LOWER PRECEDENCE THAN != !?
   inline bool _has_bit(int index) const {
@@ -252,7 +260,7 @@ class Scanner2D : public ::google::protobuf::Message {
 
 // Scanner2D
 
-// optional double frequency_Hz = 1 [default = 7920];
+// optional double frequency_hz = 1 [default = 7920];
 inline bool Scanner2D::has_frequency_hz() const {
   return _has_bit(0);
 }
@@ -400,46 +408,46 @@ inline ::std::string* Scanner2D::mutable_armstart() {
   return armstart_;
 }
 
-// optional string clocker = 7 [default = "Ctr1InternalOutput"];
-inline bool Scanner2D::has_clocker() const {
+// optional string clock = 7 [default = "Ctr1InternalOutput"];
+inline bool Scanner2D::has_clock() const {
   return _has_bit(6);
 }
-inline void Scanner2D::clear_clocker() {
-  if (clocker_ != &_default_clocker_) {
-    clocker_->assign(_default_clocker_);
+inline void Scanner2D::clear_clock() {
+  if (clock_ != &_default_clock_) {
+    clock_->assign(_default_clock_);
   }
   _clear_bit(6);
 }
-inline const ::std::string& Scanner2D::clocker() const {
-  return *clocker_;
+inline const ::std::string& Scanner2D::clock() const {
+  return *clock_;
 }
-inline void Scanner2D::set_clocker(const ::std::string& value) {
+inline void Scanner2D::set_clock(const ::std::string& value) {
   _set_bit(6);
-  if (clocker_ == &_default_clocker_) {
-    clocker_ = new ::std::string;
+  if (clock_ == &_default_clock_) {
+    clock_ = new ::std::string;
   }
-  clocker_->assign(value);
+  clock_->assign(value);
 }
-inline void Scanner2D::set_clocker(const char* value) {
+inline void Scanner2D::set_clock(const char* value) {
   _set_bit(6);
-  if (clocker_ == &_default_clocker_) {
-    clocker_ = new ::std::string;
+  if (clock_ == &_default_clock_) {
+    clock_ = new ::std::string;
   }
-  clocker_->assign(value);
+  clock_->assign(value);
 }
-inline void Scanner2D::set_clocker(const char* value, size_t size) {
+inline void Scanner2D::set_clock(const char* value, size_t size) {
   _set_bit(6);
-  if (clocker_ == &_default_clocker_) {
-    clocker_ = new ::std::string;
+  if (clock_ == &_default_clock_) {
+    clock_ = new ::std::string;
   }
-  clocker_->assign(reinterpret_cast<const char*>(value), size);
+  clock_->assign(reinterpret_cast<const char*>(value), size);
 }
-inline ::std::string* Scanner2D::mutable_clocker() {
+inline ::std::string* Scanner2D::mutable_clock() {
   _set_bit(6);
-  if (clocker_ == &_default_clocker_) {
-    clocker_ = new ::std::string(_default_clocker_);
+  if (clock_ == &_default_clock_) {
+    clock_ = new ::std::string(_default_clock_);
   }
-  return clocker_;
+  return clock_;
 }
 
 // optional string ctr = 8 [default = "/Dev1/ctr1"];
@@ -526,70 +534,86 @@ inline ::std::string* Scanner2D::mutable_ctr_alt() {
   return ctr_alt_;
 }
 
-// optional .fetch.cfg.device.Digitizer digitizer = 10;
-inline bool Scanner2D::has_digitizer() const {
+// optional uint32 ao_samples_per_frame = 10 [default = 16384];
+inline bool Scanner2D::has_ao_samples_per_frame() const {
   return _has_bit(9);
+}
+inline void Scanner2D::clear_ao_samples_per_frame() {
+  ao_samples_per_frame_ = 16384u;
+  _clear_bit(9);
+}
+inline ::google::protobuf::uint32 Scanner2D::ao_samples_per_frame() const {
+  return ao_samples_per_frame_;
+}
+inline void Scanner2D::set_ao_samples_per_frame(::google::protobuf::uint32 value) {
+  _set_bit(9);
+  ao_samples_per_frame_ = value;
+}
+
+// optional .fetch.cfg.device.Digitizer digitizer = 11;
+inline bool Scanner2D::has_digitizer() const {
+  return _has_bit(10);
 }
 inline void Scanner2D::clear_digitizer() {
   if (digitizer_ != NULL) digitizer_->::fetch::cfg::device::Digitizer::Clear();
-  _clear_bit(9);
+  _clear_bit(10);
 }
 inline const ::fetch::cfg::device::Digitizer& Scanner2D::digitizer() const {
   return digitizer_ != NULL ? *digitizer_ : *default_instance_->digitizer_;
 }
 inline ::fetch::cfg::device::Digitizer* Scanner2D::mutable_digitizer() {
-  _set_bit(9);
+  _set_bit(10);
   if (digitizer_ == NULL) digitizer_ = new ::fetch::cfg::device::Digitizer;
   return digitizer_;
 }
 
-// optional .fetch.cfg.device.Pockels pockels = 11;
+// optional .fetch.cfg.device.Pockels pockels = 12;
 inline bool Scanner2D::has_pockels() const {
-  return _has_bit(10);
+  return _has_bit(11);
 }
 inline void Scanner2D::clear_pockels() {
   if (pockels_ != NULL) pockels_->::fetch::cfg::device::Pockels::Clear();
-  _clear_bit(10);
+  _clear_bit(11);
 }
 inline const ::fetch::cfg::device::Pockels& Scanner2D::pockels() const {
   return pockels_ != NULL ? *pockels_ : *default_instance_->pockels_;
 }
 inline ::fetch::cfg::device::Pockels* Scanner2D::mutable_pockels() {
-  _set_bit(10);
+  _set_bit(11);
   if (pockels_ == NULL) pockels_ = new ::fetch::cfg::device::Pockels;
   return pockels_;
 }
 
-// optional .fetch.cfg.device.Shutter shutter = 12;
+// optional .fetch.cfg.device.Shutter shutter = 13;
 inline bool Scanner2D::has_shutter() const {
-  return _has_bit(11);
+  return _has_bit(12);
 }
 inline void Scanner2D::clear_shutter() {
   if (shutter_ != NULL) shutter_->::fetch::cfg::device::Shutter::Clear();
-  _clear_bit(11);
+  _clear_bit(12);
 }
 inline const ::fetch::cfg::device::Shutter& Scanner2D::shutter() const {
   return shutter_ != NULL ? *shutter_ : *default_instance_->shutter_;
 }
 inline ::fetch::cfg::device::Shutter* Scanner2D::mutable_shutter() {
-  _set_bit(11);
+  _set_bit(12);
   if (shutter_ == NULL) shutter_ = new ::fetch::cfg::device::Shutter;
   return shutter_;
 }
 
-// optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 13;
+// optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
 inline bool Scanner2D::has_linear_scan_mirror() const {
-  return _has_bit(12);
+  return _has_bit(13);
 }
 inline void Scanner2D::clear_linear_scan_mirror() {
   if (linear_scan_mirror_ != NULL) linear_scan_mirror_->::fetch::cfg::device::LinearScanMirror::Clear();
-  _clear_bit(12);
+  _clear_bit(13);
 }
 inline const ::fetch::cfg::device::LinearScanMirror& Scanner2D::linear_scan_mirror() const {
   return linear_scan_mirror_ != NULL ? *linear_scan_mirror_ : *default_instance_->linear_scan_mirror_;
 }
 inline ::fetch::cfg::device::LinearScanMirror* Scanner2D::mutable_linear_scan_mirror() {
-  _set_bit(12);
+  _set_bit(13);
   if (linear_scan_mirror_ == NULL) linear_scan_mirror_ = new ::fetch::cfg::device::LinearScanMirror;
   return linear_scan_mirror_;
 }

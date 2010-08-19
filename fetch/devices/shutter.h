@@ -13,13 +13,14 @@
 
 #pragma once
 #include "NIDAQAgent.h"
+#include "shutter.pb.h"
 
 #define SHUTTER_DEFAULT_TIMEOUT           INFINITY
 #define SHUTTER_MAX_CHAN_STRING                 32
 
-#define DEFAULT_SHUTTER_CHANNEL "/Dev1/port0/line8"
-#define DEFAULT_SHUTTER_OPEN                     0
-#define DEFAULT_SHUTTER_CLOSED                   1
+//#define DEFAULT_SHUTTER_CHANNEL "/Dev1/port0/line8"
+//#define DEFAULT_SHUTTER_OPEN                     0
+//#define DEFAULT_SHUTTER_CLOSED                   1
 
 #define SHUTTER_DEFAULT_OPEN_DELAY_MS           50
 
@@ -38,7 +39,10 @@ namespace fetch
     class Shutter : public NIDAQAgent
     {
     public:
+      typedef cfg::device::Shutter Config;
+
       Shutter();
+      Shutter(Config *cfg);
 
       void Set          (u8 val);
       void Close        (void);
@@ -47,19 +51,10 @@ namespace fetch
       void Bind         (void);   // Binds the digital output channel to the daq task.
 
     public:
-      struct Config
-      { char    do_channel[SHUTTER_MAX_CHAN_STRING];
-        u8      open,
-                closed;
-        Config()
-        : open(DEFAULT_SHUTTER_OPEN),
-          closed(DEFAULT_SHUTTER_CLOSED)
-          { memset(do_channel,0,sizeof(do_channel));
-            strncpy(do_channel,DEFAULT_SHUTTER_CHANNEL,sizeof(DEFAULT_SHUTTER_CHANNEL));
-          }
-      };
+      Config *config;
 
-      Config            config;
+    private:
+      Config _default_config;
     };
 
   }

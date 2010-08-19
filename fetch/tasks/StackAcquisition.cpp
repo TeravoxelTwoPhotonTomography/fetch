@@ -170,11 +170,11 @@ namespace fetch
         void                     *meta = NULL;
 
         DIGERR( niScope_ActualNumWfms(vi,
-                                      d->Digitizer::config.acquisition_channels,
+                                      const_cast<ViChar*>(d->Digitizer::config->chan_names().c_str()),
                                       &nwfm ) );
         DIGERR( niScope_ActualRecordLength(vi, &record_length) );
 
-        u32 scans = d->Scanner2D::config.nscans;
+        u32 scans = d->Scanner2D::config->nscans();
         Frame_With_Interleaved_Lines format( (u16) record_length,              // width
                                                    scans,                      // height
                                              (u8) (nwfm/scans),                // number of channels
@@ -206,7 +206,7 @@ namespace fetch
           double dt_in = 0.0, dt_out = 0.0;
 
           ViSession vi = d->Digitizer::vi;
-          ViChar *chan = d->Digitizer::config.acquisition_channels;
+          ViChar *chan = const_cast<ViChar*>(d->Digitizer::config->chan_names().c_str());
           TaskHandle ao_task  = d->Scanner2D::ao;
           TaskHandle clk_task = d->Scanner2D::clk;
 
@@ -223,10 +223,9 @@ namespace fetch
           //
           ref.format(frm);
 
-          ummin  = d->ZPiezo::config.um_min();
-          ummax  = d->ZPiezo::config.um_max();
-          umstep = d->ZPiezo::config.um_step();
-
+          ummin  = d->ZPiezo::config->um_min();
+          ummax  = d->ZPiezo::config->um_max();
+          umstep = d->ZPiezo::config->um_step();
           
           d->_generate_ao_waveforms__z_ramp_step(ummin);
           d->_write_ao();

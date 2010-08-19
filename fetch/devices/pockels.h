@@ -63,15 +63,16 @@
 #define POCKELS_H_
 
 #include "NIDAQAgent.h"
+#include "pockels.pb.h"
 
 #define POCKELS_DEFAULT_TIMEOUT         INFINITE
 
-#define POCKELS_DEFAULT_V_MAX                2.0
-#define POCKELS_DEFAULT_V_MIN                0.0
-#define POCKELS_DEFAULT_V_OPEN               0.0  // The value to which the pockels cell will be set during a frame.  Default should be a safe value.
-#define POCKELS_DEFAULT_V_CLOSED             0.0  // The value to which the pockels cell will be set between frames.
-#define POCKELS_DEFAULT_AO_CHANNEL    "/Dev1/ao2"
-#define POCKELS_DEFAULT_AI_CHANNEL   "/Dev1/ai16"
+//#define POCKELS_DEFAULT_V_MAX                2.0
+//#define POCKELS_DEFAULT_V_MIN                0.0
+//#define POCKELS_DEFAULT_V_OPEN               0.0  // The value to which the pockels cell will be set during a frame.  Default should be a safe value.
+//#define POCKELS_DEFAULT_V_CLOSED             0.0  // The value to which the pockels cell will be set between frames.
+//#define POCKELS_DEFAULT_AO_CHANNEL    "/Dev1/ao2"
+//#define POCKELS_DEFAULT_AI_CHANNEL   "/Dev1/ai16"
 
 #define POCKELS_MAX_CHAN_STRING               32
 
@@ -84,36 +85,25 @@ namespace fetch
     class Pockels : public NIDAQAgent
     {
     public:
-      struct Config
-      {
-        f64         v_lim_max;
-        f64         v_lim_min;
-        f64         v_open;
-        f64         v_closed;
-        char        ao_chan[POCKELS_MAX_CHAN_STRING];
-        char        ai_chan[POCKELS_MAX_CHAN_STRING]; // XXX: Unused at present
-        
-        Config()
-        : v_lim_max (POCKELS_DEFAULT_V_MAX),
-          v_lim_min (POCKELS_DEFAULT_V_MIN),
-          v_open    (POCKELS_DEFAULT_V_OPEN),
-          v_closed  (POCKELS_DEFAULT_V_CLOSED)
-        { strncpy(ao_chan,POCKELS_DEFAULT_AO_CHANNEL,sizeof(POCKELS_DEFAULT_AO_CHANNEL));
-          strncpy(ai_chan,POCKELS_DEFAULT_AI_CHANNEL,sizeof(POCKELS_DEFAULT_AI_CHANNEL));
-        }
-      };
+    typedef cfg::device::Pockels Config;
 
-      Config         config;
+      Config         *config;
     public:
                Pockels();
-      virtual ~Pockels();
+               Pockels(const Config &cfg);
+               Pockels(Config *cfg);
+
+               virtual ~Pockels();
 
       int      Is_Volts_In_Bounds(f64 volts);
       int      Set_Open_Val(f64 volts, int time);
       BOOL     Set_Open_Val_Nonblocking(f64 volts);
 
     private:
+      Config _default_config;
       CRITICAL_SECTION local_state_lock;
+
+      void __common_setup();
     };
 
   } // end namespace device

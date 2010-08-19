@@ -106,7 +106,7 @@ class Shutter : public ::google::protobuf::Message {
   inline ::google::protobuf::uint32 closed() const;
   inline void set_closed(::google::protobuf::uint32 value);
   
-  // optional string do_channel = 3 [default = "/Dev1/port0/line0"];
+  // optional string do_channel = 3 [default = "/Dev1/port0/line8"];
   inline bool has_do_channel() const;
   inline void clear_do_channel();
   static const int kDoChannelFieldNumber = 3;
@@ -184,7 +184,7 @@ inline void Shutter::set_closed(::google::protobuf::uint32 value) {
   closed_ = value;
 }
 
-// optional string do_channel = 3 [default = "/Dev1/port0/line0"];
+// optional string do_channel = 3 [default = "/Dev1/port0/line8"];
 inline bool Shutter::has_do_channel() const {
   return _has_bit(2);
 }

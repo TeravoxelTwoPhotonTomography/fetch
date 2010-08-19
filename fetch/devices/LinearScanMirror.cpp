@@ -21,7 +21,19 @@ namespace fetch
   {
 
     LinearScanMirror::LinearScanMirror()
-                     : NIDAQAgent("LinearScanMirror")
+      : NIDAQAgent("LinearScanMirror"),
+        config(&_default_config)
+    {}
+
+    LinearScanMirror::LinearScanMirror( const Config &cfg )
+      : NIDAQAgent("LinearScanMirror"),
+        config(&_default_config)
+    { config->CopyFrom(cfg);      
+    }
+
+    LinearScanMirror::LinearScanMirror( Config *cfg )
+      : NIDAQAgent("LinearScanMirror"),
+        config(cfg)
     {}
 
   }

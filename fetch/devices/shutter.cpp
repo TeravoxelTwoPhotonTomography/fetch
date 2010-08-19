@@ -21,8 +21,15 @@ namespace fetch
   {
 
     Shutter::Shutter()
-            : NIDAQAgent("shutter")
+            : NIDAQAgent("shutter"),
+              config(&_default_config)
     {}
+
+    Shutter::Shutter( Config *cfg )
+      : NIDAQAgent("shutter"),
+        config(cfg)
+    {
+    }
 
     /*
      * Note:
@@ -53,13 +60,13 @@ namespace fetch
 
     void
     Shutter::Open(void)
-    { Set(config.open);
+    { Set(config->open());
       Sleep( SHUTTER_DEFAULT_OPEN_DELAY_MS );  // ensures shutter fully opens before an acquisition starts
     }
 
     void
     Shutter::Close(void)
-    { Set(config.closed);
+    { Set(config->closed());
     }
     
     void
@@ -67,7 +74,7 @@ namespace fetch
     { DAQERR( DAQmxClearTask(daqtask) );
       DAQERR( DAQmxCreateTask(_daqtaskname,&daqtask));
       DAQERR( DAQmxCreateDOChan( daqtask,
-                                 config.do_channel,
+                                 config->do_channel().c_str(),
                                  "shutter-command",
                                  DAQmx_Val_ChanPerLine ));
       DAQERR( DAQmxStartTask( daqtask ) );                        // go ahead and start it

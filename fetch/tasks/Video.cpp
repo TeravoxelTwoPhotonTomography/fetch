@@ -90,17 +90,17 @@ namespace fetch
       template<typename T>
       Frame_With_Interleaved_Lines
       _describe_actual_frame(device::Scanner2D *d, ViInt32 *precordsize, ViInt32 *pnwfm)
-      { ViSession                   vi = ((device::Digitizer*)d)->vi;
+      { ViSession                   vi = d->device::Digitizer::vi;
         ViInt32                   nwfm;
         ViInt32          record_length;
         void                     *meta = NULL;
 
         DIGERR( niScope_ActualNumWfms(vi,
-                                      ((device::Digitizer*)d)->config.acquisition_channels,
+                                      d->device::Digitizer::config->chan_names().c_str(),
                                       &nwfm ) );
         DIGERR( niScope_ActualRecordLength(vi, &record_length) );
 
-        u32 scans = d->config.nscans;
+        u32 scans = d->config->nscans();
         Frame_With_Interleaved_Lines format( (u16) record_length,              // width
                                                    scans,                      // height
                                              (u8) (nwfm/scans),                // number of channels
@@ -134,8 +134,8 @@ namespace fetch
         double dt_in=0.0,
                dt_out=0.0;
 
-        ViSession        vi = ((device::Digitizer*)d)->vi;
-        ViChar        *chan = ((device::Digitizer*)d)->config.acquisition_channels;
+        ViSession        vi = d->device::Digitizer::vi;
+        ViChar        *chan = const_cast<ViChar*>(d->device::Digitizer::config->chan_names().c_str());
         TaskHandle  ao_task = d->ao;
         TaskHandle clk_task = d->clk;
 

@@ -30,16 +30,17 @@ void protobuf_AssignDesc_scanner2d_2eproto() {
       "scanner2d.proto");
   GOOGLE_CHECK(file != NULL);
   Scanner2D_descriptor_ = file->message_type(0);
-  static const int Scanner2D_offsets_[13] = {
+  static const int Scanner2D_offsets_[14] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Scanner2D, frequency_hz_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Scanner2D, nscans_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Scanner2D, line_duty_cycle_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Scanner2D, line_trigger_src_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Scanner2D, trigger_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Scanner2D, armstart_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Scanner2D, clocker_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Scanner2D, clock_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Scanner2D, ctr_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Scanner2D, ctr_alt_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Scanner2D, ao_samples_per_frame_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Scanner2D, digitizer_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Scanner2D, pockels_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Scanner2D, shutter_),
@@ -92,19 +93,20 @@ void protobuf_AddDesc_scanner2d_2eproto() {
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
     "\n\017scanner2d.proto\022\020fetch.cfg.device\032\017dig"
     "itizer.proto\032\rpockels.proto\032\rshutter.pro"
-    "to\032\030linear_scan_mirror.proto\"\314\003\n\tScanner"
-    "2D\022\032\n\014frequency_Hz\030\001 \001(\001:\0047920\022\023\n\006nscans"
+    "to\032\030linear_scan_mirror.proto\"\357\003\n\tScanner"
+    "2D\022\032\n\014frequency_hz\030\001 \001(\001:\0047920\022\023\n\006nscans"
     "\030\002 \001(\r:\003512\022\035\n\017line_duty_cycle\030\003 \001(\002:\0040."
     "95\022\033\n\020line_trigger_src\030\004 \001(\r:\0011\022\026\n\007trigg"
     "er\030\005 \001(\t:\005APFI0\022\027\n\010armstart\030\006 \001(\t:\005RTSI2"
-    "\022#\n\007clocker\030\007 \001(\t:\022Ctr1InternalOutput\022\027\n"
-    "\003ctr\030\010 \001(\t:\n/Dev1/ctr1\022\033\n\007ctr_alt\030\t \001(\t:"
-    "\n/Dev1/ctr0\022.\n\tdigitizer\030\n \001(\0132\033.fetch.c"
-    "fg.device.Digitizer\022*\n\007pockels\030\013 \001(\0132\031.f"
-    "etch.cfg.device.Pockels\022*\n\007shutter\030\014 \001(\013"
-    "2\031.fetch.cfg.device.Shutter\022>\n\022linear_sc"
-    "an_mirror\030\r \001(\0132\".fetch.cfg.device.Linea"
-    "rScanMirror", 571);
+    "\022!\n\005clock\030\007 \001(\t:\022Ctr1InternalOutput\022\027\n\003c"
+    "tr\030\010 \001(\t:\n/Dev1/ctr1\022\033\n\007ctr_alt\030\t \001(\t:\n/"
+    "Dev1/ctr0\022#\n\024ao_samples_per_frame\030\n \001(\r:"
+    "\00516384\022.\n\tdigitizer\030\013 \001(\0132\033.fetch.cfg.de"
+    "vice.Digitizer\022*\n\007pockels\030\014 \001(\0132\031.fetch."
+    "cfg.device.Pockels\022*\n\007shutter\030\r \001(\0132\031.fe"
+    "tch.cfg.device.Shutter\022>\n\022linear_scan_mi"
+    "rror\030\016 \001(\0132\".fetch.cfg.device.LinearScan"
+    "Mirror", 606);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "scanner2d.proto", &protobuf_RegisterTypes);
   Scanner2D::default_instance_ = new Scanner2D();
@@ -124,7 +126,7 @@ struct StaticDescriptorInitializer_scanner2d_2eproto {
 
 const ::std::string Scanner2D::_default_trigger_("APFI0");
 const ::std::string Scanner2D::_default_armstart_("RTSI2");
-const ::std::string Scanner2D::_default_clocker_("Ctr1InternalOutput");
+const ::std::string Scanner2D::_default_clock_("Ctr1InternalOutput");
 const ::std::string Scanner2D::_default_ctr_("/Dev1/ctr1");
 const ::std::string Scanner2D::_default_ctr_alt_("/Dev1/ctr0");
 #ifndef _MSC_VER
@@ -134,9 +136,10 @@ const int Scanner2D::kLineDutyCycleFieldNumber;
 const int Scanner2D::kLineTriggerSrcFieldNumber;
 const int Scanner2D::kTriggerFieldNumber;
 const int Scanner2D::kArmstartFieldNumber;
-const int Scanner2D::kClockerFieldNumber;
+const int Scanner2D::kClockFieldNumber;
 const int Scanner2D::kCtrFieldNumber;
 const int Scanner2D::kCtrAltFieldNumber;
+const int Scanner2D::kAoSamplesPerFrameFieldNumber;
 const int Scanner2D::kDigitizerFieldNumber;
 const int Scanner2D::kPockelsFieldNumber;
 const int Scanner2D::kShutterFieldNumber;
@@ -169,9 +172,10 @@ void Scanner2D::SharedCtor() {
   line_trigger_src_ = 1u;
   trigger_ = const_cast< ::std::string*>(&_default_trigger_);
   armstart_ = const_cast< ::std::string*>(&_default_armstart_);
-  clocker_ = const_cast< ::std::string*>(&_default_clocker_);
+  clock_ = const_cast< ::std::string*>(&_default_clock_);
   ctr_ = const_cast< ::std::string*>(&_default_ctr_);
   ctr_alt_ = const_cast< ::std::string*>(&_default_ctr_alt_);
+  ao_samples_per_frame_ = 16384u;
   digitizer_ = NULL;
   pockels_ = NULL;
   shutter_ = NULL;
@@ -190,8 +194,8 @@ void Scanner2D::SharedDtor() {
   if (armstart_ != &_default_armstart_) {
     delete armstart_;
   }
-  if (clocker_ != &_default_clocker_) {
-    delete clocker_;
+  if (clock_ != &_default_clock_) {
+    delete clock_;
   }
   if (ctr_ != &_default_ctr_) {
     delete ctr_;
@@ -244,8 +248,8 @@ void Scanner2D::Clear() {
       }
     }
     if (_has_bit(6)) {
-      if (clocker_ != &_default_clocker_) {
-        clocker_->assign(_default_clocker_);
+      if (clock_ != &_default_clock_) {
+        clock_->assign(_default_clock_);
       }
     }
     if (_has_bit(7)) {
@@ -260,16 +264,17 @@ void Scanner2D::Clear() {
         ctr_alt_->assign(_default_ctr_alt_);
       }
     }
-    if (_has_bit(9)) {
+    ao_samples_per_frame_ = 16384u;
+    if (_has_bit(10)) {
       if (digitizer_ != NULL) digitizer_->::fetch::cfg::device::Digitizer::Clear();
     }
-    if (_has_bit(10)) {
+    if (_has_bit(11)) {
       if (pockels_ != NULL) pockels_->::fetch::cfg::device::Pockels::Clear();
     }
-    if (_has_bit(11)) {
+    if (_has_bit(12)) {
       if (shutter_ != NULL) shutter_->::fetch::cfg::device::Shutter::Clear();
     }
-    if (_has_bit(12)) {
+    if (_has_bit(13)) {
       if (linear_scan_mirror_ != NULL) linear_scan_mirror_->::fetch::cfg::device::LinearScanMirror::Clear();
     }
   }
@@ -283,7 +288,7 @@ bool Scanner2D::MergePartialFromCodedStream(
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // optional double frequency_Hz = 1 [default = 7920];
+      // optional double frequency_hz = 1 [default = 7920];
       case 1: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
@@ -376,19 +381,19 @@ bool Scanner2D::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(58)) goto parse_clocker;
+        if (input->ExpectTag(58)) goto parse_clock;
         break;
       }
       
-      // optional string clocker = 7 [default = "Ctr1InternalOutput"];
+      // optional string clock = 7 [default = "Ctr1InternalOutput"];
       case 7: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-         parse_clocker:
+         parse_clock:
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-                input, this->mutable_clocker()));
+                input, this->mutable_clock()));
           ::google::protobuf::internal::WireFormat::VerifyUTF8String(
-            this->clocker().data(), this->clocker().length(),
+            this->clock().data(), this->clock().length(),
             ::google::protobuf::internal::WireFormat::PARSE);
         } else {
           goto handle_uninterpreted;
@@ -427,12 +432,28 @@ bool Scanner2D::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(82)) goto parse_digitizer;
+        if (input->ExpectTag(80)) goto parse_ao_samples_per_frame;
         break;
       }
       
-      // optional .fetch.cfg.device.Digitizer digitizer = 10;
+      // optional uint32 ao_samples_per_frame = 10 [default = 16384];
       case 10: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+         parse_ao_samples_per_frame:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>(
+                 input, &ao_samples_per_frame_)));
+          _set_bit(9);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(90)) goto parse_digitizer;
+        break;
+      }
+      
+      // optional .fetch.cfg.device.Digitizer digitizer = 11;
+      case 11: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_digitizer:
@@ -441,12 +462,12 @@ bool Scanner2D::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(90)) goto parse_pockels;
+        if (input->ExpectTag(98)) goto parse_pockels;
         break;
       }
       
-      // optional .fetch.cfg.device.Pockels pockels = 11;
-      case 11: {
+      // optional .fetch.cfg.device.Pockels pockels = 12;
+      case 12: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_pockels:
@@ -455,12 +476,12 @@ bool Scanner2D::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(98)) goto parse_shutter;
+        if (input->ExpectTag(106)) goto parse_shutter;
         break;
       }
       
-      // optional .fetch.cfg.device.Shutter shutter = 12;
-      case 12: {
+      // optional .fetch.cfg.device.Shutter shutter = 13;
+      case 13: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_shutter:
@@ -469,12 +490,12 @@ bool Scanner2D::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(106)) goto parse_linear_scan_mirror;
+        if (input->ExpectTag(114)) goto parse_linear_scan_mirror;
         break;
       }
       
-      // optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 13;
-      case 13: {
+      // optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
+      case 14: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_linear_scan_mirror:
@@ -505,7 +526,7 @@ bool Scanner2D::MergePartialFromCodedStream(
 
 void Scanner2D::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // optional double frequency_Hz = 1 [default = 7920];
+  // optional double frequency_hz = 1 [default = 7920];
   if (_has_bit(0)) {
     ::google::protobuf::internal::WireFormatLite::WriteDouble(1, this->frequency_hz(), output);
   }
@@ -543,13 +564,13 @@ void Scanner2D::SerializeWithCachedSizes(
       6, this->armstart(), output);
   }
   
-  // optional string clocker = 7 [default = "Ctr1InternalOutput"];
+  // optional string clock = 7 [default = "Ctr1InternalOutput"];
   if (_has_bit(6)) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
-      this->clocker().data(), this->clocker().length(),
+      this->clock().data(), this->clock().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
     ::google::protobuf::internal::WireFormatLite::WriteString(
-      7, this->clocker(), output);
+      7, this->clock(), output);
   }
   
   // optional string ctr = 8 [default = "/Dev1/ctr1"];
@@ -570,28 +591,33 @@ void Scanner2D::SerializeWithCachedSizes(
       9, this->ctr_alt(), output);
   }
   
-  // optional .fetch.cfg.device.Digitizer digitizer = 10;
+  // optional uint32 ao_samples_per_frame = 10 [default = 16384];
   if (_has_bit(9)) {
-    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      10, this->digitizer(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteUInt32(10, this->ao_samples_per_frame(), output);
   }
   
-  // optional .fetch.cfg.device.Pockels pockels = 11;
+  // optional .fetch.cfg.device.Digitizer digitizer = 11;
   if (_has_bit(10)) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      11, this->pockels(), output);
+      11, this->digitizer(), output);
   }
   
-  // optional .fetch.cfg.device.Shutter shutter = 12;
+  // optional .fetch.cfg.device.Pockels pockels = 12;
   if (_has_bit(11)) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      12, this->shutter(), output);
+      12, this->pockels(), output);
   }
   
-  // optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 13;
+  // optional .fetch.cfg.device.Shutter shutter = 13;
   if (_has_bit(12)) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      13, this->linear_scan_mirror(), output);
+      13, this->shutter(), output);
+  }
+  
+  // optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
+  if (_has_bit(13)) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      14, this->linear_scan_mirror(), output);
   }
   
   if (!unknown_fields().empty()) {
@@ -602,7 +628,7 @@ void Scanner2D::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* Scanner2D::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // optional double frequency_Hz = 1 [default = 7920];
+  // optional double frequency_hz = 1 [default = 7920];
   if (_has_bit(0)) {
     target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(1, this->frequency_hz(), target);
   }
@@ -642,14 +668,14 @@ void Scanner2D::SerializeWithCachedSizes(
         6, this->armstart(), target);
   }
   
-  // optional string clocker = 7 [default = "Ctr1InternalOutput"];
+  // optional string clock = 7 [default = "Ctr1InternalOutput"];
   if (_has_bit(6)) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
-      this->clocker().data(), this->clocker().length(),
+      this->clock().data(), this->clock().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE);
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
-        7, this->clocker(), target);
+        7, this->clock(), target);
   }
   
   // optional string ctr = 8 [default = "/Dev1/ctr1"];
@@ -672,32 +698,37 @@ void Scanner2D::SerializeWithCachedSizes(
         9, this->ctr_alt(), target);
   }
   
-  // optional .fetch.cfg.device.Digitizer digitizer = 10;
+  // optional uint32 ao_samples_per_frame = 10 [default = 16384];
   if (_has_bit(9)) {
-    target = ::google::protobuf::internal::WireFormatLite::
-      WriteMessageNoVirtualToArray(
-        10, this->digitizer(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteUInt32ToArray(10, this->ao_samples_per_frame(), target);
   }
   
-  // optional .fetch.cfg.device.Pockels pockels = 11;
+  // optional .fetch.cfg.device.Digitizer digitizer = 11;
   if (_has_bit(10)) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
-        11, this->pockels(), target);
+        11, this->digitizer(), target);
   }
   
-  // optional .fetch.cfg.device.Shutter shutter = 12;
+  // optional .fetch.cfg.device.Pockels pockels = 12;
   if (_has_bit(11)) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
-        12, this->shutter(), target);
+        12, this->pockels(), target);
   }
   
-  // optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 13;
+  // optional .fetch.cfg.device.Shutter shutter = 13;
   if (_has_bit(12)) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
-        13, this->linear_scan_mirror(), target);
+        13, this->shutter(), target);
+  }
+  
+  // optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
+  if (_has_bit(13)) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteMessageNoVirtualToArray(
+        14, this->linear_scan_mirror(), target);
   }
   
   if (!unknown_fields().empty()) {
@@ -711,7 +742,7 @@ int Scanner2D::ByteSize() const {
   int total_size = 0;
   
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    // optional double frequency_Hz = 1 [default = 7920];
+    // optional double frequency_hz = 1 [default = 7920];
     if (has_frequency_hz()) {
       total_size += 1 + 8;
     }
@@ -749,11 +780,11 @@ int Scanner2D::ByteSize() const {
           this->armstart());
     }
     
-    // optional string clocker = 7 [default = "Ctr1InternalOutput"];
-    if (has_clocker()) {
+    // optional string clock = 7 [default = "Ctr1InternalOutput"];
+    if (has_clock()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::StringSize(
-          this->clocker());
+          this->clock());
     }
     
     // optional string ctr = 8 [default = "/Dev1/ctr1"];
@@ -772,28 +803,35 @@ int Scanner2D::ByteSize() const {
           this->ctr_alt());
     }
     
-    // optional .fetch.cfg.device.Digitizer digitizer = 10;
+    // optional uint32 ao_samples_per_frame = 10 [default = 16384];
+    if (has_ao_samples_per_frame()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::UInt32Size(
+          this->ao_samples_per_frame());
+    }
+    
+    // optional .fetch.cfg.device.Digitizer digitizer = 11;
     if (has_digitizer()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           this->digitizer());
     }
     
-    // optional .fetch.cfg.device.Pockels pockels = 11;
+    // optional .fetch.cfg.device.Pockels pockels = 12;
     if (has_pockels()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           this->pockels());
     }
     
-    // optional .fetch.cfg.device.Shutter shutter = 12;
+    // optional .fetch.cfg.device.Shutter shutter = 13;
     if (has_shutter()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           this->shutter());
     }
     
-    // optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 13;
+    // optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
     if (has_linear_scan_mirror()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
@@ -846,7 +884,7 @@ void Scanner2D::MergeFrom(const Scanner2D& from) {
       set_armstart(from.armstart());
     }
     if (from._has_bit(6)) {
-      set_clocker(from.clocker());
+      set_clock(from.clock());
     }
     if (from._has_bit(7)) {
       set_ctr(from.ctr());
@@ -857,15 +895,18 @@ void Scanner2D::MergeFrom(const Scanner2D& from) {
       set_ctr_alt(from.ctr_alt());
     }
     if (from._has_bit(9)) {
-      mutable_digitizer()->::fetch::cfg::device::Digitizer::MergeFrom(from.digitizer());
+      set_ao_samples_per_frame(from.ao_samples_per_frame());
     }
     if (from._has_bit(10)) {
-      mutable_pockels()->::fetch::cfg::device::Pockels::MergeFrom(from.pockels());
+      mutable_digitizer()->::fetch::cfg::device::Digitizer::MergeFrom(from.digitizer());
     }
     if (from._has_bit(11)) {
-      mutable_shutter()->::fetch::cfg::device::Shutter::MergeFrom(from.shutter());
+      mutable_pockels()->::fetch::cfg::device::Pockels::MergeFrom(from.pockels());
     }
     if (from._has_bit(12)) {
+      mutable_shutter()->::fetch::cfg::device::Shutter::MergeFrom(from.shutter());
+    }
+    if (from._has_bit(13)) {
       mutable_linear_scan_mirror()->::fetch::cfg::device::LinearScanMirror::MergeFrom(from.linear_scan_mirror());
     }
   }
@@ -897,9 +938,10 @@ void Scanner2D::Swap(Scanner2D* other) {
     std::swap(line_trigger_src_, other->line_trigger_src_);
     std::swap(trigger_, other->trigger_);
     std::swap(armstart_, other->armstart_);
-    std::swap(clocker_, other->clocker_);
+    std::swap(clock_, other->clock_);
     std::swap(ctr_, other->ctr_);
     std::swap(ctr_alt_, other->ctr_alt_);
+    std::swap(ao_samples_per_frame_, other->ao_samples_per_frame_);
     std::swap(digitizer_, other->digitizer_);
     std::swap(pockels_, other->pockels_);
     std::swap(shutter_, other->shutter_);

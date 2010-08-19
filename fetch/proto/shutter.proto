@@ -4,6 +4,6 @@ message Shutter
 { 
   optional uint32 open       = 1 [default=1];                   // set point for an open shutter
   optional uint32 closed     = 2 [default=0];                   // set point for an open shutter 
-  optional string do_channel = 3 [default="/Dev1/port0/line0"]; // control channel
+  optional string do_channel = 3 [default="/Dev1/port0/line8"]; // control channel
 }                                   
 

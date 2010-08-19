@@ -78,7 +78,7 @@ void protobuf_AddDesc_shutter_2eproto() {
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
     "\n\rshutter.proto\022\020fetch.cfg.device\"T\n\007Shu"
     "tter\022\017\n\004open\030\001 \001(\r:\0011\022\021\n\006closed\030\002 \001(\r:\0010"
-    "\022%\n\ndo_channel\030\003 \001(\t:\021/Dev1/port0/line0", 119);
+    "\022%\n\ndo_channel\030\003 \001(\t:\021/Dev1/port0/line8", 119);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "shutter.proto", &protobuf_RegisterTypes);
   Shutter::default_instance_ = new Shutter();
@@ -96,7 +96,7 @@ struct StaticDescriptorInitializer_shutter_2eproto {
 
 // ===================================================================
 
-const ::std::string Shutter::_default_do_channel_("/Dev1/port0/line0");
+const ::std::string Shutter::_default_do_channel_("/Dev1/port0/line8");
 #ifndef _MSC_VER
 const int Shutter::kOpenFieldNumber;
 const int Shutter::kClosedFieldNumber;
@@ -208,7 +208,7 @@ bool Shutter::MergePartialFromCodedStream(
         break;
       }
       
-      // optional string do_channel = 3 [default = "/Dev1/port0/line0"];
+      // optional string do_channel = 3 [default = "/Dev1/port0/line8"];
       case 3: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
@@ -253,7 +253,7 @@ void Shutter::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteUInt32(2, this->closed(), output);
   }
   
-  // optional string do_channel = 3 [default = "/Dev1/port0/line0"];
+  // optional string do_channel = 3 [default = "/Dev1/port0/line8"];
   if (_has_bit(2)) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->do_channel().data(), this->do_channel().length(),
@@ -280,7 +280,7 @@ void Shutter::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteUInt32ToArray(2, this->closed(), target);
   }
   
-  // optional string do_channel = 3 [default = "/Dev1/port0/line0"];
+  // optional string do_channel = 3 [default = "/Dev1/port0/line8"];
   if (_has_bit(2)) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8String(
       this->do_channel().data(), this->do_channel().length(),
@@ -315,7 +315,7 @@ int Shutter::ByteSize() const {
           this->closed());
     }
     
-    // optional string do_channel = 3 [default = "/Dev1/port0/line0"];
+    // optional string do_channel = 3 [default = "/Dev1/port0/line8"];
     if (has_do_channel()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::StringSize(

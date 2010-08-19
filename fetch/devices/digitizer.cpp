@@ -33,22 +33,14 @@ namespace fetch
   namespace device 
   {
     Digitizer::Digitizer(void)
-              :vi(0)
-    { 
-      // Setup output queues.
-      // - Sizes determine initial allocations.
-      // - out[0] receives raw data     from each niScope_Fetch call.
-      // - out[1] receives the metadata from each niScope_Fetch call.
-      //
-      size_t Bpp    = 2, //bytes per pixel to initially allocated for
-             nbuf[2] = {DIGITIZER_BUFFER_NUM_FRAMES,
-                        DIGITIZER_BUFFER_NUM_FRAMES},
-               sz[2] = { config.num_records() * config.record_length() * config.num_channels() * Bpp,
-                         config.num_records() * sizeof(struct niScope_wfmInfo)};
-      _alloc_qs( &this->out, 2, nbuf, sz );
+              : vi(0),
+                config(&_default_config)
+    { __common_setup();
     }
 
     Digitizer::Digitizer(size_t nbuf, size_t nbytes_per_frame, size_t nwfm)
+      : vi(0),
+        config(&_default_config)
     { size_t Bpp    = 2, //bytes per pixel to initially allocated for
              _nbuf[2] = {nbuf,nbuf},
                sz[2] = {nbytes_per_frame,
@@ -56,23 +48,20 @@ namespace fetch
       _alloc_qs( &this->out, 2, _nbuf, sz );
     }
 
-    Digitizer::Digitizer( const Config& cfg )
-    { config.MergeFrom(cfg);
-      Guarded_Assert(config.IsInitialized());
-      // Setup output queues.
-      // - Sizes determine initial allocations.
-      // - out[0] receives raw data     from each niScope_Fetch call.
-      // - out[1] receives the metadata from each niScope_Fetch call.
-      //
-      size_t
-        Bpp = 2, //bytes per pixel to initially allocated for
-        nbuf[2] = {DIGITIZER_BUFFER_NUM_FRAMES,
-                   DIGITIZER_BUFFER_NUM_FRAMES},
-        sz[2] = { config.num_records() * config.record_length * config.num_channels * Bpp,
-                  config.num_records() * sizeof(struct niScope_wfmInfo)};
-      _alloc_qs( &this->out, 2, nbuf, sz );
+    Digitizer::Digitizer(const Config& cfg)
+              : vi(0),
+                config(&_default_config)
+    { config->CopyFrom(cfg);
+      Guarded_Assert(config->IsInitialized());
+      __common_setup();
+
     }
 
+    Digitizer::Digitizer( Config *cfg )
+    : vi(0),
+      config(cfg)
+    { __common_setup();
+    }    
 
     Digitizer::~Digitizer(void)
     { if( this->detach() > 0 )
@@ -110,7 +99,7 @@ namespace fetch
         if( (*vi) == NULL )
         { // Open the NI-SCOPE instrument handle
           status = CheckPanic (
-            niScope_init (this->config.resource_name, 
+            niScope_init (const_cast<ViRsrc>(this->config->name().c_str()),
                           NISCOPE_VAL_TRUE,  // ID Query
                           NISCOPE_VAL_FALSE, // Reset?
                           vi)                // Session
@@ -123,6 +112,22 @@ namespace fetch
 
       return status;
     }
+
+  void Digitizer::__common_setup()
+  {
+    // Setup output queues.
+    // - Sizes determine initial allocations.
+    // - out[0] receives raw data     from each niScope_Fetch call.
+    // - out[1] receives the metadata from each niScope_Fetch call.
+    //
+    size_t
+      Bpp = 2, //bytes per pixel to initially allocated for
+      nbuf[2] = {DIGITIZER_BUFFER_NUM_FRAMES,
+      DIGITIZER_BUFFER_NUM_FRAMES},
+      sz[2] = { config->num_records() * config->record_size() * config->nchannels() * Bpp,
+      config->num_records() * sizeof(struct niScope_wfmInfo)};
+    _alloc_qs( &this->out, 2, nbuf, sz );
+  }
 
   } // namespace fetch
 } // namespace fetch

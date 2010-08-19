@@ -108,18 +108,18 @@ void protobuf_AddDesc_digitizer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\017digitizer.proto\022\020fetch.cfg.device\"\223\003\n\t"
+    "\n\017digitizer.proto\022\020fetch.cfg.device\"\234\003\n\t"
     "Digitizer\022\022\n\004name\030\001 \001(\t:\004Dev3\022\035\n\013sample_"
     "rate\030\002 \001(\001:\01060000000\022\031\n\013record_size\030\003 \001("
     "\r:\0047196\022\030\n\013num_records\030\004 \001(\r:\003256\022\024\n\tref"
     "erence\030\005 \001(\001:\0010\022\025\n\nchan_names\030\006 \001(\t:\0010\022\024"
     "\n\tnchannels\030\007 \001(\r:\0011\0224\n\007channel\030\010 \003(\0132#."
-    "fetch.cfg.device.Digitizer.Channel\032\244\001\n\007C"
+    "fetch.cfg.device.Digitizer.Channel\032\255\001\n\007C"
     "hannel\022\017\n\004name\030\001 \001(\t:\0010\022\020\n\005range\030\002 \001(\001:\001"
     "1\022B\n\010coupling\030\003 \001(\0162,.fetch.cfg.device.D"
     "igitizer.Channel.Coupling:\002DC\022\026\n\007enabled"
-    "\030\004 \001(\010:\005false\"\032\n\010Coupling\022\006\n\002AC\020\000\022\006\n\002DC\020"
-    "\001", 441);
+    "\030\004 \001(\010:\005false\"#\n\010Coupling\022\006\n\002AC\020\000\022\006\n\002DC\020"
+    "\001\022\007\n\003GND\020\002", 450);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "digitizer.proto", &protobuf_RegisterTypes);
   Digitizer::default_instance_ = new Digitizer();
@@ -147,6 +147,7 @@ bool Digitizer_Channel_Coupling_IsValid(int value) {
   switch(value) {
     case 0:
     case 1:
+    case 2:
       return true;
     default:
       return false;
@@ -156,6 +157,7 @@ bool Digitizer_Channel_Coupling_IsValid(int value) {
 #ifndef _MSC_VER
 const Digitizer_Channel_Coupling Digitizer_Channel::AC;
 const Digitizer_Channel_Coupling Digitizer_Channel::DC;
+const Digitizer_Channel_Coupling Digitizer_Channel::GND;
 const Digitizer_Channel_Coupling Digitizer_Channel::Coupling_MIN;
 const Digitizer_Channel_Coupling Digitizer_Channel::Coupling_MAX;
 const int Digitizer_Channel::Coupling_ARRAYSIZE;

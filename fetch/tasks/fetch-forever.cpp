@@ -42,13 +42,13 @@ namespace fetch
         unsigned int
         FetchForever<TPixel>::config(device::Digitizer *dig)
         { ViSession   vi = dig->vi;
-          device::Digitizer::Config cfg = dig->config;
+          device::Digitizer::Config *cfg = dig->config;
           ViInt32 i;
           int nchan = 0;
           
           // Vertical
-          for(i=0; i<cfg.channel_size(); i++)
-          { const device::Digitizer::Config::Channel& ch = cfg.channel(i);          
+          for(i=0; i<cfg->channel_size(); i++)
+          { const device::Digitizer::Config::Channel& ch = cfg->channel(i);          
             CheckPanic(niScope_ConfigureVertical (vi, 
                                                   ch.name().c_str(), //channelName, 
                                                   ch.range(),        //verticalRange, 
@@ -60,10 +60,10 @@ namespace fetch
           }
           // Horizontal
           CheckPanic (niScope_ConfigureHorizontalTiming (vi, 
-                                                        cfg.sample_rate(),     // sample rate (S/s)
-                                                        cfg.record_length,     // record length (S)
-                                                        cfg.reference_position,// reference position (% units???)
-                                                        cfg.num_records(),     // number of records to fetch per acquire
+                                                        cfg->sample_rate(),     // sample rate (S/s)
+                                                        cfg->record_size(),     // record length (S)
+                                                        cfg->reference(),       // reference position (% units???)
+                                                        cfg->num_records(),     // number of records to fetch per acquire
                                                         NISCOPE_VAL_TRUE));    // enforce real time?
           // Configure software trigger, but never send the trigger.
           // This starts an infinite acquisition, until you call niScope_Abort
@@ -81,7 +81,7 @@ namespace fetch
         unsigned int
         FetchForever<TPixel>::run(device::Digitizer *dig)
         { ViSession   vi = dig->vi;
-          ViChar   *chan = dig->config.acquisition_channels;
+          ViChar   *chan = const_cast<ViChar*>(dig->config->chan_names().c_str());
           asynq   *qdata = dig->out->contents[0],
                    *qwfm = dig->out->contents[1];
           ViInt32  nelem,

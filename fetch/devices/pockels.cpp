@@ -26,10 +26,24 @@ namespace fetch
   {
 
     Pockels::Pockels(void)
-            : NIDAQAgent("Pockels")
-    { Guarded_Assert_WinErr(
-        InitializeCriticalSectionAndSpinCount(&local_state_lock, 0x80000400 ));
+            : NIDAQAgent("Pockels"),
+              config(&_default_config)
+    { __common_setup();
+
     }
+
+    Pockels::Pockels( const Config& cfg )
+      : NIDAQAgent("Pockels"),
+        config(&_default_config)
+    { config->CopyFrom(cfg);
+      __common_setup();
+    }
+
+    Pockels::Pockels(Config *cfg )
+      : NIDAQAgent("Pockels"),
+        config(cfg)
+    { __common_setup();
+    }    
 
     Pockels::~Pockels()
     { DeleteCriticalSection(&local_state_lock);
@@ -37,7 +51,7 @@ namespace fetch
 
     int
     Pockels::Is_Volts_In_Bounds(f64 volts)
-    { return ( volts >= config.v_lim_min ) && (volts <= config.v_lim_max );
+    { return ( volts >= config->v_lim_min() ) && (volts <= config->v_lim_max() );
     }
 
     int
@@ -50,7 +64,7 @@ namespace fetch
       if( (time - lasttime) > 0 )                  // The <time> is used to synchronize "simultaneous" requests
       { lasttime = time;                           // Only process requests dated after the last request.
 
-        config.v_open = volts;
+        config->set_v_open(volts);        
         // if the device is armed, we need to communicate the change to the bound task
         if(this->is_armed())
         { int run = this->is_running();
@@ -104,6 +118,12 @@ namespace fetch
         return 0;
       }
       return QueueUserWorkItem(&_pockels_set_open_val_thread_proc, (void*)q, NULL /*default flags*/);
+    }
+
+    void Pockels::__common_setup()
+    {
+      Guarded_Assert_WinErr(
+        InitializeCriticalSectionAndSpinCount(&local_state_lock, 0x80000400 ));
     }
 
 

@@ -647,6 +647,7 @@ namespace fetch
       static int  last_change_token = 0;
       static size_t           nchan = 0;
       static size_t          nbytes = 0;
+      static size_t   has_committed = 0; 
       
       if( q )
       { // create the source buffer
@@ -690,20 +691,23 @@ namespace fetch
           i = nchan;
           Video_Frame_From_Frame( g_video.vframe, frm);
           Video_Frame_Resource_Commit( g_video.vframe );                     
+          has_committed = 1;
         }
       } // end if q (if anything is connected)
       
+      // When there's an error on startup, the peek will timeout.
+      // Execution will proceed to this point, but no textures have been
+      // uploaded to the GPU yet.  Calling the "draw" routines will fail.
+      // Hence, check the static <has_committed> flag, to ensure the GPU
+      // has had at least one commit.
+      if(!has_committed)
+        return;
+
       //
       // Clear the back buffer
       //
       float ClearColor[4] = { 0.0f, 0.125f, 0.3f, 1.0f }; // red, green, blue, alpha
       g_video.device->ClearRenderTargetView( g_video.render_target_view, ClearColor );
-
-      //
-      // Update variables that change once per frame
-      //
-      //g_pWorldVariable->SetMatrix( ( float* )&g_World );
-      //g_pMeshColorVariable->SetFloatVector( ( float* )g_vMeshColor );
 
       //
       // Render

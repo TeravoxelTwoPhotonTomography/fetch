@@ -230,11 +230,6 @@ namespace fetch
           goto Error;
       }
       // Create thread for running task
-      // use default access rights
-      // use default stack size (1 MB)
-      // main function
-      // arguments
-      // don't start yet
       Guarded_Assert_WinErr(
       this->thread = CreateThread(0,                  // use default access rights
                                   0,                  // use default stack size (1 MB)

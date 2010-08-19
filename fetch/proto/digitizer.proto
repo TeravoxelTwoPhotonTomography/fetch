@@ -4,9 +4,10 @@ message Digitizer
 {
   message Channel
   { 
-    enum Coupling {
+    enum Coupling {                                       // NISCOPE_ATTR_VERTICAL_COUPLING. ENUM values conform to NIScope
       AC = 0;
       DC = 1;
+      GND = 2;
     }
     optional string   name     = 1 [default = "0"];       // Null terminated string with channel syntax: e.g. "0-2,7"                                                               
     optional double   range    = 2 [default = 1.0];       // Volts peak to peak.  (NI-5105) Can be 0.05, 0.2, 1, or 6 V for 50 Ohm.  Resolution is 0.1% dB.                         
@@ -23,3 +24,10 @@ message Digitizer
   optional uint32   nchannels   = 7 [default = 1];        // number of channels to independently configure - typically set to DIGITIZER_MAX_NUM_CHANNELS 
   repeated Channel  channel     = 8;                      // array of channel configurations                                                             
 }
+
+// Notes
+// -----
+//
+// * May be able to eliminate the nchannels field.  Protobuf will generate a channel_size()
+//   method that gives the correct value.
+// * rename channel to channels

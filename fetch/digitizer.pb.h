@@ -39,11 +39,12 @@ class Digitizer_Channel;
 
 enum Digitizer_Channel_Coupling {
   Digitizer_Channel_Coupling_AC = 0,
-  Digitizer_Channel_Coupling_DC = 1
+  Digitizer_Channel_Coupling_DC = 1,
+  Digitizer_Channel_Coupling_GND = 2
 };
 bool Digitizer_Channel_Coupling_IsValid(int value);
 const Digitizer_Channel_Coupling Digitizer_Channel_Coupling_Coupling_MIN = Digitizer_Channel_Coupling_AC;
-const Digitizer_Channel_Coupling Digitizer_Channel_Coupling_Coupling_MAX = Digitizer_Channel_Coupling_DC;
+const Digitizer_Channel_Coupling Digitizer_Channel_Coupling_Coupling_MAX = Digitizer_Channel_Coupling_GND;
 const int Digitizer_Channel_Coupling_Coupling_ARRAYSIZE = Digitizer_Channel_Coupling_Coupling_MAX + 1;
 
 const ::google::protobuf::EnumDescriptor* Digitizer_Channel_Coupling_descriptor();
@@ -113,6 +114,7 @@ class Digitizer_Channel : public ::google::protobuf::Message {
   typedef Digitizer_Channel_Coupling Coupling;
   static const Coupling AC = Digitizer_Channel_Coupling_AC;
   static const Coupling DC = Digitizer_Channel_Coupling_DC;
+  static const Coupling GND = Digitizer_Channel_Coupling_GND;
   static inline bool Coupling_IsValid(int value) {
     return Digitizer_Channel_Coupling_IsValid(value);
   }

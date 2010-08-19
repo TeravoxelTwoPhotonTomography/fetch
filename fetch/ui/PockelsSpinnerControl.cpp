@@ -201,7 +201,7 @@ namespace fetch
           { warning("Value set for Pockels cell is out of bounds.\r\n");
             SetDlgItemInt(hWnd,
                           _ID_POCKELS_SUBCONTROL_EDIT,
-                          (UINT) (this->pockels->config.v_open*1000.0), //convert to mV
+                          (UINT) (this->pockels->config->v_open()*1000.0), //convert to mV
                           FALSE );                                      // unsigned
           }
         }

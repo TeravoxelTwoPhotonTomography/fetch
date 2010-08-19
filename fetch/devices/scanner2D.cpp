@@ -26,35 +26,53 @@ namespace fetch
 
   namespace device
   {
-  
-    Scanner2D::Config::Config()
-    :
-      frequency_Hz      (SCANNER2D_DEFAULT_RESONANT_FREQUENCY),                  // Resonant frequency (1/full period)
-      nscans            (SCANNER2D_DEFAULT_SCANS),                               // Number of bidirectional scans (full periods) per frame
-      line_duty_cycle   (SCANNER2D_DEFAULT_LINE_DUTY_CYCLE),                     // Acquire samples during this fraction of the full period
-      line_trigger_src  (SCANNER2D_DEFAULT_LINE_TRIGGER_SRC),                    // Digitizer channel corresponding to resonant velocity input.
-      nsamples          (SCANNER2D_DEFAULT_AO_SAMPLES)                           // DAQ AO: Samples per frame                         
-    { Guarded_Assert( sizeof(trigger ) >= sizeof(SCANNER2D_DEFAULT_LINE_TRIGGER  ) );
-      Guarded_Assert( sizeof(armstart) >= sizeof(SCANNER2D_DEFAULT_FRAME_ARMSTART) );
-      Guarded_Assert( sizeof(clock   ) >= sizeof(SCANNER2D_DEFAULT_DAQ_CLOCK     ) );
-      Guarded_Assert( sizeof(ctr     ) >= sizeof(SCANNER2D_DEFAULT_DAQ_CTR       ) );
-      Guarded_Assert( sizeof(ctr_alt ) >= sizeof(SCANNER2D_DEFAULT_DAQ_CTR_ALT   ) );
-      memcpy(trigger ,SCANNER2D_DEFAULT_LINE_TRIGGER  ,sizeof(trigger ));
-      memcpy(armstart,SCANNER2D_DEFAULT_FRAME_ARMSTART,sizeof(armstart));
-      memcpy(clock   ,SCANNER2D_DEFAULT_DAQ_CLOCK     ,sizeof(clock   ));
-      memcpy(ctr     ,SCANNER2D_DEFAULT_DAQ_CTR       ,sizeof(ctr     ));
-      memcpy(ctr_alt ,SCANNER2D_DEFAULT_DAQ_CTR_ALT   ,sizeof(ctr_alt ));
-    }
-
-    Scanner2D::Scanner2D() :
-      config(), ao(NULL), clk(NULL), ao_workspace(NULL), notify_daq_done(INVALID_HANDLE_VALUE)
+    Scanner2D::Scanner2D() :      
+      config(&_default_config),
+      ao(NULL),
+      clk(NULL), 
+      ao_workspace(NULL), 
+      notify_daq_done(INVALID_HANDLE_VALUE)
     {
-      // - ao_workspace is used to generate the data used for analog output during
-      //   a frame. Need 2*nsamples b.c. there are two ao channels (the linear
-      //   scan mirror and the pockels cell)
-      ao_workspace = vector_f64_alloc(config.nsamples * 2);
-      Guarded_Assert_WinErr( notify_daq_done = CreateEvent(NULL,FALSE,FALSE,NULL));
+      __common_setup();
+      this->Digitizer::config        = config->mutable_digitizer();
+      this->LinearScanMirror::config = config->mutable_linear_scan_mirror();
+      this->Shutter::config          = config->mutable_shutter();
+      this->Pockels::config          = config->mutable_pockels();
+
+      // Minimally require two channels.
+      // 1. Acquisition
+      // 2. Analog (line) trigger
+      
+      config->mutable_digitizer()->add_channel();
+      config->mutable_digitizer()->add_channel();
+      
     }
+    
+    Scanner2D::Scanner2D( const Config& cfg ) :      
+        config(&_default_config),
+        ao(NULL),
+        clk(NULL),
+        ao_workspace(NULL),
+        notify_daq_done(INVALID_HANDLE_VALUE)
+      { config->CopyFrom(cfg);
+        this->Digitizer::config        = config->mutable_digitizer();
+        this->LinearScanMirror::config = config->mutable_linear_scan_mirror();
+        this->Shutter::config          = config->mutable_shutter();
+        this->Pockels::config          = config->mutable_pockels();
+        __common_setup();
+      }
+
+    Scanner2D::Scanner2D( Config *cfg ) :
+       Digitizer(cfg->mutable_digitizer()),
+       LinearScanMirror(cfg->mutable_linear_scan_mirror()),
+       Shutter(cfg->mutable_shutter()),
+       Pockels(cfg->mutable_pockels()),
+       ao(NULL),
+       clk(NULL),
+       ao_workspace(NULL),
+       notify_daq_done(INVALID_HANDLE_VALUE)
+      { __common_setup();
+      }
 
     Scanner2D::~Scanner2D()
     { Guarded_Assert_WinErr__NoPanic(CloseHandle(notify_daq_done));
@@ -66,9 +84,9 @@ namespace fetch
     ViInt32
     Scanner2D::_compute_record_size(void)
     {
-      double duty = this->config.line_duty_cycle,
-             rate = ((Digitizer*) (this))->config.sample_rate,
-             freq = this->config.frequency_Hz;
+      double duty = this->config->line_duty_cycle(),
+             rate = this->Digitizer::config->sample_rate(),
+             freq = this->config->frequency_hz();
       return (ViInt32)(duty * rate / freq);
     }
 
@@ -78,8 +96,8 @@ namespace fetch
       ViInt32 samples_per_scan = _compute_record_size();
       Frame_With_Interleaved_Lines
           format((u16)(samples_per_scan),
-                 config.nscans,
-                 (u8) (((Digitizer*) (this))->config.num_channels),
+                 config->nscans(),
+                 (u8) this->Digitizer::config->nchannels(),
                  id_i16);
       Guarded_Assert(format.nchan > 0);
       Guarded_Assert(format.height > 0);
@@ -136,9 +154,9 @@ namespace fetch
     
     void
     Scanner2D::_config_digitizer()
-    { device::Digitizer::Config *dig_cfg = &this->Digitizer::config;
+    { device::Digitizer::Config *dig_cfg =  this->Digitizer::config;
       ViSession                       vi =  this->Digitizer::vi;
-      device::Digitizer::Channel_Config* line_trigger_cfg;
+      //device::Digitizer::Channel_Config* line_trigger_cfg;
 
       ViReal64   refPosition         = 0.0;
       ViReal64   verticalOffset      = 0.0;
@@ -146,51 +164,54 @@ namespace fetch
       ViBoolean  enforceRealtime     = NISCOPE_VAL_TRUE;
 
       // Select the trigger channel
-      line_trigger_cfg = dig_cfg->channels + config.line_trigger_src;
-      Guarded_Assert( line_trigger_cfg->enabled );
+      if(config->line_trigger_src() >= (unsigned) dig_cfg->channel_size())
+        error("Scanner2D:\t\nTrigger source channel has not been configured.\n"
+              "\tTrigger source: %hhu (out of bounds)\n"
+              "\tNumber of configured channels: %d\n", config->line_trigger_src(), dig_cfg->channel_size());
+      const device::Digitizer::Channel_Config& line_trigger_cfg = dig_cfg->channel(config->line_trigger_src());
+      Guarded_Assert( line_trigger_cfg.enabled() );
 
       // Configure vertical for line-trigger channel
       niscope_cfg_rtsi_default( vi );
       DIGERR( niScope_ConfigureVertical(vi,
-                                        line_trigger_cfg->name,       // channelName
-                                        line_trigger_cfg->range,
+                                        line_trigger_cfg.name().c_str(),  // channelName
+                                        line_trigger_cfg.range(),
                                         0.0,
-                                        line_trigger_cfg->coupling,
+                                        line_trigger_cfg.coupling(),
                                         probeAttenuation,
-                                        NISCOPE_VAL_TRUE));          // enabled
+                                        NISCOPE_VAL_TRUE));               // enabled
 
       // Configure vertical of other channels
-      { int ichan = dig_cfg->num_channels;
-        while( ichan-- )
-        { if( ichan != config.line_trigger_src )
-          { device::Digitizer::Channel_Config *c = dig_cfg->channels + ichan;
-            DIGERR( niScope_ConfigureVertical(vi,
-                                              c->name,       // channelName
-                                              c->range,
-                                              0.0,
-                                              c->coupling,
-                                              probeAttenuation,
-                                              c->enabled));
-          }
+      { for(int ichan=0; ichan<dig_cfg->channel_size(); ++ichan)
+        { if(ichan==config->line_trigger_src())
+            continue;
+          const device::Digitizer::Channel_Config &c=dig_cfg->channel(ichan);
+          DIGERR( niScope_ConfigureVertical(vi,
+            c.name().c_str(),                    // channelName
+            c.range(),
+            0.0,
+            c.coupling(),
+            probeAttenuation,
+            c.enabled() ));
         }
       }
 
       // Configure horizontal -
       DIGERR( niScope_ConfigureHorizontalTiming(vi,
-                                                dig_cfg->sample_rate,
+                                                dig_cfg->sample_rate(),
                                                 this->_compute_record_size(),
                                                 refPosition,
-                                                config.nscans,
+                                                config->nscans(),
                                                 enforceRealtime));
 
       // Analog trigger for bidirectional scans
       DIGERR( niScope_ConfigureTriggerEdge (vi,
-                                            line_trigger_cfg->name,    // channelName
-                                            0.0,                       // triggerLevel
-                                            NISCOPE_VAL_POSITIVE,      // triggerSlope
-                                            line_trigger_cfg->coupling,// triggerCoupling
-                                            0.0,                       // triggerHoldoff
-                                            0.0 ));                    // triggerDelay
+                                            line_trigger_cfg.name().c_str(), // channelName
+                                            0.0,                          // triggerLevel
+                                            NISCOPE_VAL_POSITIVE,         // triggerSlope
+                                            line_trigger_cfg.coupling(),  // triggerCoupling
+                                            0.0,                          // triggerHoldoff
+                                            0.0 ));                       // triggerDelay
       // Wait for start trigger (frame sync) on PFI1
       DIGERR( niScope_SetAttributeViString( vi,
                                             "",
@@ -207,7 +228,7 @@ namespace fetch
     void
     Scanner2D::_compute_linear_scan_mirror_waveform__sawtooth( LinearScanMirror::Config *cfg, float64 *data, double N )
     { int i=(int)N;
-      float64 A = cfg->vpp;
+      float64 A = cfg->vpp();
       while(i--)
         data[i] = A*((i/N)-0.5); // linear ramp from -A/2 to A/2
       data[(int)N-1] = data[0];  // at end of wave, head back to the starting position
@@ -216,8 +237,8 @@ namespace fetch
     void
     Scanner2D::_compute_pockels_vertical_blanking_waveform( Pockels::Config *cfg, float64 *data, double N )
     { int i=(int)N;
-      float64 max = cfg->v_open,
-              min = cfg->v_closed;
+      float64 max = cfg->v_open(),
+              min = cfg->v_closed();
       while(i--)
         data[i] = max;           // step to max during y scan
       data[(int)N-1] = min;      // step to zero at end of scan
@@ -225,14 +246,14 @@ namespace fetch
 
     void
     Scanner2D::_generate_ao_waveforms(void)
-    { int N = config.nsamples;
+    { int N = config->ao_samples_per_frame();
       f64 *m,*p;
       lock();
       vector_f64_request(ao_workspace, 2*N - 1 /*max index*/);
       m = ao_workspace->contents; // first the mirror data
       p = m + N;                  // then the pockels data
-      _compute_linear_scan_mirror_waveform__sawtooth( &((LinearScanMirror*)this)->config, m, N);
-      _compute_pockels_vertical_blanking_waveform(    &(         (Pockels*)this)->config, p, N);
+      _compute_linear_scan_mirror_waveform__sawtooth( this->LinearScanMirror::config, m, N);
+      _compute_pockels_vertical_blanking_waveform(    this->Pockels::config, p, N);
       unlock();
     }
 
@@ -249,37 +270,37 @@ namespace fetch
 
       // concatenate the channel names
       memset(aochan, 0, sizeof(aochan));
-      strcat(aochan, lsm_cfg->channel);
+      strcat(aochan, lsm_cfg->ao_channel().c_str());
       strcat(aochan, ",");
-      strcat(aochan, pock_cfg->ao_chan);
+      strcat(aochan, pock_cfg->ao_channel().c_str());
 
       DAQERR( DAQmxCreateAOVoltageChan(cur_task,
               aochan,                        //eg: "/Dev1/ao0,/Dev1/ao2"
               "vert-mirror-out,pockels-out", //name to assign to channel
-              MIN( lsm_cfg->v_lim_min, pock_cfg->v_lim_min ), //Volts eg: -10.0
-              MAX( lsm_cfg->v_lim_max, pock_cfg->v_lim_max ), //Volts eg:  10.0
+              MIN( lsm_cfg->v_lim_min(), pock_cfg->v_lim_min() ), //Volts eg: -10.0
+              MAX( lsm_cfg->v_lim_max(), pock_cfg->v_lim_max() ), //Volts eg:  10.0
               DAQmx_Val_Volts,               //Units
               NULL));                        //Custom scale (none)
 
       DAQERR( DAQmxCfgAnlgEdgeStartTrig(cur_task,
-              cfg->trigger,
+              cfg->trigger().c_str(),
               DAQmx_Val_Rising,
               0.0));
 
       DAQERR( DAQmxCfgSampClkTiming(cur_task,
-              cfg->clock,          // "Ctr1InternalOutput",
+              cfg->clock().c_str(),          // "Ctr1InternalOutput",
               freq,
               DAQmx_Val_Rising,
               DAQmx_Val_ContSamps, // use continuous output so that counter stays in control
-              cfg->nsamples));
+              cfg->ao_samples_per_frame()));
     }
 
     void
     Scanner2D::_config_daq()
     { TaskHandle             cur_task = 0;
 
-      ViInt32   N          = config.nsamples;
-      float64   frame_time = config.nscans / config.frequency_Hz;  //  512 records / (7920 records/sec)
+      ViInt32   N          = config->ao_samples_per_frame();
+      float64   frame_time = config->nscans() / config->frequency_hz();  //  512 records / (7920 records/sec)
       float64   freq       = N/frame_time;                         // 4096 samples / 64 ms = 63 kS/s
 
       // set up counter for sample clock
@@ -299,7 +320,7 @@ namespace fetch
       DAQERR( DAQmxCreateTask("scanner2d-clk",&this->clk)); //
       cur_task = this->clk;
       DAQERR( DAQmxCreateCOPulseChanFreq       ( cur_task,
-                                                 config.ctr_alt,     // "Dev1/ctr0"
+                                                 config->ctr_alt().c_str(),     // "Dev1/ctr0"
                                                  "sample-clock",
                                                  DAQmx_Val_Hz,
                                                  DAQmx_Val_Low,
@@ -313,7 +334,7 @@ namespace fetch
       DAQERR( DAQmxCreateTask("scanner2d-clk",&this->clk)); //
       cur_task = this->clk;
       DAQERR( DAQmxCreateCOPulseChanFreq       ( cur_task,       // task
-                                                 config.ctr,     // "Dev1/ctr1"
+                                                 config->ctr().c_str(),     // "Dev1/ctr1"
                                                  "sample-clock", // name
                                                  DAQmx_Val_Hz,   // units
                                                  DAQmx_Val_Low,  // idle state - resting state of the output terminal
@@ -324,7 +345,7 @@ namespace fetch
       DAQERR( DAQmxCfgImplicitTiming           ( cur_task, DAQmx_Val_FiniteSamps, N ));
       DAQERR( DAQmxCfgDigEdgeStartTrig         ( cur_task, "AnalogComparisonEvent", DAQmx_Val_Rising ));
       DAQERR( DAQmxSetArmStartTrigType         ( cur_task, DAQmx_Val_DigEdge ));
-      DAQERR( DAQmxSetDigEdgeArmStartTrigSrc   ( cur_task, config.armstart ));
+      DAQERR( DAQmxSetDigEdgeArmStartTrigSrc   ( cur_task, config->armstart().c_str() ));
       DAQERR( DAQmxSetDigEdgeArmStartTrigEdge  ( cur_task, DAQmx_Val_Rising ));
 
       //
@@ -340,9 +361,9 @@ namespace fetch
       DAQERR( DAQmxSetWriteRegenMode(this->ao,DAQmx_Val_DoNotAllowRegen));
       _setup_ao_chan(this->ao,
                      freq,
-                     &this->config,
-                     &this->LinearScanMirror::config,
-                     &this->Pockels::config);
+                     this->config,
+                     this->LinearScanMirror::config,
+                     this->Pockels::config);
       this->_generate_ao_waveforms();
       this->_register_daq_event();
 
@@ -355,7 +376,7 @@ namespace fetch
     void
     Scanner2D::_write_ao(void)
     { int32 written,
-                  N = this->config.nsamples;
+                  N = this->config->ao_samples_per_frame();
       
       DAQERR( DAQmxWriteAnalogF64(this->ao,
                                   N,
@@ -384,7 +405,7 @@ namespace fetch
 
     void 
     Scanner2D::_register_daq_event(void)
-    { int32 N = this->config.nsamples; 
+    { int32 N = this->config->ao_samples_per_frame();
     
 #if 0
       DAQERR( DAQmxRegisterEveryNSamplesEvent(
@@ -420,5 +441,15 @@ namespace fetch
       }
       return 1;      
     }
+
+    void Scanner2D::__common_setup()
+    {
+      // - ao_workspace is used to generate the data used for analog output during
+      //   a frame. Need 2*nsamples b.c. there are two ao channels (the linear
+      //   scan mirror and the pockels cell)
+      ao_workspace = vector_f64_alloc(config->ao_samples_per_frame() * 2);
+      Guarded_Assert_WinErr( notify_daq_done = CreateEvent(NULL,FALSE,FALSE,NULL));
+    }
+
   }
 }
