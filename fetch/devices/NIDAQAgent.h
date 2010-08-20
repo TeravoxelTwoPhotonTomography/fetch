@@ -44,7 +44,7 @@ namespace fetch
       TaskHandle daqtask;
 
     protected:
-      char _daqtaskname[128];
+      char _daqtaskname[128];      
     };
 
   }

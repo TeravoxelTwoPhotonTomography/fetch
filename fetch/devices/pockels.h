@@ -64,6 +64,7 @@
 
 #include "NIDAQAgent.h"
 #include "pockels.pb.h"
+#include "object.h"
 
 #define POCKELS_DEFAULT_TIMEOUT         INFINITE
 
@@ -82,15 +83,12 @@ namespace fetch
   namespace device
   {
 
-    class Pockels : public NIDAQAgent
-    {
-    public:
-    typedef cfg::device::Pockels Config;
-
-      Config         *config;
+    class Pockels
+      : public NIDAQAgent,
+        public Configurable<cfg::device::Pockels>
+    {    
     public:
                Pockels();
-               Pockels(const Config &cfg);
                Pockels(Config *cfg);
 
                virtual ~Pockels();
@@ -100,7 +98,6 @@ namespace fetch
       BOOL     Set_Open_Val_Nonblocking(f64 volts);
 
     private:
-      Config _default_config;
       CRITICAL_SECTION local_state_lock;
 
       void __common_setup();

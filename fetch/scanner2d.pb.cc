@@ -101,11 +101,11 @@ void protobuf_AddDesc_scanner2d_2eproto() {
     "\022!\n\005clock\030\007 \001(\t:\022Ctr1InternalOutput\022\027\n\003c"
     "tr\030\010 \001(\t:\n/Dev1/ctr1\022\033\n\007ctr_alt\030\t \001(\t:\n/"
     "Dev1/ctr0\022#\n\024ao_samples_per_frame\030\n \001(\r:"
-    "\00516384\022.\n\tdigitizer\030\013 \001(\0132\033.fetch.cfg.de"
-    "vice.Digitizer\022*\n\007pockels\030\014 \001(\0132\031.fetch."
-    "cfg.device.Pockels\022*\n\007shutter\030\r \001(\0132\031.fe"
+    "\00516384\022.\n\tdigitizer\030\013 \002(\0132\033.fetch.cfg.de"
+    "vice.Digitizer\022*\n\007pockels\030\014 \002(\0132\031.fetch."
+    "cfg.device.Pockels\022*\n\007shutter\030\r \002(\0132\031.fe"
     "tch.cfg.device.Shutter\022>\n\022linear_scan_mi"
-    "rror\030\016 \001(\0132\".fetch.cfg.device.LinearScan"
+    "rror\030\016 \002(\0132\".fetch.cfg.device.LinearScan"
     "Mirror", 606);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "scanner2d.proto", &protobuf_RegisterTypes);
@@ -452,7 +452,7 @@ bool Scanner2D::MergePartialFromCodedStream(
         break;
       }
       
-      // optional .fetch.cfg.device.Digitizer digitizer = 11;
+      // required .fetch.cfg.device.Digitizer digitizer = 11;
       case 11: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
@@ -466,7 +466,7 @@ bool Scanner2D::MergePartialFromCodedStream(
         break;
       }
       
-      // optional .fetch.cfg.device.Pockels pockels = 12;
+      // required .fetch.cfg.device.Pockels pockels = 12;
       case 12: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
@@ -480,7 +480,7 @@ bool Scanner2D::MergePartialFromCodedStream(
         break;
       }
       
-      // optional .fetch.cfg.device.Shutter shutter = 13;
+      // required .fetch.cfg.device.Shutter shutter = 13;
       case 13: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
@@ -494,7 +494,7 @@ bool Scanner2D::MergePartialFromCodedStream(
         break;
       }
       
-      // optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
+      // required .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
       case 14: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
@@ -596,25 +596,25 @@ void Scanner2D::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteUInt32(10, this->ao_samples_per_frame(), output);
   }
   
-  // optional .fetch.cfg.device.Digitizer digitizer = 11;
+  // required .fetch.cfg.device.Digitizer digitizer = 11;
   if (_has_bit(10)) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       11, this->digitizer(), output);
   }
   
-  // optional .fetch.cfg.device.Pockels pockels = 12;
+  // required .fetch.cfg.device.Pockels pockels = 12;
   if (_has_bit(11)) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       12, this->pockels(), output);
   }
   
-  // optional .fetch.cfg.device.Shutter shutter = 13;
+  // required .fetch.cfg.device.Shutter shutter = 13;
   if (_has_bit(12)) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       13, this->shutter(), output);
   }
   
-  // optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
+  // required .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
   if (_has_bit(13)) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       14, this->linear_scan_mirror(), output);
@@ -703,28 +703,28 @@ void Scanner2D::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteUInt32ToArray(10, this->ao_samples_per_frame(), target);
   }
   
-  // optional .fetch.cfg.device.Digitizer digitizer = 11;
+  // required .fetch.cfg.device.Digitizer digitizer = 11;
   if (_has_bit(10)) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         11, this->digitizer(), target);
   }
   
-  // optional .fetch.cfg.device.Pockels pockels = 12;
+  // required .fetch.cfg.device.Pockels pockels = 12;
   if (_has_bit(11)) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         12, this->pockels(), target);
   }
   
-  // optional .fetch.cfg.device.Shutter shutter = 13;
+  // required .fetch.cfg.device.Shutter shutter = 13;
   if (_has_bit(12)) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
         13, this->shutter(), target);
   }
   
-  // optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
+  // required .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
   if (_has_bit(13)) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
@@ -810,28 +810,28 @@ int Scanner2D::ByteSize() const {
           this->ao_samples_per_frame());
     }
     
-    // optional .fetch.cfg.device.Digitizer digitizer = 11;
+    // required .fetch.cfg.device.Digitizer digitizer = 11;
     if (has_digitizer()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           this->digitizer());
     }
     
-    // optional .fetch.cfg.device.Pockels pockels = 12;
+    // required .fetch.cfg.device.Pockels pockels = 12;
     if (has_pockels()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           this->pockels());
     }
     
-    // optional .fetch.cfg.device.Shutter shutter = 13;
+    // required .fetch.cfg.device.Shutter shutter = 13;
     if (has_shutter()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
           this->shutter());
     }
     
-    // optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
+    // required .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
     if (has_linear_scan_mirror()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
@@ -926,6 +926,7 @@ void Scanner2D::CopyFrom(const Scanner2D& from) {
 }
 
 bool Scanner2D::IsInitialized() const {
+  if ((_has_bits_[0] & 0x00003c00) != 0x00003c00) return false;
   
   return true;
 }

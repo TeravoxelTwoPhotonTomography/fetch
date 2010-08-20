@@ -18,19 +18,12 @@ namespace fetch
   {
 
     ZPiezo::ZPiezo(void)
-           : NIDAQAgent("ZPiezo"),
-             config(&_default_config)
+           : NIDAQAgent("ZPiezo")
     {}
-
-    ZPiezo::ZPiezo(const Config &cfg)
-      : NIDAQAgent("ZPiezo"),
-        config(&_default_config)
-    { config->CopyFrom(cfg);
-    }
 
     ZPiezo::ZPiezo( Config *cfg )
       : NIDAQAgent("ZPiezo"),
-        config(cfg)
+        Configurable(cfg)
     {}
 
 

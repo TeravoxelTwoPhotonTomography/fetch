@@ -62,44 +62,9 @@
 #include "LinearScanMirror.h"
 #include "../frame.h"
 #include "scanner2d.pb.h"
-
-//
-// Device configuration
-//    definitions
-//    defaults
-//
-//#define SCANNER2D_QUEUE_NUM_FRAMES                   32
-//
-//#define SCANNER2D_DEFAULT_RESONANT_FREQUENCY         7920.0 // Hz
-//#define SCANNER2D_DEFAULT_SCANS                      512  // Number of full resonant periods that make up a frame
-//                                                          //        image height = 2 x scans
-//#define SCANNER2D_DEFAULT_LINE_DUTY_CYCLE           0.95f // Fraction of resonant period to acquire (must be less than one)
-//#define SCANNER2D_DEFAULT_LINE_TRIGGER_SRC              1 // Digitizer channel corresponding to resonant velocity input
-//                                                          // the channel should be appropriately configured in the digitizer config
-//#define SCANNER2D_DEFAULT_AO_SAMPLES               4*4096 // samples per waveform
-//#define SCANNER2D_DEFAULT_LINE_TRIGGER             "APFI0"// DAQ terminal: should be connected to resonant velocity output
-//#define SCANNER2D_DEFAULT_FRAME_ARMSTART           "RTSI2"// DAQ terminal: should be connected to "ReadyForStart" event output from digitizer
-//#define SCANNER2D_DEFAULT_DAQ_CLOCK   "Ctr1InternalOutput"// DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock
-//#define SCANNER2D_DEFAULT_DAQ_CTR             "/Dev1/ctr1"// DAQ terminal: A finite pulse train is generated so that this counter may be used as a sample clock.
-//#define SCANNER2D_DEFAULT_DAQ_CTR_ALT         "/Dev1/ctr0"// DAQ terminal: Finite pulse train generation requires a pair of counters.  This is the implicitly used one.
-//
-
-//
-//#define SCANNER2D_DEFAULT_CONFIG \
-//{ SCANNER2D_DEFAULT_RESONANT_FREQUENCY,\
-//  SCANNER2D_DEFAULT_SCANS,\
-//  SCANNER2D_DEFAULT_LINE_DUTY_CYCLE,\
-//  SCANNER2D_DEFAULT_LINE_TRIGGER_SRC,\
-//  SCANNER2D_DEFAULT_AO_SAMPLES,\
-//  SCANNER2D_DEFAULT_LINE_TRIGGER,\
-//  SCANNER2D_DEFAULT_FRAME_ARMSTART,\
-//  SCANNER2D_DEFAULT_DAQ_CLOCK,\
-//  SCANNER2D_DEFAULT_DAQ_CTR,\
-//  SCANNER2D_DEFAULT_DAQ_CTR_ALT,\
-//}
+#include "object.h"
 
 #define SCANNER2D_DEFAULT_TIMEOUT               INFINITE // ms
-//#define SCANNER2D_MAX_CHAN_STRING                     32 // characters
 
 namespace fetch
 {
@@ -109,22 +74,23 @@ namespace fetch
     class Scanner2D : public Digitizer, 
                       public Pockels, 
                       public Shutter, 
-                      public LinearScanMirror
+                      public LinearScanMirror,
+                      public Configurable<cfg::device::Scanner2D>
     {
     public:
-      typedef cfg::device::Scanner2D Config;
+      typedef cfg::device::Scanner2D Config;            // Need to declare these here to disambiguate.
+      Config* &config;      
 
-               Scanner2D();
-               Scanner2D(const Config& cfg);
-               Scanner2D(Config *cfg);
+      Scanner2D();
+      Scanner2D(Config *cfg);
 
-               virtual ~Scanner2D();
+      virtual ~Scanner2D();
 
       unsigned int attach(void);                         // Returns 0 on success, 1 otherwise
       unsigned int detach(void);                         // Returns 0 on success, 1 otherwise
 
+      virtual void set_config(Config *cfg);
     public:
-      Config     *config;
       TaskHandle  ao,
                   clk;
       HANDLE      notify_daq_done;
@@ -151,8 +117,6 @@ namespace fetch
       static  void _compute_pockels_vertical_blanking_waveform   ( Pockels::Config *cfg, float64 *data, double N );
 
     private:
-      Config _default_config;
-
       void __common_setup();
     };
 

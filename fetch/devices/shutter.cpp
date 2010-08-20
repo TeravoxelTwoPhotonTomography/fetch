@@ -8,6 +8,7 @@
 #include "stdafx.h"
 #include "shutter.h"
 #include "NIDAQAgent.h"
+#include "object.h"
 
 #include "../util/util-nidaqmx.h"
 
@@ -18,18 +19,16 @@ namespace fetch
 {
 
   namespace device
-  {
+  {        
 
     Shutter::Shutter()
-            : NIDAQAgent("shutter"),
-              config(&_default_config)
+            : NIDAQAgent("shutter")
     {}
 
     Shutter::Shutter( Config *cfg )
       : NIDAQAgent("shutter"),
-        config(cfg)
-    {
-    }
+        Configurable(cfg)
+    {}
 
     /*
      * Note:

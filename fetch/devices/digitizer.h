@@ -33,6 +33,7 @@
 #include "../agent.h"
 #include "../util/util-niscope.h"
 #include "digitizer.pb.h"
+#include "object.h"
 
 #define DIGITIZER_BUFFER_NUM_FRAMES       4        // must be a power of two
 #define DIGITIZER_DEFAULT_TIMEOUT         INFINITE // ms
@@ -41,14 +42,15 @@ namespace fetch
 {
   namespace device
   {
-    class Digitizer : public virtual Agent
+    class Digitizer
+      : public virtual Agent,
+        public Configurable<cfg::device::Digitizer>
     {
     public:
       typedef cfg::device::Digitizer          Config;
       typedef cfg::device::Digitizer_Channel  Channel_Config;
 
-      Digitizer();
-      Digitizer(const Config &cfg); // Copy constructs a new configuration
+      Digitizer();      
       Digitizer(Config *cfg); // Configuration references cfg
       Digitizer(size_t nbuf, size_t nbytes_per_frame, size_t nwfm); // Inputs determine how output queues are initially allocated
 
@@ -62,11 +64,8 @@ namespace fetch
     public:
 
       ViSession vi;
-      Config    *config;
 
     private:
-      Config    _default_config;
-
       void __common_setup();
     };
   }

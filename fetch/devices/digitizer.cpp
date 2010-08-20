@@ -33,14 +33,12 @@ namespace fetch
   namespace device 
   {
     Digitizer::Digitizer(void)
-              : vi(0),
-                config(&_default_config)
+              : vi(0)
     { __common_setup();
     }
 
     Digitizer::Digitizer(size_t nbuf, size_t nbytes_per_frame, size_t nwfm)
-      : vi(0),
-        config(&_default_config)
+      : vi(0)
     { size_t Bpp    = 2, //bytes per pixel to initially allocated for
              _nbuf[2] = {nbuf,nbuf},
                sz[2] = {nbytes_per_frame,
@@ -48,18 +46,18 @@ namespace fetch
       _alloc_qs( &this->out, 2, _nbuf, sz );
     }
 
-    Digitizer::Digitizer(const Config& cfg)
-              : vi(0),
-                config(&_default_config)
-    { config->CopyFrom(cfg);
-      Guarded_Assert(config->IsInitialized());
-      __common_setup();
+    //Digitizer::Digitizer(const Config& cfg)
+    //          : vi(0),
+    //            config(&_default_config)
+    //{ config->CopyFrom(cfg);
+    //  Guarded_Assert(config->IsInitialized());
+    //  __common_setup();
 
-    }
+    //}
 
     Digitizer::Digitizer( Config *cfg )
     : vi(0),
-      config(cfg)
+      Configurable(cfg)
     { __common_setup();
     }    
 

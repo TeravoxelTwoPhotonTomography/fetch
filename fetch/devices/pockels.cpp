@@ -26,22 +26,13 @@ namespace fetch
   {
 
     Pockels::Pockels(void)
-            : NIDAQAgent("Pockels"),
-              config(&_default_config)
+            : NIDAQAgent("Pockels")
     { __common_setup();
-
-    }
-
-    Pockels::Pockels( const Config& cfg )
-      : NIDAQAgent("Pockels"),
-        config(&_default_config)
-    { config->CopyFrom(cfg);
-      __common_setup();
-    }
+    }    
 
     Pockels::Pockels(Config *cfg )
       : NIDAQAgent("Pockels"),
-        config(cfg)
+        Configurable(cfg)
     { __common_setup();
     }    
 

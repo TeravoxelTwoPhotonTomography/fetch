@@ -26,18 +26,14 @@ namespace fetch
 
   namespace device
   {
-    Scanner2D::Scanner2D() :      
-      config(&_default_config),
+    Scanner2D::Scanner2D():
       ao(NULL),
       clk(NULL), 
       ao_workspace(NULL), 
-      notify_daq_done(INVALID_HANDLE_VALUE)
-    {
+      notify_daq_done(INVALID_HANDLE_VALUE),
+      config(Configurable<cfg::device::Scanner2D>::config)
+    { set_config(config);
       __common_setup();
-      this->Digitizer::config        = config->mutable_digitizer();
-      this->LinearScanMirror::config = config->mutable_linear_scan_mirror();
-      this->Shutter::config          = config->mutable_shutter();
-      this->Pockels::config          = config->mutable_pockels();
 
       // Minimally require two channels.
       // 1. Acquisition
@@ -47,22 +43,9 @@ namespace fetch
       config->mutable_digitizer()->add_channel();
       
     }
-    
-    Scanner2D::Scanner2D( const Config& cfg ) :      
-        config(&_default_config),
-        ao(NULL),
-        clk(NULL),
-        ao_workspace(NULL),
-        notify_daq_done(INVALID_HANDLE_VALUE)
-      { config->CopyFrom(cfg);
-        this->Digitizer::config        = config->mutable_digitizer();
-        this->LinearScanMirror::config = config->mutable_linear_scan_mirror();
-        this->Shutter::config          = config->mutable_shutter();
-        this->Pockels::config          = config->mutable_pockels();
-        __common_setup();
-      }
 
     Scanner2D::Scanner2D( Config *cfg ) :
+       Configurable<cfg::device::Scanner2D>::Configurable(cfg),
        Digitizer(cfg->mutable_digitizer()),
        LinearScanMirror(cfg->mutable_linear_scan_mirror()),
        Shutter(cfg->mutable_shutter()),
@@ -70,8 +53,10 @@ namespace fetch
        ao(NULL),
        clk(NULL),
        ao_workspace(NULL),
-       notify_daq_done(INVALID_HANDLE_VALUE)
-      { __common_setup();
+       notify_daq_done(INVALID_HANDLE_VALUE),
+       config(Configurable<cfg::device::Scanner2D>::config)
+      { //set_config(cfg);
+        __common_setup();
       }
 
     Scanner2D::~Scanner2D()
@@ -449,6 +434,15 @@ namespace fetch
       //   scan mirror and the pockels cell)
       ao_workspace = vector_f64_alloc(config->ao_samples_per_frame() * 2);
       Guarded_Assert_WinErr( notify_daq_done = CreateEvent(NULL,FALSE,FALSE,NULL));
+    }
+
+    void Scanner2D::set_config( cfg::device::Scanner2D *cfg )
+    { this->Digitizer::set_config(cfg->mutable_digitizer());
+      this->Pockels::set_config(cfg->mutable_pockels());
+      this->Shutter::set_config(cfg->mutable_shutter());
+      this->LinearScanMirror::set_config(cfg->mutable_linear_scan_mirror());
+      config = cfg;
+      debug("Scanner2D.h Setting config to 0x%p\n",cfg);
     }
 
   }

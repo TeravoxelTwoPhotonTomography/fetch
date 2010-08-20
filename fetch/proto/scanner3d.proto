@@ -1,0 +1,9 @@
+package fetch.cfg.device;
+
+import "scanner2d.proto";
+import "zpiezo.proto";
+
+message Scanner3D
+{ required Scanner2D scanner2d = 1;
+  required ZPiezo    zpiezo    = 2;
+}

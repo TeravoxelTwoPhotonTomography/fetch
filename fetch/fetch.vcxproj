@@ -111,6 +111,7 @@
     <ClCompile Include="renderer-video-frame.cpp" />
     <ClCompile Include="ring-fifo.cpp" />
     <ClCompile Include="scanner2d.pb.cc" />
+    <ClCompile Include="scanner3d.pb.cc" />
     <ClCompile Include="shutter.pb.cc" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="task.cpp" />
@@ -167,6 +168,11 @@
     <CustomBuild Include="proto\shutter.proto">
       <FileType>Document</FileType>
     </CustomBuild>
+    <CustomBuild Include="proto\scanner3d.proto">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <None Include="ClassDiagram1.cd" />
+    <None Include="ClassDiagram2.cd" />
     <None Include="shader.fx" />
     <None Include="fetch.ico" />
     <None Include="small.ico" />
@@ -187,12 +193,14 @@
     <ClInclude Include="frame.h" />
     <ClInclude Include="linear_scan_mirror.pb.h" />
     <ClInclude Include="logger.h" />
+    <ClInclude Include="object.h" />
     <ClInclude Include="pockels.pb.h" />
     <ClInclude Include="renderer-colormap.h" />
     <ClInclude Include="renderer-video-frame.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ring-fifo.h" />
     <ClInclude Include="scanner2d.pb.h" />
+    <ClInclude Include="scanner3d.pb.h" />
     <ClInclude Include="shutter.pb.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />

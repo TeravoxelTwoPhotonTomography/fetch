@@ -18,8 +18,8 @@ message Scanner2D
   optional string    ctr_alt              = 9  [default="/Dev1/ctr0"];        // DAQ terminal: Finite pulse train generation requires a pair of counters.  This is the implicitly used one.    
   optional uint32    ao_samples_per_frame = 10 [default=16384];               // DAQ AO: Samples per waveform. Used to size buffers for DAQ output during a frame.
 
-  optional Digitizer        digitizer          = 11;
-  optional Pockels          pockels            = 12;
-  optional Shutter          shutter            = 13;
-  optional LinearScanMirror linear_scan_mirror = 14;
+  required Digitizer        digitizer          = 11;
+  required Pockels          pockels            = 12;
+  required Shutter          shutter            = 13;
+  required LinearScanMirror linear_scan_mirror = 14;
 }

@@ -181,28 +181,28 @@ class Scanner2D : public ::google::protobuf::Message {
   inline ::google::protobuf::uint32 ao_samples_per_frame() const;
   inline void set_ao_samples_per_frame(::google::protobuf::uint32 value);
   
-  // optional .fetch.cfg.device.Digitizer digitizer = 11;
+  // required .fetch.cfg.device.Digitizer digitizer = 11;
   inline bool has_digitizer() const;
   inline void clear_digitizer();
   static const int kDigitizerFieldNumber = 11;
   inline const ::fetch::cfg::device::Digitizer& digitizer() const;
   inline ::fetch::cfg::device::Digitizer* mutable_digitizer();
   
-  // optional .fetch.cfg.device.Pockels pockels = 12;
+  // required .fetch.cfg.device.Pockels pockels = 12;
   inline bool has_pockels() const;
   inline void clear_pockels();
   static const int kPockelsFieldNumber = 12;
   inline const ::fetch::cfg::device::Pockels& pockels() const;
   inline ::fetch::cfg::device::Pockels* mutable_pockels();
   
-  // optional .fetch.cfg.device.Shutter shutter = 13;
+  // required .fetch.cfg.device.Shutter shutter = 13;
   inline bool has_shutter() const;
   inline void clear_shutter();
   static const int kShutterFieldNumber = 13;
   inline const ::fetch::cfg::device::Shutter& shutter() const;
   inline ::fetch::cfg::device::Shutter* mutable_shutter();
   
-  // optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
+  // required .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
   inline bool has_linear_scan_mirror() const;
   inline void clear_linear_scan_mirror();
   static const int kLinearScanMirrorFieldNumber = 14;
@@ -550,7 +550,7 @@ inline void Scanner2D::set_ao_samples_per_frame(::google::protobuf::uint32 value
   ao_samples_per_frame_ = value;
 }
 
-// optional .fetch.cfg.device.Digitizer digitizer = 11;
+// required .fetch.cfg.device.Digitizer digitizer = 11;
 inline bool Scanner2D::has_digitizer() const {
   return _has_bit(10);
 }
@@ -567,7 +567,7 @@ inline ::fetch::cfg::device::Digitizer* Scanner2D::mutable_digitizer() {
   return digitizer_;
 }
 
-// optional .fetch.cfg.device.Pockels pockels = 12;
+// required .fetch.cfg.device.Pockels pockels = 12;
 inline bool Scanner2D::has_pockels() const {
   return _has_bit(11);
 }
@@ -584,7 +584,7 @@ inline ::fetch::cfg::device::Pockels* Scanner2D::mutable_pockels() {
   return pockels_;
 }
 
-// optional .fetch.cfg.device.Shutter shutter = 13;
+// required .fetch.cfg.device.Shutter shutter = 13;
 inline bool Scanner2D::has_shutter() const {
   return _has_bit(12);
 }
@@ -601,7 +601,7 @@ inline ::fetch::cfg::device::Shutter* Scanner2D::mutable_shutter() {
   return shutter_;
 }
 
-// optional .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
+// required .fetch.cfg.device.LinearScanMirror linear_scan_mirror = 14;
 inline bool Scanner2D::has_linear_scan_mirror() const {
   return _has_bit(13);
 }

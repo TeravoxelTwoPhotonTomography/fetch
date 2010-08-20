@@ -15,6 +15,7 @@
 #include "NIDAQAgent.h"
 #include "../agent.h"
 #include "linear_scan_mirror.pb.h"
+#include "object.h"
 
 //#define DEFAULT_LINEARSCANMIRROR_VPP                   2.5   // V - peak-to-peak
 //#define DEFAULT_LINEARSCANMIRROR_V_MAX                10.0   // V - Maximum permissible value
@@ -29,20 +30,15 @@ namespace fetch
   namespace device
   {
 
-    class LinearScanMirror : public NIDAQAgent
+    class LinearScanMirror
+      : public NIDAQAgent,
+        public Configurable<cfg::device::LinearScanMirror>
     {
     public:
-      typedef cfg::device::LinearScanMirror Config;
-      Config     *config;
-
-    public:
       LinearScanMirror();
-      LinearScanMirror(const Config &cfg);
       LinearScanMirror(Config *cfg);
 
       /* TODO: add methods to change vpp on the fly*/
-    private:
-      Config _default_config;
     };
 
   }

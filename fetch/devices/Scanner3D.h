@@ -50,6 +50,7 @@
 #pragma once
 #include "scanner2d.h"
 #include "ZPiezo.h"
+#include "scanner3d.pb.h"
 
 namespace fetch
 { namespace device
@@ -57,15 +58,21 @@ namespace fetch
 
   class Scanner3D :
     public Scanner2D,
-    public ZPiezo
+    public ZPiezo,
+    public Configurable<cfg::device::Scanner3D>
     {
-    public:
+    public:      
+      typedef cfg::device::Scanner3D Config; // need to declare these to disambiguate
+      Config* &config;
+
                Scanner3D(void);
+               Scanner3D(Config *cfg);
       virtual ~Scanner3D(void);
       
       unsigned int attach(void); // Returns 0 on success, 1 otherwise
       unsigned int detach(void); // Returns 0 on success, 1 otherwise
 
+      virtual void set_config(Config *cfg);
     public:
       // fills ao_workspace with data for analog output
       virtual void _generate_ao_waveforms(void);                       // be sure to override Scanner2D::_generate_ao_waveforms
@@ -77,6 +84,7 @@ namespace fetch
     protected:
       static  void _compute_zpiezo_waveform_ramp(ZPiezo::Config *cfg, f64 z_um, f64 *data, f64 N);
       static  void _compute_zpiezo_waveform_const(ZPiezo::Config *cfg, f64 z_um, f64 *data, f64 N);
+
     };
   
   }

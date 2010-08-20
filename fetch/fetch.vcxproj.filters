@@ -212,6 +212,9 @@
     <ClCompile Include="zpiezo.pb.cc">
       <Filter>Source Files\proto</Filter>
     </ClCompile>
+    <ClCompile Include="scanner3d.pb.cc">
+      <Filter>Source Files\proto</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="shader.fx">
@@ -227,6 +230,8 @@
     <None Include="MessageTypes.cd" />
     <None Include="ReadMe.txt" />
     <None Include="Tasks.cd" />
+    <None Include="ClassDiagram1.cd" />
+    <None Include="ClassDiagram2.cd" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="agent.h">
@@ -397,6 +402,12 @@
     <ClInclude Include="zpiezo.pb.h">
       <Filter>Header Files\proto</Filter>
     </ClInclude>
+    <ClInclude Include="scanner3d.pb.h">
+      <Filter>Header Files\proto</Filter>
+    </ClInclude>
+    <ClInclude Include="object.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="fetch.rc">
@@ -423,6 +434,9 @@
       <Filter>Resource Files\Proto</Filter>
     </CustomBuild>
     <CustomBuild Include="proto\zpiezo.proto">
+      <Filter>Resource Files\Proto</Filter>
+    </CustomBuild>
+    <CustomBuild Include="proto\scanner3d.proto">
       <Filter>Resource Files\Proto</Filter>
     </CustomBuild>
   </ItemGroup>

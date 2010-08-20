@@ -13,24 +13,20 @@
 #pragma once
 #include "NIDAQAgent.h"
 #include "zpiezo.pb.h"
+#include "object.h"
 
 namespace fetch 
 { namespace device 
   {
 
-    class ZPiezo : public NIDAQAgent
+    class ZPiezo
+      : public NIDAQAgent,
+        public Configurable<cfg::device::ZPiezo>
     {
     public:
-      typedef cfg::device::ZPiezo Config;
 
       ZPiezo(void);
-      ZPiezo(const Config &cfg);
       ZPiezo(Config *cfg);
-    public:      
-      Config *config;
-
-    private:
-      Config _default_config;
     };
       
   }
