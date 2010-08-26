@@ -59,7 +59,7 @@ namespace fetch
 
       unsigned int attach(void);
       unsigned int detach(void);
-      unsigned int is_attached(void);
+      //unsigned int is_attached(void);
 
     public:
 

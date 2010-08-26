@@ -198,11 +198,12 @@ namespace fetch
         break;    
     }
     Guarded_Assert( SUCCEEDED(hr) );
+    if(g_video.driver_type==D3D10_DRIVER_TYPE_REFERENCE)
+      warning("VIDEO: Using reference driver (no hardware acceleration)\n");
 
     // pick the best msaa
     { UINT count,quality=0;
-      for(count=1;count<=
-      32;++count)
+      for(count=1;count<=32;++count)
       { Guarded_Assert(SUCCEEDED(
           g_video.device->CheckMultisampleQualityLevels(sd.BufferDesc.Format,count,&quality)));
         if(quality>0)
@@ -211,6 +212,8 @@ namespace fetch
         }
       }      
     }   
+    sd.SampleDesc.Count = 1;//msaa_levels;
+    sd.SampleDesc.Quality = msaa_quality;
 
     // Create the swap chain
     { IDXGIDevice  *pDXGIDevice;
@@ -222,7 +225,7 @@ namespace fetch
       Guarded_Assert(SUCCEEDED( pIDXGIFactory->CreateSwapChain(pDXGIDevice,&sd,&g_video.swap_chain)));
     }
  
-    debug("MSAA: %d quality %d\r\n",msaa_levels, msaa_quality );
+    debug("MSAA: %d quality %d\r\n",sd.SampleDesc.Count, sd.SampleDesc.Quality );
     
     // Create a render target view - binds the swap chain (and hWnd) to the Output Merger stage.
     ID3D10Texture2D* pBuffer;
