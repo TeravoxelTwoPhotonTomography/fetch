@@ -1,2 +1,0 @@
-env = Environment(CCFLAGS = '-g -O4')
-env.SharedLibrary('im','im.cpp')
