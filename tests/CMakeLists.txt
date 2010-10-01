@@ -36,13 +36,44 @@ include_directories(${NIDAQMX_INCLUDE_DIR})
 find_package(NIScope REQUIRED)
 include_directories(${NISCOPE_INCLUDE_DIR})
 
+#mylib
+find_package(MyLib REQUIRED)
+include_directories(${MYLIB_INCLUDE_DIR})
+
+#OpenGL
+find_package(OpenGL)
+
+#glew
+find_package(Glew REQUIRED)
+include_directories(GLEW_INCLUDE_DIR)
+
+#Qt
+SET(QTLIBLIST
+  QtMain
+  QtCore
+  QtGui
+  QtOpenGL
+)
+SET(QT_USE_IMPORTED_TARGETS TRUE)
+find_package(Qt4 4.7
+  COMPONENTS ${QTLIBLIST}
+  REQUIRED
+)
+include(${QT_USE_FILE})
+include_directories(${QT_INCLUDE_DIRS})
+
+#Alazar
+find_package(Alazar REQUIRED)
+include_directories(ALAZAR_INCLUDE_DIR)
+
+#PI C-843 Stage controller
+find_package(C843 REQUIRED)
+include_directories(C843_INCLUDE_DIR)
 ##
 # Add tests
 #
 set(PRIMARY_TEST_SOURCES
-  proto.cc
-  daq.cc
-  niscope.cc
+  integration.cc
   test.cc
   )
 add_executable(alltests alltests.cc 
@@ -54,5 +85,11 @@ target_link_libraries(alltests
   ${PROTOBUF_LIBRARIES}
   ${NIDAQMX_LIBRARY}
   ${NISCOPE_LIBRARIES}
+  ${MYLIB_LIBRARIES}
+  ${QT_LIBRARIES}
+  ${OPENGL_LIBRARY}
+  ${GLEW_LIBRARIES}
+  ${ALAZAR_LIBRARY}
+  ${C843_LIBRARY}
 )
 gtest_add_tests(alltests " " ${PRIMARY_TEST_SOURCES})

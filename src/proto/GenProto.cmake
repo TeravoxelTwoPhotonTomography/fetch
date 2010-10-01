@@ -12,6 +12,11 @@
 # PROTO_SRCS
 # PROTO_HDRS
 #
+# EXAMPLE
+# -------
+# set(PROTO_DIR "../src/proto")
+# include("${PROTO_DIR}/GenProto.cmake")
+#
 
 set(CMAKE_LIBRARY_PATH
   ${CMAKE_LIBRARY_PATH}

@@ -1,0 +1,42 @@
+##
+# Locate AlazarTech ATS-SDK
+#
+# OUTPUT VARIABLES
+# ----------------
+# ALAZAR_LIBRARY
+# ALAZAR_INCLUDE_DIR
+# ALAZAR_FOUND
+#
+
+#
+FUNCTION(_ALAZAR_ASSERT _VAR _MSG)
+IF(NOT ${_VAR})
+  IF(${ALAZAR_FIND_REQUIRED})
+    MESSAGE(FATAL_ERROR ${_MSG}) 
+  ELSE()
+    MESSAGE(STATUS ${_MSG}) 
+  ENDIF()
+ENDIF()
+ENDFUNCTION(_ALAZAR_ASSERT)
+
+#
+set(ALAZAR_FOUND "NO")
+
+find_path(ALAZAR_INCLUDE_DIR AlazarApi.h
+    HINTS
+    ${CMAKE_SOURCE_DIR}/3rdParty/AlazarTech/ATS-SDK/5.8.2
+    PATH_SUFFIXES Include
+)
+_ALAZAR_ASSERT(ALAZAR_INCLUDE_DIR "Could not find AlazarApi.h")
+
+find_library(ALAZAR_LIBRARY ATSApi.lib
+  HINTS
+  ${CMAKE_SOURCE_DIR}/3rdParty/AlazarTech/ATS-SDK/5.8.2
+  PATH_SUFFIXES Library/Win32 Library/x64
+  )
+_ALAZAR_ASSERT(ALAZAR_LIBRARY "Could not find ATSApi.lib")
+
+set(ALAZAR_FOUND "YES")
+# message("ALAZAR_INCLUDE_DIR is ${ALAZAR_INCLUDE_DIR}")
+# message("ALAZAR_LIBRARY is ${ALAZAR_LIBRARY}")
+
