@@ -1,11 +1,12 @@
+##
+# NOTES:
+#
+# - Had to modify the stock FindProtobuf.cmake module.  My changes can be found
+#   in a personal git repo mirroring the stock installed Modules.  See
+#   \\dm11.isi.janelia.org\myerslab\clackn\repo\cmake-modules
+#
 cmake_minimum_required(VERSION 2.6)
 project(fetch)
-
-##
-# Testing
-#
-enable_testing(true)
-add_subdirectory(tests)
 
 ##
 # 3rdParty
@@ -14,6 +15,7 @@ add_subdirectory(tests)
 #Paths
 set(ROOT_3RDPARTY_PATH
   "$ENV{USERPROFILE}/Desktop/src/libs"
+  CACHE PATH "Root Location of 3rd party libraries"
 )
 set(CMAKE_LIBRARY_PATH
   ${CMAKE_LIBRARY_PATH}
@@ -27,7 +29,8 @@ set(CMAKE_PROGRAM_PATH
   ${CMAKE_PROGRAM_PATH}
   "${ROOT_3RDPARTY_PATH}/protobuf-2.3.0/vsprojects/Release"
 )
- 
+
+# Protobuf 
 find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 include_directories(${CMAKE_BINARY_DIRS})
@@ -35,23 +38,11 @@ include_directories(${CMAKE_BINARY_DIRS})
 ##
 # Assembly
 #
-set(PROTO_DIR
-  src/proto
-)
-set(PROTO_FILES
-  ${PROTO_DIR}/zpiezo.proto
-  ${PROTO_DIR}/shutter.proto
-  ${PROTO_DIR}/scanner3d.proto
-  ${PROTO_DIR}/scanner2d.proto
-  ${PROTO_DIR}/pockels.proto
-  ${PROTO_DIR}/linear_scan_mirror.proto
-  ${PROTO_DIR}/digitizer.proto
-)
+set(PROTO_DIR src/proto)
+include("${PROTO_DIR}/GenProto.cmake")
 
-source_group(Proto
-  REGULAR_EXPRESSION \\.proto$
-)
-
-PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})
-message(${PROTO_SRCS})
-message(${PROTO_HDRS})
+##
+# Testing
+#
+enable_testing(true)
+add_subdirectory(tests)
