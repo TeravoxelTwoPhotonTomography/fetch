@@ -15,11 +15,11 @@ set(GTEST_MSVC_SEARCH MD)
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 
-#add tests
-set(PRIMARY_TEST_SOURCES
-  proto.cc
-  test.cc
-  )
+##
+# Config
+#
+
+#protobuf
 set(PROTO_DIR "../src/proto")
 include("${PROTO_DIR}/GenProto.cmake")
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
@@ -27,11 +27,32 @@ set(OTHER_SOURCES
   ${PROTO_SRCS}
   ${PROTO_HDRS}
 )
+
+#nidaq
+find_package(NIDAQmx REQUIRED)
+include_directories(${NIDAQMX_INCLUDE_DIR})
+
+#niscope
+find_package(NIScope REQUIRED)
+include_directories(${NISCOPE_INCLUDE_DIR})
+
+##
+# Add tests
+#
+set(PRIMARY_TEST_SOURCES
+  proto.cc
+  daq.cc
+  niscope.cc
+  test.cc
+  )
 add_executable(alltests alltests.cc 
   ${PRIMARY_TEST_SOURCES} 
   ${OTHER_SOURCES}
 )
 target_link_libraries(alltests
   ${GTEST_BOTH_LIBRARIES}
-  ${PROTOBUF_LIBRARIES})
+  ${PROTOBUF_LIBRARIES}
+  ${NIDAQMX_LIBRARY}
+  ${NISCOPE_LIBRARIES}
+)
 gtest_add_tests(alltests " " ${PRIMARY_TEST_SOURCES})

@@ -11,6 +11,8 @@ project(fetch)
 ##
 # 3rdParty
 #
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
+#message("CMAKE_MODULE_PATH is ${CMAKE_MODULE_PATH}")
 
 #Paths
 set(ROOT_3RDPARTY_PATH
@@ -34,6 +36,9 @@ set(CMAKE_PROGRAM_PATH
 find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 include_directories(${CMAKE_BINARY_DIRS})
+
+# NI-DAQmx
+find_package(NIDAQmx REQUIRED)
 
 ##
 # Assembly
