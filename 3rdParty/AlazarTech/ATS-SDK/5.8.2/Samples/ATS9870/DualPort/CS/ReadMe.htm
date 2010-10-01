@@ -1,0 +1,491 @@
+<html>
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=Generator content="Microsoft Word 11 (filtered)">
+<title>Continuous Streaming Sample</title>
+
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:Wingdings;
+	panose-1:5 0 0 0 0 0 0 0 0 0;}
+@font-face
+	{font-family:SimSun;
+	panose-1:2 1 6 0 3 1 1 1 1 1;}
+@font-face
+	{font-family:"\@SimSun";
+	panose-1:2 1 6 0 3 1 1 1 1 1;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0in;
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+h2
+	{margin-top:12.0pt;
+	margin-right:0in;
+	margin-bottom:3.0pt;
+	margin-left:0in;
+	page-break-after:avoid;
+	font-size:14.0pt;
+	font-family:Arial;}
+h3
+	{margin-top:12.0pt;
+	margin-right:0in;
+	margin-bottom:3.0pt;
+	margin-left:0in;
+	page-break-after:avoid;
+	font-size:13.0pt;
+	font-family:Arial;}
+p.MsoToc2, li.MsoToc2, div.MsoToc2
+	{margin-top:0in;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:12.0pt;
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+p.MsoToc3, li.MsoToc3, div.MsoToc3
+	{margin:0in;
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+p.MsoCaption, li.MsoCaption, div.MsoCaption
+	{margin-top:6.0pt;
+	margin-right:0in;
+	margin-bottom:6.0pt;
+	margin-left:0in;
+	font-size:10.0pt;
+	font-family:"Times New Roman";
+	font-weight:bold;}
+a:link, span.MsoHyperlink
+	{color:blue;
+	text-decoration:underline;}
+a:visited, span.MsoHyperlinkFollowed
+	{color:purple;
+	text-decoration:underline;}
+code
+	{font-family:"Courier New";}
+@page Section1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.25in 1.0in 1.25in;}
+div.Section1
+	{page:Section1;}
+ /* List Definitions */
+ ol
+	{margin-bottom:0in;}
+ul
+	{margin-bottom:0in;}
+-->
+</style>
+
+</head>
+
+<body lang=EN-US link=blue vlink=purple>
+
+<div class=Section1>
+
+<p class=MsoNormal><b><span style='font-size:16.0pt;font-family:Arial;
+color:blue'>Continuous Streaming Dual-Port AutoDMA Sample Program</span></b></p>
+
+<p class=MsoNormal>AlazarTech SDK version 5.8.0</p>
+
+<p class=MsoNormal>© 2010 Alazar Technologies, Inc.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoToc3><span class=MsoHyperlink><a href="#_Toc251824470">Introduction</a></span></p>
+
+<p class=MsoToc3><span class=MsoHyperlink><a href="#_Toc251824471">System
+requirements</a></span></p>
+
+<p class=MsoToc3><span class=MsoHyperlink><a href="#_Toc251824472">Getting
+started</a></span></p>
+
+<p class=MsoToc3><span class=MsoHyperlink><a href="#_Toc251824473">Dual-port
+AutoDMA acquisitions</a></span></p>
+
+<p class=MsoToc3><span class=MsoHyperlink><a href="#_Toc251824474">Code
+overview</a></span></p>
+
+<p class=MsoToc3><span class=MsoHyperlink><a href="#_Toc251824475">Modifying
+the sample program</a></span></p>
+
+<p class=MsoToc3><span class=MsoHyperlink><a href="#_Toc251824476">Building the
+sample program</a></span></p>
+
+<p class=MsoToc3><span class=MsoHyperlink><a href="#_Toc251824477">For more
+information</a></span></p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<h3><a name="_Toc251824470">Introduction</a></h3>
+
+<p class=MsoNormal>This folder contains a sample program that demonstrates how
+to make a dual-port AutoDMA acquisition in continuous streaming mode. The
+sample program is part of the AlazarTech SDK, and is documented in the
+“AlazarTech SDK Programmer’s Guide”.</p>
+
+<h3><a name="_Toc251824471">System requirements</a></h3>
+
+<p class=MsoNormal>Microsoft Visual C++ 6 or Microsoft Visual C++ 2008 are
+required to build the C/C++ the sample program. The sample includes a Visual
+C++ 6 workspace file for 32-bit platforms, and Visual C++ 2008 solution file
+for 32- and 64-bit platforms.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>The AlazarTech ATS9870 drivers version 5.7.7 or later are
+required to run the sample program. They can be downloaded from our web site.</p>
+
+<p class=MsoNormal><a href="http://www.alazartech.com/support/downloads.htm">http://www.alazartech.com/support/downloads.htm</a></p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>The ATS9870 has an 8-lane PCIe bus interface capable of
+sustained data transfers of up to 1.5GB/s. When the computer is booted, the
+motherboard and digitizer board negotiate the actual number of PCIe lanes
+available to the digitizer board and, as a result, its maximum PCIe bus
+bandwidth. The number of lanes may be limited by the motherboard model, or by
+the BIOS version. The <a href="../AlazarSysInfo/ReadMe.htm">AlazarSysInfo</a>
+sample demonstrates how to determine the number of PCIe lanes available to the
+digitizer board.</p>
+
+<h3><a name="_Toc251824472">Getting started</a></h3>
+
+<p class=MsoNormal>To get the most from an AlazarTech ATS9870 digitizer board,
+a programmer should:</p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'>1.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Read
+the “ATS9870 User Guide”. It provides an overview of the digitizer board’s
+hardware features, as well as its specifications.</p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'>2.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Read
+the “AlazarTech SDK Programmer’s Guide”. It describes how to program the
+digitizer hardware to make an acquisition, and to transfer sample data into
+application buffers.</p>
+
+<h3><a name="_Toc251824473">Dual-port AutoDMA acquisitions</a></h3>
+
+<p class=MsoNormal>A dual-port AutoDMA acquisition allows a board to acquire to
+on-board memory while, at the same time, transferring sample data from on-board
+memory to application buffers. </p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>AutoDMA acquisitions should be used when:</p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'><span
+style='font-family:Symbol'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>The average data acquisition data rate that is less than the
+maximum PCIe bus transfer rate.</p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'><span
+style='font-family:Symbol'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>An application cannot miss trigger events that occur while it
+transfers data to host memory, or re-arms a board for another acquisition.</p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'><span
+style='font-family:Symbol'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>An application acquires more sample points or records per
+acquisition than can be stored in on-board memory.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>Scanning applications such as ultrasonic testing, OCT,
+RADAR, and LIDAR imaging should use AutoDMA acquisitions.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>An AutoDMA acquisition is divided into segments. AutoDMA
+hardware on a board transfers sample data, one segment at a time, from on-board
+memory to a buffer in host memory. There may be an unlimited number of segments
+in an AutoDMA acquisition, so a board can be armed to make an acquisition of
+infinite duration.</p>
+
+<p class=MsoNormal><a name="_Dual-port_AutoDMA_acquisitions"></a>&nbsp;</p>
+
+<p class=MsoNormal>This sample demonstrates how to make an dual-port AutoDMA
+acquisition in continuous streaming mode. In this mode, the board acquires a
+single, gapless record per channel spanning multiple buffers, where each buffer
+contains a segment of the record. The board does not wait for a trigger a
+trigger event; it begins the acquisition as soon as the application calls
+AlazarStartCapture.</p>
+
+<h3><a name="_Toc251824474">Code overview</a></h3>
+
+<p class=MsoNormal>The program is divided into three major parts:</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'>1.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Obtain
+a board handle</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>This code obtains a handle to a board specified by its
+system and board identifiers. </p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>See section 2.1 “Addressing a board” of the AlazarTech SDK
+Programmer’s Guide for more information about using board identifiers and
+handles.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'>2.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Configuring
+the board</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>The code in the ConfigureBorad function calls AlazarTech API
+functions to configure the time base, analog inputs, and trigger system of the
+board specified by its handle. </p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>An application must call these API functions as required
+before making an acquisition. However, if the application continues to make
+other acquisitions, it does not need to call these functions again unless a
+parameter changes.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>See section 2.2 “Configuring a board” of the AlazarTech SDK
+Programmer’s Guide for more information about how to configure a board.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'>3.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span>Acquiring
+data</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>This sample arms a board to acquire a single record per
+channel spanning several AutoDMA buffers. It demonstrates how to make an
+AutoDMA acquisition in C/C++ environments.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>It calls AlazarPostAsyncBuffer to supply buffers to the
+board, and AlazarWaitAsyncBufferComplete to wait for the buffers to be filled
+by the board. </p>
+
+<h3><a name="_Toc251824475"></a><a name="_Traditional_AutoDMA_mode"></a>Modifying
+the sample program</h3>
+
+<p class=MsoNormal>The AcqToDisk.cpp file in the sample sub-directory contains
+the code to configure a board, make an acquisition, transfer sample data to
+application buffers, and optionally save sample data to file.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>Acquisition parameters should be modified to suite the
+application. All of the lines containing such parameters are labeled with
+“TODO” comments. Search for these lines in the source files, and modify them as
+required.</p>
+
+<h3><a name="_Toc251824476">Building the sample program</a></h3>
+
+<p class=MsoNormal><i>Microsoft Visual C++ 6</i></p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'><span
+style='font-family:Symbol'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Open the “AcqToDisk.dsw” project workspace in the sample
+directory. </p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'><span
+style='font-family:Symbol'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Select “Build | Set Active Configuration” menu command to display
+the “Select Active Project Configuration” dialog box, and select the “Debug”
+build or “Release” build as required. </p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'><span
+style='font-family:Symbol'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Select the “Build | Build CS.exe” command to build the sample
+program.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>If a build succeeds, it creates one of the following
+executables:</p>
+
+<table class=MsoNormalTable border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none'>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Debug</p>
+  </td>
+  <td valign=top style='border:solid windowtext 1.0pt;border-left:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Debug\CS.exe</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Release</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Release\CS.exe</p>
+  </td>
+ </tr>
+</table>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>Note that the CS is, by default, the directory name. For
+example, the output file of the debug build of the “\DualPort\TR_Header” sample
+is “\DualPort\TR_Header\Debug\TR_Header.exe”.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal><i>Microsoft Vistual C++ 2008</i></p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'><span
+style='font-family:Symbol'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Open the “AcqToDisk.sln” solution in the sample directory. </p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'><span
+style='font-family:Symbol'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Select the “Build | Configuration Manager” to display the
+“Configuration Manager” dialog and select the desired configuration and
+platform. </p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'><span
+style='font-family:Symbol'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Select the “Build | Build Solution” command to build the sample
+program. </p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>If a build succeeds, it creates one of the following
+executables:</p>
+
+<table class=MsoNormalTable border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none'>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>32-bit Debug</p>
+  </td>
+  <td valign=top style='border:solid windowtext 1.0pt;border-left:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Win32\Debug\CS.exe</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>32-bit Release</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Win32\Release\CS.exe</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>64-bit Debug</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>x64\Debug\CS.exe</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>64-bit Release</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>x64\Release\CS.exe</p>
+  </td>
+ </tr>
+</table>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>Note that the CS is, by default, the directory name. For
+example, the output file of 32-bit debug build of the “\DualPort\TR_Header” sample
+is “\DualPort\TR_Header\Win32\Debug\TR_Header.exe”.</p>
+
+<h3><a name="_Toc251824477">For more information</a></h3>
+
+<p class=MsoNormal>Please refer to the “AlazarTech SDK Programmer’s Guide” for
+more information about the using the code in the sample programs. If you have
+any questions or comments, or need assistance, contact us.</p>
+
+<table class=MsoNormalTable border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none'>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Web</p>
+  </td>
+  <td valign=top style='border:solid windowtext 1.0pt;border-left:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="http://www.alazartech.com/">http://www.alazartech.com</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Email</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="mailto:support@alazartech.com">support@alazartech.com</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Phone</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>514-426-4899</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Fax</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>514-426-2723</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Mail</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Alazar Technologies Inc.</p>
+  <p class=MsoNormal>6600 Trans-Canada Highway, Suite 310</p>
+  <p class=MsoNormal>Pointe-Claire, QC </p>
+  <p class=MsoNormal>Canada H9R 4S2</p>
+  </td>
+ </tr>
+</table>
+
+<p class=MsoNormal>&nbsp;</p>
+
+</div>
+
+</body>
+
+</html>

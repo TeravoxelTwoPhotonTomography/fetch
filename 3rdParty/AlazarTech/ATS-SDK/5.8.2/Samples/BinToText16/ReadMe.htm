@@ -1,0 +1,322 @@
+<html>
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=Generator content="Microsoft Word 11 (filtered)">
+<title>BinToText16 Sample Program</title>
+
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:Wingdings;
+	panose-1:5 0 0 0 0 0 0 0 0 0;}
+@font-face
+	{font-family:SimSun;
+	panose-1:2 1 6 0 3 1 1 1 1 1;}
+@font-face
+	{font-family:"\@SimSun";
+	panose-1:2 1 6 0 3 1 1 1 1 1;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0in;
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+h2
+	{margin-top:12.0pt;
+	margin-right:0in;
+	margin-bottom:3.0pt;
+	margin-left:0in;
+	page-break-after:avoid;
+	font-size:14.0pt;
+	font-family:Arial;}
+h3
+	{margin-top:12.0pt;
+	margin-right:0in;
+	margin-bottom:3.0pt;
+	margin-left:0in;
+	page-break-after:avoid;
+	font-size:13.0pt;
+	font-family:Arial;}
+p.MsoToc2, li.MsoToc2, div.MsoToc2
+	{margin-top:0in;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:12.0pt;
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+p.MsoToc3, li.MsoToc3, div.MsoToc3
+	{margin:0in;
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+p.MsoCaption, li.MsoCaption, div.MsoCaption
+	{margin-top:6.0pt;
+	margin-right:0in;
+	margin-bottom:6.0pt;
+	margin-left:0in;
+	font-size:10.0pt;
+	font-family:"Times New Roman";
+	font-weight:bold;}
+a:link, span.MsoHyperlink
+	{color:blue;
+	text-decoration:underline;}
+a:visited, span.MsoHyperlinkFollowed
+	{color:purple;
+	text-decoration:underline;}
+code
+	{font-family:"Courier New";}
+@page Section1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.25in 1.0in 1.25in;}
+div.Section1
+	{page:Section1;}
+ /* List Definitions */
+ ol
+	{margin-bottom:0in;}
+ul
+	{margin-bottom:0in;}
+-->
+</style>
+
+</head>
+
+<body lang=EN-US link=blue vlink=purple>
+
+<div class=Section1>
+
+<p class=MsoNormal><b><span style='font-size:16.0pt;font-family:Arial;
+color:blue'>BinToText16 Sample Program</span></b></p>
+
+<p class=MsoNormal>AlazarTech SDK version 5.8.2</p>
+
+<p class=MsoNormal>© 2010 Alazar Technologies, Inc.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoToc3><span class=MsoHyperlink><a href="#_Toc251735562">Introduction</a></span></p>
+
+<p class=MsoToc3><span class=MsoHyperlink><a href="#_Toc251735563">Using the
+sample program</a></span></p>
+
+<p class=MsoToc3><span class=MsoHyperlink><a href="#_Toc251735564">Building the
+sample program</a></span></p>
+
+<p class=MsoToc3><span class=MsoHyperlink><a href="#_Toc251735565">For more
+information</a></span></p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<h3><a name="_Toc251735562">Introduction</a></h3>
+
+<p class=MsoNormal>This utility program converts binary files to text files. It
+takes as its input a binary file containing two bytes per sample value, such as
+the sample values from an ATS310, ATS330, ATS460, ATS660, ATS9350, and ATS9462.
+And it outputs text with one with one sample value per line. This output can be
+redirected to a text file, and the text file can be opened in a text editor,
+spreadsheet programs, or other application that works with such files.</p>
+
+<h3><a name="_Toc251735563">Using the sample program</a></h3>
+
+<p class=MsoNormal>To convert a binary file “data.bin” with one byte per sample
+to a text file “data.txt” with one sample per line, type the following at a
+command prompt:</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal><code><span style='font-size:10.0pt'>      BinToText16
+data.bin &gt; data.txt</span></code></p>
+
+<h3><a name="_Toc251735564">Building the sample program</a></h3>
+
+<p class=MsoNormal>Microsoft Visual C++ 6 or Microsoft Visual C++ 2008 is
+required to build this C/C++ sample program. The sample includes a Visual C++ 6
+workspace file for 32-bit platforms, and Visual C++ 2008 solution file for 32-
+and 64-bit platforms.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal><a name="_Traditional_AutoDMA_mode"></a><i>Microsoft Visual
+C++ 6</i></p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'><span
+style='font-family:Symbol'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Open the “BinToText16.dsw” project workspace in the sample
+directory. </p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'><span
+style='font-family:Symbol'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Select “Build | Set Active Configuration” menu command to display
+the “Select Active Project Configuration” dialog box, and select the “Debug”
+build or “Release” build as required. </p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'><span
+style='font-family:Symbol'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Select the “Build | Build BinToText16” command to build the
+sample program.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>If a build succeeds, it creates one of the following
+executables:</p>
+
+<table class=MsoNormalTable border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none'>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Debug</p>
+  </td>
+  <td valign=top style='border:solid windowtext 1.0pt;border-left:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Debug\BinToText16.exe</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Release</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Release\BinToText16.exe</p>
+  </td>
+ </tr>
+</table>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal><i>Microsoft Visual C++ 2008</i></p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'><span
+style='font-family:Symbol'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Open the “BinToText16.sln” solution in the sample directory. </p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'><span
+style='font-family:Symbol'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Select the “Build | Configuration Manager” to display the
+“Configuration Manager” dialog and select the desired configuration and
+platform. </p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'><span
+style='font-family:Symbol'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>Select the “Build | Build Solution” command to build the sample
+program. </p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>If a build succeeds, it creates one of the following
+executables:</p>
+
+<table class=MsoNormalTable border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none'>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>32-bit Debug</p>
+  </td>
+  <td valign=top style='border:solid windowtext 1.0pt;border-left:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Win32\Debug\BinToText16.exe</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>32-bit Release</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Win32\Release\BinToText16.exe</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>64-bit Debug</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>x64\Debug\BinToText16.exe</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>64-bit Release</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>x64\Release\BinToText16.exe</p>
+  </td>
+ </tr>
+</table>
+
+<h3><a name="_Toc251735565">For more information</a></h3>
+
+<p class=MsoNormal>If you have any questions or comments, or need assistance,
+contact us.</p>
+
+<table class=MsoNormalTable border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none'>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Web</p>
+  </td>
+  <td valign=top style='border:solid windowtext 1.0pt;border-left:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="http://www.alazartech.com/">http://www.alazartech.com</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Email</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="mailto:support@alazartech.com">support@alazartech.com</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Phone</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>514-426-4899</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Fax</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>514-426-2723</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Mail</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Alazar Technologies Inc.</p>
+  <p class=MsoNormal>6600 Trans-Canada Highway, Suite 310</p>
+  <p class=MsoNormal>Pointe-Claire, QC </p>
+  <p class=MsoNormal>Canada H9R 4S2</p>
+  </td>
+ </tr>
+</table>
+
+<p class=MsoNormal>&nbsp;</p>
+
+</div>
+
+</body>
+
+</html>

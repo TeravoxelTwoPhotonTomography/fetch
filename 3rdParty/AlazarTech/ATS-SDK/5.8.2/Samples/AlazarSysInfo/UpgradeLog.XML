@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="AlazarSysInfo">
+</Property><Property Name="Solution File" Value="C:\AlazarTech\ATS-SDK\5.8.2\Samples\AlazarSysInfo\AlazarSysInfo.sln">
+</Property><Property Name="Date" Value="Monday, August 16, 2010">
+</Property><Property Name="Time" Value="15:08 PM">
+</Property></Properties><Event ErrorLevel="0" Project="" Source="AlazarSysInfo.sln" Description="File successfully backed up as C:\AlazarTech\ATS-SDK\5.8.2\Samples\AlazarSysInfo\AlazarSysInfo.sln.old">
+</Event><Event ErrorLevel="0" Project="AlazarSysInfo" Source="AlazarSysInfo.vcproj" Description="Converting project file 'C:\AlazarTech\ATS-SDK\5.8.2\Samples\AlazarSysInfo\AlazarSysInfo.vcproj'.">
+</Event><Event ErrorLevel="1" Project="AlazarSysInfo" Source="AlazarSysInfo.vcproj" Description="VCWebServiceProxyGeneratorTool is no longer supported. The tool has been removed from your project settings.">
+</Event><Event ErrorLevel="0" Project="AlazarSysInfo" Source="AlazarSysInfo.vcproj" Description="Done converting to new project file 'C:\AlazarTech\ATS-SDK\5.8.2\Samples\AlazarSysInfo\AlazarSysInfo.vcxproj'.">
+</Event><Event ErrorLevel="3" Project="AlazarSysInfo" Source="AlazarSysInfo.vcproj" Description="Converted">
+</Event><Event ErrorLevel="0" Project="" Source="AlazarSysInfo.sln" Description="Solution converted successfully">
+</Event><Event ErrorLevel="3" Project="" Source="AlazarSysInfo.sln" Description="Converted">
+</Event></UpgradeLog>

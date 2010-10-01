@@ -1,0 +1,644 @@
+<html>
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=Generator content="Microsoft Word 11 (filtered)">
+<title>ATS-SDK Release Notes</title>
+
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:Wingdings;
+	panose-1:5 0 0 0 0 0 0 0 0 0;}
+@font-face
+	{font-family:SimSun;
+	panose-1:2 1 6 0 3 1 1 1 1 1;}
+@font-face
+	{font-family:"\@SimSun";
+	panose-1:2 1 6 0 3 1 1 1 1 1;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0in;
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+h2
+	{margin-top:12.0pt;
+	margin-right:0in;
+	margin-bottom:3.0pt;
+	margin-left:0in;
+	page-break-after:avoid;
+	font-size:14.0pt;
+	font-family:Arial;}
+h3
+	{margin-top:12.0pt;
+	margin-right:0in;
+	margin-bottom:3.0pt;
+	margin-left:0in;
+	page-break-after:avoid;
+	font-size:13.0pt;
+	font-family:Arial;}
+p.MsoToc2, li.MsoToc2, div.MsoToc2
+	{margin-top:0in;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:12.0pt;
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+p.MsoToc3, li.MsoToc3, div.MsoToc3
+	{margin:0in;
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+p.MsoCaption, li.MsoCaption, div.MsoCaption
+	{margin-top:6.0pt;
+	margin-right:0in;
+	margin-bottom:6.0pt;
+	margin-left:0in;
+	font-size:10.0pt;
+	font-family:"Times New Roman";
+	font-weight:bold;}
+a:link, span.MsoHyperlink
+	{color:blue;
+	text-decoration:underline;}
+a:visited, span.MsoHyperlinkFollowed
+	{color:purple;
+	text-decoration:underline;}
+@page Section1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.25in 1.0in 1.25in;}
+div.Section1
+	{page:Section1;}
+ /* List Definitions */
+ ol
+	{margin-bottom:0in;}
+ul
+	{margin-bottom:0in;}
+-->
+</style>
+
+</head>
+
+<body lang=EN-US link=blue vlink=purple>
+
+<div class=Section1>
+
+<p class=MsoNormal><b><span style='font-size:16.0pt;font-family:Arial;
+color:blue'>AlazarTech SDK Release Notes</span></b></p>
+
+<p class=MsoNormal>AlazarTech SDK version 5.8.2</p>
+
+<p class=MsoNormal>© 2010 <a href="http://www.alazartech.com/">Alazar
+Technologies, Inc</a>.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoToc3><span class=MsoHyperlink><a href="#_Toc251610316">Introduction</a></span></p>
+
+<p class=MsoToc3><span class=MsoHyperlink><a href="#_Toc251610317">Getting started</a></span></p>
+
+<p class=MsoToc3><span class=MsoHyperlink><a href="#_Toc251610318">Sample
+programs</a></span></p>
+
+<p class=MsoToc3><span class=MsoHyperlink><a href="#_Toc251610319">Release
+history</a></span></p>
+
+<p class=MsoToc3><span class=MsoHyperlink><a href="#_Toc251610320">Contact us</a></span></p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<h3><a name="_Toc251610316">Introduction</a></h3>
+
+<p class=MsoNormal>Welcome to the AlazarTech SDK. </p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>This SDK provides the files and documentation necessary for
+programmers to use functions exported by AlazarTech device drivers to acquire
+data from AlazarTech PCI/PCIe digitizer boards. It includes: a programmer’s
+guide and reference manual, header and library files, and sample code.</p>
+
+<h3><a name="_Toc251610317">Getting started</a></h3>
+
+<p class=MsoNormal>A user manual is shipped with each AlazarTech digitizer
+board. This manual describes the features of your digitizer board, and provides
+its specifications. We recommend that you read the manual, and become familiar
+with the board’s features. This will make the task of writing software to
+control the hardware much easier.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>The “<a href="ATS-SDK-Guide-5.8.2.pdf">AlazarTech SDK Guide</a>”
+is included with this SDK. This document provides:</p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'><span
+style='font-family:Symbol'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>A programmer’s guide that describes how to configure, and acquire
+data from, digitizer boards.</p>
+
+<p class=MsoNormal style='margin-left:.25in;text-indent:-.25in'><span
+style='font-family:Symbol'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span>A reference manual that describes the functions exported by the
+device drivers.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>Please read the programmer’s guide section of the “<a
+href="ATS-SDK-Guide-5.8.2.pdf">AlazarTech SDK Guide</a>”. It should provide the
+instructions necessary to use the AlazarTech API to acquire data from
+AlazarTech digitizer boards.</p>
+
+<h3><a name="_Toc251610318">Sample programs</a></h3>
+
+<p class=MsoNormal>The AlazarTech SDK includes C/C++ and C# sample programs
+that demonstrate many of the different types of acquisitions possible with
+AlazarTech digitizer boards. The samples are organized into folders under the
+“Samples” and “Samples_CSharp” folders. There is one folder per board model. </p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>Click on a link below to display information about the C/C++
+sample programs available for a board model, and instructions on how to build
+them.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<table class=MsoNormalTable border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none'>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;background:#CCCCCC;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Model</p>
+  </td>
+  <td valign=top style='border:solid windowtext 1.0pt;border-left:none;
+  background:#CCCCCC;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ReadMe file</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>All</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples/AlazarSysInfo/ReadMe.htm">Samples\AlazarSysInfo\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS310</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples/ATS310/ReadMe.htm">Samples\ATS310\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS330</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples/ATS330/ReadMe.htm">Samples\ATS330\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS460</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples/ATS460/ReadMe.htm">Samples\ATS460\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS660</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples/ATS660/ReadMe.htm">Samples\ATS660\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS850</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples/ATS850/ReadMe.htm">Samples\ATS850\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS860</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples/ATS860/ReadMe.htm">Samples\ATS860\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS9350</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples/ATS9350/ReadMe.htm">Samples\ATS9350\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS9462</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples/ATS9462/ReadMe.htm">Samples\ATS9462\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS9462-FIFO</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples/ATS9462_FIFO/ReadMe.htm">Samples\ATS9462_FIFO\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS9870</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples/ATS9870/ReadMe.htm">Samples\ATS9870\ReadMe.htm</a></p>
+  </td>
+ </tr>
+</table>
+
+<p class=MsoNormal><a name="_Toc251610319">&nbsp;</a></p>
+
+<p class=MsoNormal>Click on a link below to display information about the C#
+sample programs available for a board model, and instructions on how to build
+them.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<table class=MsoNormalTable border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none'>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;background:#CCCCCC;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Model</p>
+  </td>
+  <td valign=top style='border:solid windowtext 1.0pt;border-left:none;
+  background:#CCCCCC;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ReadMe file</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>All</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples_CSharp/AlazarApiNet/ReadMe.htm">Samples_CSharp\AlazarApiNet\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>All</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples_CSharp/AlazarSysInfo/ReadMe.htm">Samples_CSharp\AlazarSysInfo\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS310</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples_CSharp/ATS310/ReadMe.htm">Samples_CSharp\ATS310\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS330</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples_CSharp/ATS330/ReadMe.htm">Samples_CSharp\ATS330\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS460</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples_CSharp/ATS460/ReadMe.htm">Samples_CSharp\ATS460\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS660</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples_CSharp/ATS660/ReadMe.htm">Samples_CSharp\ATS660\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS850</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples_CSharp/ATS850/ReadMe.htm">Samples_CSharp\ATS850\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS860</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples_CSharp/ATS860/ReadMe.htm">Samples_CSharp\ATS860\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS9350</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples_CSharp/ATS9350/ReadMe.htm">Samples_CSharp\ATS9350\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS9462</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples_CSharp/ATS9462/ReadMe.htm">Samples_CSharp\ATS9462\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS9462-FIFO</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples_CSharp/ATS9462_FIFO/ReadMe.htm">Samples_CSharp\ATS9462_FIFO\ReadMe.htm</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS9870</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="Samples_CSharp/ATS9870/ReadMe.htm">Samples_CSharp\ATS9870\ReadMe.htm</a></p>
+  </td>
+ </tr>
+</table>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<h3>Release history</h3>
+
+<table class=MsoNormalTable border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none'>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;background:#CCCCCC;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Version</p>
+  </td>
+  <td valign=top style='border:solid windowtext 1.0pt;border-left:none;
+  background:#CCCCCC;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Date</p>
+  </td>
+  <td valign=top style='border:solid windowtext 1.0pt;border-left:none;
+  background:#CCCCCC;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Description</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>5.8.2</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>2010/05/28</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:6.0pt;
+  margin-left:.25in;text-indent:-.25in'><span style='font-family:Symbol'>·<span
+  style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  </span></span>Update ATS-SDK Guide to add section describing buffer size and alignment
+  requirements.</p>
+  <p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:6.0pt;
+  margin-left:.25in;text-indent:-.25in'><span style='font-family:Symbol'>·<span
+  style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  </span></span>Fix lib files to include API functions added with 5.8.1
+  release.</p>
+  <p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:6.0pt;
+  margin-left:.25in;text-indent:-.25in'><span style='font-family:Symbol'>·<span
+  style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  </span></span>Fix error in AlazarSetExternalClockLevel description in
+  function reference.</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>5.8.1</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>2010/05/12</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal style='margin-bottom:6.0pt'>New Features</p>
+  <p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:6.0pt;
+  margin-left:.25in;text-indent:-.25in'><span style='font-family:Symbol'>·<span
+  style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  </span></span>Add C# sample programs</p>
+  <p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:6.0pt;
+  margin-left:.25in;text-indent:-.25in'><span style='font-family:Symbol'>·<span
+  style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  </span></span>Add the following API functions: AlazarForceTriggerEnable, AlazarSetExternalClockLevel.</p>
+  <p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:6.0pt;
+  margin-left:.25in;text-indent:-.25in'><span style='font-family:Symbol'>·<span
+  style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  </span></span>Add the following AlazarGetParameter values to AlazarCmd.h:
+  GET_ASYNC_BUFFERS_PENDING, GET_ASYNC_BUFFERS_PENDING_FULL,
+  GET_ASYNC_BUFFERS_PENDING_EMPTY</p>
+  <p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:6.0pt;
+  margin-left:.25in;text-indent:-.25in'><span style='font-family:Symbol'>·<span
+  style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  </span></span>Add AUX_OUT_TRIGGER_ENABLE to AlazarConfigureAuxIO.</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>5.8.0</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>2010/01/21</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:6.0pt;
+  margin-left:.25in;text-indent:-.25in'><span style='font-family:Symbol'>·<span
+  style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  </span></span>Add support for ATS9350.</p>
+  <p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:6.0pt;
+  margin-left:.25in;text-indent:-.25in'><span style='font-family:Symbol'>·<span
+  style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  </span></span>Add the following API functions: AlazarConfigureAuxIO,
+  AlazarCreateStreamFile, AlazarErrorToText, AlazarReadEx.</p>
+  <p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:6.0pt;
+  margin-left:.25in;text-indent:-.25in'><span style='font-family:Symbol'>·<span
+  style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  </span></span>Add the following AlazarSetParameter values:
+  SET_SINGLE_CHANNEL_MODE.</p>
+  <p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:6.0pt;
+  margin-left:.25in;text-indent:-.25in'><span style='font-family:Symbol'>·<span
+  style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  </span></span>Add the following AlazarGetParameter values:
+  GET_SAMPLES_PER_TIMESTAMP_CLOCK, GET_RECORDS_CAPTURED.</p>
+  <p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:6.0pt;
+  margin-left:.25in;text-indent:-.25in'><span style='font-family:Symbol'>·<span
+  style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  </span></span>Add the following AlazarGetParameterUL values:
+  GET_MAX_PRETRIGGER_SAMPLES</p>
+  <p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:6.0pt;
+  margin-left:.25in;text-indent:-.25in'><span style='font-family:Symbol'>·<span
+  style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  </span></span>Deprecate the synchronous AutoDMA acquisition functions
+  including: AlazarStartAutoDMA, AlazarGetNexBuffer, AlazarAbortAutoDma, and
+  AlazarGetAutoDMAHeaderTimeStamp. </p>
+  <p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:6.0pt;
+  margin-left:.25in;text-indent:-.25in'><span style='font-family:Symbol'>·<span
+  style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  </span></span>Update SDK documentation and sample code.</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>5.6.0</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>2008/06</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>ATS-SDK 5.6.0 release</p>
+  </td>
+ </tr>
+</table>
+
+<h3><a name="_Toc251610320">Contact us</a></h3>
+
+<p class=MsoNormal>Please contact us if you have any questions or comments
+about this SDK, or need assistance.</p>
+
+<table class=MsoNormalTable border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none'>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Web</p>
+  </td>
+  <td valign=top style='border:solid windowtext 1.0pt;border-left:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="http://www.alazartech.com/">http://www.alazartech.com</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Email</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal><a href="mailto:support@alazartech.com">support@alazartech.com</a></p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Phone</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>514-426-4899</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Fax</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>514-426-2723</p>
+  </td>
+ </tr>
+ <tr>
+  <td valign=top style='border:solid windowtext 1.0pt;border-top:none;
+  padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Mail</p>
+  </td>
+  <td valign=top style='border-top:none;border-left:none;border-bottom:solid windowtext 1.0pt;
+  border-right:solid windowtext 1.0pt;padding:0in 5.4pt 0in 5.4pt'>
+  <p class=MsoNormal>Alazar Technologies Inc.</p>
+  <p class=MsoNormal>6600 Trans-Canada Highway, Suite 310</p>
+  <p class=MsoNormal>Pointe-Claire, QC </p>
+  <p class=MsoNormal>Canada H9R 4S2</p>
+  </td>
+ </tr>
+</table>
+
+<p class=MsoNormal>&nbsp;</p>
+
+</div>
+
+</body>
+
+</html>

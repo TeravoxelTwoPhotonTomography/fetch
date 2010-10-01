@@ -1,0 +1,7 @@
+# Microsoft Developer Studio Generated Dependency File, included by AcqToDisk.mak
+
+.\AcqToDisk.cpp : \
+	"..\..\..\..\Include\AlazarApi.h"\
+	"..\..\..\..\Include\AlazarCmd.h"\
+	"..\..\..\..\Include\AlazarError.h"\
+	
