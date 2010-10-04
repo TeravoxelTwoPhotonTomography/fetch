@@ -55,7 +55,6 @@ FIND_PATH(GLEW_INCLUDE_DIR
   PATH_SUFFIXES include
   DOC "Root directory for Glew include files."
 )
-message(${GLEW_INCLUDE_DIR})
 _GLEW_ASSERT(GLEW_INCLUDE_DIR "Could not find Glew include files.")
 
 SET(GLEW_LIBRARIES ${GLEW_GLEW_LIBRARY})

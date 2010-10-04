@@ -37,7 +37,7 @@
 #define VIDEO_WINDOW_TEXTURE_RESOURCE_NAME  "tx"
 #define VIDEO_WINDOW_COLORMAP_RESOURCE_NAME "cmap"
 #define VIDEO_WINDOW_NUM_CHAN_RESOURCE_NAME "nchan"
-#define VIDEO_WINDOW_PATH_TO_SHADER         "shader.fx"
+#define VIDEO_WINDOW_PATH_TO_SHADER         "../src/shader.fx"
 #define VIDEO_WINDOW_SHADER_TECHNIQUE_NAME  "Render"
 
 #if 1
@@ -322,7 +322,8 @@ namespace fetch
                                      &shader_errors,
                                      NULL );
     if( FAILED( hr ) )
-    { debug("%s\r\n", (char*)shader_errors->GetBufferPointer() );
+    { if(shader_errors)
+        debug("%s\r\n", (char*)shader_errors->GetBufferPointer() );
       error( "Could not compile the FX file.  Perhaps it could not be located or there was a compilation error.");
     }
     

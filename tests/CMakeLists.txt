@@ -56,19 +56,21 @@ find_package(C843 REQUIRED)
 include_directories(${C843_INCLUDE_DIR})
 
 #Qt
-SET(QTLIBLIST
-  QtMain
-  QtCore
-  QtGui
-  QtOpenGL
-)
-SET(QT_USE_IMPORTED_TARGETS TRUE)
-find_package(Qt4 4.7
-  COMPONENTS ${QTLIBLIST}
-  REQUIRED
-)
-include(${QT_USE_FILE})
-include_directories(${QT_INCLUDE_DIRS})
+if(NOT ${QT_FOUND})
+  SET(QTLIBLIST
+    QtMain
+    QtCore
+    QtGui
+    QtOpenGL
+  )
+  SET(QT_USE_IMPORTED_TARGETS TRUE)
+  find_package(Qt4 4.7.0
+    COMPONENTS ${QTLIBLIST}
+    REQUIRED
+  )
+  include(${QT_USE_FILE})
+  include_directories(${QT_INCLUDE_DIRS})
+endif()
 
 ##
 # Add tests
