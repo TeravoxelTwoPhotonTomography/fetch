@@ -1,3 +1,24 @@
+/*
+=================
+Integration Tests
+=================
+
+These tests are meant to make sure that calls into each of the API's required
+for the microscope are sensible made.  By placing these into the same source
+file, these tests also ensure that the API's live nicely side-by-side.
+
+These are intendended to confirm all the required software is linking together
+appropriately.  As such, it doesn't necessarily confirm the corresponding
+hardware is installed.
+
+However, currently some tests do require hardware.  These are:
+
+  * Integration.Alazar
+  * Integration.C843StageController
+
+*/
+#include <stdio.h>
+
 #include <gtest/gtest.h>
 #include <NIDAQmx.h>
 #include <niscope.h>
@@ -5,7 +26,10 @@
 #include <GL/glew.h>
 #include <QtGui>
 #include <QtOpenGL>
-
+#include <AlazarError.h>
+#include <AlazarApi.h>
+#include <AlazarCmd.h>
+#include <C843_GCS_DLL.h>
 namespace mylib {
 #include "array.h"
 }
@@ -63,7 +87,6 @@ TEST_F(GuiIntegration,Qt)
 { EXPECT_FALSE(app==NULL);
 }
 
-#include <stdio.h>
 TEST_F(GuiIntegration,OpenGL)
 { QGLWidget *w = new QGLWidget;
   ASSERT_TRUE( w!=NULL );
@@ -82,5 +105,16 @@ TEST_F(GuiIntegration,GLEW)
   printf("GLEW Version: %s\n",version);
   EXPECT_TRUE(version!=NULL);
   EXPECT_STRNE("",(char*)version);
+}
+
+TEST(Integration,Alazar)
+{ EXPECT_GT(AlazarNumOfSystems(),(U32)0); // This isn't the best test. Assumes there's a system installed.
+}
+
+TEST(Integration,C843StageController)
+{ int id;
+  EXPECT_GE(-1, id=C843_Connect(1));
+  if(id>-1)
+    C843_CloseConnection(id);
 }
 

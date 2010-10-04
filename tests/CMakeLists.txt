@@ -45,7 +45,15 @@ find_package(OpenGL)
 
 #glew
 find_package(Glew REQUIRED)
-include_directories(GLEW_INCLUDE_DIR)
+include_directories(${GLEW_INCLUDE_DIR})
+
+#Alazar
+find_package(Alazar REQUIRED)
+include_directories(${ALAZAR_INCLUDE_DIR})
+
+#PI C-843 Stage controller
+find_package(C843 REQUIRED)
+include_directories(${C843_INCLUDE_DIR})
 
 #Qt
 SET(QTLIBLIST
@@ -62,13 +70,6 @@ find_package(Qt4 4.7
 include(${QT_USE_FILE})
 include_directories(${QT_INCLUDE_DIRS})
 
-#Alazar
-find_package(Alazar REQUIRED)
-include_directories(ALAZAR_INCLUDE_DIR)
-
-#PI C-843 Stage controller
-find_package(C843 REQUIRED)
-include_directories(C843_INCLUDE_DIR)
 ##
 # Add tests
 #
