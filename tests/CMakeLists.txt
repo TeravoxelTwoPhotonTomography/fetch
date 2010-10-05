@@ -78,6 +78,7 @@ endif()
 set(PRIMARY_TEST_SOURCES
   integration.cc
   test.cc
+  alazar.cc
   )
 add_executable(alltests alltests.cc 
   ${PRIMARY_TEST_SOURCES} 

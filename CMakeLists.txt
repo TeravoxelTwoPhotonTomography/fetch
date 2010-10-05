@@ -153,4 +153,4 @@ target_link_libraries(fetch
 # Testing
 #
 enable_testing(true)
-#add_subdirectory(tests)
+add_subdirectory(tests)

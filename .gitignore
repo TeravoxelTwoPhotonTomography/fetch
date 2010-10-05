@@ -1,3 +1,6 @@
 old
 build
+buildvs
+msvc
+vs
 *.swp
