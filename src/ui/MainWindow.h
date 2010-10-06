@@ -10,16 +10,23 @@ class MainWindow : public QMainWindow
 public:
   MainWindow();
 
-private slots:
-  void fullscreen();
-
 private:
+  void createStateMachines();
   void createMenus();
   void createActions();
 
+  QStateMachine fullscreenStateMachine;
   QMenu   *viewMenu;
+  QMenu   *fileMenu;
+
+  QAction *quitAct;
+  QAction *openAct;
+  QAction *saveToAct;
 
   QAction *fullscreenAct;
+  QState  *fullscreenStateOn;
+  QState  *fullscreenStateOff;
+  
 };
 
 //namespace ends
