@@ -1,0 +1,5 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+  <file alias="icons/fullscreen.svg">resources/icons/fullscreen.svg</file>
+</qresource>
+</RCC>

@@ -22,7 +22,7 @@
 #include "devices/Microscope.h"
 #include "tasks/microscope-interaction.h"
 
-
+#include "ui/MainWindow.h"
 /*
  * Global state
  */
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 { QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
 
   QApplication app(argc,argv);
-  QMainWindow  mainwindow;
+  fetch::ui::MainWindow mainwindow;
 
   QGraphicsScene scene;
   QGraphicsView  view(&scene);
@@ -91,5 +91,7 @@ int main(int argc, char *argv[])
 
   mainwindow.setCentralWidget(&view);
   mainwindow.show();
-  return app.exec();
+
+  unsigned int sts = app.exec();
+  return Shutdown_Soft() || sts;
 }
