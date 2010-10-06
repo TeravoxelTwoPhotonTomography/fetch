@@ -132,21 +132,19 @@ add_executable(fetch
   ${FETCH_UTIL_SRCS}
   ${FETCH_CORE_HDRS}
   ${FETCH_CORE_SRCS}
-  src/shader.fx
 )
 target_link_libraries(fetch
   ${GTEST_BOTH_LIBRARIES}
   ${PROTOBUF_LIBRARIES}
   ${NIDAQMX_LIBRARY}
   ${NISCOPE_LIBRARIES}
-  #${MYLIB_LIBRARIES}
+  ${MYLIB_LIBRARIES}
   ${QT_LIBRARIES}
   ${OPENGL_LIBRARY}
   ${GLEW_LIBRARIES}
   ${ALAZAR_LIBRARY}
   ${C843_LIBRARY}
   ${DIRECTX_LIBRARIES} 
-  comctl32.lib
 )
 
 ##

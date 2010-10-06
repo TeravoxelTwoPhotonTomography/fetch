@@ -1,8 +1,11 @@
 #pragma once
+#pragma warning(disable:4996) // CRT security warning
 
 #include "stdafx.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+#define HAVE_QT4 // TODO move this to a config.h or something
 
 // -----------------
 // Windows utitities
@@ -90,8 +93,9 @@ double      toc(TicTocTimer *last); // returns time since last in seconds and up
 // --------
 // Shutdown
 // --------
-//
+// 
 // Shutdown callback functions
+// Type: unsigned int callback(void)
 //   - take no arguments
 //   - do not exit/abort under any circumstances
 //   - return 0 only on success
@@ -127,6 +131,9 @@ void Reporting_Setup_Log_To_VSDebugger_Console(void);
 void Reporting_Setup_Log_To_File( FILE *file );
 void Reporting_Setup_Log_To_Filename( const char* filename );
 void Reporting_Setup_Log_To_Stdout(void);
+#ifdef HAVE_QT4
+void Reporting_Setup_Log_To_Qt(void);
+#endif
 
 void ReportLastWindowsError(void);
 
