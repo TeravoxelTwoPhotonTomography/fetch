@@ -23,10 +23,6 @@ include_directories(${GTEST_INCLUDE_DIRS})
 set(PROTO_DIR "../src/proto")
 include("${PROTO_DIR}/GenProto.cmake")
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-set(OTHER_SOURCES
-  ${PROTO_SRCS}
-  ${PROTO_HDRS}
-)
 
 #nidaq
 find_package(NIDAQmx REQUIRED)
@@ -80,6 +76,10 @@ set(PRIMARY_TEST_SOURCES
   test.cc
   alazar.cc
   )
+set(OTHER_SOURCES
+  ${PROTO_SRCS}
+  ${PROTO_HDRS}
+)
 add_executable(alltests alltests.cc 
   ${PRIMARY_TEST_SOURCES} 
   ${OTHER_SOURCES}
