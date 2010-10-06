@@ -111,8 +111,6 @@ include_directories(src)
 source_group("DirectX Shaders" REGULAR_EXPRESSION \\.fx$)
 source_group("GLSL Shaders\\Vertex Programs" REGULAR_EXPRESSION \\.vert$)
 source_group("GLSL Shaders\\Fragments Programs" REGULAR_EXPRESSION \\.frag$)
-source_group("Source Files\\Qt Generated"
-  REGULAR_EXPRESSION "(qrc|moc)_.+\\.cxx$")
 
 qt4_wrap_cpp(MOC_SRCS
   src/ui/MainWindow.h
@@ -120,6 +118,11 @@ qt4_wrap_cpp(MOC_SRCS
 qt4_add_resources(RCC_SRCS
   src/ui/icons.qrc
 )
+source_group("Source Files\\Qt Generated" FILES
+  ${MOC_SRCS}
+  ${RCC_SRCS}
+)
+#  REGULAR_EXPRESSION "(qrc|moc)_.+\\.cxx$")
 
 ##
 # Fetch
