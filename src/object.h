@@ -53,7 +53,7 @@ namespace fetch
   public:
     typedef T Config;
 
-    Config *config;
+    Config *_config;
 
     Configurable();
     Configurable(T *cfg);
@@ -68,12 +68,12 @@ namespace fetch
 
   template<typename T>
   fetch::Configurable<T>::Configurable()  
-  : config(0)
+  : _config(0)
   {set_config(&_default_config);}
 
   template<typename T>
   fetch::Configurable<T>::Configurable( T *cfg )
-  : config(0)
+  : _config(0)
   {set_config(cfg);}
 
   //************************************
@@ -90,7 +90,7 @@ namespace fetch
   //************************************
   template<typename T>
   void fetch::Configurable<T>::set_config( Config *cfg )
-  { config = cfg;
+  { _config = cfg;
   }
 
 

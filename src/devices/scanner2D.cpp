@@ -31,7 +31,7 @@ namespace fetch
       clk(NULL), 
       ao_workspace(NULL), 
       notify_daq_done(INVALID_HANDLE_VALUE),
-      config(Configurable<cfg::device::Scanner2D>::config)
+      config(Configurable<cfg::device::Scanner2D>::_config)
     { set_config(config);
       __common_setup();
 
@@ -54,7 +54,7 @@ namespace fetch
        clk(NULL),
        ao_workspace(NULL),
        notify_daq_done(INVALID_HANDLE_VALUE),
-       config(Configurable<cfg::device::Scanner2D>::config)
+       config(Configurable<cfg::device::Scanner2D>::_config)
       { //set_config(cfg);
         __common_setup();
       }

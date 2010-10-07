@@ -68,7 +68,7 @@ namespace fetch
     }
 
     Scanner3D::Scanner3D(void)
-      : config(Configurable<cfg::device::Scanner3D>::config)
+      : config(Configurable<cfg::device::Scanner3D>::_config)
     { 
       debug("here\n");
       set_config(config);
@@ -82,7 +82,7 @@ namespace fetch
     : Configurable<cfg::device::Scanner3D>::Configurable(cfg),
       ZPiezo(cfg->mutable_zpiezo()),
       Scanner2D(cfg->mutable_scanner2d()),
-      config(Configurable<cfg::device::Scanner3D>::config)
+      config(Configurable<cfg::device::Scanner3D>::_config)
     {}
 
     Scanner3D::~Scanner3D(void)

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "common.h"
 #include "agent.h"
 #include "task.h"
 
@@ -24,10 +24,11 @@ namespace fetch
     { LeaveCriticalSection(&_lock);
     }
 
-    Agent::Agent(void) :
+    Agent::Agent(IDevice *owner) :
       _thread(INVALID_HANDLE_VALUE),
       _is_available(0),
       _is_running(0),
+      _owner(owner),
       _task(NULL),
       _num_waiting(0),
       _in(NULL),
@@ -107,16 +108,17 @@ namespace fetch
         //if(this->detach() > 0)                                       // FIXME: This doesn't work
         //    warning("~Agent : Attempt to detach() timed out.\r\n");
 
-        if(this->_num_waiting > 0)
+        if(_num_waiting > 0)
             warning("~Agent : Agent has waiting tasks.\r\n         Try calling Agent::detach first.\r\n.");
 
-        _free_qs(&this->_in);
-        _free_qs(&this->_out);
-        _safe_free_handle(&this->_thread);
-        _safe_free_handle(&this->_notify_available);
-        _safe_free_handle(&this->_notify_stop);
-        DeleteCriticalSection(&this->_lock);
-        this->_task = NULL;
+        _free_qs(&_in);
+        _free_qs(&_out);
+        _safe_free_handle(&_thread);
+        _safe_free_handle(&_notify_available);
+        _safe_free_handle(&_notify_stop);
+        DeleteCriticalSection(&_lock);
+        _task = NULL;
+        _owner = NULL;
     }
     
     /* Returns 1 on success, 0 otherwise.
@@ -544,6 +546,32 @@ namespace fetch
     } else
     { error("In Agent::connect: Neither channel exists.\r\n");
     }
+  }
+  
+  // Returns 0 on success, nonzero otherwise.
+  unsigned int Agent::attach( void )
+  { unsigned int sts = 0;
+    lock();
+    sts |= _owner->attach();
+    if(sts==0)
+      set_available();
+    unlock();
+    return sts;
+  }
+
+  // Returns 0 on success, nonzero otherwise.
+  // Should attempt to disarm if running.
+  // Should not panic if possible.
+  unsigned int Agent::detach( void )
+  {
+    unsigned int sts=1;
+    if(!disarm(AGENT_DEFAULT_TIMEOUT))
+      warning("Could not cleanly disarm (device at 0x%p)\r\n",_owner);
+    lock();
+    sts = _owner->detach();
+    _is_available=0;
+    unlock();
+    return sts;
   }
 
 
