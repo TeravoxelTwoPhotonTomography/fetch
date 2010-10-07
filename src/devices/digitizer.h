@@ -42,31 +42,45 @@ namespace fetch
 {
   namespace device
   {
-    class Digitizer
-      : public virtual Agent,
-        public Configurable<cfg::device::Digitizer>
+    //////////////////////////////////////////////////////////////////////////
+    template<class Tcfg>
+    class IDigitizer : public IConfigurableDevice<Tcfg>
+    {
+    public:
+      IDigitizer(Agent* agent) : IConfigurableDevice(agent) {}
+      IDigitizer(Agent* agent, Config* cfg) : IConfigurableDevice(agent,cfg) {}
+    };
+
+    //////////////////////////////////////////////////////////////////////////
+    class NIScopeDigitizer : public IDigitizer<cfg::device::Digitizer>
     {
     public:
       typedef cfg::device::Digitizer          Config;
       typedef cfg::device::Digitizer_Channel  Channel_Config;
 
-      Digitizer();      
-      Digitizer(Config *cfg); // Configuration references cfg
-      Digitizer(size_t nbuf, size_t nbytes_per_frame, size_t nwfm); // Inputs determine how output queues are initially allocated
+      NIScopeDigitizer(Agent *agent);      
+      NIScopeDigitizer(Agent *agent, Config *cfg); // Configuration references cfg
+      //NIScopeDigitizer(size_t nbuf, size_t nbytes_per_frame, size_t nwfm); // Inputs determine how output queues are initially allocated
 
 
-      ~Digitizer();
+      ~NIScopeDigitizer();
 
       unsigned int attach(void);
       unsigned int detach(void);
-      //unsigned int is_attached(void);
 
     public:
 
-      ViSession vi;
+      ViSession _vi;
 
     private:
       void __common_setup();
+    };
+
+    //////////////////////////////////////////////////////////////////////////
+    class SimulatedDigitizer : public IDigitizer<int>
+    {
+    public:
+      SimulatedDigitizer(Agent *agent) : IDigitizer<int>(agent) {}
     };
   }
 } // namespace fetch

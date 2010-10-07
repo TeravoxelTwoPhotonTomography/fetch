@@ -30,23 +30,21 @@ namespace fetch
       _is_running(0),
       _owner(owner),
       _task(NULL),
-      _num_waiting(0),
-      _in(NULL),
-      _out(NULL)
+      _num_waiting(0)
     {
         // default security attr
         // manual reset
-        // initially unsignalled
+        // initially unsignaled
         Guarded_Assert_WinErr(  
-        this->_notify_available = CreateEvent( NULL,   // default security attr
+        this->_notify_available = CreateEvent( NULL,  // default security attr
                                               TRUE,   // manual reset
                                               FALSE,  // initially unsignalled
                                               NULL ));
         // default security attr
         // manual reset
-        // initially unsignalled
+        // initially unsignaled
         Guarded_Assert_WinErr(  
-        this->_notify_stop      = CreateEvent( NULL,   // default security attr
+        this->_notify_stop      = CreateEvent( NULL,  // default security attr
                                               TRUE,   // manual reset
                                               FALSE,  // initially unsignalled
                                               NULL ));
@@ -59,50 +57,9 @@ namespace fetch
         if(*h != INVALID_HANDLE_VALUE)
             if(!CloseHandle(*h))
                 ReportLastWindowsError();
-
-
         *h = INVALID_HANDLE_VALUE;
     }
     
-    void Agent::_free_qs(vector_PASYNQ **pqs)
-    {
-      vector_PASYNQ *qs = *pqs;
-      if( qs )
-      { size_t n = qs->count;
-        int sts = 1;
-        while(n--)
-          sts &= Asynq_Unref( qs->contents[n] );      //qs[n] isn't necessarily deleted. Unref returns 0 if references remain
-        if(sts)
-        { vector_PASYNQ_free( qs );
-          *pqs = NULL;
-        }
-      }
-    }
-
-    void Agent::_alloc_qs(vector_PASYNQ **pqs, size_t n, size_t *nbuf, size_t *nbytes)
-    {
-        if(n){
-            Agent::_free_qs(pqs); // Release existing queues.
-            *pqs = vector_PASYNQ_alloc(n);
-            while(n--)
-                (*pqs)->contents[n] = Asynq_Alloc(nbuf[n], nbytes[n]);
-
-            (*pqs)->count = (*pqs)->nelem; // This is so we can resize correctly later.
-        }
-    }
-
-    void Agent::_alloc_qs_easy(vector_PASYNQ **pqs, size_t n, size_t nbuf, size_t nbytes)
-    {
-        if(n){
-            Agent::_free_qs(pqs); // Release existing queues.
-            *pqs = vector_PASYNQ_alloc(n);
-            while(n--)
-                (*pqs)->contents[n] = Asynq_Alloc(nbuf, nbytes);
-
-            (*pqs)->count = (*pqs)->nelem; // This is so we can resize correctly later.
-        }
-    }
-
     Agent::~Agent(void)
     {
         //if(this->detach() > 0)                                       // FIXME: This doesn't work
@@ -110,9 +67,6 @@ namespace fetch
 
         if(_num_waiting > 0)
             warning("~Agent : Agent has waiting tasks.\r\n         Try calling Agent::detach first.\r\n.");
-
-        _free_qs(&_in);
-        _free_qs(&_out);
         _safe_free_handle(&_thread);
         _safe_free_handle(&_notify_available);
         _safe_free_handle(&_notify_stop);
@@ -202,9 +156,7 @@ namespace fetch
         //Notify waiting tasks
         this->_is_available = 1;
         if( this->_num_waiting > 0 )
-        Guarded_Assert_WinErr(
-          SetEvent( this->_notify_available ) )
-        ;
+        Guarded_Assert_WinErr(SetEvent(this->_notify_available));        
     }
 
     unsigned int Agent::wait_till_stopped(DWORD timeout_ms)
@@ -357,7 +309,7 @@ namespace fetch
                                         this->_task->thread_main, // main function
                                         this,               // arguments
                                         0,                  // run immediately
-                                        NULL ));            // don't worry about the threadid
+                                        NULL ));            // don't worry about the thread id
 #if 0
           Guarded_Assert_WinErr(
             SetThreadPriority( this->thread,
@@ -419,9 +371,9 @@ namespace fetch
         { SetEvent(this->_notify_stop);                  // Signal task to stop
           {                                             // Signal push/pop/peeks on waiting queues to abort
             unsigned i;
-            if(this->_in)
-              for(i=0;i<this->_in->nelem;++i) 
-                Guarded_Assert_WinErr(SetEvent(this->_in->contents[i]->notify_abort));
+            if(_owner->_in)
+              for(i=0;i<_owner->_in->nelem;++i) 
+                Guarded_Assert_WinErr(SetEvent(_owner->_in->contents[i]->notify_abort));
 //          if(this->out)                                                                // Only notify input queues.  This way output queues will be drained if those agents are still running.
 //            for(i=0;i<this->out->nelem;++i)
 //              Guarded_Assert_WinErr(SetEvent(this->out->contents[i]->notify_abort));
@@ -431,9 +383,9 @@ namespace fetch
           this->lock();
           ResetEvent(this->_notify_stop);
           { size_t i;
-            if(this->_in)
-              for(i=0;i<this->_in->nelem;++i) 
-                Guarded_Assert_WinErr(ResetEvent(this->_in->contents[i]->notify_abort));
+            if(_owner->_in)
+              for(i=0;i<_owner->_in->nelem;++i) 
+                Guarded_Assert_WinErr(ResetEvent(_owner->_in->contents[i]->notify_abort));
 //          if(this->out)
 //            for(i=0;i<this->out->nelem;++i) 
 //              Guarded_Assert_WinErr(ResetEvent(this->out->contents[i]->notify_abort));
@@ -511,42 +463,6 @@ namespace fetch
     Agent::attach_nowait()
     { return QueueUserWorkItem(&_agent_attach_thread_proc, (void*)this, NULL /*default flags*/);
     }
-
-  // Destination channel inherits the existing channel's properties.
-  // If both channels exist, the source properties are inherited.
-  // One channel must exist.
-  // 
-  // If destination channel exists, the existing one will be unref'd (deleted)
-  // and replaced by the source channel (which gets ref'd).
-  void
-    Agent::connect(Agent *dst, size_t dst_channel, Agent *src, size_t src_channel)
-  { // alloc in/out channels if neccessary
-    if( src->_out == NULL )
-      src->_out = vector_PASYNQ_alloc(src_channel + 1);
-    if( dst->_in == NULL )
-      dst->_in = vector_PASYNQ_alloc(dst_channel + 1);
-    Guarded_Assert( src->_out && dst->_in );
-
-    if( src_channel < src->_out->nelem )                // source channel exists
-    { asynq *s = src->_out->contents[src_channel];
-
-      if( dst_channel < dst->_in->nelem )
-      { asynq **d = dst->_in->contents + dst_channel;
-        Asynq_Ref(s);
-        Asynq_Unref(*d);
-        *d=s;
-      } else
-      { vector_PASYNQ_request( dst->_in, dst_channel );  // make space
-        dst->_in->contents[ dst_channel ] = Asynq_Ref( s );
-      }
-    } else if( dst_channel < dst->_in->nelem )           // dst exists, but not src
-    { asynq *d = dst->_in->contents[dst_channel];
-      vector_PASYNQ_request( src->_out, src_channel );   // make space
-      src->_out->contents[src_channel] = Asynq_Ref( d );
-    } else
-    { error("In Agent::connect: Neither channel exists.\r\n");
-    }
-  }
   
   // Returns 0 on success, nonzero otherwise.
   unsigned int Agent::attach( void )
@@ -575,5 +491,98 @@ namespace fetch
   }
 
 
+
+  IDevice::IDevice( Agent* agent )
+    :_in(NULL)
+    ,_out(NULL)
+  {
+  }
+
+  IDevice::~IDevice()
+  {
+    _free_qs(&_in);
+    _free_qs(&_out);
+  }
+
+  void IDevice::_free_qs(vector_PASYNQ **pqs)
+  {
+    vector_PASYNQ *qs = *pqs;
+    if( qs )
+    { 
+      size_t n = qs->count;
+      int sts = 1;
+      while(n--)
+        sts &= Asynq_Unref( qs->contents[n] );      //qs[n] isn't necessarily deleted. Unref returns 0 if references remain
+      if(sts)
+      { 
+        vector_PASYNQ_free( qs );
+        *pqs = NULL;
+      }
+    }
+  }
+
+  void IDevice::_alloc_qs(vector_PASYNQ **pqs, size_t n, size_t *nbuf, size_t *nbytes)
+  {
+    if(n){
+      IDevice::_free_qs(pqs); // Release existing queues.
+      *pqs = vector_PASYNQ_alloc(n);
+      while(n--)
+        (*pqs)->contents[n] = Asynq_Alloc(nbuf[n], nbytes[n]);
+
+      (*pqs)->count = (*pqs)->nelem; // This is so we can resize correctly later.
+    }
+  }
+
+  void IDevice::_alloc_qs_easy(vector_PASYNQ **pqs, size_t n, size_t nbuf, size_t nbytes)
+  {
+    if(n){
+      IDevice::_free_qs(pqs); // Release existing queues.
+      *pqs = vector_PASYNQ_alloc(n);
+      while(n--)
+        (*pqs)->contents[n] = Asynq_Alloc(nbuf, nbytes);
+
+      (*pqs)->count = (*pqs)->nelem; // This is so we can resize correctly later.
+    }
+  }
+  // Destination channel inherits the existing channel's properties.
+  // If both channels exist, the source properties are inherited.
+  // One channel must exist.
+  // 
+  // If destination channel exists, the existing one will be unref'd (deleted)
+  // and replaced by the source channel (which gets ref'd).
+  void
+    IDevice::connect(IDevice *dst, size_t dst_channel, IDevice *src, size_t src_channel)
+  { // alloc in/out channels if necessary
+    if( src->_out == NULL )
+      src->_out = vector_PASYNQ_alloc(src_channel + 1);
+    if( dst->_in == NULL )
+      dst->_in = vector_PASYNQ_alloc(dst_channel + 1);
+    Guarded_Assert( src->_out && dst->_in );
+
+    if( src_channel < src->_out->nelem )                // source channel exists
+    { 
+      asynq *s = src->_out->contents[src_channel];
+
+      if( dst_channel < dst->_in->nelem )
+      { 
+        asynq **d = dst->_in->contents + dst_channel;
+        Asynq_Ref(s);
+        Asynq_Unref(*d);
+        *d=s;
+      } else
+      { 
+        vector_PASYNQ_request( dst->_in, dst_channel );  // make space
+        dst->_in->contents[ dst_channel ] = Asynq_Ref( s );
+      }
+    } else if( dst_channel < dst->_in->nelem )           // dst exists, but not src
+    { 
+      asynq *d = dst->_in->contents[dst_channel];
+      vector_PASYNQ_request( src->_out, src_channel );   // make space
+      src->_out->contents[src_channel] = Asynq_Ref( d );
+    } else
+    { 
+      error("In Agent::connect: Neither channel exists.\r\n");
+    }
+  }
 } //end namespace fetch
 

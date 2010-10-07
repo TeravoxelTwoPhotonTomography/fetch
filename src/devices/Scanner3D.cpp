@@ -72,8 +72,8 @@ namespace fetch
     { 
       debug("here\n");
       set_config(config);
-      this->Digitizer::config->add_channel()->set_enabled(true);
-      this->Digitizer::config->add_channel()->set_enabled(true);
+      this->NIScopeDigitizer::config->add_channel()->set_enabled(true);
+      this->NIScopeDigitizer::config->add_channel()->set_enabled(true);
       set_unset_fields(config);
       debug("%s\n",config->DebugString().c_str());
     }
@@ -119,7 +119,7 @@ namespace fetch
       m = ao_workspace->contents; // first the mirror data
       z = m + N;                  // then the zpiezo  data
       p = z + N;                  // then the pockels data
-      _compute_linear_scan_mirror_waveform__sawtooth( this->LinearScanMirror::config, m, N);
+      _compute_linear_scan_mirror_waveform__sawtooth( this->NIDAQLinearScanMirror::config, m, N);
       _compute_zpiezo_waveform_const(                 this->ZPiezo::config    , z_um, z, N);
       _compute_pockels_vertical_blanking_waveform(    this->Pockels::config         , p, N);
 #if 0
@@ -139,7 +139,7 @@ namespace fetch
       m = ao_workspace->contents; // first the mirror data
       z = m + N;                  // then the zpiezo  data
       p = z + N;                  // then the pockels data
-      _compute_linear_scan_mirror_waveform__sawtooth( this->LinearScanMirror::config, m, N);
+      _compute_linear_scan_mirror_waveform__sawtooth( this->NIDAQLinearScanMirror::config, m, N);
       _compute_zpiezo_waveform_ramp(                  this->ZPiezo::config    , z_um, z, N);
       _compute_pockels_vertical_blanking_waveform(    this->Pockels::config         , p, N);
 #if 0
@@ -153,7 +153,7 @@ namespace fetch
     _setup_ao_chan(TaskHandle cur_task,
                    double     freq,
                    device::Scanner2D::Config        *cfg,
-                   device::LinearScanMirror::Config *lsm_cfg,
+                   device::NIDAQLinearScanMirror::Config *lsm_cfg,
                    device::Pockels::Config          *pock_cfg,
                    device::ZPiezo::Config           *zpiezo_cfg)
     {
@@ -276,7 +276,7 @@ namespace fetch
       _setup_ao_chan(this->ao,
                      freq,
                      this->Scanner2D::config,
-                     this->LinearScanMirror::config,
+                     this->NIDAQLinearScanMirror::config,
                      this->Pockels::config,
                      this->ZPiezo::config);
       DAQERR( DAQmxSetWriteRegenMode(this->ao,DAQmx_Val_DoNotAllowRegen));

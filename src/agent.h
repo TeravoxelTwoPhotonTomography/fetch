@@ -169,11 +169,35 @@ namespace fetch {
   public:
 
     IDevice(Agent* agent);
+    virtual ~IDevice();
 
     virtual unsigned int attach(void)=0;// Returns 0 on success, nonzero otherwise.
     virtual unsigned int detach(void)=0;// Returns 0 on success, nonzero otherwise.  Should attempt to disarm if running.  Should not panic if possible.
   
+    // Queue manipulation
+    static void connect(IDevice *dst, size_t dst_chan, IDevice *src, size_t src_chan);
+
     Agent* _agent;
+
+    vector_PASYNQ   *_in,         // Input  pipes
+                    *_out;        // Output pipes
+  public:
+    // _alloc_qs
+    // _alloc_qs_easy
+    //   Allocate <n> independent asynchronous queues.  These are contained
+    //   in the vector, *<qs> which is also allocated.  The "easy" version
+    //   constructs all <n> queues with <nbuf> buffers, each buffer with the
+    //   same initial size, <nbytes>.
+    //
+    //   These free existing queues before alloc'ing.
+    //
+    // _free_qs
+    //   Safe for calling with *<qs>==NULL. <qs> must not be NULL.
+    //   Sets *qs to NULL after releasing queues.
+    // 
+    static void _alloc_qs      (vector_PASYNQ **qs, size_t n, size_t *nbuf, size_t *nbytes);
+    static void _alloc_qs_easy (vector_PASYNQ **qs, size_t n, size_t nbuf, size_t nbytes);
+    static void _free_qs       (vector_PASYNQ **qs);
 
   private:
     IDevice() {};
@@ -191,17 +215,20 @@ namespace fetch {
   class IConfigurableDevice : public IDevice, public Configurable<Tcfg>
   {
   public:
+    IConfigurableDevice(Agent *agent);
     IConfigurableDevice(Agent *agent, Config *config);
-    virtual void set_config       (Config *cfg);    
+    virtual void get_config       (Config OUT *cfg);
+    virtual void set_config       (Config  IN *cfg);    
             void set_config_nowait(Config *cfg);
 
   protected:
-    virtual void _assign_config(Config *cfg) {_config=cfg};
+    virtual void _assign_config(Config IN *cfg) {_config=cfg};
+    virtual void _copy_config(Config OUT *cfg) {*cfg=_config};
 
   private:
     inline void transaction_lock();
     inline void transaction_unlock();
-    void _set_config__locked( Config * cfg );
+    void _set_config__locked( Config  IN *cfg );
 
     static DWORD WINAPI _set_config_nowait__helper(LPVOID lparam);
 
@@ -242,35 +269,11 @@ namespace fetch {
       unsigned int is_stopping(void);  // use this for testing for main-loop termination in Tasks.
                                        // FIXME: not clear from name that is_stopping is very different from is_running
                                        
-      unsigned int wait_till_stopped(DWORD timeout_ms);                                       
-                                             
-      // Queue manipulation
-      static void connect(Agent *dst, size_t dst_chan, Agent *src, size_t src_chan);
+      unsigned int wait_till_stopped(DWORD timeout_ms);
       
     public:
       IDevice         *_owner;
       Task            *_task;
-
-      vector_PASYNQ   *_in,         // Input  pipes
-                      *_out;        // Output pipes
-
-    public:
-      // _alloc_qs
-      // _alloc_qs_easy
-      //   Allocate <n> independent asynchronous queues.  These are contained
-      //   in the vector, *<qs> which is also allocated.  The "easy" version
-      //   constructs all <n> queues with <nbuf> buffers, each buffer with the
-      //   same initial size, <nbytes>.
-      //
-      //   These free existing queues before allocing.
-      //
-      // _free_qs
-      //   Safe for calling with *<qs>==NULL. <qs> must not be NULL.
-      //   Sets *qs to NULL after releasing queues.
-      // 
-      static void _alloc_qs      (vector_PASYNQ **qs, size_t n, size_t *nbuf, size_t *nbytes);
-      static void _alloc_qs_easy (vector_PASYNQ **qs, size_t n, size_t nbuf, size_t nbytes);
-      static void _free_qs       (vector_PASYNQ **qs);
       
     protected:
       friend class Task;
@@ -306,11 +309,27 @@ namespace fetch {
   //
 
   template<class Tcfg>
-  IConfigurableDevice<Tcfg>::IConfigurableDevice( Agent *agent, Config *config )
-    : IDevice(agent),
-    Configurable(config)
+  IConfigurableDevice<Tcfg>::IConfigurableDevice(Agent *agent)
+    :IDevice(agent)
+    ,Configurable()
   {
     Guarded_Assert_WinErr(InitializeCriticalSectionAndSpinCount(&_transaction_lock,0x80000400));
+  }
+
+  template<class Tcfg>
+  IConfigurableDevice<Tcfg>::IConfigurableDevice( Agent *agent, Config *config )
+    :IDevice(agent)
+    ,Configurable(config)
+  {
+    Guarded_Assert_WinErr(InitializeCriticalSectionAndSpinCount(&_transaction_lock,0x80000400));
+  }
+
+  template<class Tcfg>
+  void IConfigurableDevice<Tcfg>::get_config( Config *cfg )
+  {
+    transaction_lock();
+    _copy_config(cfg);
+    transaction_unlock();
   }
 
   template<class Tcfg>

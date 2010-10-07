@@ -25,20 +25,20 @@ namespace fetch
   namespace device
   {
 
-    Pockels::Pockels(void)
-            : NIDAQAgent("Pockels")
+    Pockels::Pockels(Agent *agent)
+      :IPockels(agent)
+      ,daq("Pockels")
     { __common_setup();
     }    
 
-    Pockels::Pockels(Config *cfg )
-      : NIDAQAgent("Pockels"),
-        Configurable(cfg)
+    Pockels::Pockels(Agent *agent, Config *cfg )
+      :IPockels(agent,cfg)
+      ,daq("Pockels")
     { __common_setup();
     }    
 
     Pockels::~Pockels()
-    { DeleteCriticalSection(&local_state_lock);
-    }
+    {}
 
     int
     Pockels::Is_Volts_In_Bounds(f64 volts)

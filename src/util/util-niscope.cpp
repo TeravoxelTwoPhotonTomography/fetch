@@ -113,7 +113,7 @@ void niscope_debug_print_status( ViSession vi )
   debug("Digitizer Data Transfer Maximum Bandwidth size: %4.1f MB\r\n",pts/1024.0/1024.0);
 
   DIGCHK( niScope_GetAttributeViInt32( vi, NULL, NISCOPE_ATTR_DATA_TRANSFER_PREFERRED_PACKET_SIZE, &mem ));
-  debug("Digitizer   Data Transfer Prefered Packet size: %4.1f MB\r\n",mem/1024.0/1024.0);
+  debug("Digitizer  Data Transfer Preferred Packet size: %4.1f MB\r\n",mem/1024.0/1024.0);
 
   DIGCHK( niScope_GetAttributeViReal64( vi, NULL, NISCOPE_ATTR_MAX_REAL_TIME_SAMPLING_RATE, &pts ));
   debug("Digitizer     Data Max real time sampling rate: %4.1f MHz\r\n",pts/1024.0/1024.0);

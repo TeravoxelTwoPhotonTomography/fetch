@@ -71,10 +71,10 @@ namespace fetch
   namespace device
   {
 
-    class Scanner2D : public Digitizer, 
+    class Scanner2D : public NIScopeDigitizer, 
                       public Pockels, 
                       public Shutter, 
-                      public LinearScanMirror,
+                      public NIDAQLinearScanMirror,
                       public Configurable<cfg::device::Scanner2D>
     {
     public:
@@ -113,7 +113,7 @@ namespace fetch
 
     protected: //Section: generators for ao waveforms
       static  void _compute_galvo_waveform__constant_zero        ( Scanner2D::Config *cfg, float64 *data, double N );
-      static  void _compute_linear_scan_mirror_waveform__sawtooth( LinearScanMirror::Config *cfg, float64 *data, double N );
+      static  void _compute_linear_scan_mirror_waveform__sawtooth( NIDAQLinearScanMirror::Config *cfg, float64 *data, double N );
       static  void _compute_pockels_vertical_blanking_waveform   ( Pockels::Config *cfg, float64 *data, double N );
 
     private:

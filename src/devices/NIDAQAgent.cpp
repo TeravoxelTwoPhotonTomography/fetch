@@ -18,9 +18,16 @@ namespace fetch
   namespace device
   {
 
-    NIDAQAgent::NIDAQAgent(char *name)
-               : Agent(),daqtask(NULL)
-    { // Copy name
+    NIDAQAgent::NIDAQAgent(Agent *agent, char *name)
+      :IConfigurableDevice<char*>(agent,name)
+      ,daqtask(NULL)
+    { 
+      /*
+      TODO: _daqtaskname and _config are redundant (I think).
+      XXX:  may not need _daqtaskname anymore
+      */
+
+      // Copy name
       size_t n = strlen(name);
       Guarded_Assert(n<sizeof(_daqtaskname));
       memset(_daqtaskname,0,sizeof(_daqtaskname));
@@ -35,9 +42,6 @@ namespace fetch
     unsigned int NIDAQAgent::detach(void)
     { unsigned int status=1; //success 0, failure 1
 
-      if( !this->disarm(NIDAQAGENT_DEFAULT_TIMEOUT) )
-        warning("Could not cleanly disarm NIDAQAgent: %s\r\n",_daqtaskname);
-
       if(daqtask)
       { debug("%s: Attempting to detach DAQ AO channel. handle 0x%p\r\n",_daqtaskname,daqtask);
         DAQJMP(DAQmxStopTask(daqtask));
@@ -46,20 +50,15 @@ namespace fetch
       status = 0;
     Error:
       daqtask = NULL;
-      this->_is_available=0;
-      this->unlock();
       return status;
     }
 
     unsigned int NIDAQAgent::attach(void)
     { unsigned int status = 1; //success 0, failure 1;
       Guarded_Assert(daqtask==NULL);
-      this->lock();
       DAQJMP(status=DAQmxCreateTask(_daqtaskname,&daqtask))
-      this->set_available();
       status = 0;
     Error:
-      this->unlock();
       return status;
     }
     

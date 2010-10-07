@@ -39,12 +39,12 @@ PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${PROTO_DIR} ${PROTO_FILES})
 #foreach(F ${PROTO_SRCS})
 #  message(${F})
 #endforeach()
-source_group("Source Files\\Protobuf"
+source_group("Source Files\\Protobuf Generated"
   FILES ${PROTO_SRCS}
 )
-source_group("Header Files\\Protobuf"
+source_group("Header Files\\Protobuf Generated"
   FILES ${PROTO_HDRS}
 )
-source_group(Protobuf
+source_group("Protobuf Files"
   REGULAR_EXPRESSION \\.proto$
 )

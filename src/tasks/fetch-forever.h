@@ -17,8 +17,8 @@ namespace fetch
           unsigned int config (Agent *d);
           unsigned int run    (Agent *d);
           
-          unsigned int config(device::Digitizer *d);
-          unsigned int run   (device::Digitizer *d);
+          unsigned int config(device::NIScopeDigitizer *d);
+          unsigned int run   (device::NIScopeDigitizer *d);
         };
     }
   }

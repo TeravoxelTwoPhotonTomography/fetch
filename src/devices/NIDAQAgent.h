@@ -32,10 +32,10 @@ namespace fetch
   namespace device
   {
 
-    class NIDAQAgent : public virtual fetch::Agent
+    class NIDAQAgent : public IConfigurableDevice<char*>
     {
     public:
-      NIDAQAgent(char *name);
+      NIDAQAgent(Agent *agent, char *name);
       ~NIDAQAgent(void);
 
       unsigned int attach();

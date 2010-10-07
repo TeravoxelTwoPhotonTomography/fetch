@@ -46,8 +46,8 @@ namespace fetch
 
     Scanner2D::Scanner2D( Config *cfg ) :
        Configurable<cfg::device::Scanner2D>::Configurable(cfg),
-       Digitizer(cfg->mutable_digitizer()),
-       LinearScanMirror(cfg->mutable_linear_scan_mirror()),
+       NIScopeDigitizer(cfg->mutable_digitizer()),
+       NIDAQLinearScanMirror(cfg->mutable_linear_scan_mirror()),
        Shutter(cfg->mutable_shutter()),
        Pockels(cfg->mutable_pockels()),
        ao(NULL),
@@ -70,7 +70,7 @@ namespace fetch
     Scanner2D::_compute_record_size(void)
     {
       double duty = this->config->line_duty_cycle(),
-             rate = this->Digitizer::config->sample_rate(),
+             rate = this->NIScopeDigitizer::config->sample_rate(),
              freq = this->config->frequency_hz();
       return (ViInt32)(duty * rate / freq);
     }
@@ -82,7 +82,7 @@ namespace fetch
       Frame_With_Interleaved_Lines
           format((u16)(samples_per_scan),
                  config->nscans(),
-                 (u8) this->Digitizer::config->nchannels(),
+                 (u8) this->NIScopeDigitizer::config->nchannels(),
                  id_i16);
       Guarded_Assert(format.nchan > 0);
       Guarded_Assert(format.height > 0);
@@ -97,7 +97,7 @@ namespace fetch
       if (!this->disarm(SCANNER2D_DEFAULT_TIMEOUT))
         warning("Could not cleanly disarm Scanner2D.\r\n");
       status |= this->Shutter::detach();
-      status |= this->Digitizer::detach();
+      status |= this->NIScopeDigitizer::detach();
       this->lock();
       if (clk)
       {
@@ -139,8 +139,8 @@ namespace fetch
     
     void
     Scanner2D::_config_digitizer()
-    { device::Digitizer::Config *dig_cfg =  this->Digitizer::config;
-      ViSession                       vi =  this->Digitizer::vi;
+    { device::Digitizer::Config *dig_cfg =  this->NIScopeDigitizer::config;
+      ViSession                       vi =  this->NIScopeDigitizer::_vi;
       //device::Digitizer::Channel_Config* line_trigger_cfg;
 
       ViReal64   refPosition         = 0.0;
@@ -153,7 +153,7 @@ namespace fetch
         error("Scanner2D:\t\nTrigger source channel has not been configured.\n"
               "\tTrigger source: %hhu (out of bounds)\n"
               "\tNumber of configured channels: %d\n", config->line_trigger_src(), dig_cfg->channel_size());
-      const device::Digitizer::Channel_Config& line_trigger_cfg = dig_cfg->channel(config->line_trigger_src());
+      const device::NIScopeDigitizer::Channel_Config& line_trigger_cfg = dig_cfg->channel(config->line_trigger_src());
       Guarded_Assert( line_trigger_cfg.enabled() );
 
       // Configure vertical for line-trigger channel
@@ -170,7 +170,7 @@ namespace fetch
       { for(int ichan=0; ichan<dig_cfg->channel_size(); ++ichan)
         { if(ichan==config->line_trigger_src())
             continue;
-          const device::Digitizer::Channel_Config &c=dig_cfg->channel(ichan);
+          const device::NIScopeDigitizer::Channel_Config &c=dig_cfg->channel(ichan);
           DIGERR( niScope_ConfigureVertical(vi,
             c.name().c_str(),                    // channelName
             c.range(),
@@ -211,7 +211,7 @@ namespace fetch
     }
 
     void
-    Scanner2D::_compute_linear_scan_mirror_waveform__sawtooth( LinearScanMirror::Config *cfg, float64 *data, double N )
+    Scanner2D::_compute_linear_scan_mirror_waveform__sawtooth( NIDAQLinearScanMirror::Config *cfg, float64 *data, double N )
     { int i=(int)N;
       float64 A = cfg->vpp();
       while(i--)
@@ -237,7 +237,7 @@ namespace fetch
       vector_f64_request(ao_workspace, 2*N - 1 /*max index*/);
       m = ao_workspace->contents; // first the mirror data
       p = m + N;                  // then the pockels data
-      _compute_linear_scan_mirror_waveform__sawtooth( this->LinearScanMirror::config, m, N);
+      _compute_linear_scan_mirror_waveform__sawtooth( this->NIDAQLinearScanMirror::config, m, N);
       _compute_pockels_vertical_blanking_waveform(    this->Pockels::config, p, N);
       unlock();
     }
@@ -248,7 +248,7 @@ namespace fetch
     _setup_ao_chan(TaskHandle cur_task,
                    double     freq,
                    device::Scanner2D::Config        *cfg,
-                   device::LinearScanMirror::Config *lsm_cfg,
+                   device::NIDAQLinearScanMirror::Config *lsm_cfg,
                    device::Pockels::Config          *pock_cfg)
     {
       char aochan[POCKELS_MAX_CHAN_STRING + LINEAR_SCAN_MIRROR__MAX_CHAN_STRING + 1];
@@ -347,7 +347,7 @@ namespace fetch
       _setup_ao_chan(this->ao,
                      freq,
                      this->config,
-                     this->LinearScanMirror::config,
+                     this->NIDAQLinearScanMirror::config,
                      this->Pockels::config);
       this->_generate_ao_waveforms();
       this->_register_daq_event();
@@ -437,10 +437,10 @@ namespace fetch
     }
 
     void Scanner2D::set_config( cfg::device::Scanner2D *cfg )
-    { this->Digitizer::set_config(cfg->mutable_digitizer());
+    { this->NIScopeDigitizer::set_config(cfg->mutable_digitizer());
       this->Pockels::set_config(cfg->mutable_pockels());
       this->Shutter::set_config(cfg->mutable_shutter());
-      this->LinearScanMirror::set_config(cfg->mutable_linear_scan_mirror());
+      this->NIDAQLinearScanMirror::set_config(cfg->mutable_linear_scan_mirror());
       config = cfg;
       debug("Scanner2D.h Setting config to 0x%p\n",cfg);
     }

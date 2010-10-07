@@ -67,14 +67,6 @@
 #include "object.h"
 
 #define POCKELS_DEFAULT_TIMEOUT         INFINITE
-
-//#define POCKELS_DEFAULT_V_MAX                2.0
-//#define POCKELS_DEFAULT_V_MIN                0.0
-//#define POCKELS_DEFAULT_V_OPEN               0.0  // The value to which the pockels cell will be set during a frame.  Default should be a safe value.
-//#define POCKELS_DEFAULT_V_CLOSED             0.0  // The value to which the pockels cell will be set between frames.
-//#define POCKELS_DEFAULT_AO_CHANNEL    "/Dev1/ao2"
-//#define POCKELS_DEFAULT_AI_CHANNEL   "/Dev1/ai16"
-
 #define POCKELS_MAX_CHAN_STRING               32
 
 namespace fetch
@@ -82,19 +74,53 @@ namespace fetch
 
   namespace device
   {
-
-    class Pockels
-      : public NIDAQAgent,
-        public Configurable<cfg::device::Pockels>
-    {    
+    template<class T>
+    class IPockels:public IConfigurableDevice<T>
+    {
     public:
-               Pockels();
-               Pockels(Config *cfg);
+      IPockels(Agent *agent)              : IConfigurableDevice<T>(agent) {}
+      IPockels(Agent *agent, Config *cfg) : IConfigurableDevice<T>(agent,cfg) {}
+
+      virtual int is_open_val_in_bounds(f64 volts) = 0;
+      virtual int set_open_val(f64 volts) = 0; 
+      virtual int set_open_val__no_wait(f64 volts) = 0;
+
+      //
+      // HERE
+      //
+      // Trying to figure out how to do the abstract interface here
+      // - How to do copy config?
+      // - who should own the config after set_config?  (should be a copy, right? but now it's not)
+      //
+
+
+      /*
+      { 
+        Config cfg;
+        get_config(&cfg);
+        if(is_open_val_in_bounds(volts))
+        { 
+          cfg.set_v_open(volts);
+          set_config(cfg);
+        }
+        else
+          warning("Pockles: attempted to set v_open to an out of bounds value.\r\n");        
+      }
+      */
+    };
+
+
+    class Pockels:public IPockels<cfg::device::Pockels>
+    {    
+      NIDAQAgent daq;
+    public:
+               Pockels(Agent *agent);
+               Pockels(Agent *agent, Config *cfg);
 
                virtual ~Pockels();
 
-      int      Is_Volts_In_Bounds(f64 volts);
-      int      Set_Open_Val(f64 volts, int time);
+      virtual int      is_open_val_in_bounds(f64 volts);
+      virtual int      set_open_val(f64 volts);
       BOOL     Set_Open_Val_Nonblocking(f64 volts);
 
     private:

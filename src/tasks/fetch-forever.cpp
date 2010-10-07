@@ -25,8 +25,8 @@ namespace fetch
       template class FetchForever<i8>;
       template class FetchForever<i16>;
       
-      template<class T> unsigned int FetchForever<T>::config (Agent *d) {return config(dynamic_cast<device::Digitizer*>(d));}
-      template<class T> unsigned int FetchForever<T>::run    (Agent *d) {return run   (dynamic_cast<device::Digitizer*>(d));}
+      template<class T> unsigned int FetchForever<T>::config (Agent *d) {return config(dynamic_cast<device::NIScopeDigitizer*>(d));}
+      template<class T> unsigned int FetchForever<T>::run    (Agent *d) {return run   (dynamic_cast<device::NIScopeDigitizer*>(d));}
       
       template<typename T>
         static inline Frame_With_Interleaved_Planes
@@ -40,15 +40,15 @@ namespace fetch
 
       template<typename TPixel>
         unsigned int
-        FetchForever<TPixel>::config(device::Digitizer *dig)
-        { ViSession   vi = dig->vi;
-          device::Digitizer::Config *cfg = dig->config;
+        FetchForever<TPixel>::config(device::NIScopeDigitizer *dig)
+        { ViSession   vi = dig->_vi;
+          device::NIScopeDigitizer::Config *cfg = dig->config;
           ViInt32 i;
           int nchan = 0;
           
           // Vertical
           for(i=0; i<cfg->channel_size(); i++)
-          { const device::Digitizer::Config::Channel& ch = cfg->channel(i);          
+          { const device::NIScopeDigitizer::Config::Channel& ch = cfg->channel(i);          
             CheckPanic(niScope_ConfigureVertical (vi, 
                                                   ch.name().c_str(), //channelName, 
                                                   ch.range(),        //verticalRange, 
@@ -79,8 +79,8 @@ namespace fetch
 
       template<class TPixel>
         unsigned int
-        FetchForever<TPixel>::run(device::Digitizer *dig)
-        { ViSession   vi = dig->vi;
+        FetchForever<TPixel>::run(device::NIScopeDigitizer *dig)
+        { ViSession   vi = dig->_vi;
           ViChar   *chan = const_cast<ViChar*>(dig->config->chan_names().c_str());
           asynq   *qdata = dig->_out->contents[0],
                    *qwfm = dig->_out->contents[1];

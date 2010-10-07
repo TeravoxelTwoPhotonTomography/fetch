@@ -29,18 +29,24 @@ namespace fetch
 
   namespace device
   {
-
-    class LinearScanMirror
-      : public NIDAQAgent,
-        public Configurable<cfg::device::LinearScanMirror>
+    template<class T>
+    class ILinearScanMirror : public IConfigurableDevice<T>
     {
     public:
-      LinearScanMirror();
-      LinearScanMirror(Config *cfg);
+      ILinearScanMirror(Agent *agent)             :IConfigurableDevice(agent) {}
+      ILinearScanMirror(Agent *agent, Config* cfg):IConfigurableDevice(agent,cfg) {}
 
       /* TODO: add methods to change vpp on the fly*/
     };
 
+    class NIDAQLinearScanMirror : public ILinearScanMirror<cfg::device::LinearScanMirror>
+    {
+      NIDAQAgent daq;
+    public:
+      NIDAQLinearScanMirror(Agent *agent);
+      NIDAQLinearScanMirror(Agent *agent, Config *cfg);
+    };
+   
   }
 
 }

@@ -20,15 +20,14 @@ namespace fetch
   namespace device
   {
 
-    LinearScanMirror::LinearScanMirror()
-      : NIDAQAgent("LinearScanMirror")
+    NIDAQLinearScanMirror::NIDAQLinearScanMirror(Agent *agent)
+      :ILinearScanMirror<cfg::device::LinearScanMirror>(agent)
+      ,daq(agent,"NIDAQLinearScanMirror")
     {}
     
-    LinearScanMirror::LinearScanMirror( Config *cfg )
-      : NIDAQAgent("LinearScanMirror"),
-        Configurable(cfg)
+    NIDAQLinearScanMirror::NIDAQLinearScanMirror(Agent *agent,Config *cfg)
+      :ILinearScanMirror<cfg::device::LinearScanMirror>(agent,cfd)
+      ,daq(agent,"NIDAQLinearScanMirror")
     {}
-
-  }
 
 }

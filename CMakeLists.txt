@@ -130,6 +130,7 @@ source_group("Source Files\\Qt Generated" FILES
 #
 
 add_executable(fetch
+  ${PROTO_FILES}
   ${PROTO_HDRS}
   ${PROTO_SRCS}
   ${FETCH_WORKERS_HDRS}
