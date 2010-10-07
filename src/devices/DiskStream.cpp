@@ -65,8 +65,8 @@ namespace fetch
           share_mode           = FILE_SHARE_READ; //other processes can read
           creation_disposition = OPEN_EXISTING;
           flags_and_attr = 0;
-          if(out==NULL)
-            _alloc_qs_easy(&out,1,4,1024);
+          if(_out==NULL)
+            _alloc_qs_easy(&_out,1,4,1024);
           debug("Attempting to open %s for reading.\r\n",filename);
         break;
         case 'w':

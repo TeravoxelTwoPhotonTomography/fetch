@@ -7,7 +7,7 @@ namespace fetch
     Task::thread_main(LPVOID lpParam)
     { DWORD result;
       Agent *d    = (Agent*) lpParam;
-      Task  *task = d->task;
+      Task  *task = d->_task;
       result = task->run(d);
       // Transition back to stop state when run returns
       d->lock();

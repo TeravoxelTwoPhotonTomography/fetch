@@ -25,19 +25,19 @@ namespace fetch
     }
 
     Agent::Agent(void) :
-      thread(INVALID_HANDLE_VALUE),
+      _thread(INVALID_HANDLE_VALUE),
       _is_available(0),
       _is_running(0),
-      task(NULL),
-      num_waiting(0),
-      in(NULL),
-      out(NULL)
+      _task(NULL),
+      _num_waiting(0),
+      _in(NULL),
+      _out(NULL)
     {
         // default security attr
         // manual reset
         // initially unsignalled
         Guarded_Assert_WinErr(  
-        this->notify_available = CreateEvent( NULL,   // default security attr
+        this->_notify_available = CreateEvent( NULL,   // default security attr
                                               TRUE,   // manual reset
                                               FALSE,  // initially unsignalled
                                               NULL ));
@@ -45,7 +45,7 @@ namespace fetch
         // manual reset
         // initially unsignalled
         Guarded_Assert_WinErr(  
-        this->notify_stop      = CreateEvent( NULL,   // default security attr
+        this->_notify_stop      = CreateEvent( NULL,   // default security attr
                                               TRUE,   // manual reset
                                               FALSE,  // initially unsignalled
                                               NULL ));
@@ -107,16 +107,16 @@ namespace fetch
         //if(this->detach() > 0)                                       // FIXME: This doesn't work
         //    warning("~Agent : Attempt to detach() timed out.\r\n");
 
-        if(this->num_waiting > 0)
+        if(this->_num_waiting > 0)
             warning("~Agent : Agent has waiting tasks.\r\n         Try calling Agent::detach first.\r\n.");
 
-        _free_qs(&this->in);
-        _free_qs(&this->out);
-        _safe_free_handle(&this->thread);
-        _safe_free_handle(&this->notify_available);
-        _safe_free_handle(&this->notify_stop);
+        _free_qs(&this->_in);
+        _free_qs(&this->_out);
+        _safe_free_handle(&this->_thread);
+        _safe_free_handle(&this->_notify_available);
+        _safe_free_handle(&this->_notify_stop);
         DeleteCriticalSection(&this->_lock);
-        this->task = NULL;
+        this->_task = NULL;
     }
     
     /* Returns 1 on success, 0 otherwise.
@@ -143,14 +143,14 @@ namespace fetch
     
     inline unsigned Agent::_wait_for_available(DWORD timeout_ms)
     {
-        HANDLE notify = this->notify_available;
+        HANDLE notify = this->_notify_available;
         DWORD res;
         Guarded_Assert_WinErr( ResetEvent( notify ) );
-        this->num_waiting++;
+        this->_num_waiting++;
         this->unlock();
         res = WaitForSingleObject(notify, timeout_ms);
         this->lock();
-        this->num_waiting--;
+        this->_num_waiting--;
         return _handle_wait_for_result(res, "Agent wait for availability.");
     }
 
@@ -166,17 +166,17 @@ namespace fetch
     }
 
     unsigned int Agent::is_attached(void)
-    { return is_available() || this->task != NULL;
+    { return is_available() || this->_task != NULL;
     }
 
     unsigned int Agent::is_armed(void)
     {
-        return this->task != NULL;
+        return this->_task != NULL;
     }
 
     unsigned int Agent::is_runnable(void)
     {
-        return this->task != NULL     //task is set
+        return this->_task != NULL     //task is set
             && !(this->_is_running);
     }
 
@@ -191,7 +191,7 @@ namespace fetch
     }
     
     unsigned int Agent::is_stopping(void)
-    { DWORD res = WaitForSingleObject(notify_stop, 0);
+    { DWORD res = WaitForSingleObject(_notify_stop, 0);
       return WAIT_OBJECT_0 == res; 
     }
 
@@ -199,19 +199,19 @@ namespace fetch
     {
         //Notify waiting tasks
         this->_is_available = 1;
-        if( this->num_waiting > 0 )
+        if( this->_num_waiting > 0 )
         Guarded_Assert_WinErr(
-          SetEvent( this->notify_available ) )
+          SetEvent( this->_notify_available ) )
         ;
     }
 
     unsigned int Agent::wait_till_stopped(DWORD timeout_ms)
     { unsigned int sts = 0;      
-      if( this->thread != INVALID_HANDLE_VALUE )      
+      if( this->_thread != INVALID_HANDLE_VALUE )      
         // thread could still become invalidated between if and wait, but need to enter wait unlocked
         // I expect Wait will return WAIT_FAILED immediately if that's the case, so this isn't really
         // a problem.
-		    sts = WaitForSingleObject(this->thread,timeout_ms) == WAIT_OBJECT_0;      
+		    sts = WaitForSingleObject(this->_thread,timeout_ms) == WAIT_OBJECT_0;      
       return sts;
     }
 
@@ -223,7 +223,7 @@ namespace fetch
           warning("Agent unavailable.  Perhaps another task is running?\r\n\tAborting attempt to arm.\r\n");
           goto Error;
       }
-      this->task = task; // save the task
+      this->_task = task; // save the task
       // Exec task config function
       if(!(task->config)(this)){
           warning("While loading task, something went wrong with the task configuration.\r\n\tAgent not armed.\r\n");
@@ -231,7 +231,7 @@ namespace fetch
       }
       // Create thread for running task
       Guarded_Assert_WinErr(
-      this->thread = CreateThread(0,                  // use default access rights
+      this->_thread = CreateThread(0,                  // use default access rights
                                   0,                  // use default stack size (1 MB)
                                   task->thread_main,  // main function
                                   this,               // arguments
@@ -242,7 +242,7 @@ namespace fetch
       DBG("Armed 0x%p\r\n",this);
       return 1;
     Error:
-      this->task = NULL;
+      this->_task = NULL;
       this->unlock();
       return 0;
     }
@@ -264,7 +264,7 @@ namespace fetch
         return args.d->arm(args.dt, args.timeout);
     }
 
-    BOOL Agent::arm_nonblocking(Task *task, DWORD timeout_ms)
+    BOOL Agent::arm_nowait(Task *task, DWORD timeout_ms)
     {
         struct T
         {
@@ -291,7 +291,7 @@ namespace fetch
             this->stop(timeout_ms);
 
         this->lock();
-        this->task = NULL;
+        this->_task = NULL;
         this->set_available();
         this->unlock();
         DBG("Disarmed 0x%p\r\n",this);
@@ -314,7 +314,7 @@ namespace fetch
         return args.d->disarm(args.timeout);
     }
 
-    BOOL Agent::disarm_nonblocking(DWORD timeout_ms)
+    BOOL Agent::disarm_nowait(DWORD timeout_ms)
     {
         struct T
         {
@@ -344,15 +344,15 @@ namespace fetch
         this->lock();
         if(this->is_runnable())
       { this->_is_running = 1;    
-        if( this->thread != INVALID_HANDLE_VALUE )
-        { sts = ResumeThread(this->thread) <= 1; // Thread's already allocated so go!      
+        if( this->_thread != INVALID_HANDLE_VALUE )
+        { sts = ResumeThread(this->_thread) <= 1; // Thread's already allocated so go!      
         }
         else
         { // Create thread for running the task
           Guarded_Assert_WinErr(
-            this->thread = CreateThread(0,                  // use default access rights
+            this->_thread = CreateThread(0,                  // use default access rights
                                         0,                  // use default stack size (1 MB)
-                                        this->task->thread_main, // main function
+                                        this->_task->thread_main, // main function
                                         this,               // arguments
                                         0,                  // run immediately
                                         NULL ));            // don't worry about the threadid
@@ -367,7 +367,7 @@ namespace fetch
       { warning("Attempted to run an unarmed or already running Agent.\r\n"
                 "\tAborting the run attempt.\r\n");
       }
-        DBG("Agent Run: 0x%p (sts %d) thread 0x%p\r\n", this, sts, this->thread);
+        DBG("Agent Run: 0x%p (sts %d) thread 0x%p\r\n", this, sts, this->_thread);
         this->unlock();
         return sts;
     }
@@ -387,7 +387,7 @@ namespace fetch
         return args.d->run();
     }
 
-    BOOL Agent::run_nonblocking()
+    BOOL Agent::run_nowait()
     {
         struct T
         {
@@ -413,25 +413,25 @@ namespace fetch
       DWORD res;
       this->lock();
       if( this->_is_running )
-      { if( this->thread != INVALID_HANDLE_VALUE)
-        { SetEvent(this->notify_stop);                  // Signal task to stop
+      { if( this->_thread != INVALID_HANDLE_VALUE)
+        { SetEvent(this->_notify_stop);                  // Signal task to stop
           {                                             // Signal push/pop/peeks on waiting queues to abort
             unsigned i;
-            if(this->in)
-              for(i=0;i<this->in->nelem;++i) 
-                Guarded_Assert_WinErr(SetEvent(this->in->contents[i]->notify_abort));
+            if(this->_in)
+              for(i=0;i<this->_in->nelem;++i) 
+                Guarded_Assert_WinErr(SetEvent(this->_in->contents[i]->notify_abort));
 //          if(this->out)                                                                // Only notify input queues.  This way output queues will be drained if those agents are still running.
 //            for(i=0;i<this->out->nelem;++i)
 //              Guarded_Assert_WinErr(SetEvent(this->out->contents[i]->notify_abort));
           }
           this->unlock();
-          res = WaitForSingleObject(this->thread, timeout_ms); // wait for running thread to stop
+          res = WaitForSingleObject(this->_thread, timeout_ms); // wait for running thread to stop
           this->lock();
-          ResetEvent(this->notify_stop);
+          ResetEvent(this->_notify_stop);
           { size_t i;
-            if(this->in)
-              for(i=0;i<this->in->nelem;++i) 
-                Guarded_Assert_WinErr(ResetEvent(this->in->contents[i]->notify_abort));
+            if(this->_in)
+              for(i=0;i<this->_in->nelem;++i) 
+                Guarded_Assert_WinErr(ResetEvent(this->_in->contents[i]->notify_abort));
 //          if(this->out)
 //            for(i=0;i<this->out->nelem;++i) 
 //              Guarded_Assert_WinErr(ResetEvent(this->out->contents[i]->notify_abort));
@@ -440,11 +440,11 @@ namespace fetch
 
           // Handle a timeout on the wait.  
           if( !_handle_wait_for_result(res, "Agent stop: Wait for thread."))
-          { warning("Timed out waiting for task thread (0x%p) to stop.  Forcing termination.\r\n",this->thread);
-            Guarded_Assert_WinErr(TerminateThread(this->thread,127)); // Force the thread to stop
+          { warning("Timed out waiting for task thread (0x%p) to stop.  Forcing termination.\r\n",this->_thread);
+            Guarded_Assert_WinErr(TerminateThread(this->_thread,127)); // Force the thread to stop
           } 
-          CloseHandle(this->thread);
-          this->thread = INVALID_HANDLE_VALUE;
+          CloseHandle(this->_thread);
+          this->_thread = INVALID_HANDLE_VALUE;
         } 
         this->_is_running = 0;
       }
@@ -469,7 +469,7 @@ namespace fetch
         return args.d->stop(args.timeout);
     }
 
-    BOOL Agent::stop_nonblocking(DWORD timeout_ms)
+    BOOL Agent::stop_nowait(DWORD timeout_ms)
     {
         struct T
         {
@@ -494,7 +494,7 @@ namespace fetch
         return d->detach();
     }
 
-    BOOL Agent::detach_nonblocking()
+    BOOL Agent::detach_nowait()
     {
         return QueueUserWorkItem(&_agent_detach_thread_proc, (void*)this, NULL /*default flags*/);
     }
@@ -506,7 +506,7 @@ namespace fetch
     }
 
   BOOL
-    Agent::attach_nonblocking()
+    Agent::attach_nowait()
     { return QueueUserWorkItem(&_agent_attach_thread_proc, (void*)this, NULL /*default flags*/);
     }
 
@@ -519,28 +519,28 @@ namespace fetch
   void
     Agent::connect(Agent *dst, size_t dst_channel, Agent *src, size_t src_channel)
   { // alloc in/out channels if neccessary
-    if( src->out == NULL )
-      src->out = vector_PASYNQ_alloc(src_channel + 1);
-    if( dst->in == NULL )
-      dst->in = vector_PASYNQ_alloc(dst_channel + 1);
-    Guarded_Assert( src->out && dst->in );
+    if( src->_out == NULL )
+      src->_out = vector_PASYNQ_alloc(src_channel + 1);
+    if( dst->_in == NULL )
+      dst->_in = vector_PASYNQ_alloc(dst_channel + 1);
+    Guarded_Assert( src->_out && dst->_in );
 
-    if( src_channel < src->out->nelem )                // source channel exists
-    { asynq *s = src->out->contents[src_channel];
+    if( src_channel < src->_out->nelem )                // source channel exists
+    { asynq *s = src->_out->contents[src_channel];
 
-      if( dst_channel < dst->in->nelem )
-      { asynq **d = dst->in->contents + dst_channel;
+      if( dst_channel < dst->_in->nelem )
+      { asynq **d = dst->_in->contents + dst_channel;
         Asynq_Ref(s);
         Asynq_Unref(*d);
         *d=s;
       } else
-      { vector_PASYNQ_request( dst->in, dst_channel );  // make space
-        dst->in->contents[ dst_channel ] = Asynq_Ref( s );
+      { vector_PASYNQ_request( dst->_in, dst_channel );  // make space
+        dst->_in->contents[ dst_channel ] = Asynq_Ref( s );
       }
-    } else if( dst_channel < dst->in->nelem )           // dst exists, but not src
-    { asynq *d = dst->in->contents[dst_channel];
-      vector_PASYNQ_request( src->out, src_channel );   // make space
-      src->out->contents[src_channel] = Asynq_Ref( d );
+    } else if( dst_channel < dst->_in->nelem )           // dst exists, but not src
+    { asynq *d = dst->_in->contents[dst_channel];
+      vector_PASYNQ_request( src->_out, src_channel );   // make space
+      src->_out->contents[src_channel] = Asynq_Ref( d );
     } else
     { error("In Agent::connect: Neither channel exists.\r\n");
     }

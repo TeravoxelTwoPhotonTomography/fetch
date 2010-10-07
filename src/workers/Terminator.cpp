@@ -31,8 +31,8 @@ namespace fetch
       size_t *szs; // array of buffer sizes
       unsigned int i, n;
 
-      q = agent->in->contents;
-      n = agent->in->nelem;
+      q = agent->_in->contents;
+      n = agent->_in->nelem;
       buf = (void**)  (Guarded_Malloc(n * sizeof(void*),
                                      "Worker device task - Terminator"));
       szs = (size_t*) (Guarded_Malloc(n * sizeof(size_t),

@@ -61,7 +61,7 @@ namespace fetch
         { int run = this->is_running();
           if(run)
             this->stop(POCKELS_DEFAULT_TIMEOUT);
-          dynamic_cast<fetch::IUpdateable*>(this->task)->update(this); //commit
+          dynamic_cast<fetch::IUpdateable*>(this->_task)->update(this); //commit
           debug("\tChanged Pockels to %f V at open.\r\n",volts);
           if( run )
             this->run();

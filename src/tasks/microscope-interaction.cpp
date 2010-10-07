@@ -43,7 +43,7 @@ namespace fetch
 	      cur =  agent->wrap.apply(cur);
 	      cur =  agent->trash.apply(cur);
 	      
-	      agent->scanner.arm_nonblocking(&focus,INFINITE);
+	      agent->scanner.arm_nowait(&focus,INFINITE);
 	      //agent->scanner.run_nonblocking();
 	      
         return 1; //success

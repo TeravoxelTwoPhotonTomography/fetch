@@ -412,7 +412,7 @@ namespace fetch
     unsigned int 
     Scanner2D::_wait_for_daq(DWORD timeout_ms) // returns 1 on success, 0 otherwise
     { HANDLE hs[] = {this->notify_daq_done,
-                     this->notify_stop};
+                     this->_notify_stop};
       DWORD  res;                     
       res = WaitForMultipleObjects(2,hs,FALSE,timeout_ms);
       if(res == WAIT_TIMEOUT)        error("Scanner2d::_wait_for_daq - Timed out waiting for DAQ to finish AO write.\r\n");

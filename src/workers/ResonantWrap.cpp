@@ -115,7 +115,7 @@ namespace fetch
     bool
     ResonantWrapAgent::WaitForOOBUpdate(DWORD timeout_ms)
     { HANDLE hs[] = {this->notify_out_of_bounds_update,
-                     this->notify_stop};
+                     this->_notify_stop};
       DWORD res;
       ResetEvent(notify_out_of_bounds_update);
       res = WaitForMultipleObjects(2,hs,FALSE,timeout_ms);

@@ -25,8 +25,8 @@ namespace fetch
     { FrameAverageAgent *agent = dynamic_cast<FrameAverageAgent*>(a);
       int every = agent->config;
 
-      asynq *qsrc = agent->in->contents[ 0 ],
-            *qdst = agent->out->contents[ 0 ];
+      asynq *qsrc = agent->_in->contents[ 0 ],
+            *qdst = agent->_out->contents[ 0 ];
 
       Frame *fsrc = (Frame*) Asynq_Token_Buffer_Alloc(qsrc),
             *fdst = (Frame*) Asynq_Token_Buffer_Alloc(qdst);

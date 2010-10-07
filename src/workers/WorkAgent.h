@@ -125,7 +125,7 @@ namespace fetch
   WorkAgent<TWorkTask,TParam>*
   WorkAgent<TWorkTask,TParam>::apply(Agent *source, int ichan)
   { connect(this,ichan,source,ichan);
-    if( out==NULL )
+    if( _out==NULL )
       __task_instance.alloc_output_queues(this);// Task must implement this.  Must connect() first.  WorkTask has a default impl. that assumes in[0]->out[0].  These should handle pre-existing queues (by freecycling).
     Guarded_Assert( disarm(WORKER_DEFAULT_TIMEOUT));
     Guarded_Assert( arm(&__task_instance,WORKER_DEFAULT_TIMEOUT));

@@ -52,7 +52,7 @@ namespace file {
 
   unsigned int
   ReadRaw::run(device::DiskStream *agent)
-  { asynq *q  = agent->out->contents[0];
+  { asynq *q  = agent->_out->contents[0];
     void *buf = Asynq_Token_Buffer_Alloc(q);
     DWORD nbytes = q->q->buffer_size_bytes,
           bytes_read;
@@ -81,7 +81,7 @@ namespace file {
 
   unsigned int
   WriteRaw::run(device::DiskStream *agent)
-  { asynq *q  = agent->in->contents[0];
+  { asynq *q  = agent->_in->contents[0];
     void *buf = Asynq_Token_Buffer_Alloc(q);
     DWORD nbytes = q->q->buffer_size_bytes,
           written;
@@ -115,7 +115,7 @@ namespace file {
 
   unsigned int
   ReadMessage::run(device::DiskStream *agent)
-  { asynq   *q   = agent->out->contents[0];
+  { asynq   *q   = agent->_out->contents[0];
     Message *buf = NULL;
     DWORD    nbytes;
     i64      sz,
@@ -172,7 +172,7 @@ namespace file {
 
   unsigned int
   WriteMessage::run(device::DiskStream *agent)
-  { asynq *q  = agent->in->contents[0];
+  { asynq *q  = agent->_in->contents[0];
     void *buf = Asynq_Token_Buffer_Alloc(q);
     DWORD nbytes = q->q->buffer_size_bytes;
 
@@ -199,7 +199,7 @@ namespace file {
 
   unsigned int
   WriteMessageAsRaw::run(device::DiskStream *agent)
-  { asynq *q  = agent->in->contents[0];
+  { asynq *q  = agent->_in->contents[0];
     Message *buf = (Message*) Asynq_Token_Buffer_Alloc(q);
     DWORD nbytes = q->q->buffer_size_bytes;
     DWORD written;

@@ -82,8 +82,8 @@ namespace fetch
         FetchForever<TPixel>::run(device::Digitizer *dig)
         { ViSession   vi = dig->vi;
           ViChar   *chan = const_cast<ViChar*>(dig->config->chan_names().c_str());
-          asynq   *qdata = dig->out->contents[0],
-                   *qwfm = dig->out->contents[1];
+          asynq   *qdata = dig->_out->contents[0],
+                   *qwfm = dig->_out->contents[1];
           ViInt32  nelem,
                     nwfm,
                      ttl = 0,ttl2=0,

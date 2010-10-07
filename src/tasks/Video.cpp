@@ -117,8 +117,8 @@ namespace fetch
       template<class TPixel>
       unsigned int
       Video<TPixel>::run(device::Scanner2D *d)
-      { asynq *qdata = d->out->contents[0],
-              *qwfm  = d->out->contents[1];
+      { asynq *qdata = d->_out->contents[0],
+              *qwfm  = d->_out->contents[1];
         Frame *frm   = NULL;
         Frame_With_Interleaved_Lines ref;
         struct niScope_wfmInfo *wfm = NULL; //(niScope_wfmInfo*) Asynq_Token_Buffer_Alloc(qwfm);

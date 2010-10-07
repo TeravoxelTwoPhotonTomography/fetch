@@ -68,7 +68,7 @@ namespace fetch
         
         //cur =  agent->trash.apply(cur);
 
-        agent->scanner.arm_nonblocking(&grabstack,INFINITE);
+        agent->scanner.arm_nowait(&grabstack,INFINITE);
 
         return 1; //success
       }
@@ -97,7 +97,7 @@ namespace fetch
         sts |= agent->scanner.run();
 
         { HANDLE hs[] = {agent->scanner.thread,          
-                         agent->notify_stop};
+                         agent->_notify_stop};
           DWORD res;
           static char filename[MAX_PATH];
           int   t;
@@ -192,7 +192,7 @@ namespace fetch
         unsigned int
         ScanStack<TPixel>::run(device::Scanner3D *d)
         {
-          asynq *qdata = d->out->contents[0], *qwfm = d->out->contents[1];
+          asynq *qdata = d->_out->contents[0], *qwfm = d->_out->contents[1];
           Frame *frm = NULL;
           Frame_With_Interleaved_Lines ref;
           struct niScope_wfmInfo *wfm = NULL;

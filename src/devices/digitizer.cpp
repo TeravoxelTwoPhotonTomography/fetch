@@ -43,7 +43,7 @@ namespace fetch
              _nbuf[2] = {nbuf,nbuf},
                sz[2] = {nbytes_per_frame,
                         nwfm*sizeof(struct niScope_wfmInfo)};
-      _alloc_qs( &this->out, 2, _nbuf, sz );
+      _alloc_qs( &this->_out, 2, _nbuf, sz );
     }
 
     //Digitizer::Digitizer(const Config& cfg)
@@ -124,7 +124,7 @@ namespace fetch
       DIGITIZER_BUFFER_NUM_FRAMES},
       sz[2] = { config->num_records() * config->record_size() * config->nchannels() * Bpp,
       config->num_records() * sizeof(struct niScope_wfmInfo)};
-    _alloc_qs( &this->out, 2, nbuf, sz );
+    _alloc_qs( &this->_out, 2, nbuf, sz );
   }
 
   } // namespace fetch

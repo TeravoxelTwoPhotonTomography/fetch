@@ -12,9 +12,7 @@
  */
 #pragma once
 
-#include "stdafx.h"
 #include "asynq.h"
-//#include "task.h"
 
 //
 // Class Agent
@@ -119,12 +117,12 @@ namespace fetch {
               unsigned int run    (void);                      // Returns 0 on success, nonzero otherwise.
               unsigned int stop   (DWORD timeout_ms);          // Returns 0 on success, nonzero otherwise.
       
-      BOOL      attach_nonblocking (void);
-      BOOL      detach_nonblocking (void);
-      BOOL         arm_nonblocking (Task *t, DWORD timeout_ms);
-      BOOL      disarm_nonblocking (DWORD timeout_ms);
-      BOOL         run_nonblocking (void);
-      BOOL        stop_nonblocking (DWORD timeout_ms);
+      BOOL      attach_nowait (void);
+      BOOL      detach_nowait (void);
+      BOOL         arm_nowait (Task *t, DWORD timeout_ms);
+      BOOL      disarm_nowait (DWORD timeout_ms);
+      BOOL         run_nowait (void);
+      BOOL        stop_nowait (DWORD timeout_ms);
 
       // State query functions      
       unsigned int is_attached(void);  // True in all but the instanced state.
@@ -141,10 +139,10 @@ namespace fetch {
       static void connect(Agent *dst, size_t dst_chan, Agent *src, size_t src_chan);
       
     public:
-      Task            *task;
+      Task            *_task;
 
-      vector_PASYNQ   *in,         // Input  pipes
-                      *out;        // Output pipes
+      vector_PASYNQ   *_in,         // Input  pipes
+                      *_out;        // Output pipes
 
     public:
       // _alloc_qs
@@ -174,11 +172,11 @@ namespace fetch {
 
     public: // Section (Data): treat as protected, friended to children of Task
       
-      HANDLE           thread,
-                       notify_available,
-                       notify_stop;
+      HANDLE           _thread,
+                       _notify_available,
+                       _notify_stop;
       CRITICAL_SECTION _lock;
-      u32              num_waiting,
+      u32              _num_waiting,
                        _is_available,
                        _is_running;
                        

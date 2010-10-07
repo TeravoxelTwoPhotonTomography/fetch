@@ -99,8 +99,8 @@ namespace fetch
     unsigned int
     OneToOneWorkTask<TMessage>::run(Agent *d)
     { unsigned int sts = 0; // success=0, fail=1
-      asynq *qsrc = d->in->contents[0],
-            *qdst = d->out->contents[0];
+      asynq *qsrc = d->_in->contents[0],
+            *qdst = d->_out->contents[0];
       TMessage *fsrc =  (TMessage*)Asynq_Token_Buffer_Alloc(qsrc),
                *fdst =  (TMessage*)Asynq_Token_Buffer_Alloc(qdst);
       size_t nbytes_in  = qsrc->q->buffer_size_bytes,
@@ -141,8 +141,8 @@ namespace fetch
     unsigned int
     InPlaceWorkTask<TMessage>::run(Agent *d)
     { unsigned int sts = 0; // success=0, fail=1
-      asynq *qsrc = d->in->contents[0],
-            *qdst = d->out->contents[0];
+      asynq *qsrc = d->_in->contents[0],
+            *qdst = d->_out->contents[0];
       TMessage *fsrc =  (TMessage*)Asynq_Token_Buffer_Alloc(qsrc);
       size_t nbytes_in  = qsrc->q->buffer_size_bytes;
       
