@@ -65,6 +65,7 @@
 #include "NIDAQAgent.h"
 #include "pockels.pb.h"
 #include "object.h"
+#include "agent.h"
 
 #define POCKELS_DEFAULT_TIMEOUT         INFINITE
 #define POCKELS_MAX_CHAN_STRING               32
@@ -74,59 +75,82 @@ namespace fetch
 
   namespace device
   {
-    template<class T>
-    class IPockels:public IConfigurableDevice<T>
+
+    class IPockels
     {
     public:
-      IPockels(Agent *agent)              : IConfigurableDevice<T>(agent) {}
-      IPockels(Agent *agent, Config *cfg) : IConfigurableDevice<T>(agent,cfg) {}
-
-      virtual int is_open_val_in_bounds(f64 volts) = 0;
-      virtual int set_open_val(f64 volts) = 0; 
-      virtual int set_open_val__no_wait(f64 volts) = 0;
-
-      //
-      // HERE
-      //
-      // Trying to figure out how to do the abstract interface here
-      // - How to do copy config?
-      // - who should own the config after set_config?  (should be a copy, right? but now it's not)
-      //
-
-
-      /*
-      { 
-        Config cfg;
-        get_config(&cfg);
-        if(is_open_val_in_bounds(volts))
-        { 
-          cfg.set_v_open(volts);
-          set_config(cfg);
-        }
-        else
-          warning("Pockles: attempted to set v_open to an out of bounds value.\r\n");        
-      }
-      */
+      virtual int isValidOpenVolts(f64 volts) = 0;
+      virtual int setOpenVolts(f64 volts) = 0; 
+      virtual int setOpenVoltsNoWait(f64 volts) = 0;
     };
 
+    template<class T>
+    class PockelsBase:public IPockels, public IConfigurableDevice<T>
+    {
+    public:
+      PockelsBase(Agent *agent)              : IConfigurableDevice<T>(agent) {}
+      PockelsBase(Agent *agent, Config *cfg) : IConfigurableDevice<T>(agent,cfg) {}
+    };
 
-    class Pockels:public IPockels<cfg::device::Pockels>
+    //
+    // NIDAQPockels
+    //
+
+    class NIDAQPockels:public PockelsBase<cfg::device::NIDAQPockels>
     {    
       NIDAQAgent daq;
     public:
-               Pockels(Agent *agent);
-               Pockels(Agent *agent, Config *cfg);
+      NIDAQPockels(Agent *agent);
+      NIDAQPockels(Agent *agent, Config *cfg);
 
-               virtual ~Pockels();
+      virtual ~NIDAQPockels();
 
-      virtual int      is_open_val_in_bounds(f64 volts);
-      virtual int      set_open_val(f64 volts);
-      BOOL     Set_Open_Val_Nonblocking(f64 volts);
+      virtual unsigned int attach() {return daq.attach();}
+      virtual unsigned int detach() {return daq.detach();}
 
-    private:
-      CRITICAL_SECTION local_state_lock;
+      virtual int isValidOpenVolts(f64 volts);
+      virtual int setOpenVolts(f64 volts);
+      virtual int setOpenVoltsNoWait(f64 volts);
+    };   
 
-      void __common_setup();
+    class SimulatedPockels:public PockelsBase<f64>
+    {
+    public:
+      SimulatedPockels(Agent *agent);
+      SimulatedPockels(Agent *agent, f64 *cfg);
+
+      virtual unsigned int attach() {return 0;}
+      virtual unsigned int detach() {return 0;}
+
+      virtual int isValidOpenVolts(f64 volts);
+      virtual int setOpenVolts(f64 volts);
+      virtual int setOpenVoltsNoWait(f64 volts);
+    };
+    
+    class Pockels:public PockelsBase<cfg::device::Pockels>
+    {
+      NIDAQPockels     *_nidaq;
+      SimulatedPockels *_simulated;
+      IDevice          *_idevice;
+      IPockels         *_ipockels;
+    public:
+      Pockels(Agent *agent);
+      Pockels(Agent *agent, Config *cfg);
+      ~Pockels();
+
+      virtual unsigned int attach();
+      virtual unsigned int detach();
+
+      void setKind(Config::PockelsType kind);
+
+      virtual int isValidOpenVolts(f64 volts);
+      virtual int setOpenVolts(f64 volts);
+      virtual int setOpenVoltsNoWait(f64 volts);
+
+      virtual void set_config(NIDAQPockels::Config *cfg);
+      virtual void set_config(SimulatedPockels::Config *cfg);
+      virtual void set_config_nowait(NIDAQPockels::Config *cfg);
+      virtual void set_config_nowait(SimulatedPockels::Config *cfg);
     };
 
   } // end namespace device

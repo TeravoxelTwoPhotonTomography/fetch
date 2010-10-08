@@ -584,5 +584,7 @@ namespace fetch
       error("In Agent::connect: Neither channel exists.\r\n");
     }
   }
+
+
 } //end namespace fetch
 

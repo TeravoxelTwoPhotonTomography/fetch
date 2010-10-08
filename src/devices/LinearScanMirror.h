@@ -29,24 +29,60 @@ namespace fetch
 
   namespace device
   {
-    template<class T>
-    class ILinearScanMirror : public IConfigurableDevice<T>
-    {
-    public:
-      ILinearScanMirror(Agent *agent)             :IConfigurableDevice(agent) {}
-      ILinearScanMirror(Agent *agent, Config* cfg):IConfigurableDevice(agent,cfg) {}
 
-      /* TODO: add methods to change vpp on the fly*/
+    class ILSM
+    {
+    public:      /* TODO: add methods to change vpp on the fly*/
     };
 
-    class NIDAQLinearScanMirror : public ILinearScanMirror<cfg::device::LinearScanMirror>
+    template<class T>
+    class LSMBase:public ILSM,public IConfigurableDevice<T>
+    {
+    public:
+      LSMBase(Agent *agent)             :IConfigurableDevice(agent) {}
+      LSMBase(Agent *agent, Config* cfg):IConfigurableDevice(agent,cfg) {}
+    };
+
+    class NIDAQLinearScanMirror : public LSMBase<cfg::device::NIDAQLinearScanMirror>
     {
       NIDAQAgent daq;
     public:
       NIDAQLinearScanMirror(Agent *agent);
       NIDAQLinearScanMirror(Agent *agent, Config *cfg);
+
+      virtual unsigned int attach() {return daq.attach();}
+      virtual unsigned int detach() {return daq.detach();}
+    };
+
+    class SimulatedLinearScanMirror : public LSMBase<f64>
+    {
+    public:
+      SimulatedLinearScanMirror(Agent *agent);
+      SimulatedLinearScanMirror(Agent *agent, Config *cfg);
+
+      virtual unsigned int attach() {return 0;}
+      virtual unsigned int detach() {return 0;}
     };
    
-  }
+   class LinearScanMirror:public LSMBase<cfg::device::LinearScanMirror>
+   {
+     NIDAQLinearScanMirror     *_nidaq;
+     SimulatedLinearScanMirror *_simulated;
+     IDevice *_idevice;
+     ILSM    *_ilsm;
+   public:
+     LinearScanMirror(Agent *agent);
+     LinearScanMirror(Agent *agent, Config *cfg);
+     ~LinearScanMirror();
 
+     void setKind(Config::LinearScanMirrorType kind);
+
+     virtual void set_config(NIDAQLinearScanMirror::Config *cfg);
+     virtual void set_config(SimulatedLinearScanMirror::Config *cfg);
+     virtual void set_config_nowait(NIDAQLinearScanMirror::Config *cfg);
+     virtual void set_config_nowait(SimulatedLinearScanMirror::Config *cfg);
+   };
+
+   //end namespace fetch::device
+  }
 }

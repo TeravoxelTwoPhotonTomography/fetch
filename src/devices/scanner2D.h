@@ -25,7 +25,7 @@
  *
  * (Agent)-------|--------------|
  *           Digitizer      NIDAQAgent----|-------|--------------|
- *               |                     Pockels  Shutter  LinearScanMirror
+ *               |                     NIDAQPockels  Shutter  LinearScanMirror
  *                \                      /       /              /
  *                 \____________________/_______/______________/
  *                           |
@@ -72,7 +72,7 @@ namespace fetch
   {
 
     class Scanner2D : public NIScopeDigitizer, 
-                      public Pockels, 
+                      public NIDAQPockels, 
                       public Shutter, 
                       public NIDAQLinearScanMirror,
                       public Configurable<cfg::device::Scanner2D>
@@ -114,7 +114,7 @@ namespace fetch
     protected: //Section: generators for ao waveforms
       static  void _compute_galvo_waveform__constant_zero        ( Scanner2D::Config *cfg, float64 *data, double N );
       static  void _compute_linear_scan_mirror_waveform__sawtooth( NIDAQLinearScanMirror::Config *cfg, float64 *data, double N );
-      static  void _compute_pockels_vertical_blanking_waveform   ( Pockels::Config *cfg, float64 *data, double N );
+      static  void _compute_pockels_vertical_blanking_waveform   ( NIDAQPockels::Config *cfg, float64 *data, double N );
 
     private:
       void __common_setup();

@@ -217,17 +217,20 @@ namespace fetch {
   public:
     IConfigurableDevice(Agent *agent);
     IConfigurableDevice(Agent *agent, Config *config);
-    virtual void get_config       (Config OUT *cfg);
-    virtual void set_config       (Config  IN *cfg);    
-            void set_config_nowait(Config *cfg);
+    virtual Config get_config(void);
+    virtual void set_config(Config *cfg);
+    int set_config_nowait(Config *cfg);
+
+  protected: //overload these
+    virtual void _assign_config(Config IN *cfg) {*_config=*cfg;}
+    virtual void _copy_config(Config OUT *cfg)  {*cfg=*_config;}
 
   protected:
-    virtual void _assign_config(Config IN *cfg) {_config=cfg};
-    virtual void _copy_config(Config OUT *cfg) {*cfg=_config};
-
-  private:
     inline void transaction_lock();
     inline void transaction_unlock();
+    void update();
+
+  private:
     void _set_config__locked( Config  IN *cfg );
 
     static DWORD WINAPI _set_config_nowait__helper(LPVOID lparam);
@@ -299,10 +302,16 @@ namespace fetch {
                     Agent*   _request_available_unlocked (int is_try, DWORD timeout_ms);
   };
 
+  //end namespace fetch
+}
+
 ////////////////////////////////////////////////////////////////////////////
 // IMPLEMENTATION
 ////////////////////////////////////////////////////////////////////////////
 
+#include "task.h"
+
+namespace fetch {
   //
   // IConfigurableDevice
   //    implementation
@@ -324,28 +333,67 @@ namespace fetch {
     Guarded_Assert_WinErr(InitializeCriticalSectionAndSpinCount(&_transaction_lock,0x80000400));
   }
 
+  //************************************
+  // Method:    get_config
+  // FullName:  fetch::IConfigurableDevice<Tcfg>::get_config
+  // Access:    virtual public 
+  // Returns:   Config
+  // Qualifier:
+  // Parameter: void
+  //
+  // Returns a copy of _config.  Synchronized.
+  // Overload _copy_config() to change how copy is performed.
+  //************************************
   template<class Tcfg>
-  void IConfigurableDevice<Tcfg>::get_config( Config *cfg )
+  Tcfg IConfigurableDevice<Tcfg>::get_config(void)
   {
+    Tcfg cfg;
     transaction_lock();
-    _copy_config(cfg);
+    _copy_config(&cfg);
     transaction_unlock();
+    return cfg;
   }
 
+  //************************************
+  // Method:    set_config
+  // FullName:  fetch::IConfigurableDevice<Tcfg>::set_config
+  // Access:    virtual public 
+  // Returns:   void
+  // Qualifier:
+  // Parameter: Config * cfg
+  //
+  // Synchronized setting of the config.
+  // Overload _assign_config to change how copy is performed.
+  // May wait on hardware.
+  //************************************
   template<class Tcfg>
-  void IConfigurableDevice<Tcfg>::set_config( Config *cfg )
+  void IConfigurableDevice<Tcfg>::set_config(Tcfg *cfg)
   {    
     transaction_lock();
     _set_config__locked(cfg);
     transaction_unlock();
   }
 
+  //************************************
+  // Method:    set_config_nowait
+  // FullName:  fetch::IConfigurableDevice<Tcfg>::set_config_nowait
+  // Access:    public 
+  // Returns:   void
+  // Qualifier: A copy to the object pointed to by <cfg> is posted
+  //            to a queue, so <cfg> does not need to live until 
+  //            the request is committed.
+  // Parameter: Config * cfg
+  // Notes:     Performs an extra copy on Push/Pop.  I think it's 
+  //            3-4 copies per request.  I could get this down to
+  //            1-2 using a non-copy Push/Pop, I think.  However,
+  //            performance should not be an issue here.
+  //************************************
   template<class Tcfg>
-  void IConfigurableDevice<Tcfg>::set_config_nowait( Config *cfg )
+  int IConfigurableDevice<Tcfg>::set_config_nowait( Config *cfg )
   { 
     typedef IConfigurableDevice<Tcfg> TSelf;
-    struct T {TSelf *self;Config *cfg;int time;};
-    struct T v = {this,cfg,0};
+    struct T {TSelf *self;Config cfg;int time;};
+    struct T v = {this,*cfg,0};
     static asynq *q=NULL;
     static int timestamp=0;
 
@@ -364,10 +412,12 @@ namespace fetch {
   DWORD WINAPI IConfigurableDevice<Tcfg>::_set_config_nowait__helper( LPVOID lparam )
   {
     typedef IConfigurableDevice<Tcfg> TSelf;
-    struct T {TSelf *self;Config *cfg;int time;};
-    struct T v = {NULL, 0.0, 0};
+    struct T {TSelf *self;Config cfg;int time;};
+    struct T v;
     asynq *q = (asynq*) lparam;
     static int lasttime=0;
+
+    memset(&v,0,sizeof(v));
 
     if(!Asynq_Pop_Copy_Try(q,&v,sizeof(T)))
     { 
@@ -380,8 +430,8 @@ namespace fetch {
     v.self->transaction_lock();
     if( (v.time - lasttime) > 0 )  // The <time> is used to synchronize "simultaneous" requests
     { 
-      lasttime = time;             // Only process requests dated after the last request.
-      v.self->_set_config__locked(v.cfg);
+      lasttime = v.time;             // Only process requests dated after the last request.
+      v.self->_set_config__locked(&v.cfg);
     }
     v.self->transaction_unlock();
     return 0; // success
@@ -391,15 +441,8 @@ namespace fetch {
   void IConfigurableDevice<Tcfg>::_set_config__locked( Config * cfg )
   {
     _assign_config(cfg);
-    if(_agent->is_armed())
-    {
-      int run = _agent->is_running();
-      if(run)
-        _agent->stop(AGENT_DEFAULT_TIMEOUT);
-      dynamic_cast<fetch::IUpdateable*>(this->_task)->update(this); //commit
-      if(run)
-        _agent->run();
-    }
+    update();
+
   }
 
   template<class Tcfg>
@@ -410,6 +453,20 @@ namespace fetch {
   void IConfigurableDevice<Tcfg>::transaction_lock()
   {LeaveCriticalSection(&_transaction_lock);}
 
-  // end namespaces
-  // fetch
+  template<class Tcfg>
+  void IConfigurableDevice<Tcfg>::update()
+  {
+    if(_agent->is_armed())
+    {
+      int run = _agent->is_running();
+      if(run)
+        _agent->stop(AGENT_DEFAULT_TIMEOUT);
+      dynamic_cast<IUpdateable*>(_agent->_task)->update(this); //commit
+      if(run)
+        _agent->run();
+    }
+  }
+
+// end namespaces
+// fetch
 }

@@ -1,6 +1,14 @@
 package fetch.cfg.device;
 
-message Digitizer 
+// Notes
+// -----
+//
+// * May be able to eliminate the nchannels field.  Protobuf will generate a channel_size()
+//   method that gives the correct value.
+// * rename channel to channels
+
+////////////////////////
+message NIScopeDigitizer 
 {
   message Channel
   { 
@@ -25,9 +33,23 @@ message Digitizer
   repeated Channel  channel     = 8;                      // array of channel configurations                                                             
 }
 
-// Notes
-// -----
-//
-// * May be able to eliminate the nchannels field.  Protobuf will generate a channel_size()
-//   method that gives the correct value.
-// * rename channel to channels
+///////////////////////
+message AlazarDigitizer
+{
+  optional string name = 1 [default = "placeholder!"];
+}
+
+/////////////////
+message Digitizer
+{
+  enum DigitizerType
+  { 
+    NIScope   = 0;
+    Alazar    = 1;
+    Simulated = 2;
+  }
+  optional DigitizerType  kind =  1 [default = NIScope];
+
+  optional NIScopeDigitizer niscope = 2;
+  optional AlazarDigitizer  alazar  = 3;
+}

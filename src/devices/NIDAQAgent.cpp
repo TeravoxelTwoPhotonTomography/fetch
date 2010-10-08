@@ -19,7 +19,7 @@ namespace fetch
   {
 
     NIDAQAgent::NIDAQAgent(Agent *agent, char *name)
-      :IConfigurableDevice<char*>(agent,name)
+      :IConfigurableDevice<char*>(agent,&name)
       ,daqtask(NULL)
     { 
       /*

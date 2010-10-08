@@ -27,22 +27,79 @@ namespace fetch
 
   namespace device
   {
-
-    class Shutter : 
-      public NIDAQAgent, 
-      public Configurable<cfg::device::Shutter>
+    class IShutter
     {
     public:
-      Shutter();
-      Shutter(Config *cfg);
+      virtual void Set(u8 val) = 0;
+      virtual void Shut() = 0;
+      virtual void Open() = 0 ;
+    }; 
 
-      void Set          (u8 val);
-      void Close        (void);
-      void Open         (void);
-      
-      void Bind         (void);   // Binds the digital output channel to the daq task.
+    template<class T>
+    class ShutterBase:public IShutter,public IConfigurableDevice<T>
+    {
+    public:
+      ShutterBase(Agent *agent) : IConfigurableDevice<T>(agent) {}
+      ShutterBase(Agent *agent, Config *cfg) :IConfigurableDevice<T>(agent,cfg) {}
     };
 
-  }
+    class NIDAQShutter:public ShutterBase<cfg::device::NIDAQShutter>      
+    {
+      NIDAQAgent daq;
+    public:
+      NIDAQShutter(Agent *agent);
+      NIDAQShutter(Agent *agent, Config *cfg);
 
+      unsigned int attach();
+      unsigned int detach();
+
+      void Set          (u8 val);
+      void Shut         (void);
+      void Open         (void);
+      
+      void Bind         (void);   // Binds the digital output channel to the daq task. - called by attach()
+    };
+
+    class SimulatedShutter:public ShutterBase<int>
+    {
+    public:
+      SimulatedShutter(Agent *agent);
+      SimulatedShutter(Agent *agent, Config *cfg);
+
+      unsigned int attach() {return 0;}
+      unsigned int detach() {return 0;}
+
+      void Set          (u8 val);
+      void Shut         (void);
+      void Open         (void);
+    };
+
+    class Shutter:public ShutterBase<cfg::device::Shutter>
+    {
+      NIDAQShutter     *_nidaq;
+      SimulatedShutter *_simulated;
+      IDevice          *_idevice;
+      IShutter         *_ishutter;
+    public:
+      Shutter(Agent *agent);
+      Shutter(Agent *agent, Config *cfg);
+      ~Shutter();
+
+      virtual unsigned int attach();
+      virtual unsigned int detach();
+
+      void setKind(Config::ShutterType kind);
+
+      void Set          (u8 val);
+      void Shut         (void);
+      void Open         (void);
+
+      virtual void set_config(NIDAQShutter::Config *cfg);
+      virtual void set_config(SimulatedShutter::Config *cfg);
+      virtual void set_config_nowait(NIDAQShutter::Config *cfg);
+      virtual void set_config_nowait(SimulatedShutter::Config *cfg);
+    };
+
+//end namespace fetch::device
+  }
 }

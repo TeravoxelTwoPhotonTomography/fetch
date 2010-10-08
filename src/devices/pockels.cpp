@@ -1,15 +1,15 @@
 /*
- * Pockels.cpp
- *
- *  Created on: Apr 19, 2010
- *      Author: Nathan Clack <clackn@janelia.hhmi.org>
- */
- /*
- * Copyright 2010 Howard Hughes Medical Institute.
- * All rights reserved.
- * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
- * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
- */
+* Pockels.cpp
+*
+*  Created on: Apr 19, 2010
+*      Author: Nathan Clack <clackn@janelia.hhmi.org>
+*/
+/*
+* Copyright 2010 Howard Hughes Medical Institute.
+* All rights reserved.
+* Use is subject to Janelia Farm Research Campus Software Copyright 1.1
+* license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
+*/
 
 #include "stdafx.h"
 #include "Pockels.h"
@@ -19,104 +19,193 @@
 #define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, error  ))
 #define DAQJMP( expr )        goto_if_fail( 0==DAQWRN(expr), Error)
 
-namespace fetch
-{
+namespace fetch  {
+namespace device {
 
-  namespace device
+  //
+  // NIDAQPockels
+  //
+
+  NIDAQPockels::NIDAQPockels(Agent *agent)
+    :PockelsBase<cfg::device::NIDAQPockels>(agent)
+    ,daq(agent,"Pockels")
+  {}    
+
+  NIDAQPockels::NIDAQPockels(Agent *agent, Config *cfg )
+    :PockelsBase<cfg::device::NIDAQPockels>(agent,cfg)
+    ,daq(agent,"NIDAQPockels")
+  {}    
+
+  NIDAQPockels::~NIDAQPockels()
+  {}
+
+  int
+    NIDAQPockels::isValidOpenVolts(f64 volts)
+  { return ( volts >= _config->v_lim_min() ) && (volts <= _config->v_lim_max() );
+  }
+
+  int
+    NIDAQPockels::setOpenVolts(f64 volts)
+  { 
+    int sts = 0; //fail
+    transaction_lock();
+    if(sts=isValidOpenVolts(volts))
+    { _config->set_v_open(volts);
+    update();        
+    }
+    else
+      warning("NIDAQPockels: attempted to set v_open to an out of bounds value.\r\n");
+    transaction_unlock();
+    return sts;
+  }
+
+  int NIDAQPockels::setOpenVoltsNoWait(f64 volts)
+  { 
+    int sts = 0; //fail
+    Config cfg = get_config();
+    if(sts=isValidOpenVolts(volts))
+    { 
+      cfg.set_v_open(volts);
+      set_config_nowait(&cfg);       
+    }
+    else
+      warning("NIDAQPockels: attempted to set v_open to an out of bounds value.\r\n");
+    return sts;
+  }
+
+  //
+  // SimulatedPockels
+  //
+
+  SimulatedPockels::SimulatedPockels( Agent *agent )
+    :PockelsBase<f64>(agent)
+  {*_config=0.0;}
+
+  SimulatedPockels::SimulatedPockels( Agent *agent, f64 *cfg )
+    :PockelsBase<f64>(agent,cfg)
+  {}
+
+  int SimulatedPockels::isValidOpenVolts( f64 volts )
   {
+    return 1;
+  }
 
-    Pockels::Pockels(Agent *agent)
-      :IPockels(agent)
-      ,daq("Pockels")
-    { __common_setup();
-    }    
+  int SimulatedPockels::setOpenVolts( f64 volts )
+  {
+    *_config=volts;
+    update();
+    return 1;
+  }
 
-    Pockels::Pockels(Agent *agent, Config *cfg )
-      :IPockels(agent,cfg)
-      ,daq("Pockels")
-    { __common_setup();
-    }    
+  int SimulatedPockels::setOpenVoltsNoWait( f64 volts )
+  {
+    set_config_nowait(&volts);
+    return 1;
+  }
 
-    Pockels::~Pockels()
-    {}
+  //
+  // Pockels
+  //
 
-    int
-    Pockels::Is_Volts_In_Bounds(f64 volts)
-    { return ( volts >= config->v_lim_min() ) && (volts <= config->v_lim_max() );
+  Pockels::Pockels( Agent *agent )
+    :PockelsBase<cfg::device::Pockels>(agent)
+    ,_nidaq(NULL)
+    ,_simulated(NULL)
+    ,_idevice(NULL)
+    ,_ipockels(NULL)
+  {
+    setKind(_config->kind());
+  }
+
+  Pockels::Pockels( Agent *agent, Config *cfg )
+    :PockelsBase<cfg::device::Pockels>(agent,cfg)
+    ,_nidaq(NULL)
+    ,_simulated(NULL)
+    ,_idevice(NULL)
+    ,_ipockels(NULL)
+  {
+    setKind(cfg->kind());
+  }
+
+  Pockels::~Pockels()
+  {
+    if(_nidaq)     { delete _nidaq;     _nidaq=NULL; }
+    if(_simulated) { delete _simulated; _simulated=NULL; }
+  }
+
+  void Pockels::setKind( Config::PockelsType kind )
+  {
+    switch(kind)
+    {    
+    case cfg::device::Pockels_PockelsType_NIDAQ:
+      if(!_nidaq)
+        _nidaq = new NIDAQPockels(_agent,_config->mutable_nidaq());
+      _idevice  = _nidaq;
+      _ipockels = _nidaq;
+      break;
+    case cfg::device::Pockels_PockelsType_Simulated:    
+      if(!_simulated)
+        _simulated = new SimulatedPockels(_agent);
+      _idevice  = _simulated;
+      _ipockels = _simulated;
+      break;
+    default:
+      error("Unrecognized kind() for Pockels.  Got: %u\r\n",(unsigned)kind);
     }
+  }
 
-    int
-    Pockels::Set_Open_Val(f64 volts, int time)
-    { static int lasttime = 0;                     // changes occur inside the lock
-      Guarded_Assert( Is_Volts_In_Bounds(volts) ); // Callers that don't like the panics (e.g. UI responses)
-                                                   //   should do their own bounds checks.
-      EnterCriticalSection(&local_state_lock);
+  int Pockels::isValidOpenVolts( f64 volts )
+  {
+    Guarded_Assert(_ipockels);
+    return _ipockels->isValidOpenVolts(volts);
+  }
 
-      if( (time - lasttime) > 0 )                  // The <time> is used to synchronize "simultaneous" requests
-      { lasttime = time;                           // Only process requests dated after the last request.
+  int Pockels::setOpenVolts( f64 volts )
+  {
+    Guarded_Assert(_ipockels);
+    return _ipockels->isValidOpenVolts(volts);
+  }
 
-        config->set_v_open(volts);        
-        // if the device is armed, we need to communicate the change to the bound task
-        if(this->is_armed())
-        { int run = this->is_running();
-          if(run)
-            this->stop(POCKELS_DEFAULT_TIMEOUT);
-          dynamic_cast<fetch::IUpdateable*>(this->_task)->update(this); //commit
-          debug("\tChanged Pockels to %f V at open.\r\n",volts);
-          if( run )
-            this->run();
-        }
+  int Pockels::setOpenVoltsNoWait( f64 volts )
+  {
+    Guarded_Assert(_ipockels);
+    return _ipockels->setOpenVoltsNoWait(volts);
+  }
 
-      }
-      LeaveCriticalSection(&local_state_lock);
-      return lasttime;
-    }
+  void Pockels::set_config( NIDAQPockels::Config *cfg )
+  {
+    Guarded_Assert(_nidaq);
+    _nidaq->set_config(cfg);
+  }
 
-#ifndef WINAPI
-#define WINAPI
-#endif
+  void Pockels::set_config_nowait( SimulatedPockels::Config *cfg )
+  {
+    Guarded_Assert(_simulated);
+    _simulated->set_config_nowait(cfg);
+  }
 
-    DWORD WINAPI
-    _pockels_set_open_val_thread_proc( LPVOID lparam )
-    { struct T {Pockels *self; f64 volts; int time;};
-      struct T v = {NULL, 0.0, 0};
-      asynq *q = (asynq*) lparam;
+  void Pockels::set_config_nowait( NIDAQPockels::Config *cfg )
+  {
+    Guarded_Assert(_nidaq);
+    _nidaq->set_config_nowait(cfg);
+  }
 
-      if(!Asynq_Pop_Copy_Try(q,&v,sizeof(T)))
-      { warning("In Pockels::Set_Open_Val work procedure:\r\n"
-                "\tCould not pop arguments from queue.\r\n");
-        return 0;
-      }
-      debug( "De-queued request:  Pockels(%p): %f V\t Timestamp: %d\tQ capacity: %d\r\n",v.self, v.volts, v.time, q->q->ring->nelem );
-      Guarded_Assert(v.self);
-      v.self->Set_Open_Val(v.volts,v.time);
-      return 0; // success
-    }
+  void Pockels::set_config( SimulatedPockels::Config *cfg )
+  {
+    Guarded_Assert(_simulated);
+    _simulated->set_config(cfg);
+  }
+  unsigned int Pockels::attach()
+  {
+    Guarded_Assert(_idevice);
+    return _idevice->attach();
+  }
 
-    BOOL
-    Pockels::Set_Open_Val_Nonblocking(f64 volts)
-    { struct T {Pockels *self; f64 volts; int time;};
-      struct T v = {this, volts, 0};
-      static asynq *q = NULL;
-      static int timestamp = 0;
+  unsigned int Pockels::detach()
+  {
+    Guarded_Assert(_idevice);
+    return _idevice->detach();
+  }
 
-      v.time = ++timestamp;
-
-      if( !q )
-        q = Asynq_Alloc(2, sizeof(struct T) );
-      if( !Asynq_Push_Copy(q, &v, sizeof(T), TRUE /*expand queue when full*/) )
-      { warning("In Scanner_Pockels_Set_Open_Val_Nonblocking: Could not push request arguments to queue.");
-        return 0;
-      }
-      return QueueUserWorkItem(&_pockels_set_open_val_thread_proc, (void*)q, NULL /*default flags*/);
-    }
-
-    void Pockels::__common_setup()
-    {
-      Guarded_Assert_WinErr(
-        InitializeCriticalSectionAndSpinCount(&local_state_lock, 0x80000400 ));
-    }
-
-
-  } //end device namespace
+} //end device namespace
 }   //end fetch  namespace

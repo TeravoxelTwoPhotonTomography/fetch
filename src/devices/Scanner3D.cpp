@@ -121,7 +121,7 @@ namespace fetch
       p = z + N;                  // then the pockels data
       _compute_linear_scan_mirror_waveform__sawtooth( this->NIDAQLinearScanMirror::config, m, N);
       _compute_zpiezo_waveform_const(                 this->ZPiezo::config    , z_um, z, N);
-      _compute_pockels_vertical_blanking_waveform(    this->Pockels::config         , p, N);
+      _compute_pockels_vertical_blanking_waveform(    this->NIDAQPockels::config         , p, N);
 #if 0
       vector_f64_dump(ao_workspace,"out.f64");
 #endif
@@ -141,7 +141,7 @@ namespace fetch
       p = z + N;                  // then the pockels data
       _compute_linear_scan_mirror_waveform__sawtooth( this->NIDAQLinearScanMirror::config, m, N);
       _compute_zpiezo_waveform_ramp(                  this->ZPiezo::config    , z_um, z, N);
-      _compute_pockels_vertical_blanking_waveform(    this->Pockels::config         , p, N);
+      _compute_pockels_vertical_blanking_waveform(    this->NIDAQPockels::config         , p, N);
 #if 0
       vector_f64_dump(ao_workspace,"out.f64");
 #endif
@@ -154,7 +154,7 @@ namespace fetch
                    double     freq,
                    device::Scanner2D::Config        *cfg,
                    device::NIDAQLinearScanMirror::Config *lsm_cfg,
-                   device::Pockels::Config          *pock_cfg,
+                   device::NIDAQPockels::Config          *pock_cfg,
                    device::ZPiezo::Config           *zpiezo_cfg)
     {
       char aochan[MAX_CHAN_STRING];
@@ -277,7 +277,7 @@ namespace fetch
                      freq,
                      this->Scanner2D::config,
                      this->NIDAQLinearScanMirror::config,
-                     this->Pockels::config,
+                     this->NIDAQPockels::config,
                      this->ZPiezo::config);
       DAQERR( DAQmxSetWriteRegenMode(this->ao,DAQmx_Val_DoNotAllowRegen));
       this->_generate_ao_waveforms();

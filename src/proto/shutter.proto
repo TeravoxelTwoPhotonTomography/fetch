@@ -1,9 +1,19 @@
 package fetch.cfg.device;
 
-message Shutter
+message NIDAQShutter
 { 
   optional uint32 open       = 1 [default=1];                   // set point for an open shutter
   optional uint32 closed     = 2 [default=0];                   // set point for an open shutter 
   optional string do_channel = 3 [default="/Dev1/port0/line8"]; // control channel
 }                                   
 
+message Shutter
+{
+  enum ShutterType
+  {
+    NIDAQ     = 0;
+    Simulated = 1;
+  }
+  optional ShutterType  kind  = 1 [default=NIDAQ];
+  optional NIDAQShutter nidaq = 2;
+}

@@ -69,6 +69,7 @@ namespace fetch
 {
   //typedef void Agent;
   class Agent;
+  class IDevice;
 
   class Task
   { public:
@@ -97,7 +98,7 @@ namespace fetch
    */
   class IUpdateable
   { public:
-    virtual unsigned int update(Agent *d) = 0; //return 1 on success, 0 otherwise
+    virtual unsigned int update(IDevice *d) = 0; //return 1 on success, 0 otherwise
   };
   
 }

@@ -1,6 +1,6 @@
 package fetch.cfg.device;
 
-message ZPiezo
+message NIDAQZPiezo
 { optional double um2v      = 1 [default=0.025];        // V/um - approximate micron to volts converstion (for control output). e.g. 1 um = 0.025 V = 25 mV
   optional double um_max    = 2 [default=5.0];          // um   - end of travel for a scan
   optional double um_min    = 3 [default=0.0];          // um   - beg of travel for a scan
@@ -9,4 +9,15 @@ message ZPiezo
   optional double v_lim_min = 6 [default=-3.0];         // V    - Minimum permissible value
   optional double v_offset  = 7 [default=0.0];          // V    - Voltage corresponding to the spatial zero point
   optional string channel   = 8 [default="/Dev1/ao1"];  // DAQ terminal: should be connected to command input on galvo controller
+}
+
+message ZPiezo
+{
+  enum ZPiezoType
+  {
+    NIDAQ     = 0;
+    Simulated = 1;
+  }
+  optional ZPiezoType   kind = 1 [default=NIDAQ];
+  optional NIDAQZPiezo nidaq = 2;
 }

@@ -1,9 +1,21 @@
 package fetch.cfg.device;
 
-message LinearScanMirror  
+message NIDAQLinearScanMirror  
 { 
   optional  double    v_lim_max   = 1 [default= 10.0];       // safety limit - high value
   optional  double    v_lim_min   = 2 [default=-10.0];       // safety limit - low  value
   optional  double    vpp         = 3 [default= 10.0];       // 
   optional  string    ao_channel  = 4 [default="/Dev1/ao0"]; // control channel
 }                                   
+
+message LinearScanMirror
+{ 
+  enum LinearScanMirrorType
+  {
+    NIDAQ = 0;
+    Simulated = 1;
+  }
+
+  optional LinearScanMirrorType  kind  = 1 [default=NIDAQ];
+  optional NIDAQLinearScanMirror nidaq = 2;
+}

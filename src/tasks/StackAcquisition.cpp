@@ -278,7 +278,7 @@ namespace fetch
           status = 0;
           DBG("Scanner - Stack Acquisition task completed normally.\r\n");
 Finalize: 
-          d->Shutter::Close(); // Close the shutter. FIXME: Ambiguous function name.
+          d->Shutter::Shut(); // Close the shutter. FIXME: Ambiguous function name.
           free(frm);
           free(wfm);
           niscope_debug_print_status(vi);          

@@ -40,10 +40,9 @@ namespace fetch
 
       unsigned int attach();
       unsigned int detach();
+
     public:
       TaskHandle daqtask;
-
-    protected:
       char _daqtaskname[128];      
     };
 

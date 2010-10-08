@@ -21,14 +21,35 @@ namespace fetch
   namespace device
   {        
 
-    Shutter::Shutter()
-            : NIDAQAgent("shutter")
-    {}
+    //
+    // NIDAQ Shutter
+    //
 
-    Shutter::Shutter( Config *cfg )
-      : NIDAQAgent("shutter"),
-        Configurable(cfg)
-    {}
+    NIDAQShutter::NIDAQShutter( Agent *agent )
+      :ShutterBase<cfg::device::NIDAQShutter>(agent)
+      ,daq(agent,"Shutter")
+    {
+    }
+
+    NIDAQShutter::NIDAQShutter( Agent *agent, Config *cfg )
+      :ShutterBase<cfg::device::NIDAQShutter>(agent,cfg)
+      ,daq(agent,"Shutter")
+    {
+    }
+
+    unsigned int NIDAQShutter::attach()
+    {
+      unsigned int sts = daq.attach();
+      if(sts==0) // 0 is success
+        Bind();
+      return sts;
+    }
+
+    unsigned int NIDAQShutter::detach()
+    {
+      return daq.detach();
+    }
+
 
     /*
      * Note:
@@ -45,9 +66,9 @@ namespace fetch
      * simple implementation has been enough.
      */
     void
-    Shutter::Set(u8 val)
+    NIDAQShutter::Set(u8 val)
     { int32 written = 0;
-      DAQERR( DAQmxWriteDigitalLines( this->daqtask,
+      DAQERR( DAQmxWriteDigitalLines( daq.daqtask,
                                       1,                          // samples per channel,
                                       0,                          // autostart
                                       0,                          // timeout
@@ -58,28 +79,157 @@ namespace fetch
     }
 
     void
-    Shutter::Open(void)
-    { Set(config->open());
+    NIDAQShutter::Open(void)
+    { Set(_config->open());
       Sleep( SHUTTER_DEFAULT_OPEN_DELAY_MS );  // ensures shutter fully opens before an acquisition starts
     }
 
     void
-    Shutter::Close(void)
-    { Set(config->closed());
+    NIDAQShutter::Shut(void)
+    { Set(_config->closed());
     }
     
     void
-    Shutter::Bind(void)
-    { DAQERR( DAQmxClearTask(daqtask) );
-      DAQERR( DAQmxCreateTask(_daqtaskname,&daqtask));
-      DAQERR( DAQmxCreateDOChan( daqtask,
-                                 config->do_channel().c_str(),
+    NIDAQShutter::Bind(void)
+    { DAQERR( DAQmxClearTask(daq.daqtask) );
+      DAQERR( DAQmxCreateTask(daq._daqtaskname,&daq.daqtask));
+      DAQERR( DAQmxCreateDOChan( daq.daqtask,
+                                 _config->do_channel().c_str(),
                                  "shutter-command",
                                  DAQmx_Val_ChanPerLine ));
-      DAQERR( DAQmxStartTask( daqtask ) );                        // go ahead and start it
-      Close();                                                    //Close the shutter.... FIXME: function name is not descriptive...
+      DAQERR( DAQmxStartTask( daq.daqtask ) );                    // go ahead and start it
+      Shut();                                                    // Close the shutter....
     }
 
+    //
+    // Simulate Shutter
+    //
+
+    SimulatedShutter::SimulatedShutter( Agent *agent )
+      :ShutterBase<int>(agent)
+    {
+      *_config=0;
+    }
+
+    SimulatedShutter::SimulatedShutter( Agent *agent, Config *cfg )
+      :ShutterBase<int>(agent,cfg)
+    {}
+
+    void SimulatedShutter::Set( u8 val )
+    { *_config=val;
+    }
+
+    void SimulatedShutter::Shut( void )
+    { *_config=0;
+    }
+
+    void SimulatedShutter::Open( void )
+    { *_config=1;
+    }
+
+    //
+    // Shutter
+    //
+
+    Shutter::Shutter( Agent *agent )
+      :ShutterBase<cfg::device::Shutter>(agent)
+      ,_nidaq(NULL)
+      ,_simulated(NULL)
+      ,_idevice(NULL)
+      ,_ishutter(NULL)
+    {
+      setKind(_config->kind());
+    }
+
+    Shutter::Shutter( Agent *agent, Config *cfg )
+      :ShutterBase<cfg::device::Shutter>(agent,cfg)
+      ,_nidaq(NULL)
+      ,_simulated(NULL)
+      ,_idevice(NULL)
+      ,_ishutter(NULL)
+    {
+      setKind(cfg->kind());
+    }
+
+    Shutter::~Shutter()
+    {
+      if(_nidaq)     { delete _nidaq;     _nidaq=NULL; }
+      if(_simulated) { delete _simulated; _simulated=NULL; }
+    }
+
+    void Shutter::setKind( Config::ShutterType kind )
+    {
+      switch(kind)
+      {    
+      case cfg::device::Shutter_ShutterType_NIDAQ:
+        if(!_nidaq)
+          _nidaq = new NIDAQShutter(_agent,_config->mutable_nidaq());
+        _idevice  = _nidaq;
+        _ishutter = _nidaq;
+        break;
+      case cfg::device::Shutter_ShutterType_Simulated:    
+        if(!_simulated)
+          _simulated = new SimulatedShutter(_agent);
+        _idevice  = _simulated;
+        _ishutter = _simulated;
+        break;
+      default:
+        error("Unrecognized kind() for Shutter.  Got: %u\r\n",(unsigned)kind);
+      }
+    }
+
+    void Shutter::Set( u8 v )
+    {
+      Guarded_Assert(_ishutter);
+      _ishutter->Set(v);
+    }
+
+    void Shutter::Open()
+    {
+      Guarded_Assert(_ishutter);
+      _ishutter->Open();
+    }
+
+    void Shutter::Shut()
+    {
+      Guarded_Assert(_ishutter);
+      _ishutter->Shut();
+    }
+
+    void Shutter::set_config( NIDAQShutter::Config *cfg )
+    {
+      Guarded_Assert(_nidaq);
+      _nidaq->set_config(cfg);
+    }
+
+    void Shutter::set_config_nowait( SimulatedShutter::Config *cfg )
+    {
+      Guarded_Assert(_simulated);
+      _simulated->set_config_nowait(cfg);
+    }
+
+    void Shutter::set_config_nowait( NIDAQShutter::Config *cfg )
+    {
+      Guarded_Assert(_nidaq);
+      _nidaq->set_config_nowait(cfg);
+    }
+
+    void Shutter::set_config( SimulatedShutter::Config *cfg )
+    {
+      Guarded_Assert(_simulated);
+      _simulated->set_config(cfg);
+    }
+    unsigned int Shutter::attach()
+    {
+      Guarded_Assert(_idevice);
+      return _idevice->attach();
+    }
+
+    unsigned int Shutter::detach()
+    {
+      Guarded_Assert(_idevice);
+      return _idevice->detach();
+    }
   }
 
 }

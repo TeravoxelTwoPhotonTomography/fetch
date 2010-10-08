@@ -49,7 +49,7 @@ namespace fetch
        NIScopeDigitizer(cfg->mutable_digitizer()),
        NIDAQLinearScanMirror(cfg->mutable_linear_scan_mirror()),
        Shutter(cfg->mutable_shutter()),
-       Pockels(cfg->mutable_pockels()),
+       NIDAQPockels(cfg->mutable_pockels()),
        ao(NULL),
        clk(NULL),
        ao_workspace(NULL),
@@ -220,7 +220,7 @@ namespace fetch
     }
 
     void
-    Scanner2D::_compute_pockels_vertical_blanking_waveform( Pockels::Config *cfg, float64 *data, double N )
+    Scanner2D::_compute_pockels_vertical_blanking_waveform( NIDAQPockels::Config *cfg, float64 *data, double N )
     { int i=(int)N;
       float64 max = cfg->v_open(),
               min = cfg->v_closed();
@@ -238,7 +238,7 @@ namespace fetch
       m = ao_workspace->contents; // first the mirror data
       p = m + N;                  // then the pockels data
       _compute_linear_scan_mirror_waveform__sawtooth( this->NIDAQLinearScanMirror::config, m, N);
-      _compute_pockels_vertical_blanking_waveform(    this->Pockels::config, p, N);
+      _compute_pockels_vertical_blanking_waveform(    this->NIDAQPockels::config, p, N);
       unlock();
     }
 
@@ -249,7 +249,7 @@ namespace fetch
                    double     freq,
                    device::Scanner2D::Config        *cfg,
                    device::NIDAQLinearScanMirror::Config *lsm_cfg,
-                   device::Pockels::Config          *pock_cfg)
+                   device::NIDAQPockels::Config          *pock_cfg)
     {
       char aochan[POCKELS_MAX_CHAN_STRING + LINEAR_SCAN_MIRROR__MAX_CHAN_STRING + 1];
 
@@ -348,7 +348,7 @@ namespace fetch
                      freq,
                      this->config,
                      this->NIDAQLinearScanMirror::config,
-                     this->Pockels::config);
+                     this->NIDAQPockels::config);
       this->_generate_ao_waveforms();
       this->_register_daq_event();
 
@@ -438,7 +438,7 @@ namespace fetch
 
     void Scanner2D::set_config( cfg::device::Scanner2D *cfg )
     { this->NIScopeDigitizer::set_config(cfg->mutable_digitizer());
-      this->Pockels::set_config(cfg->mutable_pockels());
+      this->NIDAQPockels::set_config(cfg->mutable_pockels());
       this->Shutter::set_config(cfg->mutable_shutter());
       this->NIDAQLinearScanMirror::set_config(cfg->mutable_linear_scan_mirror());
       config = cfg;

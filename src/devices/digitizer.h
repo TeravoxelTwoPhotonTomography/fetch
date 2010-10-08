@@ -42,34 +42,36 @@ namespace fetch
 {
   namespace device
   {
-    //////////////////////////////////////////////////////////////////////////
-    template<class Tcfg>
-    class IDigitizer : public IConfigurableDevice<Tcfg>
+
+    class IDigitizer
     {
     public:
-      IDigitizer(Agent* agent) : IConfigurableDevice(agent) {}
-      IDigitizer(Agent* agent, Config* cfg) : IConfigurableDevice(agent,cfg) {}
+    }; 
+
+    template<class T>
+    class DigitizerBase:public IDigitizer,public IConfigurableDevice<T>
+    {
+    public:
+      DigitizerBase(Agent *agent) : IConfigurableDevice<T>(agent) {}
+      DigitizerBase(Agent *agent, Config *cfg) :IConfigurableDevice<T>(agent,cfg) {}
     };
 
+
     //////////////////////////////////////////////////////////////////////////
-    class NIScopeDigitizer : public IDigitizer<cfg::device::Digitizer>
+    class NIScopeDigitizer : public DigitizerBase<cfg::device::NIScopeDigitizer>
     {
     public:
-      typedef cfg::device::Digitizer          Config;
-      typedef cfg::device::Digitizer_Channel  Channel_Config;
+      typedef cfg::device::NIScopeDigitizer          Config;
+      typedef cfg::device::NIScopeDigitizer_Channel  Channel_Config;
 
       NIScopeDigitizer(Agent *agent);      
-      NIScopeDigitizer(Agent *agent, Config *cfg); // Configuration references cfg
-      //NIScopeDigitizer(size_t nbuf, size_t nbytes_per_frame, size_t nwfm); // Inputs determine how output queues are initially allocated
-
-
+      NIScopeDigitizer(Agent *agent, Config *cfg);
       ~NIScopeDigitizer();
 
       unsigned int attach(void);
       unsigned int detach(void);
 
     public:
-
       ViSession _vi;
 
     private:
@@ -77,10 +79,51 @@ namespace fetch
     };
 
     //////////////////////////////////////////////////////////////////////////
-    class SimulatedDigitizer : public IDigitizer<int>
+    class AlazarDigitizer : public DigitizerBase<cfg::device::AlazarDigitizer>
     {
     public:
-      SimulatedDigitizer(Agent *agent) : IDigitizer<int>(agent) {}
+      AlazarDigitizer(Agent *agent)             : DigitizerBase<cfg::device::AlazarDigitizer>(agent) {}
+      AlazarDigitizer(Agent *agent, Config *cfg): DigitizerBase<cfg::device::AlazarDigitizer>(agent,cfg) {}
+
+      unsigned int attach() {return 0;}
+      unsigned int detach() {return 0;}
+    };
+
+    //////////////////////////////////////////////////////////////////////////
+    class SimulatedDigitizer : public DigitizerBase<int>
+    {
+    public:
+      SimulatedDigitizer(Agent *agent) : DigitizerBase<int>(agent) {}
+      SimulatedDigitizer(Agent *agent, Config *cfg): DigitizerBase<int>(agent,cfg) {}
+
+      unsigned int attach() {return 0;}
+      unsigned int detach() {return 0;}
+    };
+
+    //////////////////////////////////////////////////////////////////////////
+    class Digitizer:public DigitizerBase<cfg::device::Digitizer>
+    {
+      NIScopeDigitizer     *_niscope;
+      SimulatedDigitizer   *_simulated;
+      AlazarDigitizer      *_alazar;
+      IDevice              *_idevice;
+      IDigitizer           *_idigitizer;
+    public:
+      Digitizer(Agent *agent);
+      Digitizer(Agent *agent, Config *cfg);
+      ~Digitizer();
+
+      virtual unsigned int attach();
+      virtual unsigned int detach();
+
+      void setKind(Config::DigitizerType kind);
+
+      virtual void set_config(NIScopeDigitizer::Config *cfg);
+      virtual void set_config(AlazarDigitizer::Config *cfg);
+      virtual void set_config(SimulatedDigitizer::Config *cfg);
+      virtual void set_config_nowait(NIScopeDigitizer::Config *cfg);
+      virtual void set_config_nowait(AlazarDigitizer::Config *cfg);
+      virtual void set_config_nowait(SimulatedDigitizer::Config *cfg);
     };
   }
 } // namespace fetch
