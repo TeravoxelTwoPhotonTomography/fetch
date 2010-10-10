@@ -43,13 +43,15 @@ include_directories(${MYLIB_INCLUDE_DIR})
 #OpenGL
 find_package(OpenGL)
 
-#DirectX
-find_package(DirectX)
-include_directories(${DIRECTX_INCLUDE_DIR})
+# #[depricated] DirectX
+#find_package(DirectX)
+#include_directories(${DIRECTX_INCLUDE_DIR})
 
 #glew
+if(WIN32)
 find_package(Glew REQUIRED)
 include_directories(${GLEW_INCLUDE_DIR})
+endif(WIN32)
 
 #Alazar
 find_package(Alazar REQUIRED)
@@ -159,7 +161,7 @@ target_link_libraries(fetch
   ${GLEW_LIBRARIES}
   ${ALAZAR_LIBRARY}
   ${C843_LIBRARY}
-  ${DIRECTX_LIBRARIES} 
+# ${DIRECTX_LIBRARIES} 
 )
 
 ##

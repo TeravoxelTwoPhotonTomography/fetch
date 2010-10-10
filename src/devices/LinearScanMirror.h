@@ -17,11 +17,6 @@
 #include "linear_scan_mirror.pb.h"
 #include "object.h"
 
-//#define DEFAULT_LINEARSCANMIRROR_VPP                   2.5   // V - peak-to-peak
-//#define DEFAULT_LINEARSCANMIRROR_V_MAX                10.0   // V - Maximum permissible value
-//#define DEFAULT_LINEARSCANMIRROR_V_MIN               -10.0   // V - Minimum permissible value
-//#define DEFAULT_LINEARSCANMIRROR_CHANNEL        "/Dev1/ao0"  // DAQ terminal: should be connected to command input on galvo controller
-
 #define LINEAR_SCAN_MIRROR__MAX_CHAN_STRING             32
 
 namespace fetch

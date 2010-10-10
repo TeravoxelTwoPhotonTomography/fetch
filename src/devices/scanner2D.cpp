@@ -35,6 +35,8 @@ namespace fetch
     { set_config(config);
       __common_setup();
 
+      // Note: the lines below would normally be taken care of using
+      //       a proper config.
       // Minimally require two channels.
       // 1. Acquisition
       // 2. Analog (line) trigger
@@ -374,12 +376,13 @@ namespace fetch
       Guarded_Assert( written == N );
       return;
     } 
-
+#if 0
     int32 CVICALLBACK _daq_event_callback(TaskHandle taskHandle, int32 type, uInt32 nsamples, void *callbackData)
     { Scanner2D *self = (Scanner2D*)(callbackData);
       Guarded_Assert_WinErr(SetEvent(self->notify_daq_done));
       return 0;
     }
+#endif
     
     int32 CVICALLBACK _daq_event_done_callback(TaskHandle taskHandle, int32 sts, void *callbackData)
     { Scanner2D *self = (Scanner2D*)(callbackData);

@@ -1,0 +1,26 @@
+package fetch.cfg.device;
+
+message NationalInstrumentsDAQ
+{
+  optional uint32 ao_samples_per_frame = 1  [default=16384];      // DAQ AO: Samples per waveform. Used to size buffers for DAQ output during a frame.
+  optional string trigger     = 2  [default="APFI0"];             // DAQ terminal: should be connected to resonant velocity output                                                 
+  optional string clock       = 3  [default="Ctr1InternalOutput"];// DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock                     
+  optional string ctr         = 4  [default="/Dev1/ctr1"];        // DAQ terminal: A finite pulse train is generated so that this counter may be used as a sample clock.           
+  optional string ctr_alt     = 5  [default="/Dev1/ctr0"];        // DAQ terminal: Finite pulse train generation requires a pair of counters.  This is the implicitly used one.    
+}
+
+message SimulatedDAQ
+{
+  optional uint32 ao_samples_per_frame = 1  [default=16384];      // DAQ AO: Samples per waveform. Used to size buffers for DAQ output during a frame.
+}
+
+message DAQ
+{ 
+  enum DAQKind
+  { NIDAQ = 0;
+    Simulated = 1;
+  }
+  optional DAQKind                kind      = 1 [default=NIDAQ];
+  optional NationalInstrumentsDAQ nidaq     = 2;
+  optional SimulatedDAQ           simulated = 3;
+}

@@ -31,6 +31,9 @@ message NIScopeDigitizer
   optional string   chan_names  = 6 [default = "0"];      // the channels to acquire data on (NI Channel String syntax)                                  
   optional uint32   nchannels   = 7 [default = 1];        // number of channels to independently configure - typically set to DIGITIZER_MAX_NUM_CHANNELS 
   repeated Channel  channel     = 8;                      // array of channel configurations                                                             
+  
+  optional uint32   line_trigger_src = 4  [default=1];      // Digitizer channel corresponding to resonant velocity input                                                    
+  optional string   armstart         = 6  [default="RTSI2"];// Digitizer terminal: should be connected to "ReadyForStart" event output from digitizer                              
 }
 
 ///////////////////////

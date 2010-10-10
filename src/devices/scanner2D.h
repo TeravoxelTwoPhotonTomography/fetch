@@ -100,12 +100,30 @@ namespace fetch
       ViInt32                      _compute_record_size(void);   // determines the number of elements acquired with each digitizer record
       Frame_With_Interleaved_Lines _describe_frame(void);        // determines frame format from configuration
 
+      // TODO: move these to respective subdevices
+      //       - abstract away with "setup for 2dscan" etc..
+      //       - there are some dependencies on this objects config
+      //         e.g. line_trigger_source, nscans, ao_samples_per_frame
+      //              frequency_hz,...,basically every propery in
+      //              scanner2d.proto
+      //         Most are props of those devices though.  I
+      //         don't see any reason why they can't just be moved over.
+      //         There are a few that deal with the frame format that might
+      //         have to be arguments
+      //
       virtual void                 _config_digitizer(void);
       virtual void                 _config_daq(void);
 
+      // TODO: move write_ao to DAQ abstraction
+      //       generate_* should stay
+      //       this means that write_ao should take the buffer and size as an
+      //       argument
       virtual void                 _generate_ao_waveforms(void); // fills ao_workspace with data for analog output
       virtual void                 _write_ao(void);
       
+
+      // TODO: move these to NIDAQ interface
+      //       - also _daq_event_done_callback and the notify_daq_done event
       virtual void                 _register_daq_event(void);
       virtual unsigned int         _wait_for_daq(DWORD timeout_ms); // returns 1 on succes, 0 otherwise
       
