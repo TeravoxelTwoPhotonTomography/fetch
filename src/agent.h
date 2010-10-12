@@ -135,6 +135,8 @@ namespace fetch {
     IDevice(Agent* agent);
     virtual ~IDevice();
 
+    // Don't call these directly.  They're called through Agent::attach()/detach()
+    // The agent class takes care of synchronization and non-blocking calls.
     virtual unsigned int attach(void)=0;// Returns 0 on success, nonzero otherwise.
     virtual unsigned int detach(void)=0;// Returns 0 on success, nonzero otherwise.  Should attempt to disarm if running.  Should not panic if possible.
   
@@ -230,14 +232,14 @@ namespace fetch {
       unsigned int attach (void);                      // Returns 0 on success, nonzero otherwise.
       unsigned int detach (void);                      // Returns 0 on success, nonzero otherwise.  Should attempt to disarm if running.  Should not panic if possible.
 
-      unsigned int arm    (Task *t, DWORD timeout_ms); // Returns 0 on success, nonzero otherwise.
+      unsigned int arm    (Task *t, IDevice *dc, DWORD timeout_ms); // Returns 0 on success, nonzero otherwise.
       unsigned int disarm (DWORD timeout_ms);          // Returns 0 on success, nonzero otherwise.
       unsigned int run    (void);                      // Returns 0 on success, nonzero otherwise.
       unsigned int stop   (DWORD timeout_ms);          // Returns 0 on success, nonzero otherwise.
       
       BOOL      attach_nowait (void);
       BOOL      detach_nowait (void);
-      BOOL         arm_nowait (Task *t, DWORD timeout_ms);
+      BOOL         arm_nowait (Task *t, IDevice *dc, DWORD timeout_ms);
       BOOL      disarm_nowait (DWORD timeout_ms);
       BOOL         run_nowait (void);
       BOOL        stop_nowait (DWORD timeout_ms);

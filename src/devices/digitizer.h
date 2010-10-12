@@ -46,6 +46,7 @@ namespace fetch
     class IDigitizer
     {
     public:
+      virtual void setup(int nrecords, double record_frequency_Hz, double duty) = 0;
     }; 
 
     template<class T>
@@ -71,6 +72,7 @@ namespace fetch
       unsigned int attach(void);
       unsigned int detach(void);
 
+      virtual void setup(int nrecords, double record_frequency_Hz, double duty);
     public:
       ViSession _vi;
 
@@ -87,6 +89,8 @@ namespace fetch
 
       unsigned int attach() {return 0;}
       unsigned int detach() {return 0;}
+
+      virtual void setup(int nrecords, double record_frequency_Hz, double duty);
     };
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -98,16 +102,13 @@ namespace fetch
 
       unsigned int attach() {return 0;}
       unsigned int detach() {return 0;}
+
+      virtual void setup(int nrecords, double record_frequency_Hz, double duty) {}
     };
 
     ////////////////////////////////////////////////////////////
     class Digitizer:public DigitizerBase<cfg::device::Digitizer>
     {
-      NIScopeDigitizer     *_niscope;
-      SimulatedDigitizer   *_simulated;
-      AlazarDigitizer      *_alazar;
-      IDevice              *_idevice;
-      IDigitizer           *_idigitizer;
     public:
       Digitizer(Agent *agent);
       Digitizer(Agent *agent, Config *cfg);
@@ -120,6 +121,8 @@ namespace fetch
       virtual void _set_config(Config IN *cfg);
       virtual void _set_config(const Config &cfg); // only updates the digitizer selected by cfg.kind().
 
+      virtual void setup(int nrecords, double record_frequency_Hz, double duty) {_idigitizer->setup(nrecords,record_frequency_Hz,duty);}
+
       // XXX: These are pretty useless, consider deleting?
       virtual void set_config(const NIScopeDigitizer::Config &cfg);
       virtual void set_config(const AlazarDigitizer::Config &cfg);
@@ -127,6 +130,13 @@ namespace fetch
       virtual void set_config_nowait(const NIScopeDigitizer::Config &cfg);
       virtual void set_config_nowait(const AlazarDigitizer::Config &cfg);
       virtual void set_config_nowait(const SimulatedDigitizer::Config &cfg);
+
+    public:
+      NIScopeDigitizer     *_niscope;
+      SimulatedDigitizer   *_simulated;
+      AlazarDigitizer      *_alazar;
+      IDevice              *_idevice;
+      IDigitizer           *_idigitizer;
     };
   }
 } // namespace fetch

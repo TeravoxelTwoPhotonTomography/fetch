@@ -18,6 +18,7 @@
 #define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, warning))
 #define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, error  ))
 #define DAQJMP( expr )  goto_if_fail( 0==DAQWRN(expr), Error)
+#define DAQRTN( expr )  return_val_if_fail(0==DAQWRN(expr),1)
 
 namespace fetch {
   namespace device {
@@ -88,14 +89,14 @@ namespace fetch {
       else if(res==WAIT_ABANDONED_0)
       { 
         warning("%s: Abandoned wait on notify_daq_done.\r\n",classname);
-        return 0;
+        return 1;
       }
       else if(res==WAIT_ABANDONED_0+1)
       { 
         warning("%s: Abandoned wait on notify_stop.\r\n",classname);
-        return 0;
+        return 1;
       }
-      return 1;   
+      return 0;   
     }
 
     void NationalInstrumentsDAQ::writeAO(float64 *data)
@@ -114,6 +115,11 @@ namespace fetch {
       Guarded_Assert( written == N );
       return;
     }
+
+    int32 NationalInstrumentsDAQ::startAO()  { DAQRTN(DAQmxStartTask(_ao.daqtask)); return 0;}
+    int32 NationalInstrumentsDAQ::startCLK() { DAQRTN(DAQmxStartTask(_clk.daqtask)); return 0;}
+    int32 NationalInstrumentsDAQ::stopAO()   { DAQRTN(DAQmxStopTask(_ao.daqtask)); return 0;}
+    int32 NationalInstrumentsDAQ::stopCLK()  { DAQRTN(DAQmxStopTask(_clk.daqtask)); return 0;}
 
     //************************************
     // Method:    setupCLK

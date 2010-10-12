@@ -26,7 +26,8 @@ namespace fetch
     class IDAQ
     {
     public:
-      virtual int waitForDone(DWORD timeout_ms=INFINITE) = 0;
+      
+      virtual int waitForDone(DWORD timeout_ms=INFINITE) = 0; // Should return 1 on fail, 0 on success
 
       virtual void setupCLK(float64 nrecords, float64 record_frequency_Hz) = 0;
       virtual void setupAO(float64 nrecords, float64 record_frequency_Hz) = 0;
@@ -39,6 +40,7 @@ namespace fetch
 
       virtual void writeAO(float64 *data);
 
+      //These should return 1 on fail, 0 on success
       virtual int32 startAO() = 0;
       virtual int32 startCLK() = 0;
       virtual int32 stopAO() = 0;
@@ -74,10 +76,10 @@ namespace fetch
            
       void writeAO(float64 *data);
 
-      int32 startAO()  { return DAQmxStartTask(_ao.daqtask);}
-      int32 startCLK() { return DAQmxStartTask(_clk.daqtask);}
-      int32 stopAO()  { return DAQmxStopTask(_ao.daqtask);}
-      int32 stopCLK() { return DAQmxStopTask(_clk.daqtask);}
+      int32 startAO(); 
+      int32 startCLK();
+      int32 stopAO();
+      int32 stopCLK();
 
       float64 computeSampleFrequency( float64 nrecords, float64 record_frequency_Hz );
       int32   samplesPerRecordAO() {return _config->ao_samples_per_waveform();}

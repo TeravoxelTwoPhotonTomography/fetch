@@ -24,6 +24,11 @@
 #endif
 #pragma warning(pop)
 
+// TODO: unify names. eg. change ChangeWarn to DIGWRN
+#define DIGWRN( expr )  (niscope_chk( vi, expr, #expr, warning ))
+#define DIGERR( expr )  (niscope_chk( vi, expr, #expr, error   ))
+#define DIGJMP( expr )  goto_if_fail(VI_SUCCESS == niscope_chk( vi, expr, #expr, warning ), Error)
+
 #define CheckWarn( expression )  (niscope_chk( this->_vi, expression, #expression, &warning ))
 #define CheckPanic( expression ) (niscope_chk( this->_vi, expression, #expression, &error   ))
 #define ViErrChk( expression )    goto_if( CheckWarn(expression), Error )
@@ -113,6 +118,89 @@ Error:
           _config->num_records() * _config->record_size() * _config->nchannels() * Bpp,
           _config->num_records() * sizeof(struct niScope_wfmInfo)};
           _alloc_qs( &_out, 2, nbuf, sz );
+    }
+
+    void NIScopeDigitizer::setup(int nrecords, double record_frequency_Hz, double duty)
+    {
+      ViSession vi =  this->NIScopeDigitizer::_vi;      
+
+      ViReal64   refPosition         = 0.0;
+      ViReal64   verticalOffset      = 0.0;
+      ViReal64   probeAttenuation    = 1.0;
+      ViBoolean  enforceRealtime     = NISCOPE_VAL_TRUE;
+
+      ViInt32 record_size = duty*_config->sample_rate()/record_frequency_Hz;
+
+      Guarded_Assert(record_size>0)
+
+      // Select the trigger channel
+      if(_config->line_trigger_src() >= (unsigned) _config->channel_size())
+        error("NIScopeDigitizer:\t\nTrigger source channel has not been configured.\n"
+              "\tTrigger source: %hhu (out of bounds)\n"
+              "\tNumber of configured channels: %d\n", 
+              _config->line_trigger_src(),
+              _config->channel_size());
+      const Config::Channel& line_trigger_cfg = _config->channel(_config->line_trigger_src());
+      Guarded_Assert( line_trigger_cfg.enabled() );
+
+      // Configure vertical for line-trigger channel
+      niscope_cfg_rtsi_default( vi );
+      DIGERR( niScope_ConfigureVertical(vi,
+        line_trigger_cfg.name().c_str(),  // channelName
+        line_trigger_cfg.range(),
+        0.0,
+        line_trigger_cfg.coupling(),
+        probeAttenuation,
+        NISCOPE_VAL_TRUE));               // enabled
+
+      // Configure vertical of other channels
+      {
+        for(int ichan=0; ichan<_config->channel_size(); ++ichan)
+        { 
+          if(ichan==_config->line_trigger_src())
+            continue;
+          const Config::Channel& c=_config->channel(ichan);
+          DIGERR( niScope_ConfigureVertical(vi,
+            c.name().c_str(),                    // channelName
+            c.range(),
+            0.0,
+            c.coupling(),
+            probeAttenuation,
+            c.enabled() ));
+        }
+      }
+
+      // Configure horizontal -
+      DIGERR( niScope_ConfigureHorizontalTiming(vi,
+        _config->sample_rate(),
+        record_size,
+        refPosition,
+        nrecords,
+        enforceRealtime));
+
+      // Analog trigger for bidirectional scans
+      DIGERR( niScope_ConfigureTriggerEdge (vi,
+        line_trigger_cfg.name().c_str(), // channelName
+        0.0,                          // triggerLevel
+        NISCOPE_VAL_POSITIVE,         // triggerSlope
+        line_trigger_cfg.coupling(),  // triggerCoupling
+        0.0,                          // triggerHoldoff
+        0.0 ));                       // triggerDelay
+      // Wait for start trigger (frame sync) on PFI1
+      DIGERR( niScope_SetAttributeViString( vi,
+        "",
+        NISCOPE_ATTR_ACQ_ARM_SOURCE,
+        NISCOPE_VAL_PFI_1 ));
+      return;
+    }
+
+    //
+    // Alazar digitizer
+    //
+
+    void AlazarDigitizer::setup( int nrecords, double record_frequency_Hz, double duty )
+    {
+      error("TODO: Implement me!");
     }
 
     //
@@ -252,6 +340,9 @@ Error:
         error("Unrecognized kind() for Digitizer.  Got: %u\r\n",(unsigned)kind);
       }
     }
+
+
+
 
   } // namespace fetch
 } // namespace fetch

@@ -86,16 +86,16 @@ namespace fetch
 
     class Scanner2D : public IScanner, public IConfigurableDevice<cfg::device::Scanner2D>
     {
+    public:
       Digitizer _digitizer;
       DAQ       _daq;
       Shutter   _shutter;
       LinearScanMirror _LSM;
-      Pockels     _pockels;
+      Pockels   _pockels;
 
     public:
       Scanner2D(Agent *agent);
       Scanner2D(Agent *agent, Config *cfg);
-
 
       virtual unsigned int attach(); // returns 0 on success, 1 on failure
       virtual unsigned int detach(); // returns 0 on success, 1 on failure

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../task.h"
-#include "../agent.h"
-#include "../devices/Digitizer.h"
+#include "task.h"
+#include "agent.h"
+#include "Digitizer.h"
 
 namespace fetch
 { namespace task

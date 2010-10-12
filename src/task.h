@@ -73,8 +73,8 @@ namespace fetch
 
   class Task
   { public:
-    virtual unsigned int config(Agent *d) = 0; // return 1 on success, 0 otherwise
-    virtual unsigned int run(Agent *d)    = 0; // return 1 on success, 0 otherwise
+    virtual unsigned int config(IDevice *d) = 0; // return 1 on success, 0 otherwise
+    virtual unsigned int run(IDevice *d)    = 0; // return 1 on success, 0 otherwise
   
     static DWORD WINAPI thread_main(LPVOID lpParam);
 

@@ -6,4 +6,5 @@ import "zpiezo.proto";
 message Scanner3D
 { required Scanner2D scanner2d = 1;
   required ZPiezo    zpiezo    = 2;
+  optional float     zref_um   = 3 [default=0.0];
 }

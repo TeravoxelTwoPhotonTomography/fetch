@@ -56,34 +56,27 @@ namespace fetch
 { namespace device
   {
 
-  class Scanner3D :
-    public Scanner2D,
-    public ZPiezo,
-    public Configurable<cfg::device::Scanner3D>
+    class Scanner3D:public IScanner, public IConfigurableDevice<cfg::device::Scanner3D>
     {
-    public:      
-      typedef cfg::device::Scanner3D Config; // need to declare these to disambiguate
-      Config* &config;
-
-               Scanner3D(void);
-               Scanner3D(Config *cfg);
-      virtual ~Scanner3D(void);
-      
-      unsigned int attach(void); // Returns 0 on success, 1 otherwise
-      unsigned int detach(void); // Returns 0 on success, 1 otherwise
-
-      virtual void set_config(Config *cfg);
+      Scanner2D _scanner2d;
+      ZPiezo    _zpiezo;
     public:
-      // fills ao_workspace with data for analog output
-      virtual void _generate_ao_waveforms(void);                       // be sure to override Scanner2D::_generate_ao_waveforms
-      virtual void _generate_ao_waveforms             (f64 z_um);      // constant z
-      virtual void _generate_ao_waveforms__z_ramp_step(f64 z_um=0.0f); // ramp from z to z + z_step
+      Scanner3D(Agent *agent);
+      Scanner3D(Agent *Agent, Config *cfg);
 
-      virtual void _config_daq(void);
+      virtual unsigned int attach(); // returns 0 on success, 1 on failure
+      virtual unsigned int detach(); // returns 0 on success, 1 on failure
 
-    protected:
-      static  void _compute_zpiezo_waveform_ramp(ZPiezo::Config *cfg, f64 z_um, f64 *data, f64 N);
-      static  void _compute_zpiezo_waveform_const(ZPiezo::Config *cfg, f64 z_um, f64 *data, f64 N);
+      virtual void _set_config(Config IN *cfg);
+      virtual void _set_config(const Config& cfg);
+
+      virtual void onConfig();
+      virtual void generateAO();
+              void generateAOConstZ();
+              void generateAOConstZ(float z_um);
+              void generateAORampZ();
+              void generateAORampZ(float z_um);
+      virtual void writeAO();
 
     };
   

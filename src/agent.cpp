@@ -169,33 +169,33 @@ namespace fetch
       return sts;
     }
 
-    unsigned int Agent::arm(Task *task, DWORD timeout_ms)
-    {
+    unsigned int Agent::arm(Task *task, IDevice *dc, DWORD timeout_ms)
+    { Guarded_Assert(dc->_agent==this);
       this->lock(); // Source state can not be "armed" or "running"
-      if(!_request_available_unlocked(0/*try?*/, timeout_ms))// Blocks till agent is available
+      if(!_request_available_unlocked(0/*is try*/, timeout_ms))// Blocks till agent is available
       {
-          warning("Agent unavailable.  Perhaps another task is running?\r\n\tAborting attempt to arm.\r\n");
-          goto Error;
+        warning("Agent unavailable.  Perhaps another task is running?\r\n\tAborting attempt to arm.\r\n");
+        goto Error;
       }
       this->_task = task; // save the task
       // Exec task config function
-      if(!(task->config)(this)){
-          warning("While loading task, something went wrong with the task configuration.\r\n\tAgent not armed.\r\n");
-          goto Error;
+      if(!(task->config)(dc)){
+        warning("While loading task, something went wrong with the task configuration.\r\n\tAgent not armed.\r\n");
+        goto Error;
       }
       // Create thread for running task
-      Guarded_Assert_WinErr(
-      this->_thread = CreateThread(0,                  // use default access rights
-                                  0,                  // use default stack size (1 MB)
-                                  task->thread_main,  // main function
-                                  this,               // arguments
-                                  CREATE_SUSPENDED,   // don't start yet
-                                  NULL )); // don't worry about the thread id
+      Guarded_Assert_WinErr( this->_thread = CreateThread(
+        0,                  // use default access rights
+        0,                  // use default stack size (1 MB)
+        task->thread_main,  // main function
+        dc,                 // arguments
+        CREATE_SUSPENDED,   // don't start yet
+        NULL )); // don't worry about the thread id
       this->_is_available = 0;
       this->unlock();
       DBG("Armed 0x%p\r\n",this);
       return 1;
-    Error:
+Error:
       this->_task = NULL;
       this->unlock();
       return 0;
@@ -203,30 +203,33 @@ namespace fetch
 
     DWORD WINAPI _agent_arm_thread_proc(LPVOID lparam)
     {
-        struct T
-        {
-            Agent *d;
-            Task *dt;
-            DWORD timeout;
-        };
-        asynq *q = (asynq*)(lparam);
-        T args = {0, 0, 0};
-        if(!Asynq_Pop_Copy_Try(q, &args, sizeof(T))){
-            warning("In Agent::arm_nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
-            return 0;
-        }
-        return args.d->arm(args.dt, args.timeout);
+      struct T
+      {
+        Agent *d;
+        IDevice *dc;
+        Task *dt;
+        DWORD timeout;
+      };
+      asynq *q = (asynq*)(lparam);
+      T args = {0, 0, 0, 0};
+      if(!Asynq_Pop_Copy_Try(q, &args, sizeof(T)))
+      {
+        warning("In Agent::arm_nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
+        return 0;
+      }
+      return args.d->arm(args.dt, args.dc, args.timeout);
     }
 
-    BOOL Agent::arm_nowait(Task *task, DWORD timeout_ms)
+    BOOL Agent::arm_nowait(Task *task, IDevice *dc, DWORD timeout_ms)
     {
         struct T
         {
             Agent *d;
+            IDevice *dc;
             Task *dt;
             DWORD timeout;
         };
-        struct T args = {this, task, timeout_ms};
+        struct T args = {this, task, dc, timeout_ms};
         static asynq *q = NULL;
         if(!q)
             q = Asynq_Alloc(32, sizeof (T));
@@ -294,36 +297,39 @@ namespace fetch
     // and could be due to multiple suspensions on the thread.
     unsigned int Agent::run(void)
     {
-        DWORD sts = 0;
-        this->lock();
-        if(this->is_runnable())
-      { this->_is_running = 1;    
+      DWORD sts = 0;
+      this->lock();
+      if(this->is_runnable())
+      { 
+        this->_is_running = 1;    
         if( this->_thread != INVALID_HANDLE_VALUE )
-        { sts = ResumeThread(this->_thread) <= 1; // Thread's already allocated so go!      
+        { 
+          sts = ResumeThread(this->_thread) <= 1; // Thread's already allocated so go!      
         }
         else
         { // Create thread for running the task
           Guarded_Assert_WinErr(
-            this->_thread = CreateThread(0,                  // use default access rights
-                                        0,                  // use default stack size (1 MB)
-                                        this->_task->thread_main, // main function
-                                        this,               // arguments
-                                        0,                  // run immediately
-                                        NULL ));            // don't worry about the thread id
+            this->_thread = CreateThread(0, // use default access rights
+            0,                  // use default stack size (1 MB)
+            this->_task->thread_main, // main function
+            this,               // arguments
+            0,                  // run immediately
+            NULL ));            // don't worry about the thread id
 #if 0
           Guarded_Assert_WinErr(
             SetThreadPriority( this->thread,
-                               THREAD_PRIORITY_TIME_CRITICAL ));
+            THREAD_PRIORITY_TIME_CRITICAL ));
 #endif
           DBG("Run:4b\r\n");
         }
       } else //(then not runnable)
-      { warning("Attempted to run an unarmed or already running Agent.\r\n"
-                "\tAborting the run attempt.\r\n");
+      { 
+        warning("Attempted to run an unarmed or already running Agent.\r\n"
+          "\tAborting the run attempt.\r\n");
       }
-        DBG("Agent Run: 0x%p (sts %d) thread 0x%p\r\n", this, sts, this->_thread);
-        this->unlock();
-        return sts;
+      DBG("Agent Run: 0x%p (sts %d) thread 0x%p\r\n", this, sts, this->_thread);
+      this->unlock();
+      return sts;
     }
 
     DWORD WINAPI _agent_run_thread_proc(LPVOID lparam)

@@ -42,6 +42,14 @@ namespace fetch
       return daq.detach();
     }
 
+    /*
+     * Compute ZPiezo Waveform Constant:
+     * ----------------------------
+     *         0     N
+     *         |     |
+     *          ____________________ ,- z_um
+     *  _______|                     ,- z previous
+     */
     void NIDAQZPiezo::computeConstWaveform(float64 z_um,  float64 *data, int n )
     {
       f64 off = z_um * _config->um2v();
@@ -49,6 +57,20 @@ namespace fetch
         data[i] = off; // linear ramp from off to off+A
     }
 
+    /*
+     * Compute ZPiezo Waveform Ramp:
+     * ----------------------------
+     *
+     *           0    N
+     *           |    |____________  ,- z_um + z_step
+     *               /
+     *              /
+     *             /
+     *            /
+     *  _________/                   ,- z_um
+     *
+     *  Notice that N-1 is equiv. to z_step - z_step/N
+     */
     void NIDAQZPiezo::computeRampWaveform(float64 z_um,  float64 *data, int n )
     {
       f64   A = _config->um_step() * _config->um2v(),

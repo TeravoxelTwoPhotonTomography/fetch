@@ -1,20 +1,24 @@
-#include "stdafx.h"
+#include "common.h"
 #include "task.h"
 
 namespace fetch
 {
+
+
   DWORD WINAPI
     Task::thread_main(LPVOID lpParam)
-    { DWORD result;
-      Agent *d    = (Agent*) lpParam;
-      Task  *task = d->_task;
-      result = task->run(d);
+    {
+      DWORD result;
+      IDevice *dc   = (IDevice *) lpParam;
+      Agent   *a    = dc->_agent;
+      Task    *task = a->_task;
+      result = task->run(dc);
       // Transition back to stop state when run returns
-      d->lock();
-      d->_is_running = 0;  
-      CloseHandle(d->thread);
-      d->thread = INVALID_HANDLE_VALUE;
-      d->unlock();
+      a->lock();
+      a->_is_running = 0;  
+      CloseHandle(a->_thread);
+      a->_thread = INVALID_HANDLE_VALUE;
+      a->unlock();
       
       return result;  
     }

@@ -36,6 +36,7 @@ namespace fetch
       ,_LSM(agent)
       ,_pockels(agent)
     {
+      set_config(_config);
       __common_setup();
     }
 
@@ -108,6 +109,8 @@ namespace fetch
       _daq.setupAOChannels(nscans,scan_freq_Hz,-10,10,chans,2);
 
       _shutter.Shut();
+
+      _digitizer.setup(nscans,scan_freq_Hz,_config->line_duty_cycle());
     }
 
     void Scanner2D::generateAO()

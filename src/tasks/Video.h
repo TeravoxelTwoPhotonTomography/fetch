@@ -27,14 +27,19 @@ namespace fetch
       class Video : public Task, public IUpdateable
       {
         public:
-          unsigned int config (Agent *d);
-          unsigned int run    (Agent *d);
-          unsigned int update (Agent *d);
+          unsigned int config (IDevice *d);
+          unsigned int run    (IDevice *d);
+          unsigned int update (IDevice *d);
           
-          unsigned int config (device::Scanner2D *d);
-          unsigned int run    (device::Scanner2D *d);
+          unsigned int config (device::Scanner2D *d);          
           unsigned int update (device::Scanner2D *d);
+
+          unsigned int run_niscope(device::Scanner2D *d);
+          unsigned int run_alazar(device::Scanner2D *d);
+          unsigned int run_simulated(device::Scanner2D *d);
       };
+
+
 
     }
   }
