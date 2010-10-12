@@ -150,9 +150,9 @@ namespace fetch
               *qwfm  = d->_out->contents[1];
         Frame *frm   = NULL;
         Frame_With_Interleaved_Lines ref;
-        struct niScope_wfmInfo *wfm = NULL; //(niScope_wfmInfo*) Asynq_Token_Buffer_Alloc(qwfm);
+        struct niScope_wfmInfo *wfm = NULL;
         ViInt32 nwfm;
-        ViInt32 width;// = d->_compute_record_size(),
+        ViInt32 width;
         int      i = 0,
             status = 1; // status == 0 implies success, error otherwise
         size_t nbytes,
@@ -165,10 +165,8 @@ namespace fetch
         device::NIScopeDigitizer *dig = d->_digitizer._niscope;
         device::NIScopeDigitizer::Config digcfg = dig->get_config();
         Guarded_Assert(dig!=NULL);
-        ViSession        vi = dig->_vi; //d->device::NIScopeDigitizer::_vi;
-        ViChar        *chan = const_cast<ViChar*>(digcfg.chan_names().c_str());//d->device::NIScopeDigitizer::config->chan_names().c_str());
-        //TaskHandle  ao_task = d->ao;
-        //TaskHandle clk_task = d->clk;
+        ViSession        vi = dig->_vi;
+        ViChar        *chan = const_cast<ViChar*>(digcfg.chan_names().c_str());
 
         ref = _describe_actual_frame_niscope<TPixel>(dig,d->get_config().nscans(),&width,&nwfm);
         nbytes = ref.size_bytes();

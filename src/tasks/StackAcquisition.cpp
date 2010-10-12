@@ -10,7 +10,7 @@
  * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
-#include "stdafx.h"
+#include "common.h"
 #include "StackAcquisition.h"
 
 #if 0
@@ -25,6 +25,9 @@
 #define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, warning))
 #define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, error  ))
 #define DAQJMP( expr )  goto_if_fail( 0==DAQWRN(expr), Error)
+
+#define CHKERR( expr )  {if(expr) {error("Expression indicated failure:\r\n\t%s\r\n",#expr);}} 0 //( (expr), #expr, error  ))
+#define CHKJMP( expr )  goto_if((expr),Error)
 
 #if 1
 #define SCANNER_DEBUG_FAIL_WHEN_FULL
@@ -137,18 +140,36 @@ namespace fetch
       template class ScanStack<i16>;
 
       // upcasts
-      template<class TPixel> unsigned int ScanStack<TPixel>::config (Agent *d) {return config(dynamic_cast<device::Scanner3D*>(d));}
-      template<class TPixel> unsigned int ScanStack<TPixel>::run    (Agent *d) {return run   (dynamic_cast<device::Scanner3D*>(d));}
-      template<class TPixel> unsigned int ScanStack<TPixel>::update (Agent *d) {return update(dynamic_cast<device::Scanner3D*>(d));}
+      template<class TPixel> unsigned int ScanStack<TPixel>::config (IDevice *d) {return config(dynamic_cast<device::Scanner3D*>(d));}
+      template<class TPixel> unsigned int ScanStack<TPixel>::update (IDevice *d) {return update(dynamic_cast<device::Scanner3D*>(d));}
+
+      template<class TPixel> unsigned int ScanStack<TPixel>::run    (IDevice *d) 
+      {
+        device::Scanner3D *s = dynamic_cast<device::Scanner3D*>(d);
+        device::Digitizer::Config digcfg = s->_scanner2d._digitizer.get_config();
+        switch(digcfg.kind())
+        {
+        case cfg::device::Digitizer_DigitizerType_NIScope:
+          return run_niscope(s);
+          break;
+        case cfg::device::Digitizer_DigitizerType_Alazar:
+          return run_alazar(s);
+          break;
+        case cfg::device::Digitizer_DigitizerType_Simulated:
+          return run_simulated(s);
+          break;
+        default:
+          error("Video<>::run() - Got invalid kind() for Digitizer.get_config\r\n");          
+        }
+        return 0; //failure
+      }
 
       template<class TPixel>
         unsigned int
         ScanStack<TPixel>::
         config(device::Scanner3D *d)
         {
-          d->_config_daq();          
-          d->_config_digitizer();
-
+          d->onConfig();
           debug("Scanner3D configured for StackAcquisition<%s>\r\n", TypeStr<TPixel> ());
           return 1; //success
         }
@@ -157,40 +178,14 @@ namespace fetch
         unsigned int
         ScanStack<TPixel>::
         update(device::Scanner3D *scanner)
-        { scanner->_generate_ao_waveforms(); // updates pockels, but sets z-piezo to 0 um          
+        { 
+          scanner->generateAO();          
           return 1;
         }
 
-      template<typename T>
-      Frame_With_Interleaved_Lines
-      _describe_actual_frame(device::Scanner3D *d, ViInt32 *precordsize, ViInt32 *pnwfm)
-      { ViSession                   vi = d->NIScopeDigitizer::_vi;
-        ViInt32                   nwfm;
-        ViInt32          record_length;
-        void                     *meta = NULL;
-
-        DIGERR( niScope_ActualNumWfms(vi,
-                                      const_cast<ViChar*>(d->NIScopeDigitizer::config->chan_names().c_str()),
-                                      &nwfm ) );
-        DIGERR( niScope_ActualRecordLength(vi, &record_length) );
-
-        u32 scans = d->Scanner2D::config->nscans();
-        Frame_With_Interleaved_Lines format( (u16) record_length,              // width
-                                                   scans,                      // height
-                                             (u8) (nwfm/scans),                // number of channels
-                                                   TypeID<T>() );              // pixel type
-        Guarded_Assert( format.nchan  > 0 );
-        Guarded_Assert( format.height > 0 );
-        Guarded_Assert( format.width  > 0 );
-        *precordsize = record_length;
-        *pnwfm       = nwfm;
-        return format;
-      }
-
-
       template<class TPixel>
         unsigned int
-        ScanStack<TPixel>::run(device::Scanner3D *d)
+        ScanStack<TPixel>::run_niscope(device::Scanner3D *d)
         {
           asynq *qdata = d->_out->contents[0], *qwfm = d->_out->contents[1];
           Frame *frm = NULL;
@@ -205,12 +200,13 @@ namespace fetch
           TicTocTimer outer_clock = tic(), inner_clock = tic();
           double dt_in = 0.0, dt_out = 0.0;
 
-          ViSession vi = d->NIScopeDigitizer::_vi;
-          ViChar *chan = const_cast<ViChar*>(d->NIScopeDigitizer::config->chan_names().c_str());
-          TaskHandle ao_task  = d->Scanner2D::ao;
-          TaskHandle clk_task = d->Scanner2D::clk;
+          device::NIScopeDigitizer *dig = d->_scanner2d._digitizer._niscope;
+          device::NIScopeDigitizer::Config digcfg = dig->get_config();
 
-          ref = _describe_actual_frame<TPixel> (d, &width, &nwfm);
+          ViSession vi = dig->_vi;
+          ViChar *chan = const_cast<ViChar*>(digcfg.chan_names().c_str());
+
+          ref = _describe_actual_frame_niscope<TPixel>(d,d->_scanner2d.get_config().nscans(),&width,&nwfm);
           nbytes = ref.size_bytes();
           nbytes_info = nwfm * sizeof(struct niScope_wfmInfo);
           //
@@ -223,22 +219,18 @@ namespace fetch
           //
           ref.format(frm);
 
-          ummin  = d->ZPiezo::config->um_min();
-          ummax  = d->ZPiezo::config->um_max();
-          umstep = d->ZPiezo::config->um_step();
+          d->_zpiezo.getScanRange(&ummin,&ummax,&umstep);
           
-          d->_generate_ao_waveforms__z_ramp_step(ummin);
-          d->_write_ao();
-          d->Shutter::Open();
-          DAQJMP(DAQmxStartTask(ao_task));
+          d->generateAORampZ(ummin); //d->_generate_ao_waveforms__z_ramp_step(ummin);
+          d->writeAO();
+          d->_shutter.Open();
+          CHKJMP(d->_daq.startAO());          
           for(z_um=ummin+umstep;z_um<ummax && !d->is_stopping();z_um+=umstep)
           { 
-            //d->_write_ao();
-            DAQJMP(DAQmxStartTask(clk_task));
+            CHKJMP(d->_daq.startCLK());            
             DIGJMP(niScope_InitiateAcquisition(vi));
 
-            dt_out = toc(&outer_clock);
-            //DBG("iter: %d\ttime: %5.3g [out] %5.3g [in]\tbacklog: %9.0f Bytes\r\n",i, dt_out, dt_in, sizeof(TPixel)*niscope_get_backlog(vi) );
+            dt_out = toc(&outer_clock);            
             toc(&inner_clock);
 #if 1
             DIGJMP(Fetch<TPixel> (vi, chan, SCANNER_STACKACQ_TASK_FETCH_TIMEOUT,//10.0, //(-1=infinite) (0.0=immediate) // seconds
@@ -246,8 +238,6 @@ namespace fetch
                                   (TPixel*) frm->data,
                                   wfm));
 #endif
-
-            //DBG("\tGain: %f\r\n",wfm[0].gain);
 
             // Push the acquired data down the output pipes
             DBG("Task: StackAcquisition<%s>: pushing wfm\r\n", TypeStr<TPixel> ());
@@ -266,30 +256,44 @@ namespace fetch
             }
             ref.format(frm);
             dt_in = toc(&inner_clock);
-            toc(&outer_clock);            
-            goto_if_fail(d->_wait_for_daq(SCANNER2D_DEFAULT_TIMEOUT),Error);          
-            DAQmxStopTask(clk_task); // Ignore error/warning check here.  Under normal operation, as used here, it will give a warning for each frame.            
+            toc(&outer_clock);
+            CHKJMP(d->_daq.waitForDone(SCANNER2D_DEFAULT_TIMEOUT));
+            d->_daq.stopCLK();            
             debug("Generating AO for z = %f\r\n.",z_um);
-            d->_generate_ao_waveforms__z_ramp_step(z_um);
-            d->_write_ao();
+            d->generateAORampZ(z_um);
+            d->writeAO();
             ++i;
           };
 
           status = 0;
           DBG("Scanner - Stack Acquisition task completed normally.\r\n");
 Finalize: 
-          d->Shutter::Shut(); // Close the shutter. FIXME: Ambiguous function name.
+          d->_shutter.Shut();          
           free(frm);
           free(wfm);
-          niscope_debug_print_status(vi);          
-          DAQERR(DAQmxStopTask(ao_task)); // FIXME: ??? These will deadlock on a panic.
-          DAQERR(DAQmxStopTask(clk_task));
+          niscope_debug_print_status(vi);  
+          CHKERR(d->_daq.stopAO());
+          CHKERR(d->_daq.stopCLK());
           DIGERR(niScope_Abort(vi));
           return status;
 Error: 
+          warning("Error occurred during ScanStack<%s> task.\r\n",TypeStr<TPixel>());
           goto Finalize;
         }
 
+        template<class TPixel>
+        unsigned int fetch::task::scanner::ScanStack<TPixel>::run_simulated( device::Scanner3D *d )
+        {
+          error("Implement me!\r\n");
+          return 1;
+        }
+
+        template<class TPixel>
+        unsigned int fetch::task::scanner::ScanStack<TPixel>::run_alazar( device::Scanner3D *d )
+        {
+          error("Implement me!\r\n");
+          return 1;
+        }
     }
   }
 }

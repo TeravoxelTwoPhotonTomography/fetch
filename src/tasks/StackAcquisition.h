@@ -32,8 +32,8 @@ namespace fetch
       class StackAcquisition : public MicroscopeTask
       {
         public:
-          unsigned int config(Agent *d);
-          unsigned int    run(Agent *d);
+          unsigned int config(IDevice *d);
+          unsigned int    run(IDevice *d);
 
           unsigned int config(device::Microscope *agent);
           unsigned int    run(device::Microscope *agent);
@@ -47,14 +47,18 @@ namespace fetch
       class ScanStack : public fetch::Task, public fetch::IUpdateable
       {
       public:
-        unsigned int config (Agent *d);
-        unsigned int run    (Agent *d);
-        unsigned int update (Agent *d);
+        unsigned int config (IDevice *d);
+        unsigned int run    (IDevice *d);
+        unsigned int update (IDevice *d);
 
-        unsigned int config (device::Scanner3D *d);
-        unsigned int run    (device::Scanner3D *d);
+        unsigned int config (device::Scanner3D *d);        
         unsigned int update (device::Scanner3D *d);
+
+        unsigned int run_niscope   (device::Scanner3D *d);
+        unsigned int run_alazar    (device::Scanner3D *d);
+        unsigned int run_simulated (device::Scanner3D *d);
       };
+
 
     }  // namespace scanner
 
