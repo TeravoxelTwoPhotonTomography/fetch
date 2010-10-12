@@ -60,9 +60,10 @@
 #include "pockels.h"
 #include "shutter.h"
 #include "LinearScanMirror.h"
-#include "../frame.h"
+#include "frame.h"
 #include "scanner2d.pb.h"
 #include "object.h"
+#include "daq.h"
 
 #define SCANNER2D_DEFAULT_TIMEOUT               INFINITE // ms
 
@@ -70,69 +71,41 @@ namespace fetch
 {
   namespace device
   {
-
-    class Scanner2D : public NIScopeDigitizer, 
-                      public NIDAQPockels, 
-                      public Shutter, 
-                      public NIDAQLinearScanMirror,
-                      public Configurable<cfg::device::Scanner2D>
+    class IScanner
     {
     public:
-      typedef cfg::device::Scanner2D Config;            // Need to declare these here to disambiguate.
-      Config* &config;      
+      IScanner() : _ao_workspace(NULL) {}
 
-      Scanner2D();
-      Scanner2D(Config *cfg);
+      virtual void onConfig()   = 0; // called in a 2d scanning task's config function
+      virtual void generateAO() = 0;
+      virtual void writeAO()    = 0;
 
-      virtual ~Scanner2D();
+    protected:
+      vector_f64 *_ao_workspace;
+    };
 
-      unsigned int attach(void);                         // Returns 0 on success, 1 otherwise
-      unsigned int detach(void);                         // Returns 0 on success, 1 otherwise
+    class Scanner2D : public IScanner, public IConfigurableDevice<cfg::device::Scanner2D>
+    {
+      Digitizer _digitizer;
+      DAQ       _daq;
+      Shutter   _shutter;
+      LinearScanMirror _LSM;
+      Pockels     _pockels;
 
-      virtual void set_config(Config *cfg);
     public:
-      TaskHandle  ao,
-                  clk;
-      HANDLE      notify_daq_done;
-      vector_f64 *ao_workspace;
+      Scanner2D(Agent *agent);
+      Scanner2D(Agent *agent, Config *cfg);
 
-    public: //Section: protected with Tasks as friends.
-      ViInt32                      _compute_record_size(void);   // determines the number of elements acquired with each digitizer record
-      Frame_With_Interleaved_Lines _describe_frame(void);        // determines frame format from configuration
 
-      // TODO: move these to respective subdevices
-      //       - abstract away with "setup for 2dscan" etc..
-      //       - there are some dependencies on this objects config
-      //         e.g. line_trigger_source, nscans, ao_samples_per_frame
-      //              frequency_hz,...,basically every propery in
-      //              scanner2d.proto
-      //         Most are props of those devices though.  I
-      //         don't see any reason why they can't just be moved over.
-      //         There are a few that deal with the frame format that might
-      //         have to be arguments
-      //
-      virtual void                 _config_digitizer(void);
-      virtual void                 _config_daq(void);
+      virtual unsigned int attach(); // returns 0 on success, 1 on failure
+      virtual unsigned int detach(); // returns 0 on success, 1 on failure
 
-      // TODO: move write_ao to DAQ abstraction
-      //       generate_* should stay
-      //       this means that write_ao should take the buffer and size as an
-      //       argument
-      virtual void                 _generate_ao_waveforms(void); // fills ao_workspace with data for analog output
-      virtual void                 _write_ao(void);
-      
+      virtual void _set_config(Config IN *cfg);
+      virtual void _set_config(const Config& cfg);
 
-      // TODO: move these to NIDAQ interface
-      //       - also _daq_event_done_callback and the notify_daq_done event
-      virtual void                 _register_daq_event(void);
-      virtual unsigned int         _wait_for_daq(DWORD timeout_ms); // returns 1 on succes, 0 otherwise
-      
-      //static  int32 CVICALLBACK    _daq_event_callback(TaskHandle taskHandle, int32 type, int32 nsamples, void *callbackData);
-
-    protected: //Section: generators for ao waveforms
-      static  void _compute_galvo_waveform__constant_zero        ( Scanner2D::Config *cfg, float64 *data, double N );
-      static  void _compute_linear_scan_mirror_waveform__sawtooth( NIDAQLinearScanMirror::Config *cfg, float64 *data, double N );
-      static  void _compute_pockels_vertical_blanking_waveform   ( NIDAQPockels::Config *cfg, float64 *data, double N );
+      virtual void onConfig();
+      virtual void generateAO();
+      virtual void writeAO();
 
     private:
       void __common_setup();

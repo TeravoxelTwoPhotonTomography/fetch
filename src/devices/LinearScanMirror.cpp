@@ -22,27 +22,40 @@ namespace fetch {
     //
 
     NIDAQLinearScanMirror::NIDAQLinearScanMirror(Agent *agent)
-      :LSMBase<cfg::device::LinearScanMirror>(agent)
+      :LSMBase<Config>(agent)
       ,daq(agent,"NIDAQLinearScanMirror")
     {}
 
     NIDAQLinearScanMirror::NIDAQLinearScanMirror(Agent *agent,Config *cfg)
-      :LSMBase<cfg::device::LinearScanMirror>(agent,cfg)
+      :LSMBase<Config>(agent,cfg)
       ,daq(agent,"NIDAQLinearScanMirror")
     {}
+
+    void NIDAQLinearScanMirror::computeSawtooth( float64 *data, int n )
+    {      
+      double N = n;
+      float64 A = _config->vpp();
+      for(int i=0;i<n;++i)
+        data[i] = A*((i/N)-0.5); // linear ramp from -A/2 to A/2
+      data[n-1] = data[0];  // at end of wave, head back to the starting position
+    }
 
     //
     // SimulatedLinearScanMirror
     //
 
     SimulatedLinearScanMirror::SimulatedLinearScanMirror( Agent *agent )
-      :LSMBase<f64>(agent)
-    { *_config=0.0;
-    }
+      :LSMBase<Config>(agent)
+    {}
 
     SimulatedLinearScanMirror::SimulatedLinearScanMirror( Agent *agent, Config *cfg )
-      :LSMBase<f64>(agent,cfg)
+      :LSMBase<Config>(agent,cfg)
     {}
+
+    void SimulatedLinearScanMirror::computeSawtooth( float64 *data, int n )
+    {
+      memset(data,0,sizeof(float64)*n);
+    }
 
     //
     // LinearScanMirror
@@ -95,28 +108,35 @@ namespace fetch {
       }
     }
 
-    void LinearScanMirror::set_config( NIDAQLinearScanMirror::Config *cfg )
+    void LinearScanMirror::_set_config( Config IN *cfg )
     {
-      Guarded_Assert(_nidaq);
-      _nidaq->set_config(cfg);
+      _nidaq->_set_config(cfg->mutable_nidaq());
+      _simulated->_set_config(cfg->mutable_simulated());;
+      _config = cfg;
+      setKind(cfg->kind());
     }
 
-    void LinearScanMirror::set_config( SimulatedLinearScanMirror::Config *cfg )
+    void LinearScanMirror::_set_config( const Config &cfg )
     {
-      Guarded_Assert(_simulated);
-      _simulated->set_config(cfg);
+      cfg::device::LinearScanMirror_LinearScanMirrorType kind = cfg.kind();
+      _config->set_kind(kind);
+      setKind(kind);
+      switch(kind)
+      {    
+      case cfg::device::LinearScanMirror_LinearScanMirrorType_NIDAQ:
+        _nidaq->_set_config(cfg.nidaq());
+        break;
+      case cfg::device::LinearScanMirror_LinearScanMirrorType_Simulated:    
+        _simulated->_set_config(cfg.simulated());
+        break;
+      default:
+        error("Unrecognized kind() for LinearScanMirror.  Got: %u\r\n",(unsigned)kind);
+      }
     }
 
-    void LinearScanMirror::set_config_nowait( NIDAQLinearScanMirror::Config *cfg )
+    void LinearScanMirror::computeSawtooth( float64 *data, int n )
     {
-      Guarded_Assert(_nidaq);
-      _nidaq->set_config_nowait(cfg);
-    }
-
-    void LinearScanMirror::set_config_nowait( SimulatedLinearScanMirror::Config *cfg )
-    {
-      Guarded_Assert(_simulated);
-      _simulated->set_config_nowait(cfg);
+      _ilsm->computeSawtooth(data,n);
     }
 
     //end namespace fetch::device

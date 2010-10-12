@@ -111,43 +111,7 @@ Interface class defining two methods:
   - detach()
 
 These functions are called by the Agent class during 
-transitions to/from different runstates.
-
-IConfigurableDevice
-===================
-
-Inherits two interfaces
-
-  - IDevice
-  - Configurable
-
-IDevice is described above.  Configurable is an templated
-interface class providing a single method:
-
-  - set_config()
-
-One shouldn't really think of Configurable as doing much;
-it's meant to allow a uniform way of accessing a configuration
-variable that could be any type.
-
-IConfigurable device provides some other methods.  The two
-of interest are:
-
-  - set_config_nowait(Config*)
-  - _set_config__locked(Config*)
-
-_set_config__locked() provides a hook for subclasses to propigate
-configuration changes to sub-devices.  This function is always
-called when devices are stopped and is also called inside of 
-a locked mutex.
-
-set_config_nowait() is used to commit configuration changes to
-devices without in a non-blocking fashion.. This is accomplished
-by posting requests to a queue.  Threads from a thread pool 
-execute the requests asynchronously.  Since requests might be 
-posted out of order, a timestamp is used to track the request
-order; only the most recent requests are executed.  This means
-that some requests may be ignored.
+transitions to/from different run-states.
 */
 
 #define AGENT_DEFAULT_TIMEOUT INFINITE
@@ -208,22 +172,36 @@ namespace fetch {
   //    declaration
   //
   // Notes
-  // - children should overload _assign_config to propagate configuration assignment
+  // - children should overload _set_config to propagate configuration assignment
+  // - children should overload _get_config to change how the referenced configuration
+  //   is modified on assignment.
   //
+  // - "get" "set" and "set_nowait" make sure that configuration changes get committed
+  //   to the device in a sort-of transactional manner; they take care of changing
+  //   the run state of the device and synchronizing changes.  In the end they call
+  //   the "_set" or "_get" functions to get the job done.
   //
+  // - "update" can be useful when classes want to re-implement the config "get" and 
+  //   "set" functions.  "update" performs the runtime state changes for the device.
+
   template<class Tcfg>
   class IConfigurableDevice : public IDevice, public Configurable<Tcfg>
   {
   public:
     IConfigurableDevice(Agent *agent);
     IConfigurableDevice(Agent *agent, Config *config);
-    virtual Config get_config(void);
-    virtual void set_config(Config *cfg);
-    int set_config_nowait(Config *cfg);
+    virtual Config get_config(void);            // see: _get_config()        - returns a snapshot of the config
+    virtual void set_config(Config *cfg);       // see: _set_config(Config*) - assigns the address of the config
+    virtual void set_config(const Config &cfg); // see: _set_config(Config&) - update via copy
+    int set_config_nowait(const Config& cfg);   // see: _set_config(Config&) - update via copy
 
-  protected: //overload these
-    virtual void _assign_config(Config IN *cfg) {*_config=*cfg;}
-    virtual void _copy_config(Config OUT *cfg)  {*cfg=*_config;}
+  public: 
+    // Overload these.
+    // Each are called within a "transaction lock"
+    virtual void _set_config(Config IN *cfg)      {_config=cfg;}     // changes the pointer
+    virtual void _set_config(const Config &cfg)   {*_config=cfg;}    // copy
+    virtual void _get_config(Config **cfg)        {*cfg=_config;}    // get the pointer
+    virtual const Config& _get_config()           {return *_config;} // get a const reference (a snapshot to copy)
 
   protected:
     inline void transaction_lock();
@@ -231,12 +209,13 @@ namespace fetch {
     void update();
 
   private:
-    void _set_config__locked( Config  IN *cfg );
+//    void _set_config__locked( Config  IN *cfg );
 
     static DWORD WINAPI _set_config_nowait__helper(LPVOID lparam);
 
     CRITICAL_SECTION _transaction_lock;
   };
+
 
   //
   // Agent
@@ -342,14 +321,13 @@ namespace fetch {
   // Parameter: void
   //
   // Returns a copy of _config.  Synchronized.
-  // Overload _copy_config() to change how copy is performed.
+  // Overload _get_config() to change how copy is performed.
   //************************************
   template<class Tcfg>
   Tcfg IConfigurableDevice<Tcfg>::get_config(void)
-  {
-    Tcfg cfg;
+  {   
     transaction_lock();
-    _copy_config(&cfg);
+    Tcfg cfg = _get_config();
     transaction_unlock();
     return cfg;
   }
@@ -363,16 +341,27 @@ namespace fetch {
   // Parameter: Config * cfg
   //
   // Synchronized setting of the config.
-  // Overload _assign_config to change how copy is performed.
+  // Overload _set_config to change how copy is performed.
   // May wait on hardware.
   //************************************
   template<class Tcfg>
   void IConfigurableDevice<Tcfg>::set_config(Tcfg *cfg)
   {    
-    transaction_lock();
-    _set_config__locked(cfg);
+    transaction_lock();    
+    _set_config(cfg);
+    update();
     transaction_unlock();
   }
+  
+  template<class Tcfg>
+  void IConfigurableDevice<Tcfg>::set_config( const Config& cfg )
+  {
+	  transaction_lock();
+    _set_config(cfg);
+    update();
+    transaction_unlock();
+  }
+
 
   //************************************
   // Method:    set_config_nowait
@@ -382,18 +371,18 @@ namespace fetch {
   // Qualifier: A copy to the object pointed to by <cfg> is posted
   //            to a queue, so <cfg> does not need to live until 
   //            the request is committed.
-  // Parameter: Config * cfg
+  // Parameter: const Config & cfg
   // Notes:     Performs an extra copy on Push/Pop.  I think it's 
   //            3-4 copies per request.  I could get this down to
   //            1-2 using a non-copy Push/Pop, I think.  However,
   //            performance should not be an issue here.
   //************************************
   template<class Tcfg>
-  int IConfigurableDevice<Tcfg>::set_config_nowait( Config *cfg )
-  { 
-    typedef IConfigurableDevice<Tcfg> TSelf;
+  int IConfigurableDevice<Tcfg>::set_config_nowait( const Config &cfg )
+  {
+	  typedef IConfigurableDevice<Tcfg> TSelf;
     struct T {TSelf *self;Config cfg;int time;};
-    struct T v = {this,*cfg,0};
+    struct T v = {this,cfg,0};
     static asynq *q=NULL;
     static int timestamp=0;
 
@@ -407,6 +396,7 @@ namespace fetch {
     }
     return QueueUserWorkItem(&TSelf::_set_config_nowait__helper, (void*)q, NULL /*default flags*/);
   }
+
 
   template<class Tcfg>
   DWORD WINAPI IConfigurableDevice<Tcfg>::_set_config_nowait__helper( LPVOID lparam )
@@ -430,20 +420,21 @@ namespace fetch {
     v.self->transaction_lock();
     if( (v.time - lasttime) > 0 )  // The <time> is used to synchronize "simultaneous" requests
     { 
-      lasttime = v.time;             // Only process requests dated after the last request.
-      v.self->_set_config__locked(&v.cfg);
+      lasttime = v.time;             // Only process requests dated after the last request.      
+      v.self->_set_config(v.cfg);
+      v.self->update();
     }
     v.self->transaction_unlock();
     return 0; // success
   }
-
+  /*
   template<class Tcfg>
   void IConfigurableDevice<Tcfg>::_set_config__locked( Config * cfg )
   {
-    _assign_config(cfg);
+    _set_config(cfg);
     update();
-
   }
+      */
 
   template<class Tcfg>
   void IConfigurableDevice<Tcfg>::transaction_unlock()

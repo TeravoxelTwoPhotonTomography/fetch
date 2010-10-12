@@ -10,12 +10,18 @@ message NIDAQPockels
   optional  string    ai_channel  = 6 [default="/Dev1/ai16"]; // channel for reading off transmission
 }
 
+message SimulatedPockels
+{
+  optional double val = 1 [default=0.0];
+}
+
 message Pockels
 { enum PockelsType
   {
     NIDAQ     = 0;
     Simulated = 1;
   }
-  optional PockelsType    kind  = 1 [default=NIDAQ];
-  optional NIDAQPockels   nidaq = 2;
+  optional PockelsType      kind      = 1 [default=NIDAQ];
+  optional NIDAQPockels     nidaq     = 2;
+  optional SimulatedPockels simulated = 3;
 }

@@ -11,9 +11,10 @@
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
 #pragma once
-#include "NIDAQAgent.h"
+#include "DAQChannel.h"
 #include "zpiezo.pb.h"
 #include "object.h"
+#include "DAQChannel.h"
 
 namespace fetch 
 { namespace device 
@@ -22,6 +23,9 @@ namespace fetch
     class IZPiezo
     {
     public:
+      virtual void computeConstWaveform(float64 z_um, float64 *data, int n) = 0;
+      virtual void computeRampWaveform(float64 z_um, float64 *data, int n)  = 0;
+      virtual IDAQChannel* physicalChannel() = 0;
     };
 
     template<class T>
@@ -34,23 +38,34 @@ namespace fetch
 
     class NIDAQZPiezo:public ZPiezoBase<cfg::device::NIDAQZPiezo>      
     {
-      NIDAQAgent daq;
+      NIDAQChannel daq;
     public:
       NIDAQZPiezo(Agent *agent);
       NIDAQZPiezo(Agent *agent, Config *cfg);
 
       unsigned int attach();
       unsigned int detach();
+
+      virtual void computeConstWaveform(float64 z_um, float64 *data, int n);
+      virtual void computeRampWaveform(float64 z_um, float64 *data, int n);
+      
+      virtual IDAQChannel* physicalChannel() {return &daq;}
     };
       
-    class SimulatedZPiezo:public ZPiezoBase<f64>
+    class SimulatedZPiezo:public ZPiezoBase<cfg::device::SimulatedZPiezo>
     {
+      SimulatedDAQChannel _chan;
     public:
       SimulatedZPiezo(Agent *agent);
       SimulatedZPiezo(Agent *agent, Config *cfg);
 
       unsigned int attach() {return 0;}
       unsigned int detach() {return 0;}
+
+      virtual void computeConstWaveform(float64 z_um, float64 *data, int n);
+      virtual void computeRampWaveform(float64 z_um, float64 *data, int n);
+
+      virtual IDAQChannel* physicalChannel() {return &_chan;}
     };
 
     class ZPiezo:public ZPiezoBase<cfg::device::ZPiezo>
@@ -66,13 +81,15 @@ namespace fetch
 
       virtual unsigned int attach();
       virtual unsigned int detach();
+      void _set_config( Config IN *cfg );
+      void _set_config( const Config &cfg );
 
       void setKind(Config::ZPiezoType kind);
 
-      virtual void set_config(NIDAQZPiezo::Config *cfg);
-      virtual void set_config(SimulatedZPiezo::Config *cfg);
-      virtual void set_config_nowait(NIDAQZPiezo::Config *cfg);
-      virtual void set_config_nowait(SimulatedZPiezo::Config *cfg);
+      virtual void computeConstWaveform(float64 z_um, float64 *data, int n) {_izpiezo->computeConstWaveform(z_um,data,n);}
+      virtual void computeRampWaveform(float64 z_um, float64 *data, int n)  {_izpiezo->computeRampWaveform(z_um,data,n);}
+
+      virtual IDAQChannel* physicalChannel() {return _izpiezo->physicalChannel();}
     };
 
   }

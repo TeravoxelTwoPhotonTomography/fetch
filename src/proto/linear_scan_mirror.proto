@@ -8,6 +8,12 @@ message NIDAQLinearScanMirror
   optional  string    ao_channel  = 4 [default="/Dev1/ao0"]; // control channel
 }                                   
 
+
+message SimulatedLinearScanMirror
+{
+  optional double val = 1 [default=0.0];
+}
+
 message LinearScanMirror
 { 
   enum LinearScanMirrorType
@@ -16,6 +22,7 @@ message LinearScanMirror
     Simulated = 1;
   }
 
-  optional LinearScanMirrorType  kind  = 1 [default=NIDAQ];
-  optional NIDAQLinearScanMirror nidaq = 2;
+  optional LinearScanMirrorType       kind      = 1 [default=NIDAQ];
+  optional NIDAQLinearScanMirror      nidaq     = 2;
+  optional SimulatedLinearScanMirror  simulated = 3;
 }

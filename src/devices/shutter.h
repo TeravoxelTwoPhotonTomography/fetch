@@ -13,7 +13,7 @@
 
 #pragma once
 #include "object.h"
-#include "NIDAQAgent.h"
+#include "DAQChannel.h"
 #include "shutter.pb.h"
 
 #define SHUTTER_DEFAULT_TIMEOUT           INFINITY
@@ -45,7 +45,7 @@ namespace fetch
 
     class NIDAQShutter:public ShutterBase<cfg::device::NIDAQShutter>      
     {
-      NIDAQAgent daq;
+      NIDAQChannel daq;
     public:
       NIDAQShutter(Agent *agent);
       NIDAQShutter(Agent *agent, Config *cfg);
@@ -60,7 +60,7 @@ namespace fetch
       void Bind         (void);   // Binds the digital output channel to the daq task. - called by attach()
     };
 
-    class SimulatedShutter:public ShutterBase<int>
+    class SimulatedShutter:public ShutterBase<cfg::device::SimulatedShutter>
     {
     public:
       SimulatedShutter(Agent *agent);
@@ -87,17 +87,14 @@ namespace fetch
 
       virtual unsigned int attach();
       virtual unsigned int detach();
+      void _set_config( Config IN *cfg );
+      void _set_config( const Config &cfg );
 
       void setKind(Config::ShutterType kind);
 
       void Set          (u8 val);
       void Shut         (void);
       void Open         (void);
-
-      virtual void set_config(NIDAQShutter::Config *cfg);
-      virtual void set_config(SimulatedShutter::Config *cfg);
-      virtual void set_config_nowait(NIDAQShutter::Config *cfg);
-      virtual void set_config_nowait(SimulatedShutter::Config *cfg);
     };
 
 //end namespace fetch::device

@@ -21,13 +21,13 @@ namespace fetch
     //
 
     NIDAQZPiezo::NIDAQZPiezo( Agent *agent )
-      :ZPiezoBase<cfg::device::NIDAQZPiezo>(agent)
+      :ZPiezoBase<Config>(agent)
       ,daq(agent,"ZPiezo")
     {
     }
 
     NIDAQZPiezo::NIDAQZPiezo( Agent *agent, Config *cfg )
-      :ZPiezoBase<cfg::device::NIDAQZPiezo>(agent,cfg)
+      :ZPiezoBase<Config>(agent,cfg)
       ,daq(agent,"ZPiezo")
     {
     }
@@ -42,19 +42,42 @@ namespace fetch
       return daq.detach();
     }
 
+    void NIDAQZPiezo::computeConstWaveform(float64 z_um,  float64 *data, int n )
+    {
+      f64 off = z_um * _config->um2v();
+      for(int i=0;i<n;++i)
+        data[i] = off; // linear ramp from off to off+A
+    }
+
+    void NIDAQZPiezo::computeRampWaveform(float64 z_um,  float64 *data, int n )
+    {
+      f64   A = _config->um_step() * _config->um2v(),
+          off = z_um * _config->um2v();
+      for(int i=0;i<n;++i)
+        data[i] = A*(i/(N-1))+off; // linear ramp from off to off+A
+    }
+
     //
     // Simulate ZPiezo
     //
 
     SimulatedZPiezo::SimulatedZPiezo( Agent *agent )
-      :ZPiezoBase<f64>(agent)
-    {
-      *_config=0.0;
-    }
+      :ZPiezoBase<Config>(agent)
+    {}
 
     SimulatedZPiezo::SimulatedZPiezo( Agent *agent, Config *cfg )
-      :ZPiezoBase<f64>(agent,cfg)
+      :ZPiezoBase<Config>(agent,cfg)
     {}
+
+    void SimulatedZPiezo::computeConstWaveform( float64 z_um, float64 *data, int n )
+    {
+      memset(data,0,sizeof(float64)*n);
+    }
+
+    void SimulatedZPiezo::computeRampWaveform( float64 z_um, float64 *data, int n )
+    {
+      memset(data,0,sizeof(float64)*n);
+    }
 
     //
     // ZPiezo
@@ -106,41 +129,32 @@ namespace fetch
         error("Unrecognized kind() for ZPiezo.  Got: %u\r\n",(unsigned)kind);
       }
     }
-
-    void ZPiezo::set_config( NIDAQZPiezo::Config *cfg )
+ 
+    void ZPiezo::_set_config( Config IN *cfg )
     {
-      Guarded_Assert(_nidaq);
-      _nidaq->set_config(cfg);
+      _nidaq->_set_config(cfg->mutable_nidaq());
+      _simulated->_set_config(cfg->mutable_simulated());;
+      _config = cfg;
+      setKind(cfg->kind());
     }
 
-    void ZPiezo::set_config_nowait( SimulatedZPiezo::Config *cfg )
+    void ZPiezo::_set_config( const Config &cfg )
     {
-      Guarded_Assert(_simulated);
-      _simulated->set_config_nowait(cfg);
+      cfg::device::ZPiezo_ZPiezoType kind = cfg.kind();
+      _config->set_kind(kind);
+      setKind(kind);
+      switch(kind)
+      {    
+      case cfg::device::ZPiezo_ZPiezoType_NIDAQ:
+        _nidaq->_set_config(cfg.nidaq());
+        break;
+      case cfg::device::ZPiezo_ZPiezoType_Simulated:    
+        _simulated->_set_config(cfg.simulated());
+        break;
+      default:
+        error("Unrecognized kind() for ZPiezo.  Got: %u\r\n",(unsigned)kind);
+      }
     }
-
-    void ZPiezo::set_config_nowait( NIDAQZPiezo::Config *cfg )
-    {
-      Guarded_Assert(_nidaq);
-      _nidaq->set_config_nowait(cfg);
-    }
-
-    void ZPiezo::set_config( SimulatedZPiezo::Config *cfg )
-    {
-      Guarded_Assert(_simulated);
-      _simulated->set_config(cfg);
-    }
-    unsigned int ZPiezo::attach()
-    {
-      Guarded_Assert(_idevice);
-      return _idevice->attach();
-    }
-
-    unsigned int ZPiezo::detach()
-    {
-      Guarded_Assert(_idevice);
-      return _idevice->detach();
-    }  
 
   }
 }

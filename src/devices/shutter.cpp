@@ -7,7 +7,7 @@
 
 #include "stdafx.h"
 #include "shutter.h"
-#include "NIDAQAgent.h"
+#include "DAQmxTaskAgent.h"
 #include "object.h"
 
 #include "../util/util-nidaqmx.h"
@@ -26,13 +26,13 @@ namespace fetch
     //
 
     NIDAQShutter::NIDAQShutter( Agent *agent )
-      :ShutterBase<cfg::device::NIDAQShutter>(agent)
+      :ShutterBase<Config>(agent)
       ,daq(agent,"Shutter")
     {
     }
 
     NIDAQShutter::NIDAQShutter( Agent *agent, Config *cfg )
-      :ShutterBase<cfg::device::NIDAQShutter>(agent,cfg)
+      :ShutterBase<Config>(agent,cfg)
       ,daq(agent,"Shutter")
     {
     }
@@ -106,25 +106,26 @@ namespace fetch
     //
 
     SimulatedShutter::SimulatedShutter( Agent *agent )
-      :ShutterBase<int>(agent)
-    {
-      *_config=0;
-    }
+      :ShutterBase<Config>(agent)
+    {}
 
     SimulatedShutter::SimulatedShutter( Agent *agent, Config *cfg )
-      :ShutterBase<int>(agent,cfg)
+      :ShutterBase<Config>(agent,cfg)
     {}
 
     void SimulatedShutter::Set( u8 val )
-    { *_config=val;
+    { 
+      Config c = get_config();
+      c.set_state(val);
+      set_config(c);
     }
 
     void SimulatedShutter::Shut( void )
-    { *_config=0;
+    { Set(0);
     }
 
     void SimulatedShutter::Open( void )
-    { *_config=1;
+    { Set(1);
     }
 
     //
@@ -178,6 +179,32 @@ namespace fetch
       }
     }
 
+    void Shutter::_set_config( Config IN *cfg )
+    {
+      _nidaq->_set_config(cfg->mutable_nidaq());
+      _simulated->_set_config(cfg->mutable_simulated());;
+      _config = cfg;
+      setKind(cfg->kind());
+    }
+
+    void Shutter::_set_config( const Config &cfg )
+    {
+      cfg::device::Shutter_ShutterType kind = cfg.kind();
+      _config->set_kind(kind);
+      setKind(kind);
+      switch(kind)
+      {    
+      case cfg::device::Shutter_ShutterType_NIDAQ:
+        _nidaq->_set_config(cfg.nidaq());
+        break;
+      case cfg::device::Shutter_ShutterType_Simulated:    
+        _simulated->_set_config(cfg.simulated());
+        break;
+      default:
+        error("Unrecognized kind() for Shutter.  Got: %u\r\n",(unsigned)kind);
+      }
+    }
+
     void Shutter::Set( u8 v )
     {
       Guarded_Assert(_ishutter);
@@ -196,40 +223,6 @@ namespace fetch
       _ishutter->Shut();
     }
 
-    void Shutter::set_config( NIDAQShutter::Config *cfg )
-    {
-      Guarded_Assert(_nidaq);
-      _nidaq->set_config(cfg);
-    }
-
-    void Shutter::set_config_nowait( SimulatedShutter::Config *cfg )
-    {
-      Guarded_Assert(_simulated);
-      _simulated->set_config_nowait(cfg);
-    }
-
-    void Shutter::set_config_nowait( NIDAQShutter::Config *cfg )
-    {
-      Guarded_Assert(_nidaq);
-      _nidaq->set_config_nowait(cfg);
-    }
-
-    void Shutter::set_config( SimulatedShutter::Config *cfg )
-    {
-      Guarded_Assert(_simulated);
-      _simulated->set_config(cfg);
-    }
-    unsigned int Shutter::attach()
-    {
-      Guarded_Assert(_idevice);
-      return _idevice->attach();
-    }
-
-    unsigned int Shutter::detach()
-    {
-      Guarded_Assert(_idevice);
-      return _idevice->detach();
-    }
+//end namespace fetch::device
   }
-
 }

@@ -51,10 +51,10 @@
  * Inheritance
  * -----------
  * Agent\ (virtual)
- *       NIDAQAgent\
+ *       NIDAQChannel\
  *                  Pockels
  *
- * NIDAQAgent implements (detach)attach methods that (de)initialize a NI-DAQmx
+ * NIDAQChannel implements (detach)attach methods that (de)initialize a NI-DAQmx
  * task.
  */
 
@@ -62,7 +62,7 @@
 #ifndef POCKELS_H_
 #define POCKELS_H_
 
-#include "NIDAQAgent.h"
+#include "DAQChannel.h"
 #include "pockels.pb.h"
 #include "object.h"
 #include "agent.h"
@@ -82,6 +82,10 @@ namespace fetch
       virtual int isValidOpenVolts(f64 volts) = 0;
       virtual int setOpenVolts(f64 volts) = 0; 
       virtual int setOpenVoltsNoWait(f64 volts) = 0;
+      
+      virtual void computeVerticalBlankWaveform(float64 *data, int n) = 0;
+
+      virtual IDAQChannel* physicalChannel() = 0;
     };
 
     template<class T>
@@ -98,7 +102,7 @@ namespace fetch
 
     class NIDAQPockels:public PockelsBase<cfg::device::NIDAQPockels>
     {    
-      NIDAQAgent daq;
+      NIDAQChannel daq;
     public:
       NIDAQPockels(Agent *agent);
       NIDAQPockels(Agent *agent, Config *cfg);
@@ -111,13 +115,18 @@ namespace fetch
       virtual int isValidOpenVolts(f64 volts);
       virtual int setOpenVolts(f64 volts);
       virtual int setOpenVoltsNoWait(f64 volts);
+
+      virtual void computeVerticalBlankWaveform(float64 *data, int n);
+
+      virtual IDAQChannel* physicalChannel() {return &daq;}
     };   
 
-    class SimulatedPockels:public PockelsBase<f64>
+class SimulatedPockels:public PockelsBase<cfg::device::SimulatedPockels>
     {
+      SimulatedDAQChannel _chan;
     public:
       SimulatedPockels(Agent *agent);
-      SimulatedPockels(Agent *agent, f64 *cfg);
+      SimulatedPockels(Agent *agent, Config *cfg);
 
       virtual unsigned int attach() {return 0;}
       virtual unsigned int detach() {return 0;}
@@ -125,6 +134,10 @@ namespace fetch
       virtual int isValidOpenVolts(f64 volts);
       virtual int setOpenVolts(f64 volts);
       virtual int setOpenVoltsNoWait(f64 volts);
+
+      virtual void computeVerticalBlankWaveform(float64 *data, int n);
+
+      virtual IDAQChannel* physicalChannel() {return &_chan;}
     };
     
     class Pockels:public PockelsBase<cfg::device::Pockels>
@@ -142,15 +155,15 @@ namespace fetch
       virtual unsigned int detach();
 
       void setKind(Config::PockelsType kind);
+      void _set_config( Config IN *cfg );
+      void _set_config( const Config &cfg );
 
       virtual int isValidOpenVolts(f64 volts);
       virtual int setOpenVolts(f64 volts);
       virtual int setOpenVoltsNoWait(f64 volts);
 
-      virtual void set_config(NIDAQPockels::Config *cfg);
-      virtual void set_config(SimulatedPockels::Config *cfg);
-      virtual void set_config_nowait(NIDAQPockels::Config *cfg);
-      virtual void set_config_nowait(SimulatedPockels::Config *cfg);
+      virtual void computeVerticalBlankWaveform(float64 *data, int n) {_ipockels->computeVerticalBlankWaveform(data,n);}
+      virtual IDAQChannel* physicalChannel() {return _ipockels->physicalChannel();}
     };
 
   } // end namespace device

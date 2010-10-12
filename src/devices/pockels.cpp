@@ -66,11 +66,20 @@ namespace device {
     if(sts=isValidOpenVolts(volts))
     { 
       cfg.set_v_open(volts);
-      set_config_nowait(&cfg);       
+      set_config_nowait(cfg);       
     }
     else
       warning("NIDAQPockels: attempted to set v_open to an out of bounds value.\r\n");
     return sts;
+  }
+
+  void NIDAQPockels::computeVerticalBlankWaveform( float64 *data, int n )
+  {
+    float64 max = _config->v_open(),
+            min = _config->v_closed();
+    for(int i=0;i<n;++i)
+      data[i] = max;           // step to max during y scan
+    data[n-1] = min;      // step to zero at end of scan
   }
 
   //
@@ -78,11 +87,11 @@ namespace device {
   //
 
   SimulatedPockels::SimulatedPockels( Agent *agent )
-    :PockelsBase<f64>(agent)
-  {*_config=0.0;}
+    :PockelsBase<cfg::device::SimulatedPockels>(agent)
+  {}
 
-  SimulatedPockels::SimulatedPockels( Agent *agent, f64 *cfg )
-    :PockelsBase<f64>(agent,cfg)
+  SimulatedPockels::SimulatedPockels( Agent *agent, Config *cfg )
+    :PockelsBase<cfg::device::SimulatedPockels>(agent,cfg)
   {}
 
   int SimulatedPockels::isValidOpenVolts( f64 volts )
@@ -92,15 +101,22 @@ namespace device {
 
   int SimulatedPockels::setOpenVolts( f64 volts )
   {
-    *_config=volts;
-    update();
+    Config c = get_config();
+    c.set_val(volts);
+    set_config(c);
     return 1;
   }
 
   int SimulatedPockels::setOpenVoltsNoWait( f64 volts )
   {
-    set_config_nowait(&volts);
-    return 1;
+    Config c = get_config();
+    c.set_val(volts);
+    return set_config_nowait(c);    
+  }
+
+  void SimulatedPockels::computeVerticalBlankWaveform( float64 *data, int n )
+  {
+    memset(data,0,sizeof(float64)*n);
   }
 
   //
@@ -154,6 +170,32 @@ namespace device {
     }
   }
 
+  void Pockels::_set_config( Config IN *cfg )
+  {
+    _nidaq->_set_config(cfg->mutable_nidaq());
+    _simulated->_set_config(cfg->mutable_simulated());;
+    _config = cfg;
+    setKind(cfg->kind());
+  }
+
+  void Pockels::_set_config( const Config &cfg )
+  {
+    cfg::device::Pockels_PockelsType kind = cfg.kind();
+    _config->set_kind(kind);
+    setKind(kind);
+    switch(kind)
+    {    
+    case cfg::device::Pockels_PockelsType_NIDAQ:
+      _nidaq->_set_config(cfg.nidaq());
+      break;
+    case cfg::device::Pockels_PockelsType_Simulated:    
+      _simulated->_set_config(cfg.simulated());
+      break;
+    default:
+      error("Unrecognized kind() for Pockels.  Got: %u\r\n",(unsigned)kind);
+    }
+  }
+
   int Pockels::isValidOpenVolts( f64 volts )
   {
     Guarded_Assert(_ipockels);
@@ -172,29 +214,6 @@ namespace device {
     return _ipockels->setOpenVoltsNoWait(volts);
   }
 
-  void Pockels::set_config( NIDAQPockels::Config *cfg )
-  {
-    Guarded_Assert(_nidaq);
-    _nidaq->set_config(cfg);
-  }
-
-  void Pockels::set_config_nowait( SimulatedPockels::Config *cfg )
-  {
-    Guarded_Assert(_simulated);
-    _simulated->set_config_nowait(cfg);
-  }
-
-  void Pockels::set_config_nowait( NIDAQPockels::Config *cfg )
-  {
-    Guarded_Assert(_nidaq);
-    _nidaq->set_config_nowait(cfg);
-  }
-
-  void Pockels::set_config( SimulatedPockels::Config *cfg )
-  {
-    Guarded_Assert(_simulated);
-    _simulated->set_config(cfg);
-  }
   unsigned int Pockels::attach()
   {
     Guarded_Assert(_idevice);

@@ -175,37 +175,37 @@ Error:
       }
     }
 
-    void Digitizer::set_config( NIScopeDigitizer::Config *cfg )
+    void Digitizer::set_config(const NIScopeDigitizer::Config &cfg )
     {
       Guarded_Assert(_niscope);
       _niscope->set_config(cfg);
     }
 
-    void Digitizer::set_config( AlazarDigitizer::Config *cfg )
+    void Digitizer::set_config(const AlazarDigitizer::Config &cfg )
     {
       Guarded_Assert(_simulated);
       _alazar->set_config(cfg);
     }
 
-    void Digitizer::set_config( SimulatedDigitizer::Config *cfg )
+    void Digitizer::set_config(const SimulatedDigitizer::Config &cfg )
     {
       Guarded_Assert(_simulated);
       _simulated->set_config(cfg);
     }
 
-    void Digitizer::set_config_nowait( SimulatedDigitizer::Config *cfg )
+    void Digitizer::set_config_nowait(const SimulatedDigitizer::Config &cfg )
     {
       Guarded_Assert(_simulated);
       _simulated->set_config_nowait(cfg);
     }
 
-    void Digitizer::set_config_nowait( AlazarDigitizer::Config *cfg )
+    void Digitizer::set_config_nowait(const AlazarDigitizer::Config &cfg )
     {
       Guarded_Assert(_simulated);
       _alazar->set_config_nowait(cfg);
     }
 
-    void Digitizer::set_config_nowait( NIScopeDigitizer::Config *cfg )
+    void Digitizer::set_config_nowait(const NIScopeDigitizer::Config &cfg )
     {
       Guarded_Assert(_niscope);
       _niscope->set_config_nowait(cfg);
@@ -221,6 +221,36 @@ Error:
     {
       Guarded_Assert(_idevice);
       return _idevice->detach();
+    }
+
+    void Digitizer::_set_config( Config IN *cfg )
+    {
+      _niscope->_set_config(cfg->mutable_niscope());
+      _alazar->_set_config(cfg->mutable_alazar()); 
+      _simulated->_set_config(cfg->mutable_simulated());;
+      _config = cfg;
+      setKind(cfg->kind());
+    }
+
+    void Digitizer::_set_config( const Config &cfg )
+    {
+      cfg::device::Digitizer_DigitizerType kind = cfg.kind();
+      _config->set_kind(kind);
+      setKind(kind);
+      switch(kind)
+      {    
+      case cfg::device::Digitizer_DigitizerType_NIScope:
+        _niscope->_set_config(cfg.niscope());
+        break;
+      case cfg::device::Digitizer_DigitizerType_Alazar:
+        _alazar->_set_config(cfg.alazar());
+        break;
+      case cfg::device::Digitizer_DigitizerType_Simulated:    
+        _simulated->_set_config(cfg.simulated());
+        break;
+      default:
+        error("Unrecognized kind() for Digitizer.  Got: %u\r\n",(unsigned)kind);
+      }
     }
 
   } // namespace fetch

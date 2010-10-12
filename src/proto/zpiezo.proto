@@ -11,6 +11,11 @@ message NIDAQZPiezo
   optional string channel   = 8 [default="/Dev1/ao1"];  // DAQ terminal: should be connected to command input on galvo controller
 }
 
+message SimulatedZPiezo
+{
+  optional double val = 1 [default=0.0];
+}
+
 message ZPiezo
 {
   enum ZPiezoType
@@ -18,6 +23,7 @@ message ZPiezo
     NIDAQ     = 0;
     Simulated = 1;
   }
-  optional ZPiezoType   kind = 1 [default=NIDAQ];
-  optional NIDAQZPiezo nidaq = 2;
+  optional ZPiezoType      kind = 1 [default=NIDAQ];
+  optional NIDAQZPiezo     nidaq = 2;
+  optional SimulatedZPiezo simulated = 3;
 }

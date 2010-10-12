@@ -4,6 +4,7 @@ import "digitizer.proto";
 import "pockels.proto";
 import "shutter.proto";
 import "linear_scan_mirror.proto";
+import "daq.proto";
 
 message Scanner2D
 {
@@ -11,8 +12,9 @@ message Scanner2D
   optional uint32    nscans               = 2  [default=512];                 // Number of full resonant periods that make up a frame                                                       
   optional float     line_duty_cycle      = 3  [default=0.95];                // Fraction of resonant period to acquire (must be less than one)                                                
 
-  required Digitizer        digitizer          = 11;
-  required Pockels          pockels            = 12;
-  required Shutter          shutter            = 13;
-  required LinearScanMirror linear_scan_mirror = 14;
+  required DAQ              daq                = 4;
+  required Digitizer        digitizer          = 5;
+  required Pockels          pockels            = 6;
+  required Shutter          shutter            = 7;
+  required LinearScanMirror linear_scan_mirror = 8;
 }

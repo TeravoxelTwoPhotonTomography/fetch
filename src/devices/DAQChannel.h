@@ -1,5 +1,5 @@
 /*
- * NIDAQAgent.h
+ * NIDAQChannel.h
  *
  *  Created on: Apr 20, 2010
  *      Author: Nathan Clack <clackn@janelia.hhmi.org>
@@ -31,21 +31,36 @@ namespace fetch
 
   namespace device
   {
-
-    class NIDAQAgent : public IConfigurableDevice<char*>
+    class IDAQChannel
     {
     public:
-      NIDAQAgent(Agent *agent, char *name);
-      ~NIDAQAgent(void);
+      virtual char* name() = 0;
+    };
+
+    class NIDAQChannel : public IDAQChannel, public IConfigurableDevice<char*>
+    {
+    public:
+      NIDAQChannel(Agent *agent, char *name);
+      ~NIDAQChannel(void);
 
       unsigned int attach();
       unsigned int detach();
-
+      
+      virtual char* name() {return _daqtaskname;}
     public:
       TaskHandle daqtask;
       char _daqtaskname[128];      
     };
 
+    class SimulatedDAQChannel:public IDAQChannel, public IConfigurableDevice<char*>
+    { char _name[128];
+    public:
+      SimulatedDAQChannel(Agent *agent, char *name);
+      unsigned int attach();
+      unsigned int detach();
+
+      virtual char* name() {return _name;}
+    };
   }
 
 }

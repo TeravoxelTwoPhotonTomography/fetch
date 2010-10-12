@@ -1,12 +1,12 @@
 /*
- * NIDAQAgent.cpp
+ * NIDAQChannel.cpp
  *
  *  Created on: Apr 20, 2010
  *      Author: clackn
  */
 
 #include "stdafx.h"
-#include "NIDAQAgent.h"
+#include "DAQmxTaskAgent.h"
 
 #define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, warning))
 #define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, error  ))
@@ -18,7 +18,7 @@ namespace fetch
   namespace device
   {
 
-    NIDAQAgent::NIDAQAgent(Agent *agent, char *name)
+    NIDAQChannel::NIDAQChannel(Agent *agent, char *name)
       :IConfigurableDevice<char*>(agent,&name)
       ,daqtask(NULL)
     { 
@@ -34,12 +34,12 @@ namespace fetch
       memcpy(_daqtaskname,name,n);
     }
     
-    NIDAQAgent::~NIDAQAgent(void)
+    NIDAQChannel::~NIDAQChannel(void)
     { if(this->detach()>0)
-        warning("Couldn't cleanly detach NIDAQAgent: %s\r\n.",this->_daqtaskname);
+        warning("Couldn't cleanly detach NIDAQChannel: %s\r\n.",this->_daqtaskname);
     }
 
-    unsigned int NIDAQAgent::detach(void)
+    unsigned int NIDAQChannel::detach(void)
     { unsigned int status=1; //success 0, failure 1
 
       if(daqtask)
@@ -53,7 +53,7 @@ namespace fetch
       return status;
     }
 
-    unsigned int NIDAQAgent::attach(void)
+    unsigned int NIDAQChannel::attach(void)
     { unsigned int status = 1; //success 0, failure 1;
       Guarded_Assert(daqtask==NULL);
       DAQJMP(status=DAQmxCreateTask(_daqtaskname,&daqtask))
@@ -62,6 +62,24 @@ namespace fetch
       return status;
     }
     
+
+    SimulatedDAQChannel::SimulatedDAQChannel( Agent *agent, char *name )
+      :IConfigurableDevice<char*>(agent,&name)      
+    {
+      memset(_name,0,sizeof(_name));
+      memcpy(_name,name,MIN(strlen(name),strlen(_name)));
+    }
+
+    unsigned int SimulatedDAQChannel::attach()
+    {
+      return 0;
+    }
+
+    unsigned int SimulatedDAQChannel::detach()
+    {
+      return 0;
+    }
+
   }
 
 }

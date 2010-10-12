@@ -42,12 +42,12 @@ TEST(Integration,NIDAQmx)
 }
 
 TEST(Integration,Protobuf)
-{ fetch::cfg::device::Digitizer d;
+{ fetch::cfg::device::NIScopeDigitizer d;
   ASSERT_TRUE(d.IsInitialized());
 }
 
 TEST(Integration,NIScope)
-{ fetch::cfg::device::Digitizer d;
+{ fetch::cfg::device::NIScopeDigitizer d;
   ViSession vi;
   EXPECT_EQ(
       VI_SUCCESS,

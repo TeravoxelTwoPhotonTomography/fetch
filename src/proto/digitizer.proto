@@ -32,14 +32,20 @@ message NIScopeDigitizer
   optional uint32   nchannels   = 7 [default = 1];        // number of channels to independently configure - typically set to DIGITIZER_MAX_NUM_CHANNELS 
   repeated Channel  channel     = 8;                      // array of channel configurations                                                             
   
-  optional uint32   line_trigger_src = 4  [default=1];      // Digitizer channel corresponding to resonant velocity input                                                    
-  optional string   armstart         = 6  [default="RTSI2"];// Digitizer terminal: should be connected to "ReadyForStart" event output from digitizer                              
+  optional uint32   line_trigger_src = 9  [default=1];      // Digitizer channel corresponding to resonant velocity input                                                    
+  
 }
 
 ///////////////////////
 message AlazarDigitizer
 {
   optional string name = 1 [default = "placeholder!"];
+}
+
+//////////////////////////
+message SimulatedDigitizer
+{
+  optional uint32 number = 1 [default=0]; // placeholder
 }
 
 /////////////////
@@ -53,6 +59,7 @@ message Digitizer
   }
   optional DigitizerType  kind =  1 [default = NIScope];
 
-  optional NIScopeDigitizer niscope = 2;
-  optional AlazarDigitizer  alazar  = 3;
+  optional NIScopeDigitizer   niscope   = 2;
+  optional AlazarDigitizer    alazar    = 3;
+  optional SimulatedDigitizer simulated = 4;
 }

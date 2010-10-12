@@ -12,7 +12,7 @@
  */
 
 #pragma once
-#include "NIDAQAgent.h"
+#include "DAQChannel.h"
 #include "../agent.h"
 #include "linear_scan_mirror.pb.h"
 #include "object.h"
@@ -28,35 +28,46 @@ namespace fetch
     class ILSM
     {
     public:      /* TODO: add methods to change vpp on the fly*/
+      virtual void computeSawtooth(float64 *data, int n)=0;
+      virtual IDAQChannel* physicalChannel() = 0;
     };
 
     template<class T>
     class LSMBase:public ILSM,public IConfigurableDevice<T>
     {
     public:
-      LSMBase(Agent *agent)             :IConfigurableDevice(agent) {}
-      LSMBase(Agent *agent, Config* cfg):IConfigurableDevice(agent,cfg) {}
+      LSMBase(Agent *agent)             :IConfigurableDevice<T>(agent) {}
+      LSMBase(Agent *agent, Config* cfg):IConfigurableDevice<T>(agent,cfg) {}
     };
 
     class NIDAQLinearScanMirror : public LSMBase<cfg::device::NIDAQLinearScanMirror>
     {
-      NIDAQAgent daq;
+      NIDAQChannel daq;
     public:
       NIDAQLinearScanMirror(Agent *agent);
       NIDAQLinearScanMirror(Agent *agent, Config *cfg);
 
       virtual unsigned int attach() {return daq.attach();}
       virtual unsigned int detach() {return daq.detach();}
+      
+      virtual void computeSawtooth(float64 *data, int n);
+
+      virtual IDAQChannel* physicalChannel() {return &daq;}
     };
 
-    class SimulatedLinearScanMirror : public LSMBase<f64>
+    class SimulatedLinearScanMirror : public LSMBase<cfg::device::SimulatedLinearScanMirror>
     {
+      SimulatedDAQChannel _chan;
     public:
       SimulatedLinearScanMirror(Agent *agent);
       SimulatedLinearScanMirror(Agent *agent, Config *cfg);
 
       virtual unsigned int attach() {return 0;}
       virtual unsigned int detach() {return 0;}
+
+      virtual void computeSawtooth(float64 *data, int n);
+
+      virtual IDAQChannel* physicalChannel() {return &_chan;}
     };
    
    class LinearScanMirror:public LSMBase<cfg::device::LinearScanMirror>
@@ -72,10 +83,14 @@ namespace fetch
 
      void setKind(Config::LinearScanMirrorType kind);
 
-     virtual void set_config(NIDAQLinearScanMirror::Config *cfg);
-     virtual void set_config(SimulatedLinearScanMirror::Config *cfg);
-     virtual void set_config_nowait(NIDAQLinearScanMirror::Config *cfg);
-     virtual void set_config_nowait(SimulatedLinearScanMirror::Config *cfg);
+     virtual unsigned int attach() {return _idevice->attach();}
+     virtual unsigned int detach() {return _idevice->detach();}
+     void _set_config( Config IN *cfg );
+     void _set_config( const Config &cfg );
+
+     virtual void computeSawtooth(float64 *data, int n);
+
+     virtual IDAQChannel* physicalChannel() {return _ilsm->physicalChannel();}
    };
 
    //end namespace fetch::device
