@@ -22,8 +22,8 @@ namespace fetch
 
     class Terminator : public WorkTask
     { public:
-        unsigned int run                 (Agent *agent);
-        virtual  void alloc_output_queues(Agent *agent);//noop
+        unsigned int run                 (IDevice *d);
+        virtual  void alloc_output_queues(IDevice *d);//noop
     };
   }
 

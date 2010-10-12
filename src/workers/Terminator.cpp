@@ -24,15 +24,15 @@ namespace fetch
   namespace task
   {
     unsigned int
-    Terminator::run(Agent *agent)
+    Terminator::run(IDevice *d)
     {
       asynq **q;   // input queues (all input channels)
       void **buf;  // array of token buffers
       size_t *szs; // array of buffer sizes
       unsigned int i, n;
 
-      q = agent->_in->contents;
-      n = agent->_in->nelem;
+      q = d->_in->contents;
+      n = d->_in->nelem;
       buf = (void**)  (Guarded_Malloc(n * sizeof(void*),
                                      "Worker device task - Terminator"));
       szs = (size_t*) (Guarded_Malloc(n * sizeof(size_t),
@@ -54,7 +54,7 @@ namespace fetch
           szs[i%n] = q[i%n]->q->buffer_size_bytes;
         }
         i++;
-      } while (!agent->is_stopping());
+      } while (!d->_agent->is_stopping());
       
       // cleanup
       for (i = 0; i < n; i++)
@@ -65,7 +65,7 @@ namespace fetch
     }
 
     void
-    Terminator::alloc_output_queues(Agent *agent)
+    Terminator::alloc_output_queues(IDevice *d)
     { //noop - No output
     }
 

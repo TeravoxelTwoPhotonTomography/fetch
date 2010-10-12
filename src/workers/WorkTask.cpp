@@ -14,23 +14,13 @@ namespace fetch
   namespace task
   {
 
-    void WorkTask::alloc_output_queues(Agent *agent)
+    void WorkTask::alloc_output_queues(IDevice *d)
     { // Allocates an output queue on out[0] that has matching storage to in[0].
-      agent->_alloc_qs_easy(&agent->_out,
-                            1,                                             // number of output channels to allocate
-                            agent->_in->contents[0]->q->ring->nelem,        // copy number of output buffers from input queue
-                            agent->_in->contents[0]->q->buffer_size_bytes); // copy buffer size from input queue
+      d->_alloc_qs_easy(&d->_out,
+                        1,                                             // number of output channels to allocate
+                        d->_in->contents[0]->q->ring->nelem,        // copy number of output buffers from input queue
+                        d->_in->contents[0]->q->buffer_size_bytes); // copy buffer size from input queue
     }
-
-    //void UpdateableWorkTask::alloc_output_queues(Agent *agent)
-    //{ // Allocates an output queue on out[0] that has matching storage to in[0].
-    //  agent->_alloc_qs_easy(agent->out,
-    //                        1,                                          // number of output channels to allocate
-    //                        agent->in->contents->q->ring->count,         // copy number of output buffers from input queue
-    //                        agent->in->contents->q->buffer_size_bytes);  // copy buffer size from input queue
-    //}
-
-
 
   }
 }

@@ -11,7 +11,7 @@
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
 /*
- * WorkAgent<TWorkTask,TParam=void*>
+ * WorkAgent<TWorkTask,TConfig=void*>
  * ---------------------------------
  *
  * TWorkTask
@@ -28,7 +28,7 @@
  */
 #pragma once
 
-#include "../agent.h"
+#include "agent.h"
 
 #define WORKER_DEFAULT_TIMEOUT INFINITE
 
@@ -50,22 +50,21 @@ namespace fetch
    * WorkAgent<task::PixelWiseAverager,int> step2(4); // times to average
    * Agent *last = step2.apply(step1.apply(&src,0));
    */
-  template<typename TWorkTask, typename TParam=void*>
-  class WorkAgent : public Agent
+  template<typename TWorkTask, typename TConfig=void*>
+  class WorkAgent : public IConfigurableDevice<TConfig>
   { public:
-      WorkAgent();                                           // Will configure only.  Use apply() to connect, arm, and run.  config is set to TParam().
-      WorkAgent(TParam parameter);                           // Will configure only.  Use apply() to connect, arm, and run.
-      WorkAgent(Agent *source, int ichan, TParam parameter); // Will connect, configure, arm, and run
-      ~WorkAgent();
+      WorkAgent();                                           // Will configure only.  Use apply() to connect, arm, and run.  config is set to TConfig().
+      WorkAgent(TConfig *config);                            // Will configure only.  Use apply() to connect, arm, and run.
+      WorkAgent(IDevice *source, int ichan, TConfig *config);  // Will connect, configure, arm, and run
 
-      WorkAgent<TWorkTask,TParam>* apply(Agent *source, int ichan=0); // returns <this>
+      WorkAgent<TWorkTask,TConfig>* apply(IDevice *source, int ichan=0); // returns <this>
 
       unsigned int attach(void);
       unsigned int detach(void);
 
     public: //data
-      TParam    config;
       TWorkTask __task_instance;
+      Agent     __agent_instance;
   };
 
   ////////////////////////////////////////////////////////////////////////////
@@ -74,62 +73,51 @@ namespace fetch
   //
   ////////////////////////////////////////////////////////////////////////////
   
-  template<typename TWorkTask,typename TParam>
-  WorkAgent<TWorkTask,TParam>::WorkAgent()
-  : config(),
-    __task_instance()
-  { attach(); }
+  template<typename TWorkTask,typename TConfig>
+  WorkAgent<TWorkTask,TConfig>::WorkAgent()
+    :IConfigurableDevice<TConfig>(&__agent_instance)
+    ,__agent_instance(this)    
+  { _agent->attach(); }
 
-  template<typename TWorkTask,typename TParam>
-  WorkAgent<TWorkTask,TParam>::WorkAgent(TParam parameter)
-  : config(parameter),
-    __task_instance()
-  { attach(); }
+  template<typename TWorkTask,typename TConfig>
+  WorkAgent<TWorkTask,TConfig>::WorkAgent(TConfig *config)
+    :IConfigurableDevice<TConfig>(&__agent_instance,config)
+    ,__agent_instance(this)
+  { _agent->attach(); }
 
-  template<typename TWorkTask,typename TParam>
-  WorkAgent<TWorkTask,TParam>::WorkAgent(Agent *source, int ichan, TParam parameter)
-  { config = parameter;
-    __task_instance = TWorkTask();            // a bit kludgey - the WorkAgent is only ever associated with a single task.
+  template<typename TWorkTask,typename TConfig>
+  WorkAgent<TWorkTask,TConfig>::WorkAgent(Agent *source, int ichan, TConfig *cobfig)
+    :IConfigurableDevice<TConfig>(&__agent_instance,config)
+    ,__agent_instance(this)
+  { 
+    _agent->attach();
     apply(source,ichan);
   }
   
-  template<typename TWorkTask,typename TParam>
-  WorkAgent<TWorkTask,TParam>::~WorkAgent(void)
-  { if(this->detach()>0)
-      warning("Could not cleanly detach WorkAgent (task instance at 0x%p).\r\n",&this->__task_instance);
-  }
-  
-  template<typename TWorkTask,typename TParam>
-  unsigned int WorkAgent<TWorkTask,TParam>::
+  template<typename TWorkTask,typename TConfig>
+  unsigned int WorkAgent<TWorkTask,TConfig>::
   attach(void) 
-  { this->lock(); 
-    this->set_available(); 
-    this->unlock(); 
+  {
     return 0; /*0 success, 1 failure*/
   }
   
-  template<typename TWorkTask,typename TParam>
-  unsigned int WorkAgent<TWorkTask,TParam>::
+  template<typename TWorkTask,typename TConfig>
+  unsigned int WorkAgent<TWorkTask,TConfig>::
   detach(void) 
-  { debug("Attempting WorkAgent::disarm() for task at 0x%p.\r\n",&this->__task_instance);
-    if( !this->disarm(WORKER_DEFAULT_TIMEOUT) )
-      warning("Could not cleanly detach WorkAgent (task instance at 0x%p).\r\n",&this->__task_instance);  
-      
-    this->lock();
-    this->_is_available=0;
-    this->unlock();
+  { debug("Attempting WorkAgent::detach() for task at 0x%p.\r\n",&this->__task_instance);    
     return 0; /*0 success, 1 failure*/
   }
   
-  template<typename TWorkTask,typename TParam>
-  WorkAgent<TWorkTask,TParam>*
-  WorkAgent<TWorkTask,TParam>::apply(Agent *source, int ichan)
-  { connect(this,ichan,source,ichan);
+  template<typename TWorkTask,typename TConfig>
+  WorkAgent<TWorkTask,TConfig>*
+  WorkAgent<TWorkTask,TConfig>::apply(IDevice *source, int ichan)
+  { 
+    connect(this,ichan,source,ichan);
     if( _out==NULL )
       __task_instance.alloc_output_queues(this);// Task must implement this.  Must connect() first.  WorkTask has a default impl. that assumes in[0]->out[0].  These should handle pre-existing queues (by freecycling).
-    Guarded_Assert( disarm(WORKER_DEFAULT_TIMEOUT));
-    Guarded_Assert( arm(&__task_instance,WORKER_DEFAULT_TIMEOUT));
-    Guarded_Assert( run());
+    Guarded_Assert(_agent->disarm(WORKER_DEFAULT_TIMEOUT));
+    Guarded_Assert(_agent->arm(&__task_instance,WORKER_DEFAULT_TIMEOUT));
+    Guarded_Assert(_agent->run());
     return this;
   }
 

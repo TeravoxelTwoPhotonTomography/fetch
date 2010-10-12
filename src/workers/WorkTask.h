@@ -62,32 +62,23 @@ namespace fetch
   {
 
     class WorkTask : public fetch::Task
-    { public:
-        unsigned int config(Agent *d) {return 1;} //success
-
-        virtual void alloc_output_queues(Agent *agent);
+    { public:        
+        virtual void alloc_output_queues(IDevice *d);
     };
 
-    //class UpdateableWorkTask : public fetch::UpdateableTask
-    //{ public:
-    //    virtual unsigned int config(Agent *d) {}
-    //    virtual unsigned int update(Agent *d) {}
-
-    //    virtual static void alloc_output_queues(Agent *agent);
-    //};
 
     template<typename TMessage>
     class OneToOneWorkTask : public WorkTask
     { public:
-                unsigned int run(Agent *d);
-        virtual unsigned int work(Agent *agent, TMessage *dst, TMessage *src) = 0;
+                unsigned int run(IDevice *d);
+        virtual unsigned int work(IDevice *agent, TMessage *dst, TMessage *src) = 0;
     };
 
     template<typename TMessage>
     class InPlaceWorkTask : public WorkTask
     { public:
-                unsigned int run(Agent *d);
-        virtual unsigned int work(Agent *agent, TMessage *src) = 0;
+                unsigned int run(IDevice *d);
+        virtual unsigned int work(IDevice *agent, TMessage *src) = 0;
     };
 
 
@@ -97,7 +88,7 @@ namespace fetch
 
     template<typename TMessage>
     unsigned int
-    OneToOneWorkTask<TMessage>::run(Agent *d)
+    OneToOneWorkTask<TMessage>::run(IDevice *d)
     { unsigned int sts = 0; // success=0, fail=1
       asynq *qsrc = d->_in->contents[0],
             *qdst = d->_out->contents[0];
@@ -139,7 +130,7 @@ namespace fetch
     
     template<typename TMessage>
     unsigned int
-    InPlaceWorkTask<TMessage>::run(Agent *d)
+    InPlaceWorkTask<TMessage>::run(IDevice *d)
     { unsigned int sts = 0; // success=0, fail=1
       asynq *qsrc = d->_in->contents[0],
             *qdst = d->_out->contents[0];
