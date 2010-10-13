@@ -52,19 +52,22 @@ namespace fetch
    */
   template<typename TWorkTask, typename TConfig=void*>
   class WorkAgent : public IConfigurableDevice<TConfig>
-  { public:
-      WorkAgent();                                           // Will configure only.  Use apply() to connect, arm, and run.  config is set to TConfig().
-      WorkAgent(TConfig *config);                            // Will configure only.  Use apply() to connect, arm, and run.
-      WorkAgent(IDevice *source, int ichan, TConfig *config);  // Will connect, configure, arm, and run
+  { 
+  public:
+    typedef TWorkTask TaskType;
 
-      WorkAgent<TWorkTask,TConfig>* apply(IDevice *source, int ichan=0); // returns <this>
+    WorkAgent();                                           // Will configure only.  Use apply() to connect, arm, and run.  config is set to TConfig().
+    WorkAgent(TConfig *config);                            // Will configure only.  Use apply() to connect, arm, and run.
+    WorkAgent(IDevice *source, int ichan, TConfig *config);  // Will connect, configure, arm, and run
 
-      unsigned int attach(void);
-      unsigned int detach(void);
+    WorkAgent<TWorkTask,TConfig>* apply(IDevice *source, int ichan=0); // returns <this>
 
-    public: //data
-      TWorkTask __task_instance;
-      Agent     __agent_instance;
+    unsigned int attach(void);
+    unsigned int detach(void);
+
+  public: //data
+    TWorkTask __task_instance;
+    Agent     __agent_instance;
   };
 
   ////////////////////////////////////////////////////////////////////////////
@@ -76,17 +79,23 @@ namespace fetch
   template<typename TWorkTask,typename TConfig>
   WorkAgent<TWorkTask,TConfig>::WorkAgent()
     :IConfigurableDevice<TConfig>(&__agent_instance)
-    ,__agent_instance(this)    
-  { _agent->attach(); }
+    ,__agent_instance(NULL)    
+  {
+    __agent_instance._owner = this;
+    _agent->attach(); 
+  }
 
   template<typename TWorkTask,typename TConfig>
   WorkAgent<TWorkTask,TConfig>::WorkAgent(TConfig *config)
     :IConfigurableDevice<TConfig>(&__agent_instance,config)
-    ,__agent_instance(this)
-  { _agent->attach(); }
+    ,__agent_instance(NULL)
+  { 
+    __agent_instance._owner = this;
+    _agent->attach(); 
+  }
 
   template<typename TWorkTask,typename TConfig>
-  WorkAgent<TWorkTask,TConfig>::WorkAgent(Agent *source, int ichan, TConfig *cobfig)
+  WorkAgent<TWorkTask,TConfig>::WorkAgent(IDevice *source, int ichan, TConfig *config)
     :IConfigurableDevice<TConfig>(&__agent_instance,config)
     ,__agent_instance(this)
   { 
@@ -116,7 +125,7 @@ namespace fetch
     if( _out==NULL )
       __task_instance.alloc_output_queues(this);// Task must implement this.  Must connect() first.  WorkTask has a default impl. that assumes in[0]->out[0].  These should handle pre-existing queues (by freecycling).
     Guarded_Assert(_agent->disarm(WORKER_DEFAULT_TIMEOUT));
-    Guarded_Assert(_agent->arm(&__task_instance,WORKER_DEFAULT_TIMEOUT));
+    Guarded_Assert(_agent->arm(&__task_instance,this,WORKER_DEFAULT_TIMEOUT));
     Guarded_Assert(_agent->run());
     return this;
   }

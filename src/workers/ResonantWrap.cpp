@@ -36,7 +36,7 @@ namespace fetch
       float turn;
       int ow,oh,iw,ih;
 
-      turn =  = dc->get_config().turn_px();
+      turn = dc->get_config().turn_px();
       iw = fsrc->width;
       ih = fsrc->height;
 
@@ -83,12 +83,15 @@ namespace fetch
     : _notify_out_of_bounds_update(INVALID_HANDLE_VALUE),
       _is_in_bounds(false)
     { 
-      Guarded_Assert_WinErr(
-        _notify_out_of_bounds_update 
-          = CreateEvent(NULL, /*sec attr*/
-                        TRUE, /*?manual reset*/
-                        TRUE, /*?initial state - default oob*/
-                        NULL) /*name*/);
+      __common_setup();
+    }
+
+    ResonantWrapAgent::ResonantWrapAgent( Config *config )
+      :WorkAgent<TaskType,Config>(config)
+      ,_notify_out_of_bounds_update(INVALID_HANDLE_VALUE)
+      ,_is_in_bounds(false)
+    { 
+       __common_setup();
     }
 
     ResonantWrapAgent::~ResonantWrapAgent()
@@ -150,6 +153,17 @@ namespace fetch
       res = WaitForMultipleObjects(2,hs,FALSE,timeout_ms);
       return res == WAIT_OBJECT_0;
     }
+
+    void ResonantWrapAgent::__common_setup()
+    {
+      Guarded_Assert_WinErr(
+        _notify_out_of_bounds_update 
+        = CreateEvent(NULL, /*sec attr*/
+        TRUE, /*?manual reset*/
+        TRUE, /*?initial state - default oob*/
+        NULL) /*name*/);
+    }
+
   }  // namespace worker
 
 }

@@ -13,8 +13,8 @@
 
 #pragma once
 
-#include "WorkTask.h"
 #include "workers.pb.h"
+#include "WorkTask.h"
 
 #define RESONANTWRAPAGENT_DEFAULT_TIMEOUT         INFINITE
 
@@ -38,6 +38,10 @@ namespace fetch
     {
       public:
         ResonantWrapAgent();
+        ResonantWrapAgent(Config *config);
+
+        void __common_setup();
+
         ~ResonantWrapAgent();
 
 

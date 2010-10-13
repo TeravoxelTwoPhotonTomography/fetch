@@ -26,24 +26,24 @@ namespace fetch
   namespace device
   {
 	
-	  template class DiskStreamSpecialized<task::file::ReadMessage,task::file::WriteMessage>;      // DiskStreamMessage;
-    template class DiskStreamSpecialized<task::file::ReadRaw    ,task::file::WriteRaw>;          // DiskStreamRaw;    
-    template class DiskStreamSpecialized<task::file::ReadRaw    ,task::file::WriteMessageAsRaw>; // DiskStreamMessageAsRaw;
+	  template class DiskStream<task::file::ReadMessage,task::file::WriteMessage>;      // DiskStreamMessage;
+    template class DiskStream<task::file::ReadRaw    ,task::file::WriteRaw>;          // DiskStreamRaw;    
+    template class DiskStream<task::file::ReadRaw    ,task::file::WriteMessageAsRaw>; // DiskStreamMessageAsRaw;
 	
-    DiskStream::DiskStream(Agent *agent)
+    DiskStreamBase::DiskStreamBase(Agent *agent)
       :IConfigurableDevice<Config>(agent)
       ,_hfile(INVALID_HANDLE_VALUE)
     {
     }
 
-    DiskStream::DiskStream( Agent *agent, Config *config )
+    DiskStreamBase::DiskStreamBase( Agent *agent, Config *config )
       :IConfigurableDevice<Config>(agent)
       ,_hfile(INVALID_HANDLE_VALUE)
     {
     }
 
 	
-    DiskStream::DiskStream(Agent*agent, char *fname, char *m)
+    DiskStreamBase::DiskStreamBase(Agent*agent, char *fname, char *m)
       :IConfigurableDevice<Config>(agent)
       ,_hfile(INVALID_HANDLE_VALUE)
     {
@@ -52,12 +52,12 @@ namespace fetch
     }
 
 	
-    DiskStream::~DiskStream()
+    DiskStreamBase::~DiskStreamBase()
     {
     }
 
 	
-    unsigned int DiskStream::attach(void)
+    unsigned int DiskStreamBase::attach(void)
     {
       DWORD desired_access, share_mode, creation_disposition, flags_and_attr;
       unsigned int eflag = 0; //success
@@ -88,7 +88,7 @@ namespace fetch
         break;
       default:
         { 
-          warning("DiskStream::attach() -- Couldn't interpret mode.  Got %s\r\n",mode);
+          warning("DiskStreamBase::attach() -- Couldn't interpret mode.  Got %s\r\n",mode);
           return 1; //failure
         }
       }
@@ -116,7 +116,7 @@ namespace fetch
     }
 
 	
-    unsigned int DiskStream::detach(void)
+    unsigned int DiskStreamBase::detach(void)
     {
       unsigned int eflag = 1; //error
       const char *mode,*filename;
@@ -156,16 +156,18 @@ Error:
 
     
     unsigned int
-    DiskStream::close(void)
+    DiskStreamBase::close(void)
     { return detach();
     }
 
     template<typename TReader,typename TWriter>
-    unsigned int DiskStreamSpecialized<TReader,TWriter>::open(char *filename, char *mode)
+    unsigned int 
+      DiskStream<TReader,TWriter>::
+      open(const std::string& filename, const std::string& mode)
     { int   sts = 1; //success
 
-      Guarded_Assert(strlen(filename)<DISKSTREAM_MAX_PATH);
-      Guarded_Assert(strlen(mode)<DISKSTREAM_MAX_MODE);
+      Guarded_Assert(filename.length()<DISKSTREAM_MAX_PATH);
+      Guarded_Assert(mode.length()<DISKSTREAM_MAX_MODE);
       Config c = get_config();
       c.set_path(filename);
       c.set_mode(mode);
@@ -177,7 +179,7 @@ Error:
 
       // Open the file
       // Associate read/write task
-      switch (mode[0])
+      switch (mode.c_str()[0])
       {
         case 'r':
           Guarded_Assert( _agent->arm(&reader,this,DISKSTREAM_DEFAULT_TIMEOUT) );
@@ -186,7 +188,7 @@ Error:
           Guarded_Assert( _agent->arm(&writer,this,DISKSTREAM_DEFAULT_TIMEOUT) );
         break;
         default:
-          error("DiskStream::open() -- Couldn't interpret mode.  Got %s\r\n",mode);
+          error("DiskStreamBase::open() -- Couldn't interpret mode.  Got %s\r\n",mode);
       }
 
       _agent->run();

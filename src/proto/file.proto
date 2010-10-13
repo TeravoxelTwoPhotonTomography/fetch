@@ -6,9 +6,10 @@ message File
   optional string mode = 2 [default="r"];
 }
 
-optional FileSeries
+message FileSeries
 { 
   optional string root     = 1 [default=""];
   optional string date     = 2 [default="unknown"];
   optional int32  seriesno = 3 [default=0]; 
+  optional string pathsep  = 4 [default="\\"];
 }

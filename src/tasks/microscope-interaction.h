@@ -11,11 +11,17 @@
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
 #pragma once
-#include "../task.h"
-#include "../devices/microscope.h"
+#include "task.h"
+#include "devices\Microscope.h"
 
 namespace fetch
-{ namespace task
+{ 
+  namespace device
+  {
+    class Microscope;
+  }
+
+  namespace task
   { namespace microscope
     {
       //typedef UpcastTask<device::Microscope> MicroscopeTask;
@@ -23,8 +29,8 @@ namespace fetch
       
       class Interaction : public MicroscopeTask
       { public:
-          unsigned int config(Agent *d);
-          unsigned int    run(Agent *d);
+          unsigned int config(IDevice *d);
+          unsigned int    run(IDevice *d);
           
           unsigned int config(device::Microscope *agent);
           unsigned int    run(device::Microscope *agent);

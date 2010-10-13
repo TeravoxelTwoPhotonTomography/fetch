@@ -139,7 +139,13 @@ namespace fetch {
     // The agent class takes care of synchronization and non-blocking calls.
     virtual unsigned int attach(void)=0;// Returns 0 on success, nonzero otherwise.
     virtual unsigned int detach(void)=0;// Returns 0 on success, nonzero otherwise.  Should attempt to disarm if running.  Should not panic if possible.
-  
+
+    // Don't call directly.  This is a hook called from Agent::disarm()
+    // It's called from within the Agent's mutex.
+    // Use it to disarm subdevices.
+    // eg. Used by fetch::device::Microscope to disarm running workers.
+    virtual unsigned int disarm(void) {return 1;/*success*/} // Returns 1 on success, 0 otherwise
+
     // Queue manipulation
     static void connect(IDevice *dst, size_t dst_chan, IDevice *src, size_t src_chan);
 

@@ -85,8 +85,8 @@ namespace fetch
       Shutter(Agent *agent, Config *cfg);
       ~Shutter();
 
-      virtual unsigned int attach();
-      virtual unsigned int detach();
+      virtual unsigned int attach() {return _idevice->attach();}
+      virtual unsigned int detach() {return _idevice->detach();}
       void _set_config( Config IN *cfg );
       void _set_config( const Config &cfg );
 

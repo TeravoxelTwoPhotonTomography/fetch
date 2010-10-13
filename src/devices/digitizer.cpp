@@ -129,9 +129,12 @@ Error:
       ViReal64   probeAttenuation    = 1.0;
       ViBoolean  enforceRealtime     = NISCOPE_VAL_TRUE;
 
+#pragma warning(push)
+#pragma warning(disable:4244)
       ViInt32 record_size = duty*_config->sample_rate()/record_frequency_Hz;
+#pragma warning(pop)
 
-      Guarded_Assert(record_size>0)
+      Guarded_Assert(record_size>0);
 
       // Select the trigger channel
       if(_config->line_trigger_src() >= (unsigned) _config->channel_size())

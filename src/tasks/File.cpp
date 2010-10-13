@@ -27,31 +27,31 @@ namespace file {
 
 
   // Upcasting
-  unsigned int ReadRaw::config      (IDevice *d) {return config(dynamic_cast<device::DiskStream*>(d));}
-  unsigned int ReadRaw::run         (IDevice *d) {return run   (dynamic_cast<device::DiskStream*>(d));}
+  unsigned int ReadRaw::config      (IDevice *d) {return config(dynamic_cast<device::DiskStreamBase*>(d));}
+  unsigned int ReadRaw::run         (IDevice *d) {return run   (dynamic_cast<device::DiskStreamBase*>(d));}
   
-  unsigned int WriteRaw::config     (IDevice *d) {return config(dynamic_cast<device::DiskStream*>(d));}
-  unsigned int WriteRaw::run        (IDevice *d) {return run   (dynamic_cast<device::DiskStream*>(d));}
+  unsigned int WriteRaw::config     (IDevice *d) {return config(dynamic_cast<device::DiskStreamBase*>(d));}
+  unsigned int WriteRaw::run        (IDevice *d) {return run   (dynamic_cast<device::DiskStreamBase*>(d));}
   
-  unsigned int ReadMessage::config  (IDevice *d) {return config(dynamic_cast<device::DiskStream*>(d));}
-  unsigned int ReadMessage::run     (IDevice *d) {return run   (dynamic_cast<device::DiskStream*>(d));}
+  unsigned int ReadMessage::config  (IDevice *d) {return config(dynamic_cast<device::DiskStreamBase*>(d));}
+  unsigned int ReadMessage::run     (IDevice *d) {return run   (dynamic_cast<device::DiskStreamBase*>(d));}
   
-  unsigned int WriteMessage::config (IDevice *d) {return config(dynamic_cast<device::DiskStream*>(d));}
-  unsigned int WriteMessage::run    (IDevice *d) {return run   (dynamic_cast<device::DiskStream*>(d));}
+  unsigned int WriteMessage::config (IDevice *d) {return config(dynamic_cast<device::DiskStreamBase*>(d));}
+  unsigned int WriteMessage::run    (IDevice *d) {return run   (dynamic_cast<device::DiskStreamBase*>(d));}
   
-  unsigned int WriteMessageAsRaw::config (IDevice *d) {return config(dynamic_cast<device::DiskStream*>(d));}
-  unsigned int WriteMessageAsRaw::run    (IDevice *d) {return run   (dynamic_cast<device::DiskStream*>(d));}  
+  unsigned int WriteMessageAsRaw::config (IDevice *d) {return config(dynamic_cast<device::DiskStreamBase*>(d));}
+  unsigned int WriteMessageAsRaw::run    (IDevice *d) {return run   (dynamic_cast<device::DiskStreamBase*>(d));}  
 
   //
   // Implementation
   //
   
   unsigned int
-  ReadRaw::config(device::DiskStream *dc)
+  ReadRaw::config(device::DiskStreamBase *dc)
   {return 1;}
 
   unsigned int
-  ReadRaw::run(device::DiskStream *dc)
+  ReadRaw::run(device::DiskStreamBase *dc)
   { asynq *q  = dc->_out->contents[0];
     void *buf = Asynq_Token_Buffer_Alloc(q);
     DWORD nbytes = q->q->buffer_size_bytes,
@@ -67,7 +67,7 @@ namespace file {
       debug("Read %s bytes: %d\r\n"
             "\t%-7.1f bytes per second (dt: %f)\r\n",
             filename, nbytes, nbytes/dt, dt );
-    } while ( nbytes && !dc->is_stopping() );
+    } while ( nbytes && !dc->_agent->is_stopping() );
     Asynq_Token_Buffer_Free(buf);
     return 0; // success
   }
@@ -75,13 +75,13 @@ namespace file {
 
 
   unsigned int
-  WriteRaw::config(device::DiskStream *dc)
+  WriteRaw::config(device::DiskStreamBase *dc)
   {return 1;}
 
 
 
   unsigned int
-  WriteRaw::run(device::DiskStream *dc)
+  WriteRaw::run(device::DiskStreamBase *dc)
   { asynq *q  = dc->_in->contents[0];
     void *buf = Asynq_Token_Buffer_Alloc(q);
     DWORD nbytes = q->q->buffer_size_bytes,
@@ -109,11 +109,11 @@ namespace file {
  *
  */
   unsigned int
-  ReadMessage::config(device::DiskStream *dc)
+  ReadMessage::config(device::DiskStreamBase *dc)
   {return 1;}
 
   unsigned int
-  ReadMessage::run(device::DiskStream *dc)
+  ReadMessage::run(device::DiskStreamBase *dc)
   { asynq   *q   = dc->_out->contents[0];
     Message *buf = NULL;
     DWORD    nbytes;
@@ -165,19 +165,19 @@ namespace file {
 
 
   unsigned int
-  WriteMessage::config(device::DiskStream *dc)
+  WriteMessage::config(device::DiskStreamBase *dc)
   {return 1;}
 
 
 
   unsigned int
-  WriteMessage::run(device::DiskStream *dc)
+  WriteMessage::run(device::DiskStreamBase *dc)
   { asynq *q  = dc->_in->contents[0];
     void *buf = Asynq_Token_Buffer_Alloc(q);
     DWORD nbytes = q->q->buffer_size_bytes;
 
     TicTocTimer t = tic();
-    while( !dc->is_stopping() && Asynq_Pop(q, &buf, nbytes) )
+    while( !dc->_agent->is_stopping() && Asynq_Pop(q, &buf, nbytes) )
       { double dt = toc(&t);
         nbytes = ((Message*)buf)->size_bytes();
         disk_stream_debug("FPS: %3.1f Frame time: %5.4f            MB/s: %3.1f Q: %3d Write %8d bytes to %s\r\n",
@@ -192,13 +192,13 @@ namespace file {
 
 
   unsigned int
-  WriteMessageAsRaw::config(device::DiskStream *dc)
+  WriteMessageAsRaw::config(device::DiskStreamBase *dc)
   {return 1;}
 
 
 
   unsigned int
-  WriteMessageAsRaw::run(device::DiskStream *dc)
+  WriteMessageAsRaw::run(device::DiskStreamBase *dc)
   { asynq *q  = dc->_in->contents[0];
     Message *buf = (Message*) Asynq_Token_Buffer_Alloc(q);
     DWORD nbytes = q->q->buffer_size_bytes;

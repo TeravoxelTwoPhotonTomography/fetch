@@ -59,8 +59,7 @@ void Init(void)
 
   //Microscope devices
   gp_microscope = new fetch::device::Microscope;
-  Guarded_Assert(gp_microscope->attach());
-  Guarded_Assert(gp_microscope->arm(&g_microscope_default_task,INFINITE)); // TODO: replace with ...->arm().  That is, define arm(void) to arm default task with no timeout
+
 
   // Connect video display
   // TODO

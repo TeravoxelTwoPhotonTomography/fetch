@@ -62,8 +62,10 @@ namespace fetch
   {
 
     class WorkTask : public fetch::Task
-    { public:        
-        virtual void alloc_output_queues(IDevice *d);
+    { 
+    public:        
+      unsigned int config(IDevice *d) {return 1;} // success.  Most WorkTasks don't need a config function.
+      virtual void alloc_output_queues(IDevice *d);
     };
 
 
@@ -98,7 +100,7 @@ namespace fetch
              nbytes_out = qdst->q->buffer_size_bytes,
              sz;
       
-      while( !d->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, nbytes_in) )
+      while( !d->_agent->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, nbytes_in) )
         { //debug("In  OneToOneWorkTask::run - just popped\r\n");
           nbytes_in = fsrc->size_bytes();
           fsrc->format(fdst);
@@ -137,7 +139,7 @@ namespace fetch
       TMessage *fsrc =  (TMessage*)Asynq_Token_Buffer_Alloc(qsrc);
       size_t nbytes_in  = qsrc->q->buffer_size_bytes;
       
-      while(!d->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, nbytes_in) )
+      while(!d->_agent->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, nbytes_in) )
         { //debug("In  OneToOneWorkTask::run - just popped\r\n");
           nbytes_in = fsrc->size_bytes();
           goto_if_fail(

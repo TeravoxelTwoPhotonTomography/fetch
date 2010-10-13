@@ -17,6 +17,8 @@
 #include "object.h"
 #include "DAQChannel.h"
 
+void __common_setup();
+
 namespace fetch
 {
 
@@ -38,7 +40,7 @@ namespace fetch
                            IDAQChannel **channels,
                            int nchannels) = 0;
 
-      virtual void writeAO(float64 *data);
+      virtual void writeAO(float64 *data) = 0;
 
       //These should return 1 on fail, 0 on success
       virtual int32 startAO() = 0;
@@ -64,6 +66,7 @@ namespace fetch
     public:
       NationalInstrumentsDAQ(Agent *agent);
       NationalInstrumentsDAQ(Agent *agent, Config *cfg);
+      ~NationalInstrumentsDAQ();
 
       virtual unsigned int attach();
       virtual unsigned int detach();
@@ -84,7 +87,9 @@ namespace fetch
       float64 computeSampleFrequency( float64 nrecords, float64 record_frequency_Hz );
       int32   samplesPerRecordAO() {return _config->ao_samples_per_waveform();}
     protected:
-      void registerDoneEvent(void);      
+      void registerDoneEvent(void);
+    private:
+      void __common_setup();
     public:
       HANDLE _notify_done;
     };

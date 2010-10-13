@@ -88,10 +88,12 @@ namespace device {
 
   SimulatedPockels::SimulatedPockels( Agent *agent )
     :PockelsBase<cfg::device::SimulatedPockels>(agent)
+    ,_chan(agent,"Pockels")
   {}
 
   SimulatedPockels::SimulatedPockels( Agent *agent, Config *cfg )
     :PockelsBase<cfg::device::SimulatedPockels>(agent,cfg)
+    ,_chan(agent,"Pockels")
   {}
 
   int SimulatedPockels::isValidOpenVolts( f64 volts )

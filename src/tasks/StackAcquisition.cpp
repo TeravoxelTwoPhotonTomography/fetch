@@ -12,6 +12,9 @@
  */
 #include "common.h"
 #include "StackAcquisition.h"
+#include "Video.h"
+#include "frame.h"
+#include "devices\digitizer.h"
 
 #if 0
 #define DBG(...) debug(__VA_ARGS__);
@@ -48,30 +51,25 @@ namespace fetch
     namespace microscope {
 
       //Upcasting
-      unsigned int StackAcquisition::config(Agent *d) {return config(dynamic_cast<device::Microscope*>(d));}
-      unsigned int StackAcquisition::run   (Agent *d) {return run   (dynamic_cast<device::Microscope*>(d));}
+      unsigned int StackAcquisition::config(IDevice *d) {return config(dynamic_cast<device::Microscope*>(d));}
+      unsigned int StackAcquisition::run   (IDevice *d) {return run   (dynamic_cast<device::Microscope*>(d));}
 
-      unsigned int StackAcquisition::config(device::Microscope *agent) // todo change "agent" to "scope"
-      { static task::scanner::ScanStack<i16> grabstack;
-        static char filename[MAX_PATH];
+      unsigned int StackAcquisition::config(device::Microscope *d)
+      { 
+        static task::scanner::ScanStack<i16> grabstack;
+        std::string filename;
 
         //Assemble pipeline here
-        Agent *cur;
-        cur = &agent->scanner;
-        cur =  agent->pixel_averager.apply(cur);
-	      cur =  agent->frame_averager.apply(cur);
-        cur =  agent->inverter.apply(cur);
-        cur =  agent->cast_to_i16.apply(cur);
-        cur =  agent->wrap.apply(cur);
+        IDevice *cur;
+        cur = d->configPipeline();
 
-        agent->next_filename(filename);
-        Guarded_Assert( agent->disk.close()==0 );
-        Agent::connect(&agent->disk,0,cur,0);
-        Guarded_Assert( agent->disk.open(filename,"w"));
-        
-        //cur =  agent->trash.apply(cur);
+        d->next_filename();
+        filename = d->next_filename();
+        Guarded_Assert( d->disk.close()==0 );
+        IDevice::connect(&d->disk,0,cur,0);
+        Guarded_Assert( d->disk.open(filename,"w"));
 
-        agent->scanner.arm_nowait(&grabstack,INFINITE);
+        d->__scan_agent.arm_nowait(&grabstack,&d->scanner,INFINITE);
 
         return 1; //success
       }
@@ -94,37 +92,43 @@ namespace fetch
           return -1;
       }
 
-      unsigned int StackAcquisition::run(device::Microscope *agent)
+      unsigned int StackAcquisition::run(device::Microscope *dc)
       { 
-        unsigned int sts = 0; // success
-        sts |= agent->scanner.run();
+        unsigned int eflag = 0; // success
+        
+        Guarded_Assert(dc->__scan_agent.is_runnable());
+        Guarded_Assert(dc->__io_agent.is_running());
 
-        { HANDLE hs[] = {agent->scanner.thread,          
-                         agent->_notify_stop};
+        eflag |= dc->__scan_agent.run();
+
+        { HANDLE hs[] = {dc->__scan_agent._thread,          
+                         dc->__scan_agent._notify_stop};
           DWORD res;
-          static char filename[MAX_PATH];
+          std::string filename;
           int   t;
+
+          // wait for scan to complete (or cancel)
           res = WaitForMultipleObjects(2,hs,FALSE,INFINITE);
           t = _handle_wait_for_result(res,"StackAcquisition::run - Wait for scanner to finish.");
           switch(t)
-          { case 0:     // in this case, the scanner thread stopped.  Nothing left to do.
-              sts |= 0; // success
+          { case 0:       // in this case, the scanner thread stopped.  Nothing left to do.
+              eflag |= 0; // success
               break; 
-            case 1:     // in this case, the stop event triggered and must be propigated.
-              sts |= agent->scanner.stop(SCANNER2D_DEFAULT_TIMEOUT) != 1;
+            case 1:       // in this case, the stop event triggered and must be propagated.
+              eflag |= dc->__scan_agent.stop(SCANNER2D_DEFAULT_TIMEOUT) != 1;
               break;
-            default:    // in this case, there was a timeout or abandoned wait
-              sts |= 1; //failure              
+            default:      // in this case, there was a timeout or abandoned wait
+              eflag |= 1; //failure              
           }
           
-          // Increment file          
-          sts |= agent->disk.close();
-          agent->next_filename(filename);          
-          Agent::connect(&agent->disk,0,&agent->wrap,0);
-          sts |= agent->disk.open(filename,"w");
+          // Increment file
+          eflag |= dc->disk.close();
+          filename = dc->next_filename();          
+          dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
+          eflag |= dc->disk.open(filename,"w");
           
         }
-        return sts;
+        return eflag;
       }
 
     }  // namespace microscope
@@ -204,9 +208,13 @@ namespace fetch
           device::NIScopeDigitizer::Config digcfg = dig->get_config();
 
           ViSession vi = dig->_vi;
-          ViChar *chan = const_cast<ViChar*>(digcfg.chan_names().c_str());
-
-          ref = _describe_actual_frame_niscope<TPixel>(d,d->_scanner2d.get_config().nscans(),&width,&nwfm);
+          ViChar *chan = const_cast<ViChar*>(digcfg.chan_names().c_str());                   
+          
+          ref = _describe_actual_frame_niscope<TPixel>(
+            dig,                                 // NISCope Digitizer
+            d->_scanner2d.get_config().nscans(), // number of scans
+            &width,                              // width in pixels (queried from board)
+            &nwfm);                              // this should be the number of scans (queried from board)
           nbytes = ref.size_bytes();
           nbytes_info = nwfm * sizeof(struct niScope_wfmInfo);
           //
@@ -221,13 +229,13 @@ namespace fetch
 
           d->_zpiezo.getScanRange(&ummin,&ummax,&umstep);
           
-          d->generateAORampZ(ummin); //d->_generate_ao_waveforms__z_ramp_step(ummin);
+          d->generateAORampZ((float)ummin); //d->_generate_ao_waveforms__z_ramp_step(ummin);
           d->writeAO();
-          d->_shutter.Open();
-          CHKJMP(d->_daq.startAO());          
-          for(z_um=ummin+umstep;z_um<ummax && !d->is_stopping();z_um+=umstep)
+          d->_scanner2d._shutter.Open();
+          CHKJMP(d->_scanner2d._daq.startAO());          
+          for(z_um=ummin+umstep;z_um<ummax && !d->_agent->is_stopping();z_um+=umstep)
           { 
-            CHKJMP(d->_daq.startCLK());            
+            CHKJMP(d->_scanner2d._daq.startCLK());            
             DIGJMP(niScope_InitiateAcquisition(vi));
 
             dt_out = toc(&outer_clock);            
@@ -257,10 +265,10 @@ namespace fetch
             ref.format(frm);
             dt_in = toc(&inner_clock);
             toc(&outer_clock);
-            CHKJMP(d->_daq.waitForDone(SCANNER2D_DEFAULT_TIMEOUT));
-            d->_daq.stopCLK();            
+            CHKJMP(d->_scanner2d._daq.waitForDone(SCANNER2D_DEFAULT_TIMEOUT));
+            d->_scanner2d._daq.stopCLK();            
             debug("Generating AO for z = %f\r\n.",z_um);
-            d->generateAORampZ(z_um);
+            d->generateAORampZ((float)z_um);
             d->writeAO();
             ++i;
           };
@@ -268,12 +276,12 @@ namespace fetch
           status = 0;
           DBG("Scanner - Stack Acquisition task completed normally.\r\n");
 Finalize: 
-          d->_shutter.Shut();          
+          d->_scanner2d._shutter.Shut();          
           free(frm);
           free(wfm);
           niscope_debug_print_status(vi);  
-          CHKERR(d->_daq.stopAO());
-          CHKERR(d->_daq.stopCLK());
+          CHKERR(d->_scanner2d._daq.stopAO());
+          CHKERR(d->_scanner2d._daq.stopCLK());
           DIGERR(niScope_Abort(vi));
           return status;
 Error: 

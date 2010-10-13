@@ -74,7 +74,9 @@ namespace fetch
     void NIDAQZPiezo::computeRampWaveform(float64 z_um,  float64 *data, int n )
     {
       f64   A = _config->um_step() * _config->um2v(),
-          off = z_um * _config->um2v();
+          off = z_um * _config->um2v(),
+            N = n;
+
       for(int i=0;i<n;++i)
         data[i] = A*(i/(N-1))+off; // linear ramp from off to off+A
     }
@@ -93,10 +95,12 @@ namespace fetch
 
     SimulatedZPiezo::SimulatedZPiezo( Agent *agent )
       :ZPiezoBase<Config>(agent)
+      ,_chan(agent,"ZPiezo")
     {}
 
     SimulatedZPiezo::SimulatedZPiezo( Agent *agent, Config *cfg )
       :ZPiezoBase<Config>(agent,cfg)
+      ,_chan(agent,"ZPiezo")
     {}
 
     void SimulatedZPiezo::computeConstWaveform( float64 z_um, float64 *data, int n )

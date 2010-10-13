@@ -88,6 +88,8 @@ namespace fetch
 
     void Scanner2D::_set_config( const Config& cfg )
     {
+      // Copies the input config.
+      // polymorphic devices need to get notified in case their "kind" changed
       *_config = cfg;
       _digitizer.setKind(_config->digitizer().kind());
       _daq.setKind(_config->daq().kind());
@@ -110,7 +112,7 @@ namespace fetch
 
       _shutter.Shut();
 
-      _digitizer.setup(nscans,scan_freq_Hz,_config->line_duty_cycle());
+      _digitizer.setup((int)nscans,scan_freq_Hz,_config->line_duty_cycle());
     }
 
     void Scanner2D::generateAO()

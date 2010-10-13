@@ -21,7 +21,7 @@
 #include "common.h"
 #include "agent.h"
 #include "tasks/File.h"
-#include "storage.pb.h"
+#include "file.pb.h"
 
 #define DISKSTREAM_MAX_PATH         1024
 #define DISKSTREAM_MAX_MODE         4
@@ -33,15 +33,15 @@ namespace fetch
   namespace device
   {
     
-    class DiskStream: public IConfigurableDevice<cfg::device::DiskStream>
+    class DiskStreamBase: public IConfigurableDevice<cfg::File>
     {
       public:
-        DiskStream(Agent *agent);
-        DiskStream(Agent *agent, Config *config);
-        DiskStream(Agent *agent, char *filename, char *mode);
-        ~DiskStream();
+        DiskStreamBase(Agent *agent);
+        DiskStreamBase(Agent *agent, Config *config);
+        DiskStreamBase(Agent *agent, char *filename, char *mode);
+        ~DiskStreamBase();
 
-        virtual unsigned int open  (char *filename, char *mode) = 0;
+        virtual unsigned int open(const std::string& filename, const std::string& mode) = 0;
                 unsigned int close (void);                           //synonymous with detach()
                 unsigned int detach(void);                        
 
@@ -53,16 +53,19 @@ namespace fetch
     };                                                               
 
     template<typename TReader,typename TWriter>
-    class DiskStreamSpecialized : public DiskStream
+    class DiskStream : public DiskStreamBase
     { public:
         TReader reader;
         TWriter writer;
         
-        unsigned int open(char *filename, char *mode);
+        DiskStream(Agent *agent) : DiskStreamBase(agent) {}
+        DiskStream(Agent *agent, Config *config) : DiskStreamBase(agent,config) {}
+
+        unsigned int open(const std::string& filename, const std::string& mode);
     };
-    typedef DiskStreamSpecialized<task::file::ReadMessage,task::file::WriteMessage>      DiskStreamMessage;
-    typedef DiskStreamSpecialized<task::file::ReadRaw    ,task::file::WriteRaw>          DiskStreamRaw;
-    typedef DiskStreamSpecialized<task::file::ReadRaw    ,task::file::WriteMessageAsRaw> DiskStreamMessageAsRaw;
+    typedef DiskStream<task::file::ReadMessage,task::file::WriteMessage>      DiskStreamMessage;
+    typedef DiskStream<task::file::ReadRaw    ,task::file::WriteRaw>          DiskStreamRaw;
+    typedef DiskStream<task::file::ReadRaw    ,task::file::WriteMessageAsRaw> DiskStreamMessageAsRaw;
 
   }
 

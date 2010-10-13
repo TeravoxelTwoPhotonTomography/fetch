@@ -58,7 +58,7 @@ namespace task {
   FrameInvert::
   alloc_output_queues(IDevice *dc)
   { // Allocates an output queue on out[0] that has matching storage to in[0].      
-    dc->_alloc_qs_easy(&dc_->_out,
+    dc->_alloc_qs_easy(&dc->_out,
                           1,                                               // number of output channels to allocate
                           dc->_in->contents[0]->q->ring->nelem,            // copy number of output buffers from input queue
                           dc->_in->contents[0]->q->buffer_size_bytes);

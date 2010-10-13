@@ -5,9 +5,9 @@
  *      Author: clackn
  */
 
-#include "stdafx.h"
+#include "common.h"
 #include "shutter.h"
-#include "DAQmxTaskAgent.h"
+#include "DAQChannel.h"
 #include "object.h"
 
 #include "../util/util-nidaqmx.h"
@@ -116,7 +116,11 @@ namespace fetch
     void SimulatedShutter::Set( u8 val )
     { 
       Config c = get_config();
+#pragma warning(push)
+#pragma warning(disable:4800) // forcing to bool
       c.set_state(val);
+#pragma warning(push)
+
       set_config(c);
     }
 

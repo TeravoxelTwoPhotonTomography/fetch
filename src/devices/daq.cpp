@@ -32,13 +32,18 @@ namespace fetch {
       ,_clk(agent,"CLK")
       ,_ao(agent,"AO")
     {
-      Guarded_Assert_WinErr(_notify_done=CreateEvent(NULL,FALSE,FALSE,NULL)); // auto-reset, initially untriggered
+      __common_setup();
     }
 
     NationalInstrumentsDAQ::NationalInstrumentsDAQ(Agent *agent,Config *cfg)
       :DAQBase<Config>(agent,cfg)
       ,_clk(agent,"CLK")
       ,_ao(agent,"AO")
+    {
+      __common_setup();
+    }
+
+    NationalInstrumentsDAQ::~NationalInstrumentsDAQ()
     {
       Guarded_Assert_WinErr__NoPanic(CloseHandle(_notify_done));
     }
@@ -247,6 +252,11 @@ namespace fetch {
       ViInt32   N          = _config->ao_samples_per_waveform();
       float64   frame_time = nrecords/record_frequency_Hz;         //  512 records / (7920 records/sec)
       return N/frame_time;                         // 4096 samples / 64 ms = 63 kS/s
+    }
+
+    void NationalInstrumentsDAQ::__common_setup()
+    {
+      Guarded_Assert_WinErr(_notify_done=CreateEvent(NULL,FALSE,FALSE,NULL)); // auto-reset, initially untriggered
     }
 
     //

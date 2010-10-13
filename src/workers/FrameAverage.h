@@ -10,6 +10,7 @@
 
 #include "WorkAgent.h"
 #include "WorkTask.h"
+#include "tests\workers.pb.h"
 
 namespace fetch
 {

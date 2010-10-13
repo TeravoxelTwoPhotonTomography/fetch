@@ -39,8 +39,9 @@ namespace fetch
           unsigned int run_simulated(device::Scanner2D *d);
       };
 
-
-
+      template<typename T>
+      Frame_With_Interleaved_Lines
+        _describe_actual_frame_niscope(device::NIScopeDigitizer *dig, ViInt32 nscans, ViInt32 *precordsize, ViInt32 *pnwfm);
     }
   }
 }

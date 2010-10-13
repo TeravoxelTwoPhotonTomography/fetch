@@ -6,7 +6,7 @@
  */
 
 #include "stdafx.h"
-#include "DAQmxTaskAgent.h"
+#include "DAQChannel.h"
 
 #define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, warning))
 #define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, error  ))

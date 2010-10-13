@@ -229,7 +229,7 @@ Error:
             Task *dt;
             DWORD timeout;
         };
-        struct T args = {this, task, dc, timeout_ms};
+        struct T args = {this, dc, task, timeout_ms};
         static asynq *q = NULL;
         if(!q)
             q = Asynq_Alloc(32, sizeof (T));
@@ -242,17 +242,19 @@ Error:
     }
 
     unsigned int Agent::disarm(DWORD timeout_ms)
-    {
-        if(this->_is_running)
-            // Source state can be running or armed
-            this->stop(timeout_ms);
+    { 
+      unsigned int sts = 1; //success
+      if(this->_is_running)
+        // Source state can be running or armed
+        this->stop(timeout_ms);
 
-        this->lock();
-        this->_task = NULL;
-        this->set_available();
-        this->unlock();
-        DBG("Disarmed 0x%p\r\n",this);
-        return 1;
+      this->lock();
+      this->_task = NULL;
+      this->set_available();
+      sts &= _owner->disarm();
+      this->unlock();
+      DBG("Disarmed 0x%p\r\n",this);
+      return sts;
     }
     
     DWORD WINAPI _agent_disarm_thread_proc(LPVOID lparam)
@@ -507,6 +509,8 @@ Error:
 
   IDevice::~IDevice()
   {
+    // should detach if attached?
+
     _free_qs(&_in);
     _free_qs(&_out);
   }

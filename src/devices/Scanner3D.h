@@ -58,6 +58,7 @@ namespace fetch
 
     class Scanner3D:public IScanner, public IConfigurableDevice<cfg::device::Scanner3D>
     {
+    public:
       Scanner2D _scanner2d;
       ZPiezo    _zpiezo;
     public:

@@ -12,9 +12,9 @@
  */
 #pragma once
 #include "stdafx.h"
-#include "..\task.h"
-#include "..\tasks\Video.h"
-#include "..\devices\microscope.h"
+#include "task.h"
+#include "tasks\Video.h"
+#include "devices\microscope.h"
 #include "microscope-interaction.h"
 
 namespace fetch
@@ -22,29 +22,24 @@ namespace fetch
   { namespace microscope
     {   
       // Upcasting
-      unsigned int Interaction::config(Agent *d) {return config(dynamic_cast<device::Microscope*>(d));}
-      unsigned int Interaction::run   (Agent *d) {return run   (dynamic_cast<device::Microscope*>(d));}   
+      unsigned int Interaction::config(IDevice *d) {return config(dynamic_cast<device::Microscope*>(d));}
+      unsigned int Interaction::run   (IDevice *d) {return run   (dynamic_cast<device::Microscope*>(d));}   
       
       
       //
       // Implementation
       //
       
-      unsigned int Interaction::config(device::Microscope *agent)
-      { static task::scanner::Video<i16> focus;
+      unsigned int Interaction::config(device::Microscope *dc)
+      { 
+        static task::scanner::Video<i16> focus;
       
         //Assemble pipeline here
-	      Agent *cur;
-	      cur = &agent->scanner;
-	      cur =  agent->pixel_averager.apply(cur);
-	      cur =  agent->frame_averager.apply(cur);
-	      cur =  agent->inverter.apply(cur);
-	      cur =  agent->cast_to_i16.apply(cur);
-	      cur =  agent->wrap.apply(cur);
-	      cur =  agent->trash.apply(cur);
+	      IDevice *cur;
+        cur =  dc->configPipeline();
+	      cur =  dc->trash.apply(cur);
 	      
-	      agent->scanner.arm_nowait(&focus,INFINITE);
-	      //agent->scanner.run_nonblocking();
+	      dc->__scan_agent.arm_nowait(&focus,&dc->scanner._scanner2d,INFINITE);
 	      
         return 1; //success
       }            

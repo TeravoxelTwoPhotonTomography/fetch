@@ -18,13 +18,13 @@
 
 
 namespace fetch
-{ namespace device { class DiskStream; }
+{ namespace device { class DiskStreamBase; }
 
   namespace task
   {
     namespace file {
 
-      //typedef UpcastTask<device::DiskStream> DiskStreamTask;
+      //typedef UpcastTask<device::DiskStreamBase> DiskStreamTask;
       typedef Task DiskStreamTask;
 
       /*
@@ -43,8 +43,8 @@ namespace fetch
           unsigned int config (IDevice *d);
           unsigned int run    (IDevice *d);
                     
-          unsigned int config(device::DiskStream *agent);
-          unsigned int run(device::DiskStream *agent);
+          unsigned int config(device::DiskStreamBase *agent);
+          unsigned int run(device::DiskStreamBase *agent);
       };
 
       class ReadRaw : public DiskStreamTask
@@ -52,8 +52,8 @@ namespace fetch
           unsigned int config (IDevice *d);
           unsigned int run    (IDevice *d);
             
-          unsigned int config(device::DiskStream *agent);
-          unsigned int run(device::DiskStream *agent);
+          unsigned int config(device::DiskStreamBase *agent);
+          unsigned int run(device::DiskStreamBase *agent);
       };
 
       class WriteMessage : public DiskStreamTask
@@ -61,8 +61,8 @@ namespace fetch
           unsigned int config (IDevice *d);
           unsigned int run    (IDevice *d);
             
-          unsigned int config(device::DiskStream *agent);
-          unsigned int run(device::DiskStream *agent);
+          unsigned int config(device::DiskStreamBase *agent);
+          unsigned int run(device::DiskStreamBase *agent);
       };
 
       class ReadMessage : public DiskStreamTask
@@ -70,8 +70,8 @@ namespace fetch
           unsigned int config (IDevice *d);
           unsigned int run    (IDevice *d);
             
-          unsigned int config(device::DiskStream *agent);
-          unsigned int run(device::DiskStream *agent);
+          unsigned int config(device::DiskStreamBase *agent);
+          unsigned int run(device::DiskStreamBase *agent);
       }; 
       
       // Extracts data from messages and writes just the data to disk.
@@ -80,8 +80,8 @@ namespace fetch
           unsigned int config (IDevice *d);
           unsigned int run    (IDevice *d);
             
-          unsigned int config(device::DiskStream *agent);
-          unsigned int run(device::DiskStream *agent);
+          unsigned int config(device::DiskStreamBase *agent);
+          unsigned int run(device::DiskStreamBase *agent);
       };
 
     }  // namespace disk

@@ -46,10 +46,12 @@ namespace fetch {
 
     SimulatedLinearScanMirror::SimulatedLinearScanMirror( Agent *agent )
       :LSMBase<Config>(agent)
+      ,_chan(agent,"LSM")
     {}
 
     SimulatedLinearScanMirror::SimulatedLinearScanMirror( Agent *agent, Config *cfg )
       :LSMBase<Config>(agent,cfg)
+      ,_chan(agent,"LSM")
     {}
 
     void SimulatedLinearScanMirror::computeSawtooth( float64 *data, int n )

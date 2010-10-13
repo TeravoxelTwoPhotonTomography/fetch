@@ -1,9 +1,8 @@
-#include "stdafx.h"
-
+#include "common.h"
 #include "fetch-forever.h"
-#include "../util/util-niscope.h"
-#include "../devices/digitizer.h"
-#include "../frame.h"
+#include "util/util-niscope.h"
+#include "devices/digitizer.h"
+#include "frame.h"
 
 
 #define CheckWarn( expression )  (niscope_chk( vi, expression, #expression, &warning ))
@@ -25,8 +24,8 @@ namespace fetch
       template class FetchForever<i8>;
       template class FetchForever<i16>;
       
-      template<class T> unsigned int FetchForever<T>::config (Agent *d) {return config(dynamic_cast<device::NIScopeDigitizer*>(d));}
-      template<class T> unsigned int FetchForever<T>::run    (Agent *d) {return run   (dynamic_cast<device::NIScopeDigitizer*>(d));}
+      template<class T> unsigned int FetchForever<T>::config (IDevice *d) {return config(dynamic_cast<device::NIScopeDigitizer*>(d));}
+      template<class T> unsigned int FetchForever<T>::run    (IDevice *d) {return run   (dynamic_cast<device::NIScopeDigitizer*>(d));}
       
       template<typename T>
         static inline Frame_With_Interleaved_Planes
@@ -42,7 +41,7 @@ namespace fetch
         unsigned int
         FetchForever<TPixel>::config(device::NIScopeDigitizer *dig)
         { ViSession   vi = dig->_vi;
-          device::NIScopeDigitizer::Config *cfg = dig->config;
+          device::NIScopeDigitizer::Config *cfg = dig->_config;
           ViInt32 i;
           int nchan = 0;
           
@@ -81,7 +80,7 @@ namespace fetch
         unsigned int
         FetchForever<TPixel>::run(device::NIScopeDigitizer *dig)
         { ViSession   vi = dig->_vi;
-          ViChar   *chan = const_cast<ViChar*>(dig->config->chan_names().c_str());
+          ViChar   *chan = const_cast<ViChar*>(dig->_config->chan_names().c_str());
           asynq   *qdata = dig->_out->contents[0],
                    *qwfm = dig->_out->contents[1];
           ViInt32  nelem,
@@ -177,7 +176,7 @@ namespace fetch
               //        1.0/dt, dt, nelem/dt/1000000.0, nelem*sizeof(TPixel)*nwfm/1000000.0/dt,
               //        qdata->q->head - qdata->q->tail );
             }    
-          } while ( !dig->is_stopping() );
+          } while ( !dig->_agent->is_stopping() );
           digitizer_task_fetch_forever_debug("Digitizer Fetch_Forever - Running done -\r\n"
                 "Task done: normal exit\r\n");
           ret = 0; //success
