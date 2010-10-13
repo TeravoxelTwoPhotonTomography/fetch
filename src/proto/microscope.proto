@@ -1,0 +1,14 @@
+package fetch.cfg.device;
+
+import "scanner3d.proto"
+import "workers.proto"
+import "file.proto"
+
+message microscope
+{
+  optional message Scanner3D            scanner3d             = 1;
+  optional message ResonantWrap         resonant_wrap         = 2;
+  optional message HorizontalDownsample horizontal_downsample = 3;
+  optional message FrameAverage         frame_average         = 4;
+  optional message FileSeries           file_series           = 5;
+}

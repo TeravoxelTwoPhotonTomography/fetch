@@ -40,8 +40,8 @@ namespace fetch
       */
       class WriteRaw : public DiskStreamTask
       { public:
-          unsigned int config (Agent *d);
-          unsigned int run    (Agent *d);
+          unsigned int config (IDevice *d);
+          unsigned int run    (IDevice *d);
                     
           unsigned int config(device::DiskStream *agent);
           unsigned int run(device::DiskStream *agent);
@@ -49,8 +49,8 @@ namespace fetch
 
       class ReadRaw : public DiskStreamTask
       { public:
-          unsigned int config (Agent *d);
-          unsigned int run    (Agent *d);
+          unsigned int config (IDevice *d);
+          unsigned int run    (IDevice *d);
             
           unsigned int config(device::DiskStream *agent);
           unsigned int run(device::DiskStream *agent);
@@ -58,8 +58,8 @@ namespace fetch
 
       class WriteMessage : public DiskStreamTask
       { public:  
-          unsigned int config (Agent *d);
-          unsigned int run    (Agent *d);
+          unsigned int config (IDevice *d);
+          unsigned int run    (IDevice *d);
             
           unsigned int config(device::DiskStream *agent);
           unsigned int run(device::DiskStream *agent);
@@ -67,8 +67,8 @@ namespace fetch
 
       class ReadMessage : public DiskStreamTask
       { public:
-          unsigned int config (Agent *d);
-          unsigned int run    (Agent *d);
+          unsigned int config (IDevice *d);
+          unsigned int run    (IDevice *d);
             
           unsigned int config(device::DiskStream *agent);
           unsigned int run(device::DiskStream *agent);
@@ -77,8 +77,8 @@ namespace fetch
       // Extracts data from messages and writes just the data to disk.
       class WriteMessageAsRaw : public DiskStreamTask
       { public:  
-          unsigned int config (Agent *d);
-          unsigned int run    (Agent *d);
+          unsigned int config (IDevice *d);
+          unsigned int run    (IDevice *d);
             
           unsigned int config(device::DiskStream *agent);
           unsigned int run(device::DiskStream *agent);

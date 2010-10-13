@@ -30,119 +30,128 @@ namespace fetch
     template class DiskStreamSpecialized<task::file::ReadRaw    ,task::file::WriteRaw>;          // DiskStreamRaw;    
     template class DiskStreamSpecialized<task::file::ReadRaw    ,task::file::WriteMessageAsRaw>; // DiskStreamMessageAsRaw;
 	
-    DiskStream::DiskStream()
-      : hfile(INVALID_HANDLE_VALUE)
-    { //reader = new TReader();
-      //writer = new TWriter();
+    DiskStream::DiskStream(Agent *agent)
+      :IConfigurableDevice<Config>(agent)
+      ,_hfile(INVALID_HANDLE_VALUE)
+    {
+    }
+
+    DiskStream::DiskStream( Agent *agent, Config *config )
+      :IConfigurableDevice<Config>(agent)
+      ,_hfile(INVALID_HANDLE_VALUE)
+    {
     }
 
 	
-    DiskStream::DiskStream(char *fname, char *m)
-      : hfile(INVALID_HANDLE_VALUE)
+    DiskStream::DiskStream(Agent*agent, char *fname, char *m)
+      :IConfigurableDevice<Config>(agent)
+      ,_hfile(INVALID_HANDLE_VALUE)
     {
-      //lock();
-      //reader = new task::file::ReadMessage;
-      //writer = new task::file::WriteMessage;
-      strncpy(this->filename,fname,DISKSTREAM_MAX_PATH);
-      strncpy(this->mode,mode,DISKSTREAM_MAX_MODE);
-      //unlock();
+      _config->set_path(fname);
+      _config->set_mode(m);
     }
-    
+
 	
     DiskStream::~DiskStream()
-    { //delete reader;
-      //delete writer;
+    {
     }
 
 	
     unsigned int DiskStream::attach(void)
-    { DWORD desired_access, share_mode, creation_disposition, flags_and_attr;
-      unsigned int sts = 0; //success
+    {
+      DWORD desired_access, share_mode, creation_disposition, flags_and_attr;
+      unsigned int eflag = 0; //success
+      const char *mode,*filename;
+      Config c = get_config();
+      mode = c.mode().c_str();
+      filename = c.path().c_str();
+
       switch (mode[0])
       {
-        case 'r':
-          desired_access       = GENERIC_READ;
-          share_mode           = FILE_SHARE_READ; //other processes can read
-          creation_disposition = OPEN_EXISTING;
-          flags_and_attr = 0;
-          if(_out==NULL)
-            _alloc_qs_easy(&_out,1,4,1024);
-          debug("Attempting to open %s for reading.\r\n",filename);
+      case 'r':
+        desired_access       = GENERIC_READ;
+        share_mode           = FILE_SHARE_READ; //other processes can read
+        creation_disposition = OPEN_EXISTING;
+        flags_and_attr = 0;
+        if(_out==NULL)
+          _alloc_qs_easy(&_out,1,4,1024);
+        debug("Attempting to open %s for reading.\r\n",filename);
         break;
-        case 'w':
-          desired_access       = GENERIC_WRITE;
-          share_mode           = 0;               //don't share
-          creation_disposition = CREATE_ALWAYS;
-          flags_and_attr       = FILE_ATTRIBUTE_NORMAL;
-          if(in==NULL)
-            _alloc_qs_easy(&in,1,4,1024);
-          debug("Attempting to open %s for writing.\r\n",filename);
+      case 'w':
+        desired_access       = GENERIC_WRITE;
+        share_mode           = 0;               //don't share
+        creation_disposition = CREATE_ALWAYS;
+        flags_and_attr       = FILE_ATTRIBUTE_NORMAL;
+        if(_in==NULL)
+          _alloc_qs_easy(&_in,1,4,1024);
+        debug("Attempting to open %s for writing.\r\n",filename);
         break;
-        default:
-          error("DiskStream::attach() -- Couldn't interpret mode.  Got %s\r\n",
-                mode);
+      default:
+        { 
+          warning("DiskStream::attach() -- Couldn't interpret mode.  Got %s\r\n",mode);
+          return 1; //failure
+        }
       }
-      
-      this->lock();
-      hfile = CreateFileA(filename,
-                          desired_access,
-                          share_mode,
-                          NULL,
-                          creation_disposition,
-                          flags_and_attr,
-                          NULL );
-      if (hfile == INVALID_HANDLE_VALUE)
+
+      _hfile = CreateFileA(filename,
+        desired_access,
+        share_mode,
+        NULL,
+        creation_disposition,
+        flags_and_attr,
+        NULL );
+      if (_hfile == INVALID_HANDLE_VALUE)
       {
         ReportLastWindowsError();
         warning("Could not open file\r\n"
-               "\tat %s\r\n"
-               "\twith mode %c. \r\n", filename, mode);
-        sts = 1; //failure
+          "\tat %s\r\n"
+          "\twith mode %c. \r\n", filename, mode);
+        eflag = 1; //failure
       } else
-      { this->set_available();
+      { 
         debug("Successfully opened file: %s\r\n",filename);
       }
-      this->unlock();
-      
-      return sts;
+
+      return eflag;
     }
 
 	
     unsigned int DiskStream::detach(void)
-    { unsigned int sts = 1; //error
-
+    {
+      unsigned int eflag = 1; //error
+      const char *mode,*filename;
+      Config c = get_config();
+      mode = c.mode().c_str();
+      filename = c.path().c_str();
       debug("Disk Stream: %s\r\n"
-            "\tAttempting to close file.\r\n", this->filename );
-
+            "\tAttempting to close file.\r\n", filename );
+      
       // Flush
-      this->lock();
-      if(in)
-      { asynq **beg =       in->contents,
-              **cur = beg + in->nelem;
+      if(_in)
+      { asynq **beg =       _in->contents,
+              **cur = beg + _in->nelem;
         while(cur-- > beg)
           Asynq_Flush_Waiting_Consumers( cur[0] );
       }
-      this->unlock();
-
-      if( !this->disarm( DISKSTREAM_DEFAULT_TIMEOUT ) )
-        warning("Could not cleanly disarm disk stream.\r\n");
 
       // Close the file
-      this->lock();
-      { if( hfile != INVALID_HANDLE_VALUE)
-        { if(!CloseHandle(hfile))
-          { ReportLastWindowsError();
+      { 
+        if( _hfile != INVALID_HANDLE_VALUE)
+        { 
+          if(!CloseHandle(_hfile))
+          {
+            ReportLastWindowsError();
             goto Error;
           }
-          hfile = INVALID_HANDLE_VALUE;
+          _hfile = INVALID_HANDLE_VALUE;
         }
       }
 
-      sts = 0;  // success
+      eflag = 0;  // success
       debug("Disk Stream: Detached %s\r\n",filename);
-    Error:
-      this->unlock();
-      return sts;
+Error:
+      warning("Disk Stream: Trouble detaching %s\r\n",filename);
+      return eflag;
     }
 
     
@@ -157,13 +166,13 @@ namespace fetch
 
       Guarded_Assert(strlen(filename)<DISKSTREAM_MAX_PATH);
       Guarded_Assert(strlen(mode)<DISKSTREAM_MAX_MODE);
-      this->lock();
-      strncpy(this->filename,filename,DISKSTREAM_MAX_PATH);
-      strncpy(this->mode,mode,DISKSTREAM_MAX_MODE);
-      this->unlock();
+      Config c = get_config();
+      c.set_path(filename);
+      c.set_mode(mode);
+      set_config(c);
 
-      this->detach(); // allows open() to be called from any state
-      if( this->attach()!=0 )  // open's the file handle
+      _agent->detach(); // allows open() to be called from any state
+      if( _agent->attach()!=0 )  // open's the file handle
         return 0;// failure to open                      
 
       // Open the file
@@ -171,17 +180,16 @@ namespace fetch
       switch (mode[0])
       {
         case 'r':
-          Guarded_Assert( arm(&reader,DISKSTREAM_DEFAULT_TIMEOUT) );
+          Guarded_Assert( _agent->arm(&reader,this,DISKSTREAM_DEFAULT_TIMEOUT) );
         break;
         case 'w':
-          Guarded_Assert( arm(&writer,DISKSTREAM_DEFAULT_TIMEOUT) );
+          Guarded_Assert( _agent->arm(&writer,this,DISKSTREAM_DEFAULT_TIMEOUT) );
         break;
         default:
-          error("DiskStream::open() -- Couldn't interpret mode.  Got %s\r\n",
-                mode);
+          error("DiskStream::open() -- Couldn't interpret mode.  Got %s\r\n",mode);
       }
 
-      this->run();
+      _agent->run();
       return sts;
     }
 

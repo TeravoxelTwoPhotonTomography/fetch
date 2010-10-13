@@ -1,5 +1,5 @@
 /*
- * PixelWiseAverager.h
+ * HorizontalDownsampler.h
  *
  *  Created on: Apr 23, 2010
  *      Author: Nathan Clack <clackn@janelia.hhmi.org>
@@ -14,6 +14,7 @@
 
 #include "WorkAgent.h"
 #include "WorkTask.h"
+#include "workers.pb.h"
 
 namespace fetch
 {
@@ -21,15 +22,15 @@ namespace fetch
   namespace task
   {
     
-    class PixelWiseAverager : public OneToOneWorkTask<Frame>
+    class HorizontalDownsampler : public OneToOneWorkTask<Frame>
     { public:
-        unsigned int work(Agent *agent, Frame *dst, Frame *src);
+        unsigned int work(IDevice *agent, Frame *dst, Frame *src);
     };    
   }
 
   namespace worker
   {
-    typedef WorkAgent<task::PixelWiseAverager,int> PixelWiseAveragerAgent;
+    typedef WorkAgent<task::HorizontalDownsampler,cfg::worker::HorizontalDownsample> HorizontalDownsampleAgent;
   }
 
 }

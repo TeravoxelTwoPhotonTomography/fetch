@@ -1,5 +1,5 @@
 /*
- * PixelWiseAverager.cpp
+ * HorizontalDownsampler.cpp
  *
  *  Created on: Apr 23, 2010
  *      Author: Nathan Clack <clackn@janelia.hhmi.org>
@@ -7,7 +7,7 @@
 
 #include "stdafx.h"
 #include "WorkAgent.h"
-#include "PixelWiseAverager.h"
+#include "HorizontalDownsampler.h"
 
 #if 0
 #define DBG(...) debug(__VA_ARGS__)
@@ -39,20 +39,20 @@ namespace fetch
     }
     
     unsigned int
-    PixelWiseAverager::
-    work(Agent *pwaa, Frame *fdst, Frame *fsrc)
-    { PixelWiseAveragerAgent *agent = dynamic_cast<PixelWiseAveragerAgent*>(pwaa);
+    HorizontalDownsampler::
+    work(IDevice *idc, Frame *fdst, Frame *fsrc)
+    { HorizontalDownsampleAgent *dc = dynamic_cast<HorizontalDownsampleAgent*>(idc);
       int N;
       size_t nbytes = fsrc->size_bytes(),
              nelem  = (nbytes - sizeof(Frame))/fsrc->Bpp;
       //fsrc->dump("pixel-averager-source.f32");
       
-      N = agent->config;      
+      N = dc->get_config().ntimes();
       fdst->width /= N;      // Adjust output format
       fdst->rtti   = id_f32;
       fdst->Bpp    = 4;
-      DBG("In PixelWiseAverager::work.\r\n");      
-      //fsrc->dump("PixelWiseAverager-src.%s",TypeStrFromID(fsrc->rtti));
+      DBG("In HorizontalDownsampler::work.\r\n");      
+      //fsrc->dump("HorizontalDownsampler-src.%s",TypeStrFromID(fsrc->rtti));
       switch(fsrc->rtti)
       { 
         case id_u8 : pwa<u8 >(fdst->data,fsrc->data,N,nelem); break;
@@ -68,7 +68,7 @@ namespace fetch
         default:
           error("Unrecognized source type (id=%d).\r\n",fsrc->rtti);        
       }
-      //fdst->dump("PixelWiseAverager-dst.%s",TypeStrFromID(fdst->rtti));
+      //fdst->dump("HorizontalDownsampler-dst.%s",TypeStrFromID(fdst->rtti));
       return 1; // success
     }
 

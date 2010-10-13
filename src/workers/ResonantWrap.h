@@ -14,6 +14,7 @@
 #pragma once
 
 #include "WorkTask.h"
+#include "workers.pb.h"
 
 #define RESONANTWRAPAGENT_DEFAULT_TIMEOUT         INFINITE
 
@@ -26,33 +27,33 @@ namespace fetch
     class ResonantWrap : public fetch::task::OneToOneWorkTask<Frame>
     {
       public:
-        unsigned int work(Agent *agent, Frame *dst, Frame *src);
+        unsigned int work(IDevice *d, Frame *dst, Frame *src);
     };
 
   } // namespace task
 
   namespace worker {
 
-    class ResonantWrapAgent:public WorkAgent<task::ResonantWrap,float>
+    class ResonantWrapAgent:public WorkAgent<task::ResonantWrap,cfg::worker::ResonantWrap>
     {
       public:
         ResonantWrapAgent();
         ~ResonantWrapAgent();
 
-        inline bool Is_In_Bounds(void);
-        int  Set_Turn(float turn,int timestamp); //returns a timestamp
-        bool Set_Turn_NonBlocking(float turn);
 
-        bool WaitForOOBUpdate(DWORD timeout_ms); //returns true on out-of-bounds flag update.  Otherwise false (timeouts, abort, etc...)
+        void setTurn(float turn);
+        int  setTurnNoWait(float turn);
+
+        inline bool isInBounds(void);
+        bool waitForOOBUpdate(DWORD timeout_ms); //returns true on out-of-bounds flag update.  Otherwise false (timeouts, abort, etc...)
 
       private:
         friend class task::ResonantWrap;
-        void SetIsInBounds(bool);
+        void setIsInBounds(bool);
 
       private:
-        HANDLE notify_out_of_bounds_update;      //anybody waiting on this should reset it first
-        CRITICAL_SECTION local_state_lock;
-        bool is_in_bounds;
+        HANDLE _notify_out_of_bounds_update;      //anybody waiting on this should reset it first        
+        bool _is_in_bounds;
     };
 
   }  // namespace worker

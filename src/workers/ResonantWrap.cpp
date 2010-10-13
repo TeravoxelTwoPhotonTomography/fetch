@@ -31,12 +31,12 @@ namespace fetch
   {
 
     unsigned int
-    ResonantWrap::work(Agent *rwa, Frame *fdst, Frame *fsrc)
-    { ResonantWrapAgent *agent = dynamic_cast<ResonantWrapAgent*>(rwa);
+    ResonantWrap::work(IDevice *idc, Frame *fdst, Frame *fsrc)
+    { ResonantWrapAgent *dc = dynamic_cast<ResonantWrapAgent*>(idc);
       float turn;
       int ow,oh,iw,ih;
 
-      turn = agent->config;
+      turn =  = dc->get_config().turn_px();
       iw = fsrc->width;
       ih = fsrc->height;
 
@@ -44,10 +44,10 @@ namespace fetch
       { // turn parameter out-of-bounds
         Frame::copy_data(fdst,fsrc);     // just pass the data through - if fsrc and fdst were pointers to pointers we could avoid this copy
         //warning("task: ResonantWrap: turn parameter out of bounds.  turn = %f\r\n",turn);
-        agent->SetIsInBounds(false);
+        dc->setIsInBounds(false);
         return 1; //return success - [ ] what happens if I return fail here?
       } else
-      { agent->SetIsInBounds(true);
+      { dc->setIsInBounds(true);
       }
 
 
@@ -80,12 +80,11 @@ namespace fetch
   namespace worker {
 
     ResonantWrapAgent::ResonantWrapAgent()
-    : notify_out_of_bounds_update(INVALID_HANDLE_VALUE),
-      is_in_bounds(false)
-    { Guarded_Assert_WinErr(
-        InitializeCriticalSectionAndSpinCount(&local_state_lock, 0x80000400 ));
+    : _notify_out_of_bounds_update(INVALID_HANDLE_VALUE),
+      _is_in_bounds(false)
+    { 
       Guarded_Assert_WinErr(
-        notify_out_of_bounds_update 
+        _notify_out_of_bounds_update 
           = CreateEvent(NULL, /*sec attr*/
                         TRUE, /*?manual reset*/
                         TRUE, /*?initial state - default oob*/
@@ -93,95 +92,63 @@ namespace fetch
     }
 
     ResonantWrapAgent::~ResonantWrapAgent()
-    { Guarded_Assert_WinErr__NoPanic(CloseHandle(notify_out_of_bounds_update));
-      DeleteCriticalSection(&local_state_lock);
-    }
-
-    inline bool
-    ResonantWrapAgent::Is_In_Bounds(void)
-    { return is_in_bounds;
+    { Guarded_Assert_WinErr__NoPanic(CloseHandle(_notify_out_of_bounds_update));      
     }
 
     void
-    ResonantWrapAgent::SetIsInBounds(bool val)
-    { //only one thread writes is_in_bounds
-      //several may read
-      if(val==is_in_bounds) return;
-
-      is_in_bounds=val;
-      SetEvent(notify_out_of_bounds_update);
-    }
-
-    bool
-    ResonantWrapAgent::WaitForOOBUpdate(DWORD timeout_ms)
-    { HANDLE hs[] = {this->notify_out_of_bounds_update,
-                     this->_notify_stop};
-      DWORD res;
-      ResetEvent(notify_out_of_bounds_update);
-      res = WaitForMultipleObjects(2,hs,FALSE,timeout_ms);
-      return res == WAIT_OBJECT_0;
+    ResonantWrapAgent::setTurn(float turn)
+    { 
+      Config c = get_config();
+      c.set_turn_px(turn);
+      set_config(c);
     }
 
     int
-    ResonantWrapAgent::Set_Turn(float turn, int time)
-    { static int lasttime = 0;                     // changes occur inside the lock
-
-      EnterCriticalSection(&local_state_lock);
-
-      if( (time - lasttime) > 0 )                  // The <time> is used to synchronize "simultaneous" requests
-      { lasttime = time;                           // Only process requests dated after the last request.
-
-        config = turn;
-        // if the device is armed, we need to communicate the change to the bound task
-        if(this->is_armed())
-        { int run = this->is_running();
-          if(run)
-            this->stop(RESONANTWRAPAGENT_DEFAULT_TIMEOUT);
-          //dynamic_cast<fetch::IUpdateable*>(this->task)->update(this); //commit
-          debug("\tChanged Resonant wrap turn set to %f.\r\n",turn);
-          if( run )
-            this->run();
-        }
-
-      }
-      LeaveCriticalSection(&local_state_lock);
-      return lasttime;
+    ResonantWrapAgent::setTurnNoWait(float turn)
+    { 
+      Config c = get_config();
+      c.set_turn_px(turn);
+      return set_config_nowait(c);
     }
 
+    /*
+    This code doesn't appear to be used anywhere.
 
-    DWORD WINAPI
-    _resonant_wrap_set_turn_val_thread_proc( LPVOID lparam )
-    { struct T {ResonantWrapAgent *self; float turn; int time;};
-      struct T v = {NULL, 0.0, 0};
-      asynq *q = (asynq*) lparam;
+    I added it so the worker could notify the main thread of a problem.
+    Getting the range for a valid "turn" is difficult because it depends
+    on the frame size which isn't simple to calculate at this point.
 
-      if(!Asynq_Pop_Copy_Try(q,&v,sizeof(T)))
-      { warning("In ResonantWrapAgent::Set_Turn work procedure:\r\n"
-                "\tCould not pop arguments from queue.\r\n");
-        return 0;
-      }
-      debug( "De-queued request:  ResonantWrapAgent(%p): %f V\t Timestamp: %d\tQ capacity: %d\r\n",v.self, v.turn, v.time, q->q->ring->nelem );
-      Guarded_Assert(v.self);
-      v.self->Set_Turn(v.turn,v.time);
-      return 0; // success
+    I'm not sure if I need this mechanism.  If I do it might be nice to have 
+    around in other devices or workers, so I might generalize it.
+
+    I'm also not sure it works like I want it to.  The wait will wake up
+    on an error, but is_in_bounds might change in the meantime.  The wait 
+    could act as a flag on it's own?  Anyway, not sure how this is 
+    going to get used yet...
+    */
+    inline bool
+    ResonantWrapAgent::isInBounds(void)
+    { return _is_in_bounds;
+    }
+
+    void
+    ResonantWrapAgent::setIsInBounds(bool val)
+    { //only one thread writes _is_in_bounds
+      //several may read
+      if(val==_is_in_bounds) return;
+
+      _is_in_bounds=val;
+      SetEvent(_notify_out_of_bounds_update);
     }
 
     bool
-    ResonantWrapAgent::Set_Turn_NonBlocking(float turn)
-    { struct T {ResonantWrapAgent *self; float turn; int time;};
-      struct T v = {this, turn, 0};
-      static asynq *q = NULL;
-      static int timestamp = 0;
-
-      v.time = ++timestamp;
-
-      if( !q )
-        q = Asynq_Alloc(2, sizeof(struct T) );
-      if( !Asynq_Push_Copy(q, &v, sizeof(T), TRUE /*expand queue when full*/) )
-      { warning("In ResonantWrapAgent::Set_Turn_NonBlocking: Could not push request arguments to queue.");
-        return 0;
-      }
-      return QueueUserWorkItem(&_resonant_wrap_set_turn_val_thread_proc, (void*)q, NULL /*default flags*/) == TRUE;
+    ResonantWrapAgent::waitForOOBUpdate(DWORD timeout_ms)
+    { HANDLE hs[] = {this->_notify_out_of_bounds_update,
+                     this->_agent->_notify_stop};
+      DWORD res;
+      ResetEvent(_notify_out_of_bounds_update);
+      res = WaitForMultipleObjects(2,hs,FALSE,timeout_ms);
+      return res == WAIT_OBJECT_0;
     }
   }  // namespace worker
 

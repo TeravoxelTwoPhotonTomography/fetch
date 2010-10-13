@@ -24,9 +24,9 @@
 #pragma once
 
 #include "WorkTask.h"
-#include "../util/util-image.h"
-#include "../frame.h"
-#include "../types.h"
+#include "util/util-image.h"
+#include "frame.h"
+#include "types.h"
 
 namespace fetch
 {
@@ -38,10 +38,12 @@ namespace fetch
     class FrameCast : public fetch::task::OneToOneWorkTask<Frame>
     {
       public:
-        unsigned int work(Agent *agent, Frame *fdst, Frame *fsrc);
+        unsigned int work(IDevice *dc, Frame *fdst, Frame *fsrc);
         
-        virtual void alloc_output_queues(Agent *agent);
+        virtual void alloc_output_queues(IDevice *dc);
     };
+
+    
 
     /*
      * Implementation
@@ -49,8 +51,10 @@ namespace fetch
     template<typename Tdst>
     inline unsigned int
     FrameCast<Tdst>::
-    work(Agent *fca, Frame *fdst, Frame *fsrc)
-    { WorkAgent<task::FrameCast<Tdst>,int> *agent = dynamic_cast<WorkAgent<task::FrameCast<Tdst>,int>*>(fca); //upcast
+    work(IDevice *idc, Frame *fdst, Frame *fsrc)
+    { 
+      typedef WorkAgent<task::FrameCast<Tdst>> FrameCastAgent;
+      FrameCastAgent *dc = dynamic_cast<FrameCastAgent*>(idc); //up cast
       void  *s;
       Tdst  *d;
       size_t dst_pitch[4], src_pitch[4], n[3];
@@ -90,27 +94,27 @@ namespace fetch
     template<typename Tdst>
     void
     FrameCast<Tdst>::
-    alloc_output_queues(Agent *agent)
+    alloc_output_queues(IDevice *dc)
     { // Allocates an output queue on out[0] that has matching storage to in[0].      
-      agent->_alloc_qs_easy(&agent->_out,
+      dc->_alloc_qs_easy(&dc->_out,
                             1,                                               // number of output channels to allocate
-                            agent->_in->contents[0]->q->ring->nelem,          // copy number of output buffers from input queue
-                            agent->_in->contents[0]->q->buffer_size_bytes*sizeof(Tdst)); // copy buffer size from input queue - prepare for worst case
+                            dc->_in->contents[0]->q->ring->nelem,          // copy number of output buffers from input queue
+                            dc->_in->contents[0]->q->buffer_size_bytes*sizeof(Tdst)); // copy buffer size from input queue - prepare for worst case
     }
   } 
       
   namespace worker
   { 
-    typedef WorkAgent<task::FrameCast<u8 >,int> FrameCastAgent_u8;
-    typedef WorkAgent<task::FrameCast<u16>,int> FrameCastAgent_u16;
-    typedef WorkAgent<task::FrameCast<u32>,int> FrameCastAgent_u32;
-    typedef WorkAgent<task::FrameCast<u64>,int> FrameCastAgent_u64;
-    typedef WorkAgent<task::FrameCast<i8 >,int> FrameCastAgent_i8;
-    typedef WorkAgent<task::FrameCast<i16>,int> FrameCastAgent_i16;
-    typedef WorkAgent<task::FrameCast<i32>,int> FrameCastAgent_i32;
-    typedef WorkAgent<task::FrameCast<i64>,int> FrameCastAgent_i64;
-    typedef WorkAgent<task::FrameCast<f32>,int> FrameCastAgent_f32;
-    typedef WorkAgent<task::FrameCast<f64>,int> FrameCastAgent_f64;
+    typedef WorkAgent<task::FrameCast<u8 >> FrameCastAgent_u8;
+    typedef WorkAgent<task::FrameCast<u16>> FrameCastAgent_u16;
+    typedef WorkAgent<task::FrameCast<u32>> FrameCastAgent_u32;
+    typedef WorkAgent<task::FrameCast<u64>> FrameCastAgent_u64;
+    typedef WorkAgent<task::FrameCast<i8 >> FrameCastAgent_i8;
+    typedef WorkAgent<task::FrameCast<i16>> FrameCastAgent_i16;
+    typedef WorkAgent<task::FrameCast<i32>> FrameCastAgent_i32;
+    typedef WorkAgent<task::FrameCast<i64>> FrameCastAgent_i64;
+    typedef WorkAgent<task::FrameCast<f32>> FrameCastAgent_f32;
+    typedef WorkAgent<task::FrameCast<f64>> FrameCastAgent_f64;
   }
 }
 

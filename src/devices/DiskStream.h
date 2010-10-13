@@ -18,9 +18,10 @@
  */
 #pragma once
 
-#include "../stdafx.h"
-#include "../agent.h"
-#include "../tasks/File.h"
+#include "common.h"
+#include "agent.h"
+#include "tasks/File.h"
+#include "storage.pb.h"
 
 #define DISKSTREAM_MAX_PATH         1024
 #define DISKSTREAM_MAX_MODE         4
@@ -32,22 +33,20 @@ namespace fetch
   namespace device
   {
     
-    class DiskStream: public Agent
+    class DiskStream: public IConfigurableDevice<cfg::device::DiskStream>
     {
       public:
-        DiskStream();
-        DiskStream(char *filename, char *mode);
+        DiskStream(Agent *agent);
+        DiskStream(Agent *agent, Config *config);
+        DiskStream(Agent *agent, char *filename, char *mode);
         ~DiskStream();
 
         virtual unsigned int open  (char *filename, char *mode) = 0;
                 unsigned int close (void);                           //synonymous with detach()
                 unsigned int detach(void);                        
 
-      public:        
-
-        char    filename[DISKSTREAM_MAX_PATH];
-        char    mode[DISKSTREAM_MAX_PATH];
-        HANDLE  hfile;
+    public:        
+      HANDLE  _hfile;
 
       protected:
         unsigned int attach(void);                                   // use open() instead

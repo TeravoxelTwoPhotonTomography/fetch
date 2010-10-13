@@ -1,0 +1,16 @@
+package fetch.cfg.worker;
+
+message ResonantWrap
+{ 
+  optional float turn_px = 1 [default = 0.0];
+}
+
+message HorizontalDownsample
+{
+  optional int32 ntimes = 1 [default=1];
+}
+
+message FrameAverage
+{
+  optional int32 ntimes = 1 [default=1];
+}

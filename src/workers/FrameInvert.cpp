@@ -12,7 +12,7 @@ namespace task {
   }
   
   template<class T> void uinvert(T* data, size_t nbytes)
-  { T max = (T) -1;
+  { T max = (T) -1; // T is unsigned
     size_t n = nbytes/sizeof(T);
     
     for(size_t i=0; i<n; ++i, ++data)
@@ -21,8 +21,8 @@ namespace task {
   
   unsigned int
   FrameInvert::
-  work(Agent *fia, Frame *fsrc)
-  { worker::FrameInvertAgent *agent = dynamic_cast<worker::FrameInvertAgent*>(fia);
+  work(IDevice *idc, Frame *fsrc)
+  { worker::FrameInvertAgent *dc = dynamic_cast<worker::FrameInvertAgent*>(idc);
     void  *s;
     size_t src_pitch[4], n[3];
     fsrc->compute_pitches(src_pitch);
@@ -56,12 +56,12 @@ namespace task {
     
   void
   FrameInvert::
-  alloc_output_queues(Agent *agent)
+  alloc_output_queues(IDevice *dc)
   { // Allocates an output queue on out[0] that has matching storage to in[0].      
-    agent->_alloc_qs_easy(&agent->_out,
+    dc->_alloc_qs_easy(&dc_->_out,
                           1,                                               // number of output channels to allocate
-                          agent->_in->contents[0]->q->ring->nelem,          // copy number of output buffers from input queue
-                          agent->_in->contents[0]->q->buffer_size_bytes);
+                          dc->_in->contents[0]->q->ring->nelem,            // copy number of output buffers from input queue
+                          dc->_in->contents[0]->q->buffer_size_bytes);
   }
   
 }

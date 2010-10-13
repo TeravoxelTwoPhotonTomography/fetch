@@ -499,7 +499,8 @@ Error:
 
 
   IDevice::IDevice( Agent* agent )
-    :_in(NULL)
+    :_agent(agent),
+    _in(NULL)
     ,_out(NULL)
   {
   }

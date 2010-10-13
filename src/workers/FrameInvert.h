@@ -9,16 +9,16 @@ class FrameInvert :
   public InPlaceWorkTask<Frame>
   {
   public:
-        unsigned int work(Agent *agent, Frame *fsrc);
+        unsigned int work(IDevice *dc, Frame *fsrc);
         
-        virtual void alloc_output_queues(Agent *agent);
+        virtual void alloc_output_queues(IDevice *dc);
 
   };
 
 } //namespace task
 
 namespace worker {
-  typedef WorkAgent<task::FrameInvert,int> FrameInvertAgent;
+  typedef WorkAgent<task::FrameInvert> FrameInvertAgent;
 } //namespace worker
 
 } //namespace fetch

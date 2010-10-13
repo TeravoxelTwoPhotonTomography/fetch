@@ -21,12 +21,12 @@ namespace fetch
   namespace task
   { 
     unsigned int
-    FrameAverage::run(Agent *a)
-    { FrameAverageAgent *agent = dynamic_cast<FrameAverageAgent*>(a);
-      int every = agent->config;
+    FrameAverage::run(IDevice *idc)
+    { FrameAverageAgent *dc = dynamic_cast<FrameAverageAgent*>(idc);
+      int every = dc->get_config().ntimes(); //agent->config;
 
-      asynq *qsrc = agent->_in->contents[ 0 ],
-            *qdst = agent->_out->contents[ 0 ];
+      asynq *qsrc = dc->_in->contents[ 0 ],
+            *qdst = dc->_out->contents[ 0 ];
 
       Frame *fsrc = (Frame*) Asynq_Token_Buffer_Alloc(qsrc),
             *fdst = (Frame*) Asynq_Token_Buffer_Alloc(qdst);
@@ -35,7 +35,7 @@ namespace fetch
       
       if(every<=1)
       // Do nothing, just pass through
-      { while(!agent->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, qsrc->q->buffer_size_bytes) )
+      { while(!dc->_agent->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, qsrc->q->buffer_size_bytes) )
           goto_if_fail(  //   push - wait till successful
                 Asynq_Push_Timed( qdst, (void**)&fsrc, fsrc->size_bytes(), WORKER_DEFAULT_TIMEOUT ),
                 OutputQueueTimeoutError);
@@ -50,7 +50,7 @@ namespace fetch
                      nelem = nbytes / sizeof(f32);
 
           // First one
-          if(!agent->is_stopping() && Asynq_Pop(qsrc,(void**)&fsrc,src_bytes))
+          if(!dc->_agent->is_stopping() && Asynq_Pop(qsrc,(void**)&fsrc,src_bytes))
           {
             if(fsrc->size_bytes()>dst_bytes)
               Guarded_Assert(fdst = (Frame*) realloc(fdst,dst_bytes = fsrc->size_bytes()));
@@ -62,7 +62,7 @@ namespace fetch
             continue;
 
           // The rest
-          while(!agent->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, fsrc->size_bytes()) )
+          while(!dc->_agent->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, fsrc->size_bytes()) )
           { buf = (f32*) fsrc->data;
 
             ++count;
@@ -84,7 +84,7 @@ namespace fetch
                 acc[i] += buf[i];
             }
           }
-        } while (!agent->is_stopping());
+        } while (!dc->_agent->is_stopping());
       }
       Asynq_Token_Buffer_Free(fsrc);
       Asynq_Token_Buffer_Free(fdst);

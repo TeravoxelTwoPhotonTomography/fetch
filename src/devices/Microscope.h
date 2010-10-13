@@ -12,16 +12,16 @@
  */
 #pragma once
 
-#include "../agent.h"
-#include "../task.h"
+#include "agent.h"
+#include "task.h"
 #include "scanner3D.h"
 
-#include "../workers/FrameAverage.h"
-#include "../workers/PixelWiseAverager.h"
-#include "../workers/Terminator.h"
-#include "../workers/FrameCaster.h"
-#include "../workers/ResonantWrap.h"
-#include "../workers/FrameInvert.h"
+#include "workers/FrameAverage.h"
+#include "workers/HorizontalDownsampler.h"
+#include "workers/Terminator.h"
+#include "workers/FrameCaster.h"
+#include "workers/ResonantWrap.h"
+#include "workers/FrameInvert.h"
 
 #include "DiskStream.h"
 
@@ -47,13 +47,13 @@ namespace fetch
         unsigned int disarm(DWORD timeout_ms);
         
       public:
-        void next_filename(char *dest);                // assembles filename and incriments config.file_iter_id
+        void next_filename(char *dest);                // assembles filename and icnrement config.file_iter_id
         
       public:
         device::Scanner3D              scanner;
 
         worker::FrameAverageAgent 	   frame_averager;
-        worker::PixelWiseAveragerAgent pixel_averager;
+        worker::HorizontalDownsampleAgent pixel_averager;
         worker::FrameCastAgent_i16     cast_to_i16;
         worker::FrameInvertAgent       inverter;
         worker::ResonantWrapAgent      wrap;

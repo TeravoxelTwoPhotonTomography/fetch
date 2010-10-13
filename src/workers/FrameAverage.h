@@ -19,13 +19,13 @@ namespace fetch
    
     class FrameAverage : public WorkTask
     { public:
-        unsigned int run(Agent* agent);
+        unsigned int run(IDevice* dc);
     };
   }
 
   namespace worker
   {
-    typedef WorkAgent<task::FrameAverage,int> FrameAverageAgent;
+    typedef WorkAgent<task::FrameAverage,cfg::worker::FrameAverage> FrameAverageAgent;
   }
 
 }
