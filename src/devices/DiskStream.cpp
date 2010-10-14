@@ -105,7 +105,7 @@ namespace fetch
         ReportLastWindowsError();
         warning("Could not open file\r\n"
           "\tat %s\r\n"
-          "\twith mode %c. \r\n", filename, mode);
+          "\twith mode %s. \r\n", filename, mode);
         eflag = 1; //failure
       } else
       { 

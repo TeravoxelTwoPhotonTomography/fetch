@@ -56,6 +56,7 @@
       eflag |= scanner.attach();
 
       std::string stackname = _config->file_prefix()+_config->stack_extension();
+      file_series.ensurePathExists();
       eflag |= disk.open(file_series.getFullPath(stackname),"w");
 
       return eflag;  
@@ -134,19 +135,13 @@
     const std::string FileSeries::getFullPath( const std::string& shortname )
     {
       char strSeriesNo[32];
-
-      int n = _desc->seriesno();
-      if(n>99999)
-        warning("File series number is greater than the supported number of digits.\r\n");
-      memset(strSeriesNo,0,sizeof(strSeriesNo));
-      sprintf_s(strSeriesNo,sizeof(strSeriesNo),"%05d",n); //limited to 5 digits
-
+      renderSeriesNo(strSeriesNo,sizeof(strSeriesNo));
       updateDate();
 
       // reset series number when series path changes
       std::string seriespath = _desc->root() + _desc->pathsep() + _desc->date();
       if(seriespath.compare(_lastpath)!=0)
-        _desc->set_seriesno(0);
+        _desc->set_seriesno(0); // for next time
       _lastpath = seriespath;
 
       return seriespath
@@ -164,6 +159,69 @@
       sprintf_s(datestr,sizeof(datestr),"%04d-%02d-%02d",t->tm_year+1900,t->tm_mon+1,t->tm_mday);
       _desc->set_date(datestr);
     }
+   
+    void FileSeries::ensurePathExists()
+    {
+      std::string t;
+      char strSeriesNo[32];
+
+      renderSeriesNo(strSeriesNo,sizeof(strSeriesNo));
+      updateDate();
+      
+      t = _desc->root()+_desc->pathsep()+_desc->date();
+      tryCreateDirectory(t.c_str(), "root path", _desc->root().c_str());
+
+      t += _desc->pathsep()+strSeriesNo;
+      tryCreateDirectory(t.c_str(), "date path", _desc->root().c_str());
+    }
+
+    void FileSeries::renderSeriesNo( char * strSeriesNo,int maxbytes )
+    {
+      int n = _desc->seriesno();
+      if(n>99999)
+        warning("File series number is greater than the supported number of digits.\r\n");
+      memset(strSeriesNo,0,maxbytes);
+      sprintf_s(strSeriesNo,maxbytes,"%05d",n); //limited to 5 digits
+    }
+
+    void FileSeries::tryCreateDirectory( LPCTSTR path, const char* description, LPCTSTR root )
+    {
+      if(!CreateDirectory(path,NULL/*default security*/))
+      {
+        switch(GetLastError())
+        {
+        case ERROR_ALREADY_EXISTS: /*ignore*/ 
+          break;
+        case ERROR_PATH_NOT_FOUND:
+          error("FileSeries: Could not find %s:\r\n\t%s\r\n",description,root);
+          break;
+        default:
+          error("Unexpected error returned after call to CreateDirectory()\r\n");
+        }
+      }
+    }
+
+    //notes
+    //-----
+    // - I can see no reason right now to use transactions
+    //   It would prevent against renaming/deleting dependent directories during the transaction
+    //   Might be interesting in other places to lock files during acquisition.  However, I think a little
+    //   discipline from the user(me) can go a long way.
+    //
+    // - approach
+    //
+    //   1. assert <root> exists
+    //   2. assert creation or existence of <root>/<date>
+    //   3. assert creation of <root>/<data>/<seriesno>
+    //   4. return true on success, fail otherwise.
+    //see     
+    //---
+    //
+    //MSDN CreateDirectory http://msdn.microsoft.com/en-us/library/aa363855(VS.85).aspx
+    //MSDN CreateDirectoryTransacted http://msdn.microsoft.com/en-us/library/aa363855(VS.85).aspx
+    //MSDN CreateTransaction http://msdn.microsoft.com/en-us/library/aa366011(v=VS.85).aspx
+    //     handle = CreateTransaction(NULL/*default security*/,0,0,0,0,0/*timeout,0==inf*/,"description");
+
 
   } // end namespace device  
 } // end namespace fetch

@@ -6,9 +6,22 @@ message File
   optional string mode = 2 [default="r"];
 }
 
+// This ends up specifying a path to a place to save data.  The path gets
+// constructed according to:
+//
+//   <root><pathsep><date><pathsep><seriesno>
+//
+// e.g.:
+//
+//   c:\data\2010-10-10\00001\
+//
+// The number of digits used for <seriesno> is hard-coded at present.
+//
+// If the path is not found the <date> and <seriesno> directories may be
+// created, but the <root> should not be created if not found.
 message FileSeries
 { 
-  optional string root     = 1 [default=""];
+  optional string root     = 1 [default="data"];
   optional string date     = 2 [default="unknown"];
   optional int32  seriesno = 3 [default=0]; 
   optional string pathsep  = 4 [default="\\"];

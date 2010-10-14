@@ -74,9 +74,11 @@ endif()
 set(PRIMARY_TEST_SOURCES
   integration.cc
   test.cc
+  file.cc
   alazar.cc
   )
 set(OTHER_SOURCES
+  ${FETCH_SRCS}
   ${PROTO_SRCS}
   ${PROTO_HDRS}
 )

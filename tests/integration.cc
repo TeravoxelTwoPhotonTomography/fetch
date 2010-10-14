@@ -106,10 +106,11 @@ TEST_F(GuiIntegration,GLEW)
   EXPECT_TRUE(version!=NULL);
   EXPECT_STRNE("",(char*)version);
 }
-
+#if 1
 TEST(Integration,Alazar)
 { EXPECT_GT(AlazarNumOfSystems(),(U32)0); // This isn't the best test. Assumes there's a system installed.
 }
+#endif
 
 TEST(Integration,C843StageController)
 { int id;
@@ -117,4 +118,3 @@ TEST(Integration,C843StageController)
   if(id>-1)
     C843_CloseConnection(id);
 }
-

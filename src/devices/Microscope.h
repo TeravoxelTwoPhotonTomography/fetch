@@ -49,6 +49,7 @@ namespace fetch
 { namespace device
   {
   
+//TODO: move this into it's own header and out of namespace fetch::device (move to fetch::)
     class FileSeries
     {
     public:
@@ -57,8 +58,11 @@ namespace fetch
 
       FileSeries& inc(void);
       const std::string getFullPath(const std::string& shortname);
-    
+      void ensurePathExists();
+
     private:
+      void renderSeriesNo( char * strSeriesNo, int maxbytes );
+      void tryCreateDirectory( LPCTSTR root_date, const char* description, LPCTSTR root );
       void updateDate(void);
       std::string _lastpath;
       cfg::FileSeries __default_desc;

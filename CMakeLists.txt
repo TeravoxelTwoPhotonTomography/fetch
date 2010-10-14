@@ -131,22 +131,25 @@ source_group("Source Files\\Qt Generated" FILES
 # Executable
 #
 
-add_executable(fetch
+set(FETCH_SRCS
   ${PROTO_FILES}
-  ${PROTO_HDRS}
-  ${PROTO_SRCS}
   ${FETCH_WORKERS_HDRS}
   ${FETCH_WORKERS_SRCS}
   ${FETCH_DEVICES_HDRS}
   ${FETCH_DEVICES_SRCS}
   ${FETCH_TASKS_HDRS}
   ${FETCH_TASKS_SRCS}
-  ${FETCH_UI_HDRS}
-  ${FETCH_UI_SRCS}
   ${FETCH_UTIL_HDRS}
   ${FETCH_UTIL_SRCS}
   ${FETCH_CORE_HDRS}
   ${FETCH_CORE_SRCS}
+  )
+add_executable(fetch
+  ${PROTO_HDRS}
+  ${PROTO_SRCS}
+  ${FETCH_SRCS}
+  ${FETCH_UI_HDRS}
+  ${FETCH_UI_SRCS}
   ${MOC_SRCS}
   ${RCC_SRCS}
 )
