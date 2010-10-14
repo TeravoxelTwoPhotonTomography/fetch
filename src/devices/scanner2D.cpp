@@ -36,7 +36,7 @@ namespace fetch
       ,_LSM(agent)
       ,_pockels(agent)
     {
-      set_config(_config);
+      _set_config(_config);
       __common_setup();
     }
 

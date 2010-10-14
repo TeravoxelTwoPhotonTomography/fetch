@@ -23,12 +23,14 @@
 #include "tasks/microscope-interaction.h"
 
 #include "ui/MainWindow.h"
+#include <stdio.h>
 /*
  * Global state
  */
 
 fetch::device::Microscope *gp_microscope;
 fetch::task::microscope::Interaction g_microscope_default_task;
+
 /*
  * Shutdown callbacks
  */
@@ -91,6 +93,9 @@ int main(int argc, char *argv[])
   mainwindow.setCentralWidget(&view);
   mainwindow.show();
 
-  unsigned int sts = app.exec();
-  return Shutdown_Soft() || sts;
+  unsigned int eflag = app.exec();
+  eflag |= Shutdown_Soft();
+  debug("Press <Enter> to exit.\r\n");
+  getchar();
+  return eflag;
 }

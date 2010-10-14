@@ -316,11 +316,13 @@ Error:
 
     void Digitizer::_set_config( Config IN *cfg )
     {
-      _niscope->_set_config(cfg->mutable_niscope());
-      _alazar->_set_config(cfg->mutable_alazar()); 
-      _simulated->_set_config(cfg->mutable_simulated());;
+      setKind(cfg->kind()); // this will instance a device refered to in the config
+      Guarded_Assert( _niscope || _alazar || _simulated );
+      if(_niscope)   _niscope->_set_config(cfg->mutable_niscope());
+      if(_alazar)    _alazar->_set_config(cfg->mutable_alazar()); 
+      if(_simulated) _simulated->_set_config(cfg->mutable_simulated());;
       _config = cfg;
-      setKind(cfg->kind());
+      
     }
 
     void Digitizer::_set_config( const Config &cfg )

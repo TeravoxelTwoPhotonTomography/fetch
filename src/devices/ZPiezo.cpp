@@ -166,10 +166,11 @@ namespace fetch
  
     void ZPiezo::_set_config( Config IN *cfg )
     {
-      _nidaq->_set_config(cfg->mutable_nidaq());
-      _simulated->_set_config(cfg->mutable_simulated());;
-      _config = cfg;
       setKind(cfg->kind());
+      Guarded_Assert(_nidaq||_simulated); // at least one device was instanced
+      if(_nidaq)     _nidaq->_set_config(cfg->mutable_nidaq());
+      if(_simulated) _simulated->_set_config(cfg->mutable_simulated());
+      _config = cfg;
     }
 
     void ZPiezo::_set_config( const Config &cfg )

@@ -139,7 +139,7 @@
       if(n>99999)
         warning("File series number is greater than the supported number of digits.\r\n");
       memset(strSeriesNo,0,sizeof(strSeriesNo));
-      sprintf_s(strSeriesNo,sizeof(strSeriesNo),"%05d"); //limited to 5 digits
+      sprintf_s(strSeriesNo,sizeof(strSeriesNo),"%05d",n); //limited to 5 digits
 
       updateDate();
 

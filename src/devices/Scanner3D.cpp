@@ -31,7 +31,7 @@ namespace fetch
       ,_scanner2d(agent)
       ,_zpiezo(agent)
     {
-      set_config(_config);
+      _set_config(_config);
     }
 
     Scanner3D::Scanner3D( Agent *agent, Config *cfg )

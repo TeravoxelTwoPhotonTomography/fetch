@@ -206,6 +206,7 @@ namespace fetch {
   public: 
     // Overload these.
     // Each are called within a "transaction lock"
+    // Use this version inside of constructors rather than set_config().  These guys shouldn't require a constructed agent.
     virtual void _set_config(Config IN *cfg)      {_config=cfg;}     // changes the pointer
     virtual void _set_config(const Config &cfg)   {*_config=cfg;}    // copy
     virtual void _get_config(Config **cfg)        {*cfg=_config;}    // get the pointer
