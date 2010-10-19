@@ -25,8 +25,8 @@
 // Check http://www.alazartech.com/support/downloads.htm
 // for latest versions
 //
-#define REQUIRED_ALAZAR_FIRMARE_REV_MAJOR 16
-#define REQUIRED_ALAZAR_FIRMARE_REV_MINOR 2
+#define REQUIRED_ALAZAR_FIRMARE_REV_MAJOR 14
+#define REQUIRED_ALAZAR_FIRMARE_REV_MINOR 6
 #define REQUIRED_ALAZAR_FIRMARE_REV_REV   0
 
 #define REQUIRED_ALAZAR_DRIVER_REV_MAJOR 5  
@@ -217,7 +217,7 @@ TEST_F(AlazarBoardQuery,SaneASOPCType)
   { 
     U32 v;
     EXPECT_EQ(AlazarQueryCapability(handles[i],ASOPC_TYPE,0,&v),ApiSuccess);
-    printf("Board 0x%p ASOPC Type: %u\n",handles[i],v);
+    printf("Board 0x%p ASOPC Type: %p\n",handles[i],v);
   }
 }
 

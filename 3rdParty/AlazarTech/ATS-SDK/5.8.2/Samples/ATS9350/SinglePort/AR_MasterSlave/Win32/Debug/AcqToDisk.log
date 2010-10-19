@@ -1,0 +1,28 @@
+﻿Build started 10/18/2010 4:29:13 PM.
+     1>Project "C:\Users\clackn\Desktop\src\fetch\3rdParty\AlazarTech\ATS-SDK\5.8.2\Samples\ATS9350\SinglePort\AR_MasterSlave\AcqToDisk.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Creating "Win32\Debug\AcqToDisk.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I..\..\..\..\Include /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _CRT_SECURE_NO_WARNINGS /D _VC80_UPGRADE=0x0600 /D _MBCS /Gm /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Win32\Debug\\" /Fd"Win32\Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt AcqToDisk.cpp
+         AcqToDisk.cpp
+       ManifestResourceCompile:
+         All outputs are up-to-date.
+     1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\Microsoft.CppBuild.targets(990,5): warning MSB8012: TargetPath(C:\Users\clackn\Desktop\src\fetch\3rdParty\AlazarTech\ATS-SDK\5.8.2\Samples\ATS9350\SinglePort\AR_MasterSlave\Win32\Debug\AcqToDisk.exe) does not match the Linker's OutputFile property value (C:\Users\clackn\Desktop\src\fetch\3rdParty\AlazarTech\ATS-SDK\5.8.2\Samples\ATS9350\SinglePort\AR_MasterSlave\Win32\Debug\AR_MasterSlave.exe). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
+     1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\Microsoft.CppBuild.targets(992,5): warning MSB8012: TargetName(AcqToDisk) does not match the Linker's OutputFile property value (AR_MasterSlave). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"Win32\Debug\AR_MasterSlave.exe" /INCREMENTAL /NOLOGO /LIBPATH:..\..\..\..\Library\Win32 odbc32.lib odbccp32.lib ATSApi.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Win32\Debug\AcqToDisk.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\clackn\Desktop\src\fetch\3rdParty\AlazarTech\ATS-SDK\5.8.2\Samples\ATS9350\SinglePort\AR_MasterSlave\Win32\Debug\AcqToDisk.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE:NO /IMPLIB:"Win32\Debug\AcqToDisk.lib" /MACHINE:X86 Win32\Debug\AcqToDisk.exe.embed.manifest.res
+         Win32\Debug\AcqToDisk.obj
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /out:"Win32\Debug\AcqToDisk.exe.embed.manifest" /manifest Win32\Debug\AcqToDisk.exe.intermediate.manifest
+         All outputs are up-to-date.
+       LinkEmbedManifest:
+         All outputs are up-to-date.
+         AcqToDisk.vcxproj -> C:\Users\clackn\Desktop\src\fetch\3rdParty\AlazarTech\ATS-SDK\5.8.2\Samples\ATS9350\SinglePort\AR_MasterSlave\Win32\Debug\AcqToDisk.exe
+       FinalizeBuildStatus:
+         Deleting file "Win32\Debug\AcqToDisk.unsuccessfulbuild".
+         Touching "Win32\Debug\AcqToDisk.lastbuildstate".
+     1>Done Building Project "C:\Users\clackn\Desktop\src\fetch\3rdParty\AlazarTech\ATS-SDK\5.8.2\Samples\ATS9350\SinglePort\AR_MasterSlave\AcqToDisk.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:01.96

@@ -236,7 +236,7 @@ BOOL ConfigureBoard(HANDLE boardHandle)
 	}
 
 	// TODO: Select external trigger parameters as required
-
+  
 	retCode =
 		AlazarSetExternalTrigger( 
 			boardHandle,			// HANDLE -- board handle
@@ -269,7 +269,7 @@ BOOL ConfigureBoard(HANDLE boardHandle)
 	// board may trigger if the timeout interval expires before a 
 	// hardware trigger event arrives.
 
-	double triggerTimeout_sec = 0.;
+	double triggerTimeout_sec = 1.0e-3; //1 ms //0.;
 	U32 triggerTimeout_clocks = (U32) (triggerTimeout_sec / 10.e-6 + 0.5);
 
 	retCode = 
