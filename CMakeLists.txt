@@ -168,6 +168,25 @@ target_link_libraries(fetch
 )
 
 ##
+# Apps
+#
+
+add_executable(dumpMessage
+  src/apps/dumpMessage.cc
+  src/util/util-protobuf.h
+  src/util/util-protobuf.cpp
+  src/common.h
+  src/common.cpp
+  ${PROTO_FILES}
+  ${PROTO_HDRS}
+  ${PROTO_SRCS}
+  )
+target_link_libraries(dumpMessage
+  ${PROTOBUF_LIBRARIES}
+  )
+
+
+##
 # Testing
 #
 enable_testing(true)

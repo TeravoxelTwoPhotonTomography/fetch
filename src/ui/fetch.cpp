@@ -17,6 +17,7 @@
 #include <QtOpenGL>
 #include <assert.h>
 #include "util/util-gl.h"
+#include "util/util-qt.h"
 
 #include "common.h"
 #include "devices/Microscope.h"

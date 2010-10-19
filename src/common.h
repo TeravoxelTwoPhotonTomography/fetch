@@ -131,9 +131,6 @@ void Reporting_Setup_Log_To_VSDebugger_Console(void);
 void Reporting_Setup_Log_To_File( FILE *file );
 void Reporting_Setup_Log_To_Filename( const char* filename );
 void Reporting_Setup_Log_To_Stdout(void);
-#ifdef HAVE_QT4
-void Reporting_Setup_Log_To_Qt(void);
-#endif
 
 void ReportLastWindowsError(void);
 
