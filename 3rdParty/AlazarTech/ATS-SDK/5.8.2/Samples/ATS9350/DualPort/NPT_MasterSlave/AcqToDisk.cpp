@@ -271,7 +271,7 @@ BOOL ConfigureBoard(HANDLE boardHandle)
 	// board may trigger if the timeout interval expires before a 
 	// hardware trigger event arrives.
 
-	double triggerTimeout_sec = 0.;
+	double triggerTimeout_sec = 10.e-3;
 	U32 triggerTimeout_clocks = (U32) (triggerTimeout_sec / 10.e-6 + 0.5);
 
 	retCode = 
@@ -652,6 +652,7 @@ BOOL AcquireData(U32 boardCount)
 
 	if (fpData != NULL)
 		fclose(fpData);
-
+  printf("Press <Enter> to continue.\r\n");
+  getchar();
 	return success;
 }
