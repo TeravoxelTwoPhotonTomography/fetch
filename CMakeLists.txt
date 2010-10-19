@@ -185,7 +185,14 @@ target_link_libraries(dumpMessage
   ${PROTOBUF_LIBRARIES}
   )
 
-
+add_executable(queryStages
+    src/apps/queryStages.cc
+    src/common.h
+    src/common.cpp
+    )
+target_link_libraries(queryStages
+    ${C843_LIBRARY}
+    )
 ##
 # Testing
 #

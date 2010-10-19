@@ -1,0 +1,22 @@
+package fetch.cfg.device;
+
+// Configuration for the PI C843 Stage controller
+
+message C843StageController
+{ 
+  message Axis
+	{
+		message Range {
+			optional double min = 1 [default=0.0];
+			optional double max = 2 [default=0.0];
+		}
+		optional uint32 axis_id = 1 [default=1];         //1-4
+		optional string stage   = 2 [default="NOSTAGE"]; //M-511.DD (XY), M-501.DG (Z)
+		optional Range  travel  = 3;
+		optional double pos     = 4 [default=0.0];
+		optional double vel     = 5 [default=0.0];
+	}
+
+	optional uint32 board_id = 1 [default=1];
+	repeated Axis   axes     = 2;
+}

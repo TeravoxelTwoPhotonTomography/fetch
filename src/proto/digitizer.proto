@@ -1,13 +1,14 @@
 package fetch.cfg.device;
 
+
+////////////////////////
+
 // Notes
 // -----
 //
 // * May be able to eliminate the nchannels field.  Protobuf will generate a channel_size()
 //   method that gives the correct value.
 // * rename channel to channels
-
-////////////////////////
 message NIScopeDigitizer 
 {
   message Channel
@@ -39,7 +40,92 @@ message NIScopeDigitizer
 ///////////////////////
 message AlazarDigitizer
 {
-  optional string name = 1 [default = "placeholder!"];
+  enum ClockSource { // Specific to the ATS9350
+    INTERNAL_CLOCK                                = 1;
+    SLOW_EXTERNAL_CLOCK                           = 4;
+    EXTERNAL_CLOCK_AC                             = 5;
+    EXTERNAL_CLOCK_10MHz_REF                      = 7;
+  }
+  enum SampleRate { // Specific to the ATS9350
+    SAMPLE_RATE_1KSPS                             = 0x1;
+    SAMPLE_RATE_2KSPS                             = 0x2;
+    SAMPLE_RATE_5KSPS                             = 0x4;
+    SAMPLE_RATE_10KSPS                            = 0x8;
+    SAMPLE_RATE_100KSPS                           = 0xA;
+    SAMPLE_RATE_200KSPS                           = 0x10;
+    SAMPLE_RATE_500KSPS                           = 0x12;
+    SAMPLE_RATE_1MSPS                             = 0x14;
+    SAMPLE_RATE_2MSPS                             = 0x18;
+    SAMPLE_RATE_5MSPS                             = 0x1A;
+    SAMPLE_RATE_10MSPS                            = 0x1C;
+    SAMPLE_RATE_20MSPS                            = 0x1E;
+    SAMPLE_RATE_50MSPS                            = 0x22;
+    SAMPLE_RATE_100MSPS                           = 0x24;
+    SAMPLE_RATE_125MSPS                           = 0x25;
+    SAMPLE_RATE_250MSPS                           = 0x2B;
+    SAMPLE_RATE_500MSPS                           = 0x30;
+    SAMPLE_RATE_USER_DEF                          = 0x40;
+    SAMPLE_RATE_MAX                               = 500000000;
+  }
+  enum ClockEdge {
+    CLOCK_EDGE_RISING                             = 0;
+    CLOCK_EDGE_FALLING                            = 1;
+  }
+  enum ChannelID {
+    CHANNEL_A                                     = 1;
+    CHANNEL_B                                     = 2;
+  }
+  enum Coupling {
+    AC_COUPLING                                   = 1;
+    DC_COUPLING                                   = 2;
+  }
+  enum Range
+  {
+    INPUT_RANGE_PM_20_MV  = 1;
+    INPUT_RANGE_PM_40_MV  = 2;
+    INPUT_RANGE_PM_50_MV  = 3;
+    INPUT_RANGE_PM_100_MV = 5;
+    INPUT_RANGE_PM_200_MV = 6;
+    INPUT_RANGE_PM_400_MV = 7;
+    INPUT_RANGE_PM_500_MV = 8;
+    INPUT_RANGE_PM_800_MV = 9;
+    INPUT_RANGE_PM_1_V    = 10;
+    INPUT_RANGE_PM_2_V    = 11;
+    INPUT_RANGE_PM_4_V    = 12;
+    INPUT_RANGE_PM_5_V    = 13;
+    INPUT_RANGE_PM_8_V    = 14;
+    INPUT_RANGE_PM_10_V   = 15;
+    INPUT_RANGE_PM_20_V   = 16;
+    INPUT_RANGE_PM_40_V   = 17;
+    INPUT_RANGE_PM_16_V   = 18;
+    INPUT_RANGE_HIFI      = 32; // for amplifier bypass
+  }
+  enum Impedance
+  {
+    IMPEDANCE_1M_OHM      = 1;
+    IMPEDANCE_50_OHM      = 2;
+  }
+
+  message Channel {
+    optional uint32     board_id  = 1 [default = 1];
+    optional ChannelID  chan_id   = 2 [default = CHANNEL_A];
+    optional Coupling   coupling  = 3 [default = DC_COUPLING];
+    optional Range      range     = 4 [default = INPUT_RANGE_PM_200_MV];
+    optional Impedance  impedance = 5 [default = IMPEDANCE_50_OHM];
+    optional bool       enabled   = 6 [default = true];
+  }
+
+  optional uint32 system_id           = 1 [default = 1];
+
+  // timebase
+  optional SampleRate sample_rate     = 2 [default = SAMPLE_RATE_MAX];
+  optional ClockEdge  clock_edge      = 3 [default = CLOCK_EDGE_RISING];
+  optional float      ext_clock_level = 4 [default = 0.0];
+  optional uint32     decimation      = 5 [default = 1]; // may be 1,2,4,or any multiple of 5 up to 100k.  Only used with SAMPLE_RATE_MAX
+
+  repeated Channel    channels        = 6;
+
+  // TODO: triggers, aux io, Dual-port AutoDMA acquisition
 }
 
 //////////////////////////
