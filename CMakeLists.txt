@@ -15,7 +15,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 
 #Paths
 set(ROOT_3RDPARTY_PATH
-  "$ENV{USERPROFILE}/Desktop/src/libs"
+  ${CMAKE_SOURCE_DIR}/3rdParty
+# "$ENV{USERPROFILE}/Desktop/src/libs"
   CACHE PATH "Root Location of 3rd party libraries"
 )
 

@@ -1,3 +1,4 @@
+#include <windows.h>
 #include <C843_GCS_DLL.H>
 #include <assert.h>
 #include "common.h"
@@ -105,6 +106,9 @@ int main(int argc, char* argv[])
 
   StageController xyz;
   xyz.printTravelRanges();
+  
+  printf("Press <Enter>\r\n");
+  getchar();
   return 0;
 
 }

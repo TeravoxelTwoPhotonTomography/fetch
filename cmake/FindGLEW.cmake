@@ -27,6 +27,7 @@ ENDFUNCTION(_GLEW_ASSERT)
 SET(_GLEW_HINTS
   ~/src/mylib
   "$ENV{USERPROFILE}/Desktop/src/libs/glew-1.5.6/x32"
+  ${CMAKE_SOURCE_DIR}/3rdParty/glew-1.5.6/x32
 )
 
 FIND_LIBRARY(GLEW_GLEW_LIBRARY
