@@ -120,6 +120,7 @@ qt4_wrap_cpp(MOC_SRCS
 )
 qt4_add_resources(RCC_SRCS
   src/ui/icons.qrc
+  src/apps/fetch.qrc
 )
 source_group("Source Files\\Qt Generated" FILES
   ${MOC_SRCS}
@@ -132,6 +133,7 @@ source_group("Source Files\\Qt Generated" FILES
 # Executable
 #
 
+# FETCH_SRCS is used by testing, for example
 set(FETCH_SRCS
   ${PROTO_FILES}
   ${FETCH_WORKERS_HDRS}
@@ -146,6 +148,7 @@ set(FETCH_SRCS
   ${FETCH_CORE_SRCS}
   )
 add_executable(fetch
+  src/apps/fetch.cpp
   ${PROTO_HDRS}
   ${PROTO_SRCS}
   ${FETCH_SRCS}

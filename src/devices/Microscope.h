@@ -76,6 +76,7 @@ namespace fetch
     public:     
       // Will attach and arm the default task on construction
       Microscope();
+      Microscope(const Config &cfg);
       Microscope(Config *cfg);
 
       void __common_setup();

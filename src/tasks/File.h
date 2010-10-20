@@ -12,19 +12,23 @@
  */
 #pragma once
 
-#include "../devices/DiskStream.h"
-#include "../task.h"
+#include "devices/DiskStream.h"
+#include "task.h"
 
 
 
 namespace fetch
-{ namespace device { class DiskStreamBase; }
+{
+  namespace device { 
+    class HFILEDiskStreamBase; 
+    class TiffStream;
+  }
 
   namespace task
   {
     namespace file {
 
-      //typedef UpcastTask<device::DiskStreamBase> DiskStreamTask;
+      //typedef UpcastTask<device::HFILEDiskStreamBase> DiskStreamTask;
       typedef Task DiskStreamTask;
 
       /*
@@ -43,8 +47,8 @@ namespace fetch
           unsigned int config (IDevice *d);
           unsigned int run    (IDevice *d);
                     
-          unsigned int config(device::DiskStreamBase *agent);
-          unsigned int run(device::DiskStreamBase *agent);
+          unsigned int config(device::HFILEDiskStreamBase *agent);
+          unsigned int run(device::HFILEDiskStreamBase *agent);
       };
 
       class ReadRaw : public DiskStreamTask
@@ -52,8 +56,8 @@ namespace fetch
           unsigned int config (IDevice *d);
           unsigned int run    (IDevice *d);
             
-          unsigned int config(device::DiskStreamBase *agent);
-          unsigned int run(device::DiskStreamBase *agent);
+          unsigned int config(device::HFILEDiskStreamBase *agent);
+          unsigned int run(device::HFILEDiskStreamBase *agent);
       };
 
       class WriteMessage : public DiskStreamTask
@@ -61,8 +65,8 @@ namespace fetch
           unsigned int config (IDevice *d);
           unsigned int run    (IDevice *d);
             
-          unsigned int config(device::DiskStreamBase *agent);
-          unsigned int run(device::DiskStreamBase *agent);
+          unsigned int config(device::HFILEDiskStreamBase *agent);
+          unsigned int run(device::HFILEDiskStreamBase *agent);
       };
 
       class ReadMessage : public DiskStreamTask
@@ -70,8 +74,8 @@ namespace fetch
           unsigned int config (IDevice *d);
           unsigned int run    (IDevice *d);
             
-          unsigned int config(device::DiskStreamBase *agent);
-          unsigned int run(device::DiskStreamBase *agent);
+          unsigned int config(device::HFILEDiskStreamBase *agent);
+          unsigned int run(device::HFILEDiskStreamBase *agent);
       }; 
       
       // Extracts data from messages and writes just the data to disk.
@@ -80,8 +84,28 @@ namespace fetch
           unsigned int config (IDevice *d);
           unsigned int run    (IDevice *d);
             
-          unsigned int config(device::DiskStreamBase *agent);
-          unsigned int run(device::DiskStreamBase *agent);
+          unsigned int config(device::HFILEDiskStreamBase *agent);
+          unsigned int run(device::HFILEDiskStreamBase *agent);
+      };
+
+      class TiffStreamReadTask:public DiskStreamTask
+      {
+      public:
+        unsigned int config(IDevice *d);
+        unsigned int run   (IDevice *d);
+
+        unsigned int config(device::TiffStream *dc);
+        unsigned int run   (device::TiffStream *dc);
+      };
+
+      class TiffStreamWriteTask:public DiskStreamTask
+      {
+      public:
+        unsigned int config(IDevice *d);
+        unsigned int run   (IDevice *d);
+
+        unsigned int config(device::TiffStream *dc);
+        unsigned int run   (device::TiffStream *dc);
       };
 
     }  // namespace disk

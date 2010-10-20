@@ -25,6 +25,7 @@
 
 #include "ui/MainWindow.h"
 #include <stdio.h>
+#include <google/protobuf/text_format.h>
 /*
  * Global state
  */
@@ -61,7 +62,13 @@ void Init(void)
   Reporting_Setup_Log_To_Qt();
 
   //Microscope devices
-  gp_microscope = new fetch::device::Microscope;
+  QFile cfgfile(":/config/microscope");
+  Guarded_Assert(cfgfile.open(QIODevice::ReadOnly));
+  Guarded_Assert(cfgfile.isReadable());
+  //cfgfile.setTextModeEnabled(true);
+  fetch::cfg::device::Microscope config;
+  google::protobuf::TextFormat::ParseFromString(cfgfile.readAll().constData(),&config);
+  gp_microscope = new fetch::device::Microscope(config);
 
 
   // Connect video display

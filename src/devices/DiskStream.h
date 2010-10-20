@@ -15,6 +15,8 @@
  * -----
  * - The Agent::connect() function will take care of the input queues.
  *
+ * - This has got to be the worst possible way...ugh
+ *
  */
 #pragma once
 
@@ -22,6 +24,7 @@
 #include "agent.h"
 #include "tasks/File.h"
 #include "file.pb.h"
+#include "MY_TIFF/tiff.io.h"
 
 #define DISKSTREAM_MAX_PATH         1024
 #define DISKSTREAM_MAX_MODE         4
@@ -33,39 +36,84 @@ namespace fetch
   namespace device
   {
     
-    class DiskStreamBase: public IConfigurableDevice<cfg::File>
+    class IDiskStream: public IConfigurableDevice<cfg::File>
     {
       public:
-        DiskStreamBase(Agent *agent);
-        DiskStreamBase(Agent *agent, Config *config);
-        DiskStreamBase(Agent *agent, char *filename, char *mode);
-        ~DiskStreamBase();
+        IDiskStream(Agent *agent);
+        IDiskStream(Agent *agent, Config *config);
+        IDiskStream(Agent *agent, char *filename, char *mode);
 
-        virtual unsigned int open(const std::string& filename, const std::string& mode) = 0;
-                unsigned int close (void);                           //synonymous with detach()
-                unsigned int detach(void);                        
+        virtual unsigned int open(const std::string& filename, const std::string& mode);     // 0=success, 1=failure.  Attaches, arms, and runs
+        inline  unsigned int close (void) {return detach();};                                //synonymous with detach()
 
-    public:        
+        void flush(); // Causes input queues to flush.  They stop blocking.
+
+        // Children still need to define
+        //   detach()
+        //   attach()
+        // Children need to set the _reader and _writer pointers
+
+    protected:
+        Task *_reader;
+        Task *_writer;
+
+    }; 
+
+    class TiffStream : public IDiskStream
+    {
+    public:
+      TiffStream(Agent *agent);
+      TiffStream(Agent *agent, Config *config);
+
+      unsigned int detach();
+    protected:
+      unsigned int attach();
+
+      unsigned int _attach_writer( char * filename );
+
+      unsigned int _attach_reader( char * filename );
+
+    public:
+      task::file::TiffStreamReadTask  _read_task;
+      task::file::TiffStreamWriteTask _write_task;
+      Tiff_Reader *_tiff_reader;
+      Tiff_Writer *_tiff_writer;
+    };
+
+    class HFILEDiskStreamBase : public IDiskStream
+    {    
+      // Children still need to define
+      //   detach()
+      //   attach()
+      // Children need to set the _reader and _writer pointers
+    public:
+      HFILEDiskStreamBase(Agent *agent);
+      HFILEDiskStreamBase(Agent *agent, Config *config);
+    public:
       HANDLE  _hfile;
-
-      protected:
-        unsigned int attach(void);                                   // use open() instead
-    };                                                               
+    };
 
     template<typename TReader,typename TWriter>
-    class DiskStream : public DiskStreamBase
-    { public:
-        TReader reader;
-        TWriter writer;
-        
-        DiskStream(Agent *agent) : DiskStreamBase(agent) {}
-        DiskStream(Agent *agent, Config *config) : DiskStreamBase(agent,config) {}
+    class HFILEDiskStream : public HFILEDiskStreamBase
+    { 
+    public:
+      HFILEDiskStream(Agent *agent);
+      HFILEDiskStream(Agent *agent, Config *config);
+      
+      unsigned int detach(void);
 
-        unsigned int open(const std::string& filename, const std::string& mode);
+    protected:
+      unsigned int attach(void);                       // use open() instead        
+
+    private:
+      TReader _inst_reader;
+      TWriter _inst_writer;
     };
-    typedef DiskStream<task::file::ReadMessage,task::file::WriteMessage>      DiskStreamMessage;
-    typedef DiskStream<task::file::ReadRaw    ,task::file::WriteRaw>          DiskStreamRaw;
-    typedef DiskStream<task::file::ReadRaw    ,task::file::WriteMessageAsRaw> DiskStreamMessageAsRaw;
+
+
+    typedef HFILEDiskStream<task::file::ReadMessage,task::file::WriteMessage>      DiskStreamMessage;
+    typedef HFILEDiskStream<task::file::ReadRaw    ,task::file::WriteRaw>          DiskStreamRaw;
+    typedef HFILEDiskStream<task::file::ReadRaw    ,task::file::WriteMessageAsRaw> DiskStreamMessageAsRaw;
 
   }
 

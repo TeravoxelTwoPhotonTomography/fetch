@@ -479,6 +479,8 @@ Error:
     sts |= _owner->attach();
     if(sts==0)
       set_available();
+    else
+      warning("Agent's owner did not attach properly.\r\n\tFile: %s (%d)",__FILE__,__LINE__);
     unlock();
     return sts;
   }
@@ -564,11 +566,12 @@ Error:
   void
     IDevice::connect(IDevice *dst, size_t dst_channel, IDevice *src, size_t src_channel)
   { // alloc in/out channels if necessary
+    Guarded_Assert( src->_out!=NULL || dst->_in!=NULL ); // can't both be NULL
     if( src->_out == NULL )
       src->_out = vector_PASYNQ_alloc(src_channel + 1);
     if( dst->_in == NULL )
       dst->_in = vector_PASYNQ_alloc(dst_channel + 1);
-    Guarded_Assert( src->_out && dst->_in );
+    Guarded_Assert( src->_out && dst->_in ); // neither can be NULL
 
     if( src_channel < src->_out->nelem )                // source channel exists
     { 

@@ -30,6 +30,18 @@
       __common_setup();
     }  
 
+    Microscope::Microscope( const Config &cfg )
+      :IConfigurableDevice<Config>(&__self_agent)
+      ,__self_agent(NULL)
+      ,__scan_agent(&scanner)
+      ,__io_agent(&disk)
+      ,scanner(&__scan_agent)    
+      ,disk(&__io_agent)
+    {
+      set_config(cfg);
+      __common_setup();
+    }
+
     Microscope::Microscope(Config *cfg )
       :IConfigurableDevice<Config>(&__self_agent,cfg)
       ,__self_agent(NULL)
@@ -57,7 +69,7 @@
 
       std::string stackname = _config->file_prefix()+_config->stack_extension();
       file_series.ensurePathExists();
-      eflag |= disk.open(file_series.getFullPath(stackname),"w");
+      eflag |= disk.open(file_series.getFullPath(stackname),"w");    
 
       return eflag;  
     }
@@ -119,7 +131,7 @@
     void Microscope::__common_setup()
     {
       __self_agent._owner = this;
-      Guarded_Assert(_agent->attach());
+      Guarded_Assert(_agent->attach()==0);
       Guarded_Assert(_agent->arm(&interaction_task,this,INFINITE));
     }
 

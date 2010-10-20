@@ -1,0 +1,129 @@
+scanner3d {
+  scanner2d {
+    frequency_hz: 7920
+    nscans: 512
+    line_duty_cycle: 0.95
+    daq {
+      kind: NIDAQ
+      nidaq {
+        ao_samples_per_waveform: 16384
+        trigger: "APFI0"
+        clock: "Ctr1InternalOutput"
+        ctr: "/Dev1/ctr1"
+        ctr_alt: "/Dev1/ctr0"
+        armstart: "RTSI2"
+        name: "Dev1"
+      }
+      simulated {
+        samples_per_record: 16384
+        sample_frequency_hz: 1000000
+      }
+    }
+    digitizer {
+      kind: NIScope
+      niscope {
+        name: "Dev3"
+        sample_rate: 60000000
+        record_size: 7196
+        num_records: 256
+        reference: 0
+        chan_names: "0"
+        nchannels: 1
+        line_trigger_src: 1
+        channel {
+          name: "0"
+          range: 0.2
+          enabled: true
+        }
+        channel {
+          name: "1"
+          range: 2.0
+          enabled: true
+        }
+      }
+      alazar {
+        system_id: 1
+        sample_rate: SAMPLE_RATE_MAX
+        clock_edge: CLOCK_EDGE_RISING
+        ext_clock_level: 0
+        decimation: 1
+      }
+      simulated {
+        number: 0
+      }
+    }
+    pockels {
+      kind: NIDAQ
+      nidaq {
+        v_lim_max: 2
+        v_lim_min: 0
+        v_open: 0
+        v_closed: 0
+        ao_channel: "/Dev1/ao2"
+        ai_channel: "/Dev1/ai16"
+      }
+      simulated {
+        val: 0
+      }
+    }
+    shutter {
+      kind: NIDAQ
+      nidaq {
+        open: 1
+        closed: 0
+        do_channel: "/Dev1/port0/line8"
+      }
+      simulated {
+        state: false
+      }
+    }
+    linear_scan_mirror {
+      kind: NIDAQ
+      nidaq {
+        v_lim_max: 10
+        v_lim_min: -10
+        vpp: 10
+        ao_channel: "/Dev1/ao0"
+      }
+      simulated {
+        val: 0
+      }
+    }
+  }
+  zpiezo {
+    kind: NIDAQ
+    nidaq {
+      um2v: 0.025
+      um_max: 5
+      um_min: 0
+      um_step: 0.005
+      v_lim_max: 12
+      v_lim_min: -3
+      v_offset: 0
+      channel: "/Dev1/ao1"
+    }
+    simulated {
+      val: 0
+    }
+  }
+  zref_um: 0
+}
+resonant_wrap {
+  turn_px: 0
+}
+horizontal_downsample {
+  ntimes: 1
+}
+frame_average {
+  ntimes: 1
+}
+file_series {
+  root: "data"
+  date: "unknown"
+  seriesno: 0
+  pathsep: "\\"
+}
+file_prefix: "default"
+stack_extension: ".tif"
+config_extension: ".microscope"
+

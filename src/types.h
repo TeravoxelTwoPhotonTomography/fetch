@@ -1,5 +1,5 @@
 #pragma once
-#include "stdafx.h"
+#include "common.h"
 
 typedef enum _basic_type_id
 { id_unspecified = -1,
@@ -12,7 +12,8 @@ typedef enum _basic_type_id
   id_i32,
   id_i64,
   id_f32,
-  id_f64
+  id_f64,
+  MAX_TYPE_ID
 } Basic_Type_ID;
 
 typedef struct _basic_type_attribute
@@ -23,6 +24,11 @@ typedef struct _basic_type_attribute
 } Basic_Type_Attribute;
 
 extern const Basic_Type_Attribute g_type_attributes[];
+
+#define TYPE_IS_SIGNED(id)   (g_type_attributes[id].is_signed)
+#define TYPE_IS_FLOATING(id) (g_type_attributes[id].is_floating)
+#define TYPE_NBITS(id)       (g_type_attributes[id].bits)
+#define TYPE_NBYTES(id)      (g_type_attributes[id].bytes)
 
 //
 // TypeID<T>();

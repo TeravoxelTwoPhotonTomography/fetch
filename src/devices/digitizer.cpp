@@ -88,19 +88,20 @@ Error:
 
     unsigned int
       NIScopeDigitizer::attach(void)
-    { ViStatus status = VI_SUCCESS;      
-    digitizer_debug("Digitizer: Attach\r\n");      
-    if( _vi == NULL )
-    { // Open the NI-SCOPE instrument handle
-      status = CheckPanic (
-        niScope_init (const_cast<ViRsrc>(_config->name().c_str()),
-        NISCOPE_VAL_TRUE,    // ID Query
-        NISCOPE_VAL_FALSE,   // Reset?
-        &_vi)                // Session
-        );
-    }      
-    digitizer_debug("\tGot session %3d with status %d\n",_vi,status);
-    return status!=VI_SUCCESS;
+    {
+      ViStatus status = VI_SUCCESS;      
+      digitizer_debug("NIScopeDigitizer: Attach\r\n");      
+      if( _vi == NULL )
+      { // Open the NI-SCOPE instrument handle
+        status = CheckPanic (
+          niScope_init (const_cast<ViRsrc>(_config->name().c_str()),
+          NISCOPE_VAL_TRUE,    // ID Query
+          NISCOPE_VAL_FALSE,   // Reset?
+          &_vi)                // Session
+          );
+      }      
+      digitizer_debug("\tGot session %3d with status %d\n",_vi,status);
+      return status!=VI_SUCCESS;
     }
 
     void NIScopeDigitizer::__common_setup()

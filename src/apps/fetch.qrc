@@ -1,0 +1,5 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix="/config">
+  <file alias="microscope">fetch.resource/default.microscope</file>
+</qresource>
+</RCC>

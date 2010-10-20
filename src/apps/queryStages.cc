@@ -8,7 +8,10 @@ inline void handle(int boardid, int v, char* expr, char* msg, char *file, int li
 {
   char emsg[1024];
   long err = C843_GetError(boardid);
+#pragma warning(push)
+#pragma warning(disable:4800)
   bool sts = C843_TranslateError(err,emsg,sizeof(emsg));
+#pragma warning(pop)
   if(!v) 
     report(
     "Expression evaluated to false:\r\n"
@@ -130,13 +133,16 @@ class StageController
         printf("%3d % #7.7f\r\n",i,v[i]);
       }
     }    
-    
+
+//#define HAVE_C843_ISCONTROLLERREADY
     void printStatus()
     {
+#ifdef HAVE_C843_ISCONTROLLERREADY
       enum ReadyType
       { NOT_READY = 176,
         READY
       };
+#endif
       long connected,
            ready
            ;
@@ -147,7 +153,9 @@ class StageController
            
       
       connected = C843_IsConnected(_id);
+#ifdef HAVE_C843_ISCONTROLLERREADY
       CHKERR(C843_IsControllerReady(_id,&ready),"");
+#endif
       CHKERR(C843_IsMoving(_id,"",m),"");
       CHKERR(C843_IsReferenceOK(_id,"",r),"");
       CHKERR(C843_IsReferencing(_id,"",R),"");
@@ -163,7 +171,11 @@ class StageController
              " id m r R \r\n"
              "--- - - - \r\n",
              connected?"yes":"no",
+#ifdef HAVE_C843_ISCONTROLLERREADY
              ready==READY?"yes":"no");
+#else
+             "C843_IsControllerReady() not present");
+#endif
       for(int i=0;i<3;++i)
       {
         printf("%3d %c %c %c\r\n",i,
