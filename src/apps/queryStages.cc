@@ -4,20 +4,24 @@
 #include "common.h"
 
 
-inline void handle(int v, char* expr, char* msg, char *file, int line, pf_reporter report)
+inline void handle(int boardid, int v, char* expr, char* msg, char *file, int line, pf_reporter report)
 {
+  char emsg[1024];
+  long err = C843_GetError(boardid);
+  bool sts = C843_TranslateError(err,emsg,sizeof(emsg));
   if(!v) 
     report(
     "Expression evaluated to false:\r\n"
     "\tFile: %s Line: %d\r\n"
     "\texpression: %s\r\n"
     "\t     value: %d\r\n"
-    "\t%s\r\n",file,line,expr,v,msg);
+    "\tC843 error: %s (%d)\r\n"
+    "\t%s\r\n",file,line,expr,v,(sts?emsg:"C843_TranslateError call failed"),err,msg);
 }
-#define CHKWRN(expr,msg) handle((expr),#expr,msg,__FILE__,__LINE__,warning);
-#define CHKERR(expr,msg) handle((expr),#expr,msg,__FILE__,__LINE__,error);
+#define CHKWRN(expr,msg) handle(_id,(expr),#expr,msg,__FILE__,__LINE__,warning);
+#define CHKERR(expr,msg) handle(_id,(expr),#expr,msg,__FILE__,__LINE__,error);
 
-#if 1
+#if 0
 #define DBG(...) debug(__VA_ARGS__)
 #else
 #define DBG(...) 
@@ -26,13 +30,15 @@ inline void handle(int v, char* expr, char* msg, char *file, int line, pf_report
 class StageController
 {
   private:
-    int _id;
+    long _id;
 
 
   public:
     StageController()
     {
-      CHKERR(_id=C843_Connect(1)>=0          , "Couldn't connect to controller");
+      
+      CHKERR( (_id=C843_Connect(1)) >=0      , "Couldn't connect to controller");      
+      CHKERR(C843_IsConnected(_id)           , "Board not connected!");
       CHKERR(areAnyStagesConfigured()==FALSE , "Expected no configured stages");
       CHKERR(areAnyAxesConfigured()==FALSE   , "Expected no configured axes.");
       CHKERR(connectStages()                 , "Failed to connect stages");
@@ -49,10 +55,11 @@ class StageController
     bool areAnyStagesConfigured()
     {
       char stages[1024],
-           expected[] = "1=NOSTAGE\n2=NOSTAGE\n3=NOSTAGE\n4=NOSTAGE\n";
+           expected[] = "1=NOSTAGE \n2=NOSTAGE \n3=NOSTAGE \n4=NOSTAGE\n";
       CHKERR(C843_qCST(_id,"1234",stages,1023),"");
       DBG("C843: qCST returned: \r\n\t%s\r\n",stages);
-      return strcmp(stages,expected)!=0;
+      bool v = strcmp(stages,expected)!=0;
+      return v;
     }
 
     int areAnyAxesConfigured()
@@ -78,8 +85,8 @@ class StageController
       CHKERR(C843_qSAI(_id,axes,9),"");
       DBG("C843: qSAI returned: \r\n\t%s\r\n",axes);
       CHKERR(strcmp(stages,
-            "1=M-511.DD\n2=M-511.DD\n3=M-501.1DG\n4=NOSTAGE\n")==0,
-          "Received unexpected stage configuration from controller");
+            "1=M-511.DD \n2=M-511.DD \n3=M-501.1DG \n4=NOSTAGE\n")==0,
+            "Received unexpected stage configuration from controller");
       CHKERR(strcmp(axes,"123")==0,
           "Received unexpected axis configuration from controller");
     }
@@ -89,12 +96,83 @@ class StageController
       double mn[4],mx[4];
       CHKERR(C843_qTMN(_id,"",mn),"");
       CHKERR(C843_qTMX(_id,"",mx),"");
-      printf("Travel\r\n"
-             "------\r\n");
-      for(int i=0;i<4;++i)
+      printf("\r\n[Travel]\r\n"
+             " id     min         max\r\n"
+             "---  ---------  -----------\r\n");
+      for(int i=0;i<3;++i)
       {
-        printf("%3d %7.7f %7.7f\r\n",i,mn[i],mx[i]);
+        printf("%3d % #7.7f % #7.7f\r\n",i,mn[i],mx[i]);
       }
+    }
+    
+    void printVelocity()
+    {
+      double v[4];
+      CHKERR(C843_qVEL(_id,"",v),"");
+      printf("\r\n[Velocity]\r\n"
+             " id  magnitude\r\n"
+             "---  ---------\r\n");
+      for(int i=0;i<3;++i)
+      {
+        printf("%3d % #7.7f\r\n",i,v[i]);
+      }
+    }
+    
+    void printPosition()
+    {
+      double v[4];
+      CHKERR(C843_qPOS(_id,"",v),"");
+      printf("\r\n[Position]\r\n"
+             " id  magnitude\r\n"
+             "---  ---------\r\n");
+      for(int i=0;i<3;++i)
+      {
+        printf("%3d % #7.7f\r\n",i,v[i]);
+      }
+    }    
+    
+    void printStatus()
+    {
+      enum ReadyType
+      { NOT_READY = 176,
+        READY
+      };
+      long connected,
+           ready
+           ;
+      BOOL m[4]={0,0,0,0},
+           r[4]={0,0,0,0},
+           R[4]={0,0,0,0}
+           ;
+           
+      
+      connected = C843_IsConnected(_id);
+      CHKERR(C843_IsControllerReady(_id,&ready),"");
+      CHKERR(C843_IsMoving(_id,"",m),"");
+      CHKERR(C843_IsReferenceOK(_id,"",r),"");
+      CHKERR(C843_IsReferencing(_id,"",R),"");
+
+      printf("\r\n[Status]\r\n"
+             "Connected: %s\r\n"
+             "    Ready: %s\r\n"
+             "Legend: x=Yes .=No\r\n"
+             "\tm: moving\r\n"
+             "\tr: reference ok\r\n"
+             "\tR: is referencing\r\n"
+             "\r\n"
+             " id m r R \r\n"
+             "--- - - - \r\n",
+             connected?"yes":"no",
+             ready==READY?"yes":"no");
+      for(int i=0;i<3;++i)
+      {
+        printf("%3d %c %c %c\r\n",i,
+          m[i]?'x':'.',
+          r[i]?'x':'.',
+          R[i]?'x':'.'
+          );
+      }
+                
     }
 };
 
@@ -106,6 +184,9 @@ int main(int argc, char* argv[])
 
   StageController xyz;
   xyz.printTravelRanges();
+  xyz.printVelocity();
+  xyz.printPosition();
+  xyz.printStatus();
   
   printf("Press <Enter>\r\n");
   getchar();
