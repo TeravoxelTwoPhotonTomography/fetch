@@ -104,9 +104,10 @@ namespace fetch
       virtual void _set_config(const Config& cfg);
 
       virtual void onConfig();
+      virtual void onUpdate() {generateAO();}
       virtual void generateAO();
       virtual void writeAO();
-      
+          
       asynq *getVideoChannel() { return _out->contents[0]; }
 
     private:

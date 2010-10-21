@@ -149,10 +149,13 @@ namespace fetch {
     // Queue manipulation
     static void connect(IDevice *dst, size_t dst_chan, IDevice *src, size_t src_chan);
 
+    virtual void onUpdate() {}          // Overload this to make state changes that are dependent on the configuration. See e.g.: Scanner2d::onUpdate()
+
     Agent* _agent;
 
     vector_PASYNQ   *_in,         // Input  pipes
-                    *_out;        // Output pipes
+                    *_out;        // Output pipes    
+
   public:
     // _alloc_qs
     // _alloc_qs_easy
@@ -190,8 +193,10 @@ namespace fetch {
   //   the "_set" or "_get" functions to get the job done.
   //
   // - "update" can be useful when classes want to re-implement the config "get" and 
-  //   "set" functions.  "update" performs the runtime state changes for the device.
-  //   If you don't want to callback to the task, overload with an empty function.
+  //   "set" functions.  "update" performs the changes required for armed devices.
+  //   Armed devices have had a Task's config() function run.  The Task::config() function
+  //   is sometimes overkill for small parameter changes. onUpdate() and Task::update()
+  //   are provided for just this reason.
 
   template<class Tcfg>
   class IConfigurableDevice : public IDevice, public Configurable<Tcfg>
@@ -216,7 +221,8 @@ namespace fetch {
   protected:
     inline void transaction_lock();
     inline void transaction_unlock();
-    virtual void update();             // if you don't want to callback to the task, overload this with an empty function.
+    virtual void update();               // This stops a running agent, calls the onUpdate() function, restarting the agent as necessary.
+    
 
   private:
 //    void _set_config__locked( Config  IN *cfg );
@@ -462,7 +468,8 @@ namespace fetch {
       int run = _agent->is_running();
       if(run)
         _agent->stop(AGENT_DEFAULT_TIMEOUT);
-      dynamic_cast<IUpdateable*>(_agent->_task)->update(this); //commit
+      _agent->_owner->onUpdate();
+      //dynamic_cast<IUpdateable*>(_agent->_task)->update(this); //commit
       if(run)
         _agent->run();
     }

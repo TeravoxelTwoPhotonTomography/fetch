@@ -50,8 +50,9 @@ namespace device {
     int sts = 0; //fail
     transaction_lock();
     if(sts=isValidOpenVolts(volts))
-    { _config->set_v_open(volts);
-    update();        
+    { 
+      _config->set_v_open(volts);
+      update();        
     }
     else
       warning("NIDAQPockels: attempted to set v_open to an out of bounds value.\r\n");
