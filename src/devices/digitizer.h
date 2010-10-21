@@ -34,6 +34,7 @@
 #include "../util/util-niscope.h"
 #include "digitizer.pb.h"
 #include "object.h"
+#include "types.h"
 
 #define DIGITIZER_BUFFER_NUM_FRAMES       4        // must be a power of two
 #define DIGITIZER_DEFAULT_TIMEOUT         INFINITE // ms
@@ -42,11 +43,23 @@ namespace fetch
 {
   namespace device
   {
-
+    // IDigitizer
+    // ----------
+    //
+    // setup() - configures digitizer for triggered multirecord acquisition.  
+    //           specialized a bit for video acquisition.
+    // record_size() - returns the number of samples per record.  A record is 
+    //                 typically the samples acquired from a single trigger for
+    //                 a single channel.
+    // nchan() - returns the number of channels acquired by a single acquisition
+    //           according to the current digitizer configuration.
+    //
     class IDigitizer
     {
     public:
-      virtual void setup(int nrecords, double record_frequency_Hz, double duty) = 0;
+      virtual void   setup(int nrecords, double record_frequency_Hz, double duty) = 0;
+      virtual size_t record_size(double record_frequency_Hz, double duty) = 0;
+      virtual size_t nchan() = 0;
     }; 
 
     template<class T>
@@ -72,7 +85,9 @@ namespace fetch
       unsigned int attach(void);
       unsigned int detach(void);
 
-      virtual void setup(int nrecords, double record_frequency_Hz, double duty);
+      virtual void   setup(int nrecords, double record_frequency_Hz, double duty);
+      virtual size_t record_size(double record_frequency_Hz, double duty);
+      virtual size_t nchan() {return _config->nchannels();}
     public:
       ViSession _vi;
 
@@ -91,6 +106,10 @@ namespace fetch
       unsigned int detach() {return 0;}
 
       virtual void setup(int nrecords, double record_frequency_Hz, double duty);
+      virtual size_t record_size(double record_frequency_Hz, double duty);
+      virtual size_t nchan();
+
+      double sample_rate();
     };
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -104,6 +123,8 @@ namespace fetch
       unsigned int detach() {return 0;}
 
       virtual void setup(int nrecords, double record_frequency_Hz, double duty) {}
+      size_t SimulatedDigitizer::record_size( double record_frequency_Hz, double duty );
+      virtual size_t nchan() {return _config->nchan();}
     };
 
     ////////////////////////////////////////////////////////////
@@ -122,6 +143,9 @@ namespace fetch
       virtual void _set_config(const Config &cfg); // only updates the digitizer selected by cfg.kind().
 
       virtual void setup(int nrecords, double record_frequency_Hz, double duty) {_idigitizer->setup(nrecords,record_frequency_Hz,duty);}
+
+      virtual size_t record_size(double record_frequency_Hz, double duty) {return _idigitizer->record_size(record_frequency_Hz,duty);}
+      virtual size_t nchan() {return _idigitizer->nchan();}
 
       // XXX: These are pretty useless, consider deleting?
       virtual void set_config(const NIScopeDigitizer::Config &cfg);

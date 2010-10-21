@@ -50,6 +50,7 @@ scanner3d {
       }
       simulated {
         number: 0
+        sample_rate: 1000000 
       }
     }
     pockels {

@@ -353,7 +353,7 @@ FailedIFDRead:
         u8 *data = (u8*) buf->data;
         for(int i=0;i<buf->nchan;++i)
           goto_if_fail(Add_Tiff_Image_Channel(tim,CHAN_BLACK,scale,type,data+i*pp),FailedAddChannel);
-        goto_if_fail(Make_IFD_For_Image(tim,LZW_COMPRESS,buf->width,buf->height),FailedMakeIFD);
+        goto_if_fail(ifd=Make_IFD_For_Image(tim,LZW_COMPRESS,buf->width,buf->height),FailedMakeIFD);
         goto_if_fail(Write_Tiff_IFD(tif,ifd)==0,FailedWriteIFD);
       }
       mytiff::unlock();

@@ -163,6 +163,7 @@ void debug  (const char* fmt, ...);
 #define return_val_if_fail( cond, val ) { if(!(cond)) return (val); }
 #define return_val_if( cond, val )      { if( (cond)) return (val); }
 
+#define UNREACHABLE warning("Should never get here: %s (%d)\r\n",__FILE__,__LINE__)
 // ------
 // Memory
 // ------

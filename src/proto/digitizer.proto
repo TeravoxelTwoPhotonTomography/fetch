@@ -30,7 +30,7 @@ message NIScopeDigitizer
   optional uint32   num_records = 4 [default = 256];      // number of records per acquire call.                                                         
   optional double   reference   = 5 [default = 0.0];      // as a percentage                                                                             
   optional string   chan_names  = 6 [default = "0"];      // the channels to acquire data on (NI Channel String syntax)                                  
-  optional uint32   nchannels   = 7 [default = 1];        // number of channels to independently configure - typically set to DIGITIZER_MAX_NUM_CHANNELS 
+  optional uint32   nchannels   = 7 [default = 1];        // number of acquired channels.  This excludes triggering channels, etc...
   repeated Channel  channel     = 8;                      // array of channel configurations                                                             
   
   optional uint32   line_trigger_src = 9  [default=1];      // Digitizer channel corresponding to resonant velocity input                                                    
@@ -112,7 +112,7 @@ message AlazarDigitizer
     optional Coupling   coupling  = 3 [default = DC_COUPLING];
     optional Range      range     = 4 [default = INPUT_RANGE_PM_200_MV];
     optional Impedance  impedance = 5 [default = IMPEDANCE_50_OHM];
-    optional bool       enabled   = 6 [default = true];
+    optional bool       enabled   = 6 [default = true];    // indicates this channel will be used to collect data.  Triggering channels _do not_ need to be enabled.
   }
 
   optional uint32 system_id           = 1 [default = 1];
@@ -121,9 +121,10 @@ message AlazarDigitizer
   optional SampleRate sample_rate     = 2 [default = SAMPLE_RATE_MAX];
   optional ClockEdge  clock_edge      = 3 [default = CLOCK_EDGE_RISING];
   optional float      ext_clock_level = 4 [default = 0.0];
-  optional uint32     decimation      = 5 [default = 1]; // may be 1,2,4,or any multiple of 5 up to 100k.  Only used with SAMPLE_RATE_MAX
+  optional double     ext_clock_rate  = 5 [default = 0.0]; // only used if you're using an external clock
+  optional uint32     decimation      = 6 [default = 1];   // may be 1,2,4,or any multiple of 5 up to 100k.  Only used with SAMPLE_RATE_MAX
 
-  repeated Channel    channels        = 6;
+  repeated Channel    channels        = 7;
 
   // TODO: triggers, aux io, Dual-port AutoDMA acquisition
 }
@@ -131,7 +132,9 @@ message AlazarDigitizer
 //////////////////////////
 message SimulatedDigitizer
 {
-  optional uint32 number = 1 [default=0]; // placeholder
+  optional uint32 number      = 1 [default=0];       // placeholder
+  optional double sample_rate = 2 [default=1000000];
+  optional int32  nchan       = 3 [default=1];       // number of channels
 }
 
 /////////////////

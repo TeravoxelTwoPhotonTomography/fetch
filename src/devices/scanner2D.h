@@ -106,6 +106,8 @@ namespace fetch
       virtual void onConfig();
       virtual void generateAO();
       virtual void writeAO();
+      
+      asynq *getVideoChannel() { return _out->contents[0]; }
 
     private:
       void __common_setup();

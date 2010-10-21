@@ -143,8 +143,10 @@ class StageController
         READY
       };
 #endif
-      long connected,
-           ready
+      long connected
+#ifdef HAVE_C843_ISCONTROLLERREADY
+           ,ready
+#endif
            ;
       BOOL m[4]={0,0,0,0},
            r[4]={0,0,0,0},

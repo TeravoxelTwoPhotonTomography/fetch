@@ -67,7 +67,7 @@ void Init(void)
   Guarded_Assert(cfgfile.isReadable());
   //cfgfile.setTextModeEnabled(true);
   fetch::cfg::device::Microscope config;
-  google::protobuf::TextFormat::ParseFromString(cfgfile.readAll().constData(),&config);
+  Guarded_Assert(google::protobuf::TextFormat::ParseFromString(cfgfile.readAll().constData(),&config));
   gp_microscope = new fetch::device::Microscope(config);
 
 

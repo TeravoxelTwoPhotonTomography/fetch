@@ -60,6 +60,18 @@ namespace fetch
       return_val_if(eflag |= _daq.attach()      ,eflag);
       return_val_if(eflag |= _LSM.attach()      ,eflag);
       return_val_if(eflag |= _pockels.attach()  ,eflag);
+
+      if(!_out)
+      { 
+        // Guess for how the output will be sized for allocation.
+        FrmFmt fmt(
+          (u16)_digitizer.record_size(_config->frequency_hz(),_config->line_duty_cycle()),
+          (u16)_config->nscans(),
+          (u8)_digitizer.nchan(),
+          id_u16);
+        _alloc_qs_easy(&_out,1,4,fmt.size_bytes());
+      }
+
       return eflag;
     }
 

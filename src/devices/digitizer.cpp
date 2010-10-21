@@ -10,10 +10,11 @@
 * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
 * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
 */
-#include "stdafx.h"
-#include "../util/util-niscope.h"
+#include "common.h"
+#include "util/util-niscope.h"
 #include "digitizer.h"
-#include "../asynq.h"
+#include "asynq.h"
+#include "AlazarCmd.h"
 
 #pragma warning(push)
 #pragma warning(disable:4005)
@@ -125,17 +126,17 @@ Error:
     {
       ViSession vi =  this->NIScopeDigitizer::_vi;      
 
-      ViReal64   refPosition         = 0.0;
+      ViReal64   refPosition         = _config->reference();
       ViReal64   verticalOffset      = 0.0;
       ViReal64   probeAttenuation    = 1.0;
       ViBoolean  enforceRealtime     = NISCOPE_VAL_TRUE;
 
 #pragma warning(push)
-#pragma warning(disable:4244)
-      ViInt32 record_size = duty*_config->sample_rate()/record_frequency_Hz;
+#pragma warning(disable:4244) // type conversion
+      ViInt32 recsz = record_size(record_frequency_Hz,duty);
 #pragma warning(pop)
 
-      Guarded_Assert(record_size>0);
+      Guarded_Assert(recsz>0);
 
       // Select the trigger channel
       if(_config->line_trigger_src() >= (unsigned) _config->channel_size())
@@ -167,7 +168,7 @@ Error:
           DIGERR( niScope_ConfigureVertical(vi,
             c.name().c_str(),                    // channelName
             c.range(),
-            0.0,
+            verticalOffset,
             c.coupling(),
             probeAttenuation,
             c.enabled() ));
@@ -177,7 +178,7 @@ Error:
       // Configure horizontal -
       DIGERR( niScope_ConfigureHorizontalTiming(vi,
         _config->sample_rate(),
-        record_size,
+        recsz,
         refPosition,
         nrecords,
         enforceRealtime));
@@ -195,7 +196,21 @@ Error:
         "",
         NISCOPE_ATTR_ACQ_ARM_SOURCE,
         NISCOPE_VAL_PFI_1 ));
+
+      // Update the config to reflect the setup
+      Config c = get_config();
+      c.set_record_size(recsz);
+      c.set_num_records(nrecords);
+      set_config(c);
       return;
+    }
+
+    size_t NIScopeDigitizer::record_size( double record_frequency_Hz, double duty )
+    {
+#pragma warning(push)
+#pragma warning(disable:4244) // type cast
+      return duty*_config->sample_rate()/record_frequency_Hz;
+#pragma warning(pop)
     }
 
     //
@@ -206,6 +221,66 @@ Error:
     {
       error("TODO: Implement me!");
     }
+    size_t AlazarDigitizer::record_size( double record_frequency_Hz, double duty )
+    {
+#pragma warning(push)
+#pragma warning(disable:4244) // type cast
+      return duty*sample_rate()/record_frequency_Hz;
+#pragma warning(pop)
+    }
+
+    double AlazarDigitizer::sample_rate()
+    {
+      switch(_config->sample_rate())
+      {
+        case SAMPLE_RATE_1KSPS    : return      1000.0; break;
+        case SAMPLE_RATE_2KSPS    : return      2000.0; break;
+        case SAMPLE_RATE_5KSPS    : return      5000.0; break;
+        case SAMPLE_RATE_10KSPS   : return     10000.0; break;
+        case SAMPLE_RATE_100KSPS  : return    100000.0; break;
+        case SAMPLE_RATE_200KSPS  : return    200000.0; break;
+        case SAMPLE_RATE_500KSPS  : return    500000.0; break;
+        case SAMPLE_RATE_1MSPS    : return   1000000.0; break;
+        case SAMPLE_RATE_2MSPS    : return   2000000.0; break;
+        case SAMPLE_RATE_5MSPS    : return   5000000.0; break;
+        case SAMPLE_RATE_10MSPS   : return  10000000.0; break;
+        case SAMPLE_RATE_20MSPS   : return  20000000.0; break;
+        case SAMPLE_RATE_50MSPS   : return  50000000.0; break;
+        case SAMPLE_RATE_100MSPS  : return 100000000.0; break;
+        case SAMPLE_RATE_125MSPS  : return 125000000.0; break;
+        case SAMPLE_RATE_250MSPS  : return 250000000.0; break;
+        case SAMPLE_RATE_500MSPS  : return 500000000.0; break;
+        case SAMPLE_RATE_USER_DEF : return _config->ext_clock_rate(); break; // external clock
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_MAX: return 500000000.0; break;
+      default:
+        error("Did not recognize value returned by sample_rate().  Got: %d\r\n.",_config->sample_rate());
+      }
+      UNREACHABLE;
+      return -1.0;
+    }
+
+    size_t AlazarDigitizer::nchan()
+    {
+      size_t n=0;
+      for(int i=0;i<_config->channels().size();++i)
+        if(_config->channels(i).enabled())
+          ++n;
+      return n;
+    }
+
+    //
+    // Simulated Digitizer
+    //
+
+    size_t SimulatedDigitizer::record_size( double record_frequency_Hz, double duty )
+    {
+#pragma warning(push)
+#pragma warning(disable:4244) // type cast
+      return duty*_config->sample_rate()/record_frequency_Hz;
+#pragma warning(pop)
+    }
+
+
 
     //
     // Digitizer
@@ -350,5 +425,5 @@ Error:
 
 
 
-  } // namespace fetch
+} // namespace fetch
 } // namespace fetch

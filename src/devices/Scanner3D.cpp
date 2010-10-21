@@ -11,7 +11,7 @@
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
 
-#include "StdAfx.h"
+#include "common.h"
 
 #include "Scanner3D.h"
 #include "Scanner2D.h"
@@ -47,6 +47,14 @@ namespace fetch
       unsigned int eflag = 0; //success = 0, error = 1
       return_val_if(eflag |= _scanner2d.attach()  ,eflag);
       return_val_if(eflag |= _zpiezo.attach()     ,eflag);
+      
+      if(!_out)
+      {
+        // Reference the video output channel
+        _out=vector_PASYNQ_alloc(1);
+        Guarded_Assert(_out->contents[0] = Asynq_Ref(_scanner2d.getVideoChannel()));
+      }      
+      //
       return eflag;
     }
 
