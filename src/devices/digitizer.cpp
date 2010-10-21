@@ -69,8 +69,7 @@ namespace fetch
     //} 
 
     NIScopeDigitizer::~NIScopeDigitizer(void)
-    { if( _agent->detach() > 0 )
-    warning("Could not cleanly detach. vi: %d\r\n", this->_vi);
+    {      
     }
 
     unsigned int

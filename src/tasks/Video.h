@@ -12,9 +12,9 @@
  */
 
 #pragma once
-#include "../task.h"
-#include "../devices/scanner2D.h"
-#include "../agent.h"
+#include "task.h"
+#include "devices/scanner2D.h"
+#include "agent.h"
 
 namespace fetch
 {

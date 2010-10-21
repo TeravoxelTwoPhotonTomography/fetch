@@ -28,10 +28,6 @@
 #include <string>
 #include "tasks/microscope-interaction.h"
 
-#define MICROSCOPE_DEFAULT_DEST_PATH           "E:\\microscope\\data\\2010-07-27\\4\\"
-#define MICROSCOPE_DEFAULT_FILE_NAME_TEMPLATE  "Stack_%03d.stream"
-#define MICROSCOPE_DEFAULT_INITIAL_FILE_ID     0
-
 #define MICROSCOPE_MAX_WORKERS     10
 #define MICROSCOPE_DEFAULT_TIMEOUT INFINITE
 
@@ -89,6 +85,7 @@ namespace fetch
       unsigned int disarm();
 
       virtual void _set_config(Config IN *cfg);
+      virtual void _set_config(const Config& cfg);
 
       IDevice* configPipeline();  // returns the end of the pipeline
 
@@ -106,9 +103,11 @@ namespace fetch
       worker::ResonantWrapAgent      wrap;
 
       worker::TerminalAgent		       trash;                
-      device::DiskStreamMessage      disk;
+      device::TiffStream             disk;
 
       task::microscope::Interaction  interaction_task;      
+
+      inline asynq *getVideoChannel() {return wrap._out->contents[0];}
 
     public:
       FileSeries file_series;

@@ -330,7 +330,7 @@ FailedImageGet:
 #pragma warning(disable:4533) // initialization is skipped by GOTO
     unsigned int TiffStream::_attach_writer( char * filename )
     {
-      Guarded_Assert(_tiff_writer); // open() should call detach() before attach().  detach() should set open handles to null.
+      Guarded_Assert(_tiff_writer==NULL); // open() should call detach() before attach().  detach() should set open handles to null.
       mytiff::lock();
       goto_if_fail(_tiff_writer = Open_Tiff_Writer(filename,FALSE/*32 bit*/,mytiff::islsm(filename)),FailedOpen);
       mytiff::unlock();

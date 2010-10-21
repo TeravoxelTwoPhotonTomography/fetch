@@ -60,12 +60,26 @@
 
     Microscope::~Microscope(void)
     { 
+      if(__scan_agent.detach()) warning("Microscope __scan_agent did not detach cleanly\r\n");
+      if(__self_agent.detach()) warning("Microscope __self_agent did not detach cleanly\r\n");
+      if(  __io_agent.detach()) warning("Microscope __io_agent did not detach cleanly\r\n");
     } 
 
     unsigned int
     Microscope::attach(void)
-    { int eflag = 0; // 0 success, 1 failure
-      eflag |= scanner.attach();
+    { 
+      int eflag = 0; // 0 success, 1 failure
+
+      // argh this is a confusing way to do things.  which attach to call when.
+      //
+      // Really the agent's interface should be the primary one for changing the run state, but
+      // the way I've put things together, it looks like the IDevices is primary.  In part this
+      // is because the IDevice child provides an API for the device it represents.  Need a way
+      // of distinguishing.  Perhaps just rename IDevice's attach()/detach() to __attach()/__detach()
+      // or onAttach/onDetach...something to remind me it's a callback.
+      //
+
+      eflag |= __scan_agent.attach(); //scanner.attach(); 
 
       std::string stackname = _config->file_prefix()+_config->stack_extension();
       file_series.ensurePathExists();
@@ -113,6 +127,12 @@
     {
       scanner._set_config(cfg->mutable_scanner3d());
       file_series._desc = cfg->mutable_file_series();
+    }
+
+    void Microscope::_set_config( const Config& cfg )
+    {
+      *_config=cfg;         // Copy
+      _set_config(_config); // Update
     }
 
     IDevice* Microscope::configPipeline()

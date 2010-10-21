@@ -191,6 +191,7 @@ namespace fetch {
   //
   // - "update" can be useful when classes want to re-implement the config "get" and 
   //   "set" functions.  "update" performs the runtime state changes for the device.
+  //   If you don't want to callback to the task, overload with an empty function.
 
   template<class Tcfg>
   class IConfigurableDevice : public IDevice, public Configurable<Tcfg>
@@ -215,7 +216,7 @@ namespace fetch {
   protected:
     inline void transaction_lock();
     inline void transaction_unlock();
-    void update();
+    virtual void update();             // if you don't want to callback to the task, overload this with an empty function.
 
   private:
 //    void _set_config__locked( Config  IN *cfg );

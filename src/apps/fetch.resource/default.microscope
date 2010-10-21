@@ -1,10 +1,10 @@
-scanner3d {
+scanner3d { 
   scanner2d {
     frequency_hz: 7920
     nscans: 512
     line_duty_cycle: 0.95
     daq {
-      kind: NIDAQ
+      kind: Simulated
       nidaq {
         ao_samples_per_waveform: 16384
         trigger: "APFI0"
@@ -20,7 +20,7 @@ scanner3d {
       }
     }
     digitizer {
-      kind: NIScope
+      kind: Simulated
       niscope {
         name: "Dev3"
         sample_rate: 60000000
@@ -54,7 +54,7 @@ scanner3d {
       }
     }
     pockels {
-      kind: NIDAQ
+      kind: Simulated
       nidaq {
         v_lim_max: 2
         v_lim_min: 0
@@ -68,7 +68,7 @@ scanner3d {
       }
     }
     shutter {
-      kind: NIDAQ
+      kind: Simulated
       nidaq {
         open: 1
         closed: 0
@@ -79,7 +79,7 @@ scanner3d {
       }
     }
     linear_scan_mirror {
-      kind: NIDAQ
+      kind: Simulated # NIDAQ
       nidaq {
         v_lim_max: 10
         v_lim_min: -10
@@ -92,7 +92,7 @@ scanner3d {
     }
   }
   zpiezo {
-    kind: NIDAQ
+    kind: Simulated #NIDAQ
     nidaq {
       um2v: 0.025
       um_max: 5

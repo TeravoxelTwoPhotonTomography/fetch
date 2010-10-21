@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 
   unsigned int eflag = app.exec();
   eflag |= Shutdown_Soft();
-  debug("Press <Enter> to exit.\r\n");
-  getchar();
+  //debug("Press <Enter> to exit.\r\n");
+  //getchar();
   return eflag;
 }

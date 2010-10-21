@@ -69,6 +69,8 @@ namespace fetch
       unsigned int attach() {return 0;}
       unsigned int detach() {return 0;}
 
+      void update(void) {}
+
       void Set          (u8 val);
       void Shut         (void);
       void Open         (void);
