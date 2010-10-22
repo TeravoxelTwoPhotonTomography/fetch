@@ -30,6 +30,10 @@ namespace fetch
     public:      /* TODO: add methods to change vpp on the fly*/
       virtual void computeSawtooth(float64 *data, int n)=0;
       virtual IDAQChannel* physicalChannel() = 0;
+
+      virtual double getAmplitudeVolts() = 0;
+      virtual void   setAmplitudeVolts(double vpp) = 0;
+      virtual void   setAmplitudeVoltsNoWait(double vpp) = 0;
     };
 
     template<class T>
@@ -53,6 +57,11 @@ namespace fetch
       virtual void computeSawtooth(float64 *data, int n);
 
       virtual IDAQChannel* physicalChannel() {return &daq;}
+
+      virtual double getAmplitudeVolts() {return _config->vpp();}
+      virtual void   setAmplitudeVolts(double vpp) {Config c = get_config(); c.set_vpp(vpp); set_config(c);}
+      virtual void   setAmplitudeVoltsNoWait(double vpp) {Config c = get_config(); c.set_vpp(vpp); Guarded_Assert_WinErr(set_config_nowait(c));}
+
     };
 
     class SimulatedLinearScanMirror : public LSMBase<cfg::device::SimulatedLinearScanMirror>
@@ -68,6 +77,10 @@ namespace fetch
       virtual void computeSawtooth(float64 *data, int n);
 
       virtual IDAQChannel* physicalChannel() {return &_chan;}
+
+      virtual double getAmplitudeVolts() {return _config->val();}
+      virtual void   setAmplitudeVolts(double vpp) {Config c = get_config(); c.set_val(vpp); set_config(c);}
+      virtual void   setAmplitudeVoltsNoWait(double vpp) {Config c = get_config(); c.set_val(vpp); Guarded_Assert_WinErr(set_config_nowait(c));}
     };
    
    class LinearScanMirror:public LSMBase<cfg::device::LinearScanMirror>
@@ -91,6 +104,10 @@ namespace fetch
      virtual void computeSawtooth(float64 *data, int n);
 
      virtual IDAQChannel* physicalChannel() {return _ilsm->physicalChannel();}
+
+     virtual double getAmplitudeVolts() {return _ilsm->getAmplitudeVolts();}
+     virtual void   setAmplitudeVolts(double vpp) {_ilsm->setAmplitudeVolts(vpp);}
+     virtual void   setAmplitudeVoltsNoWait(double vpp) {_ilsm->setAmplitudeVoltsNoWait(vpp);}
    };
 
    //end namespace fetch::device

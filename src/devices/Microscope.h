@@ -27,6 +27,8 @@
 #include "DiskStream.h"
 #include <string>
 #include "tasks/microscope-interaction.h"
+#include "LinearScanMirror.h"
+#include "pockels.h"
 
 #define MICROSCOPE_MAX_WORKERS     10
 #define MICROSCOPE_DEFAULT_TIMEOUT INFINITE
@@ -108,6 +110,9 @@ namespace fetch
       task::microscope::Interaction  interaction_task;      
 
       inline asynq *getVideoChannel() {return wrap._out->contents[0];}
+      inline LinearScanMirror  *LSM() {return &scanner._scanner2d._LSM;}
+      inline Pockels       *pockels() {return &scanner._scanner2d._pockels;}
+    
 
     public:
       FileSeries file_series;

@@ -10,7 +10,7 @@
  */
 #pragma once
 
-#include "stdafx.h"
+#include "common.h"
 #include "ring-fifo.h"
 
 /*

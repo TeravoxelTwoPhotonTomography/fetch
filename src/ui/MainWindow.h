@@ -1,19 +1,25 @@
 #include <QtGui>
 
 namespace fetch {
+namespace device {class Microscope;}
 namespace ui {
+
+class VideoAcquisitionDockWidget;
 
 class MainWindow : public QMainWindow
 {
   Q_OBJECT
 
 public:
-  MainWindow();
+  MainWindow(device::Microscope *dc);
 
 private:
   void createStateMachines();
   void createMenus();
   void createActions();
+  void createDockWidgets();
+
+  device::Microscope *_dc;
 
   QStateMachine fullscreenStateMachine;
   QMenu   *viewMenu;
@@ -26,6 +32,8 @@ private:
   QAction *fullscreenAct;
   QState  *fullscreenStateOn;
   QState  *fullscreenStateOff;
+
+  VideoAcquisitionDockWidget *_videoAcquisitionDockWidget;
   
 };
 

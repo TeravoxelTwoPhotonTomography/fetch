@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stdafx.h"
+#include "common.h"
 
 /*
  Ring FIFO

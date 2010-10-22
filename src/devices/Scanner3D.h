@@ -65,6 +65,8 @@ namespace fetch
       Scanner3D(Agent *agent);
       Scanner3D(Agent *Agent, Config *cfg);
 
+      void __common_setup();
+
       virtual unsigned int attach(); // returns 0 on success, 1 on failure
       virtual unsigned int detach(); // returns 0 on success, 1 on failure
 

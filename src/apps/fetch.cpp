@@ -79,7 +79,8 @@ int main(int argc, char *argv[])
 { QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
 
   QApplication app(argc,argv);
-  fetch::ui::MainWindow mainwindow;
+  Init();
+  fetch::ui::MainWindow mainwindow(gp_microscope);
 
   QGraphicsScene scene;
   QGraphicsView  view(&scene);
@@ -96,7 +97,7 @@ int main(int argc, char *argv[])
   printOpenGLInfo();
   checkGLError();
 
-  Init();
+  
 
   mainwindow.setCentralWidget(&view);
   mainwindow.show();

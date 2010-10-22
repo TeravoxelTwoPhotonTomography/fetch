@@ -228,20 +228,6 @@ namespace file {
   {
     return 1;
   }
-#if 0
-  // alloc queues
-  Tiff_IFD *ifd = NULL;
-  Tiff_Image *tim = NULL;
-  goto_if_fail(ifd=Read_Tiff_IFD(_tiff_reader),FailedIFD);
-  goto_if_fail(tim=Get_Tiff_Image(ifd),FailedImageGet);    // this loads everything but the data
-  Frame_With_Interleaved_Planes fmt(tim->width,tim->height,tim->number_channels,mytiff::pixel_type(tim));
-  Free_Tiff_Image(tim);
-  Free_Tiff_IFD(ifd);
-  Rewind_Tiff_Reader(_tiff_reader);
-  mytiff::unlock();
-  if(_out==NULL)
-    _alloc_qs_easy(&_out,1,4,fmt.size_bytes());
-#endif
 
   unsigned int TiffStreamReadTask::run( device::TiffStream *dc )
   {

@@ -1,18 +1,23 @@
 #include "MainWindow.h"
 #include <assert.h>
 #include "common.h"
+#include "devices/Microscope.h"
+#include "VideoAcquisitionDockWidget.h"
 
-fetch::ui::MainWindow::MainWindow()
-  :quitAct(0),
-  openAct(0),
-  saveToAct(0),
-  fullscreenAct(0),
-  fullscreenStateOff(0),
-  fullscreenStateOn(0)
+fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
+  :_dc(dc)
+  ,quitAct(0)
+  ,openAct(0)
+  ,saveToAct(0)
+  ,fullscreenAct(0)
+  ,fullscreenStateOff(0)
+  ,fullscreenStateOn(0)
+  ,_videoAcquisitionDockWidget(0)
 {
   createActions();
   createStateMachines();
   createMenus();
+  createDockWidgets();
 }
 
 void fetch::ui::MainWindow::createActions()
@@ -84,4 +89,11 @@ void fetch::ui::MainWindow::createStateMachines()
 	  fullscreenStateMachine.setInitialState(fullscreenStateOff);
 	  fullscreenStateMachine.start();
   }
+}
+
+void fetch::ui::MainWindow::createDockWidgets()
+{
+  _videoAcquisitionDockWidget = new VideoAcquisitionDockWidget(_dc);
+  addDockWidget(Qt::LeftDockWidgetArea,_videoAcquisitionDockWidget);
+  viewMenu->addAction(_videoAcquisitionDockWidget->toggleViewAction());
 }

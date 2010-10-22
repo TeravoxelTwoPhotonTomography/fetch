@@ -1,6 +1,7 @@
 #include <google\protobuf\message.h>
 #include "google\protobuf\descriptor.h"
 #include "common.h"
+#include "util-protobuf.h"
 
 void set_unset_fields(google::protobuf::Message *msg)
 { 
@@ -48,3 +49,20 @@ void set_unset_fields(google::protobuf::Message *msg)
     }        
   }
 }
+
+struct CS
+{
+  CRITICAL_SECTION _cs;
+  CS()  {InitializeCriticalSectionAndSpinCount( &_cs, 0x80000400 );}
+  ~CS() {DeleteCriticalSection(&_cs);}
+
+  inline void lock()    {EnterCriticalSection(&_cs);}
+  inline void unlock()  {LeaveCriticalSection(&_cs);}
+};
+
+namespace pb 
+{
+  CS _g_cs;
+  void lock()   {_g_cs.lock();}
+  void unlock() {_g_cs.unlock();}
+} //end namespace pb

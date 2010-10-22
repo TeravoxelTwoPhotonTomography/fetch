@@ -14,6 +14,7 @@
 
 #include "asynq.h"
 #include "object.h"
+#include "util\util-protobuf.h"
 
 //
 // Class Agent
@@ -378,7 +379,7 @@ namespace fetch {
     transaction_unlock();
   }
 
-
+#define CONFIG_BUFFER_MAX_BYTES 2048
   //************************************
   // Method:    set_config_nowait
   // FullName:  fetch::IConfigurableDevice<Tcfg>::set_config_nowait
@@ -397,14 +398,22 @@ namespace fetch {
   int IConfigurableDevice<Tcfg>::set_config_nowait( const Config &cfg )
   {
 	  typedef IConfigurableDevice<Tcfg> TSelf;
-    struct T {TSelf *self;Config cfg;int time;};
-    struct T v = {this,cfg,0};
+    struct T {TSelf *self;u8 data[CONFIG_BUFFER_MAX_BYTES]; size_t size; int time;};
+    struct T v = {0};
     static asynq *q=NULL;
     static int timestamp=0;
-
+    //memset(&v,0,sizeof(v));
+    v.self = this;
     v.time = ++timestamp;
+
+
+    v.size = cfg.ByteSize();
+    Guarded_Assert(cfg.SerializeToArray(v.data,CONFIG_BUFFER_MAX_BYTES));
+
+
     if( !q )
-      q = Asynq_Alloc(2, sizeof(struct T) );
+      q = Asynq_Alloc(2, sizeof(T) );    
+
     if( !Asynq_Push_Copy(q, &v, sizeof(T), TRUE /*expand queue when full*/) )
     { 
       warning("In set_config_nowait(): Could not push request arguments to queue.");
@@ -413,35 +422,44 @@ namespace fetch {
     return QueueUserWorkItem(&TSelf::_set_config_nowait__helper, (void*)q, NULL /*default flags*/);
   }
 
-
   template<class Tcfg>
   DWORD WINAPI IConfigurableDevice<Tcfg>::_set_config_nowait__helper( LPVOID lparam )
   {
+    DWORD err = 0; //success
     typedef IConfigurableDevice<Tcfg> TSelf;
-    struct T {TSelf *self;Config cfg;int time;};
-    struct T v;
+    struct T {TSelf *self;u8 data[CONFIG_BUFFER_MAX_BYTES]; size_t size; int time;};
+    struct T v = {0};
     asynq *q = (asynq*) lparam;
     static int lasttime=0;
 
-    memset(&v,0,sizeof(v));
+    //memset(&v,0,sizeof(v));
 
     if(!Asynq_Pop_Copy_Try(q,&v,sizeof(T)))
     { 
-      warning("In set_config_nowait helper procedure:\r\n"
+      warning(
+        "In set_config_nowait helper procedure:\r\n"
         "\tCould not pop arguments from queue.\r\n");
       return 0;
     }
-    debug( "De-queued request:  Config(%p): %f V\t Timestamp: %d\tQ capacity: %d\r\n",v.self, v.cfg, v.time, q->q->ring->nelem );
+    //debug( "De-queued request:  Config(0x%p): %d V\t Timestamp: %d\tQ capacity: %d\r\n",v.data, v.size, v.time, q->q->ring->nelem );
     Guarded_Assert(v.self);
     v.self->transaction_lock();
     if( (v.time - lasttime) > 0 )  // The <time> is used to synchronize "simultaneous" requests
     { 
-      lasttime = v.time;             // Only process requests dated after the last request.      
-      v.self->_set_config(v.cfg);
+      lasttime = v.time;             // Only process requests dated after the last request.
+      
+      goto_if_fail(v.self->_config->ParseFromArray(v.data,v.size),FailedToParse);
+      
       v.self->update();
     }
+Finalize:
     v.self->transaction_unlock();
-    return 0; // success
+    return err;
+FailedToParse:
+    pb::unlock();
+    warning("Failed to update the config.\r\n");
+    err = 1;
+    goto Finalize;
   }
   /*
   template<class Tcfg>
@@ -454,11 +472,11 @@ namespace fetch {
 
   template<class Tcfg>
   void IConfigurableDevice<Tcfg>::transaction_unlock()
-  {EnterCriticalSection(&_transaction_lock);}
+  {LeaveCriticalSection(&_transaction_lock);}
 
   template<class Tcfg>
   void IConfigurableDevice<Tcfg>::transaction_lock()
-  {LeaveCriticalSection(&_transaction_lock);}
+  {EnterCriticalSection(&_transaction_lock);}
 
   template<class Tcfg>
   void IConfigurableDevice<Tcfg>::update()

@@ -8,7 +8,7 @@
  * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
-#include "stdafx.h"
+#include "common.h"
 #include "asynq.h"
 
 
@@ -331,9 +331,18 @@ unsigned int
 Asynq_Push_Copy(asynq *self, void *buf, size_t sz, int expand_on_full )
 { unsigned int result;
   static void *token = 0;
+  static size_t capacity;
   Asynq_Lock(self);
   if( !token ) // one-time-initialize working space
+  {
+    capacity = self->q->buffer_size_bytes;
     token = Asynq_Token_Buffer_Alloc(self);
+  }
+  if(capacity<self->q->buffer_size_bytes)
+  {
+    capacity = self->q->buffer_size_bytes;
+    token = realloc(token,capacity);
+  }
   memcpy(token,buf, self->q->buffer_size_bytes);
   result = _asynq_push_unlocked(self, &token, sz, expand_on_full, FALSE, FALSE, INFINITE );
   Asynq_Unlock(self);
@@ -393,10 +402,19 @@ Asynq_Pop_Try( asynq *self, void **pbuf, size_t sz)
 unsigned int
 Asynq_Pop_Copy_Try( asynq *self, void *buf, size_t sz)
 { unsigned int result;
-  static void* token;
+  static void* token = 0;
+  static size_t capacity;
   Asynq_Lock(self);
-  if( !token )
+  if( !token ) // one-time-initialize working space
+  {
+    capacity = self->q->buffer_size_bytes;
     token = Asynq_Token_Buffer_Alloc(self);
+  }
+  if(capacity<self->q->buffer_size_bytes)
+  {
+    capacity = self->q->buffer_size_bytes;
+    token = realloc(token,capacity);
+  }
   result = _asynq_pop_unlocked(self, &token, sz,
                                 TRUE,       // try
                                 INFINITE ); // timeout

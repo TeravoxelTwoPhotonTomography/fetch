@@ -32,6 +32,7 @@ namespace fetch
       ,_zpiezo(agent)
     {
       _set_config(_config);
+      __common_setup();
     }
 
     Scanner3D::Scanner3D( Agent *agent, Config *cfg )
@@ -39,7 +40,7 @@ namespace fetch
       ,_scanner2d(agent,cfg->mutable_scanner2d())
       ,_zpiezo(agent,cfg->mutable_zpiezo())
     {
-
+      __common_setup();
     }
 
     unsigned int Scanner3D::attach()
@@ -142,6 +143,11 @@ namespace fetch
       _scanner2d._pockels.computeVerticalBlankWaveform(p,N);
       _zpiezo.computeRampWaveform(z_um,z,N);
       transaction_unlock();
+    }
+
+    void Scanner3D::__common_setup()
+    {
+      _ao_workspace = vector_f64_alloc(_scanner2d._daq.samplesPerRecordAO()*3);
     }
 
   }

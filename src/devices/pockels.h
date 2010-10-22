@@ -82,6 +82,7 @@ namespace fetch
       virtual int isValidOpenVolts(f64 volts) = 0;
       virtual int setOpenVolts(f64 volts) = 0; 
       virtual int setOpenVoltsNoWait(f64 volts) = 0;
+      virtual f64 getOpenVolts() = 0;
       
       virtual void computeVerticalBlankWaveform(float64 *data, int n) = 0;
 
@@ -115,6 +116,7 @@ namespace fetch
       virtual int isValidOpenVolts(f64 volts);
       virtual int setOpenVolts(f64 volts);
       virtual int setOpenVoltsNoWait(f64 volts);
+      virtual f64 getOpenVolts() {return _config->v_open();}
 
       virtual void computeVerticalBlankWaveform(float64 *data, int n);
 
@@ -134,6 +136,7 @@ class SimulatedPockels:public PockelsBase<cfg::device::SimulatedPockels>
       virtual int isValidOpenVolts(f64 volts);
       virtual int setOpenVolts(f64 volts);
       virtual int setOpenVoltsNoWait(f64 volts);
+      virtual f64 getOpenVolts() {return _config->val();}
 
       virtual void computeVerticalBlankWaveform(float64 *data, int n);
 
@@ -161,6 +164,7 @@ class SimulatedPockels:public PockelsBase<cfg::device::SimulatedPockels>
       virtual int isValidOpenVolts(f64 volts);
       virtual int setOpenVolts(f64 volts);
       virtual int setOpenVoltsNoWait(f64 volts);
+      virtual f64 getOpenVolts() {return _ipockels->getOpenVolts();}
 
       virtual void computeVerticalBlankWaveform(float64 *data, int n) {_ipockels->computeVerticalBlankWaveform(data,n);}
       virtual IDAQChannel* physicalChannel() {return _ipockels->physicalChannel();}
