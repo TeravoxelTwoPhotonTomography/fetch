@@ -3,6 +3,10 @@
 #include "common.h"
 #include "devices/Microscope.h"
 #include "VideoAcquisitionDockWidget.h"
+<<<<<<< HEAD
+=======
+#include "MainView.h"
+>>>>>>> b73c643... Removed StageField (failed attempt)
 
 fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   :_dc(dc)
@@ -96,4 +100,12 @@ void fetch::ui::MainWindow::createDockWidgets()
   _videoAcquisitionDockWidget = new VideoAcquisitionDockWidget(_dc);
   addDockWidget(Qt::LeftDockWidgetArea,_videoAcquisitionDockWidget);
   viewMenu->addAction(_videoAcquisitionDockWidget->toggleViewAction());
+}
+
+void fetch::ui::MainWindow::createViews()
+{
+
+  _mainView = new MainView(&_stageFieldScene,this);
+  //_stageFieldScene.addItem(new StageFieldItemGroup);
+  setCentralWidget(_mainView);
 }

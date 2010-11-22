@@ -109,6 +109,27 @@ scanner3d {
   }
   zref_um: 0
 }
+stage {
+	kind: Simulated
+	c843 {
+	  id: 1
+		axis {
+			id: 1
+			stage: "M-511.DD"
+		}
+		axis {
+			id: 2
+			stage: "M-511.DD"
+		}
+		axis {
+			id: 3
+			stage: "M-501.DG"
+		}		
+	}
+  simulated {
+    val: 1337
+  }    
+}
 resonant_wrap {
   turn_px: 0
 }

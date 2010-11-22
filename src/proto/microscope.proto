@@ -1,17 +1,19 @@
 package fetch.cfg.device;
 
 import "scanner3d.proto";
+import "stage.proto";
 import "workers.proto";
 import "file.proto";
 
 message Microscope
 {
   required Scanner3D                   scanner3d             = 1;
-  required worker.ResonantWrap         resonant_wrap         = 2;
-  required worker.HorizontalDownsample horizontal_downsample = 3;
-  required worker.FrameAverage         frame_average         = 4;
-  required FileSeries                  file_series           = 5;
-  optional string                      file_prefix           = 6 [default="default"];
-  optional string                      stack_extension       = 7 [default=".tif"];
-  optional string                      config_extension      = 8 [default=".microscope"];
+  required Stage                       stage                 = 2;
+  required worker.ResonantWrap         resonant_wrap         = 3;
+  required worker.HorizontalDownsample horizontal_downsample = 4;
+  required worker.FrameAverage         frame_average         = 5;
+  required FileSeries                  file_series           = 6;
+  optional string                      file_prefix           = 8 [default="default"];
+  optional string                      stack_extension       = 9 [default=".tif"];
+  optional string                      config_extension      =10 [default=".microscope"];
 }

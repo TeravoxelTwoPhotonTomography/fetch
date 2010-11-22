@@ -6,17 +6,27 @@ message C843StageController
 { 
   message Axis
 	{
-		message Range {
-			optional double min = 1 [default=0.0];
-			optional double max = 2 [default=0.0];
-		}
-		optional uint32 axis_id = 1 [default=1];         //1-4
-		optional string stage   = 2 [default="NOSTAGE"]; //M-511.DD (XY), M-501.DG (Z)
-		optional Range  travel  = 3;
-		optional double pos     = 4 [default=0.0];
-		optional double vel     = 5 [default=0.0];
+		optional uint32 id    = 1 [default=1];         //1-4
+		optional string stage = 2 [default="NOSTAGE"]; //M-511.DD (XY), M-501.DG (Z)
 	}
 
-	optional uint32 board_id = 1 [default=1];
-	repeated Axis   axes     = 2;
+	optional uint32 id   = 1 [default=1];
+	repeated Axis   axis = 2;
+}
+
+message SimulatedStage
+{
+  optional uint32 val = 1 [default=0];
+}
+
+message Stage
+{
+  enum StageType
+  {
+    C843      = 0;
+    Simulated = 1;
+  }    
+  optional StageType            kind      = 1;
+  optional C843StageController  c843      = 2;
+  optional SimulatedStage       simulated = 3;
 }
