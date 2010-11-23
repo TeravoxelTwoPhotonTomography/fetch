@@ -10,49 +10,80 @@ namespace mylib {
 
 namespace fetch{
 namespace ui {
+ 
+/************************************************************************/
+/* IPlayerThread                                                        */
+/************************************************************************/
+/*
+Methods
+  IPlayerThread  - sets up the connection between the Figure and the 
+                    imageReady event.  The event is a Qt:BlockingQueueConnection.
 
+  setFigure()    - connects the imageReady signal to a Figure.  This will
+                   disconnect the last Figure set, if any.  If NULL is passed
+                   as input, the last Figure will be disconnected and no new
+                   Figure connected (I don't know if the thread will block on 
+                   emitting imageReady, but nothing should receive).
 
-class ArrayPlayer:public QThread
+                   Receivers connected outside of this call should not be 
+                   effected.
+
+  running()      - returns true if the "running" flag is set.  Used to 
+                    signal termination to the main loop for the thread.
+                    Synchronized.
+  stop()         - Sets the "running" flag to stop.  Synchronized.
+
+  imageReady()   - Qt signal communicates that an image is ready.
+                    Posts an Array*.  Only a dummy Array struct gets 
+                    copied onto the Qt event queue; the actual pixel data
+                    is not copied anywhere. It's necessary that
+                    the Player thread blocks until the imageReady signal is 
+                    handled.
+*/
+class IPlayerThread:public QThread
 {
   Q_OBJECT
+public:
+  IPlayerThread(Figure *w=0);
+
+  void setFigure(Figure *w); //passing NULL will disconnect imageReady from the last assigned Figure.
+
+  virtual int  running() {QMutexLocker l(&lock_); return running_;}
+  virtual void stop()    {QMutexLocker l(&lock_); running_=0;} 
+signals:
+  void imageReady(mylib::Array *im);
+
+protected:
+  Figure *w_;
+  QMutex lock_;
+  int running_;
+};
+
+class ArrayPlayer:public IPlayerThread
+{
   public:
     ArrayPlayer(const char* filename, Figure *w=0);
     virtual ~ArrayPlayer();
-     
-    inline int  running() {QMutexLocker l(&lock_); return running_;}
-    inline void stop()    {QMutexLocker l(&lock_); running_=0;} 
-  signals:
-    void imageReady(mylib::Array *im);
+
   protected:
     virtual void run();
 
   protected:
     mylib::Array *im_;
-    Figure *w_;
-    int running_;
-    QMutex lock_;
 };
 
-class AsynqPlayer:public QThread
+class AsynqPlayer:public IPlayerThread
 {
-  Q_OBJECT
 public:
   AsynqPlayer(asynq *in, Figure *w=0);
   virtual ~AsynqPlayer();
 
-  inline int  running() {QMutexLocker l(&lock_); return running_;}
-  inline void stop()    {QMutexLocker l(&lock_); running_=0;} 
-signals:
-  void imageReady(mylib::Array *im);
 protected:
   virtual void run();
 
 protected:
-  Figure *w_;
   asynq *in_;
-  int running_;
-  QMutex lock_;
-
+  int peek_timeout_ms_;
 };
 
 }} //end fetch::ui

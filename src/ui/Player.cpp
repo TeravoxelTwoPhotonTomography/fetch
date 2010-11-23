@@ -14,19 +14,51 @@ using namespace ::mylib;
 namespace fetch{
 namespace ui {
 
-ArrayPlayer::ArrayPlayer(const char* filename, Figure *w/*=0*/):
-  w_(w),
-  running_(0)
+/************************************************************************/
+/* IPlayerThread                                                        */
+/************************************************************************/
+IPlayerThread::IPlayerThread( Figure *w/*=0*/ )
+  :w_(NULL)
+  ,running_(0)
+{
+  setFigure(w);
+}
+
+void IPlayerThread::setFigure( Figure *w )
+{ QMutexLocker lock(&lock_);
+  if(w_)
+  {
+    disconnect(
+      this,SIGNAL(imageReady(mylib::Array*)),
+      w_ ,SLOT  (imshow(mylib::Array*)));
+    w_ = NULL;
+  } 
+  w_ = w;
+  if(w)
+  {
+    connect(
+      this,SIGNAL(imageReady(mylib::Array*)),
+      w_ ,SLOT  (imshow(mylib::Array*)),
+      Qt::BlockingQueuedConnection);
+  }
+}
+
+/************************************************************************/
+/* ArrayPlayer                                                          */
+/************************************************************************/
+ArrayPlayer::ArrayPlayer(const char* filename, Figure *w/*=0*/)
+  :IPlayerThread(w)
 {
   assert(im_=Read_Image(const_cast<char*>(filename),0));
   if(w_==NULL)
+  {
     if(im_->ndims>2)
       w_ = imshow(Get_Array_Plane(im_,0));
     else
       w_ = imshow(im_);
-  connect(this,SIGNAL(imageReady(mylib::Array*)),
-    w_  ,SLOT  (imshow(mylib::Array*)),
-    Qt::BlockingQueuedConnection);
+    setFigure(w);
+  }
+
   Print_Inuse_List(stderr,1);
 }
 
@@ -56,23 +88,15 @@ void ArrayPlayer::run()
 }
 
 /************************************************************************/
-/* FRAMESTREAMPLAYER                                                    */
+/* AsynqPlayer                                                          */
 /************************************************************************/
 
 AsynqPlayer::AsynqPlayer( asynq *in, Figure *w/*=0*/ )
-  :w_(w)
-  ,in_(0)
-  ,running_(0)
+  :IPlayerThread(w)
+  ,in_(0)  
+  ,peek_timeout_ms_(10)
 {
   in_ = Asynq_Ref(in);
-  /* TODO
-     o  below won't work when w==NULL, what then?
-     o  connecting and disconnecting from different widgets/items?
-  */
-  connect(
-    this,SIGNAL(imageReady(mylib::Array*)),
-    w_  ,SLOT  (imshow(mylib::Array*)),
-    Qt::BlockingQueuedConnection); //blocks until receiver returns
 }
 
 AsynqPlayer::~AsynqPlayer()
@@ -87,23 +111,19 @@ void AsynqPlayer::run()
   size_t nbytes  = in_->q->buffer_size_bytes;
   mylib::Array im;
   size_t dims[3];
-  assert(sizeof(size_t)==sizeof(mylib::Dimn_Type));
-  im.dims = (Dimn_Type*) dims;
-  im.ndims = 3;
-  im.kind = PLAIN_KIND;
-  im.text = "\0";
-  im.tlen = 0;  
-  while(running() && Asynq_Pop(in_,(void**)&buf,nbytes))
+  running_ = 1;
+  // Notes: o Peek copies from current data into frame buffer.
+  //        o Peek might realloc the input frame buffer.
+  while(running())
   {
-    nbytes = buf->size_bytes();
-    im.data = buf->data;
-    im.type  = fetchTypeToArrayType(buf->rtti);
-    im.scale = fetchTypeToArrayScale(buf->rtti);
-    im.size = dims[0]*dims[1]*dims[2];
-    buf->get_shape(dims);
-    emit imageReady(&im); //blocks until receiver returns
+    if( Asynq_Peek_Timed(in_,(void**)&buf,nbytes,peek_timeout_ms_) )
+    { nbytes = buf->size_bytes();
+      castFetchFrameToDummyArray(&im,buf,dims);
+      emit imageReady(&im); //blocks until receiver returns
+    }
   }
   Asynq_Token_Buffer_Free(buf);
 }
+
 
 }} //end fetch::ui

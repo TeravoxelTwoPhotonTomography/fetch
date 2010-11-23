@@ -122,7 +122,7 @@ ConversionFailed:
   void VideoAcquisitionDockWidget::setPockels()
   {
     HERE;    
-    bool ok=0;    
+    bool ok=0;
     int v = _lePockels->text().toInt(&ok);
     if(!ok) goto ConversionFailed;
 

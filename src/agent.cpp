@@ -95,9 +95,9 @@ namespace fetch
             warning("Agent: Wait timeout\r\n\t%s\r\n", msg);
 
         return 0;
-    }
-    
-    inline unsigned Agent::_wait_for_available(DWORD timeout_ms)
+    }   
+
+    inline unsigned Agent::_wait_till_available(DWORD timeout_ms)
     {
         HANDLE notify = this->_notify_available;
         DWORD res;
@@ -114,13 +114,20 @@ namespace fetch
     {
       if( !this->_is_available )
       { if( is_try ) return NULL;
-        if( !_wait_for_available(timeout_ms))
+        if( !_wait_till_available(timeout_ms))
           if( !this->_is_available )
             return NULL;
       }
       return this;
     }
 
+    inline unsigned int Agent::wait_till_available(DWORD timeout_ms)
+    {
+      lock();
+      Agent *a = _request_available_unlocked(0,timeout_ms);
+      unlock();
+      return a!=NULL; //returns 1 on success, 0 otherwise
+    }
     unsigned int Agent::is_attached(void)
     { return is_available() || this->_task != NULL;
     }

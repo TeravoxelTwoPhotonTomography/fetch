@@ -268,7 +268,8 @@ namespace fetch {
       unsigned int is_stopping(void);  // use this for testing for main-loop termination in Tasks.
                                        // FIXME: not clear from name that is_stopping is very different from is_running
                                        
-      unsigned int wait_till_stopped(DWORD timeout_ms);
+      unsigned int wait_till_stopped(DWORD timeout_ms);   //returns 1 on success, 0 otherwise
+      unsigned int wait_till_available(DWORD timeout_ms); //returns 1 on success, 0 otherwise
       
     public:
       IDevice         *_owner;
@@ -294,8 +295,8 @@ namespace fetch {
                        
     private:
       inline static unsigned _handle_wait_for_result     (DWORD result, const char *msg);
-      inline        unsigned _wait_for_available         (DWORD timeout_ms);
                     Agent*   _request_available_unlocked (int is_try, DWORD timeout_ms);
+      inline unsigned int    _wait_till_available(DWORD timeout_ms);// private because it requires a particular locking pattern
   };
 
   //end namespace fetch

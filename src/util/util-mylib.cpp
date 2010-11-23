@@ -2,6 +2,7 @@
 #include <string.h>
 #include "util-mylib.h"
 #include "types.h"
+#include "frame.h"
 
 struct CS
 {
@@ -59,6 +60,37 @@ namespace mylib
     return frameTypeToArrayScale[id];
   }
 
+  // castFetchFrameToArray   
+  //
+  // Fills in the fields of a dummy Array object.
+  // The "dummy" array isn't tracked by mylib's memory management.
+  //
+  // ARGUMENTS
+  // <dest>  address of an instance of an Array _not_ created with Make_Array*
+  // <src>   address of a Frame instance holding the pixel data.
+  // <dims>  storage for holding the frame dimensions
+  //
+  // EXAMPLE
+  //   Input: Frame *frame
+  //     Array im;
+  //     size_t dims[3];
+  //     castFetchFrameToDummyArray(&im,frame,dims);
+  // 
+  //
+  void castFetchFrameToDummyArray(Array* dest, Frame* src, size_t dims[3])
+  {
+    assert(sizeof(size_t)==sizeof(mylib::Dimn_Type));
+    dest->dims = (Dimn_Type*) dims;
+    dest->ndims = 3;
+    dest->kind = PLAIN_KIND;
+    dest->text = "\0";
+    dest->tlen = 0; 
+    dest->data = src->data;
+    dest->type  = fetchTypeToArrayType(src->rtti);
+    dest->scale = fetchTypeToArrayScale(src->rtti);
+    src->get_shape(dims);
+    dest->size = dims[0]*dims[1]*dims[2];
+  }
 } //end namespace mylib
 
 namespace mytiff {

@@ -1,4 +1,5 @@
 #include <QtGui>
+#include "ui/AgentController.h"
 
 namespace fetch {
 namespace device {class Microscope;}
@@ -6,6 +7,7 @@ namespace ui {
 
 class VideoAcquisitionDockWidget;
 class Figure;
+class IPlayerThread;
 
 class MainWindow : public QMainWindow
 {
@@ -13,6 +15,10 @@ class MainWindow : public QMainWindow
 
 public:
   MainWindow(device::Microscope *dc);
+  virtual ~MainWindow();
+
+protected:
+  void closeEvent(QCloseEvent *event);
 
 private:
   void createStateMachines();
@@ -36,6 +42,10 @@ private:
 
   VideoAcquisitionDockWidget *_videoAcquisitionDockWidget;
   Figure *_display;
+  IPlayerThread *_player;
+  
+  QTimer _poller;
+  AgentController _scope_state_broadcast;  
 };
 
 //namespace ends

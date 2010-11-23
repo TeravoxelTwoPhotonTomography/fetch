@@ -4,6 +4,7 @@
 #include "devices/Microscope.h"
 #include "VideoAcquisitionDockWidget.h"
 #include "Figure.h"
+#include "Player.h"
 
 fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   :_dc(dc)
@@ -14,12 +15,18 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,fullscreenStateOff(0)
   ,fullscreenStateOn(0)
   ,_videoAcquisitionDockWidget(0)
+  ,_display(0)
+  ,_player(0)
+  ,_scope_state_broadcast(&dc->__self_agent)
 {
   createActions();
   createStateMachines();
   createMenus();
   createDockWidgets();
   createViews();
+  
+  connect(&_poller,SIGNAL(timeout()),&_scope_state_broadcast,SLOT(poll()));
+  _poller.start(50 /*ms*/);  
 }
 
 void fetch::ui::MainWindow::createActions()
@@ -46,14 +53,14 @@ void fetch::ui::MainWindow::createActions()
     openAct = new QAction(QIcon(":/icons/open"),"&Open",this);
     openAct->setShortcut(QKeySequence::Open);
     openAct->setStatusTip("Open a data source.");
-    // TODO: 
+    // TODO: connect to something
   }
 
   {
     saveToAct = new QAction(QIcon(":/icons/saveto"),"&Save To",this);
     saveToAct->setShortcut(QKeySequence::Save);
     saveToAct->setStatusTip("Set the data destination.");
-    // TODO: 
+    // TODO:  connect to something
   }
 }
 
@@ -67,8 +74,7 @@ void fetch::ui::MainWindow::createMenus()
   fileMenu = menuBar()->addMenu("&File");
   fileMenu->addAction(openAct);
   fileMenu->addAction(saveToAct);
-  fileMenu->addAction(quitAct);
-  
+  fileMenu->addAction(quitAct);                                                                                                                                                                                                                                           
 
   viewMenu = menuBar()->addMenu("&View");
   viewMenu->addAction(fullscreenAct);
@@ -102,6 +108,19 @@ void fetch::ui::MainWindow::createDockWidgets()
 
 void fetch::ui::MainWindow::createViews()
 {
-  _display = new Figure;    
+  _display = new Figure;
+  _player  = new AsynqPlayer(_dc->getVideoChannel(),_display);
   setCentralWidget(_display);
+  _player->start();
+}
+
+void fetch::ui::MainWindow::closeEvent( QCloseEvent *event )
+{
+  _player->stop();
+  _poller.stop();
+}
+
+fetch::ui::MainWindow::~MainWindow()
+{
+  if(_player) delete _player;
 }
