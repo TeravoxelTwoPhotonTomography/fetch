@@ -3,10 +3,7 @@
 #include "common.h"
 #include "devices/Microscope.h"
 #include "VideoAcquisitionDockWidget.h"
-<<<<<<< HEAD
-=======
-#include "MainView.h"
->>>>>>> b73c643... Removed StageField (failed attempt)
+#include "Figure.h"
 
 fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   :_dc(dc)
@@ -22,6 +19,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   createStateMachines();
   createMenus();
   createDockWidgets();
+  createViews();
 }
 
 void fetch::ui::MainWindow::createActions()
@@ -104,8 +102,6 @@ void fetch::ui::MainWindow::createDockWidgets()
 
 void fetch::ui::MainWindow::createViews()
 {
-
-  _mainView = new MainView(&_stageFieldScene,this);
-  //_stageFieldScene.addItem(new StageFieldItemGroup);
-  setCentralWidget(_mainView);
+  _display = new Figure;    
+  setCentralWidget(_display);
 }

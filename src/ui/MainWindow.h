@@ -5,6 +5,7 @@ namespace device {class Microscope;}
 namespace ui {
 
 class VideoAcquisitionDockWidget;
+class Figure;
 
 class MainWindow : public QMainWindow
 {
@@ -18,7 +19,7 @@ private:
   void createMenus();
   void createActions();
   void createDockWidgets();
-
+  void createViews();
   device::Microscope *_dc;
 
   QStateMachine fullscreenStateMachine;
@@ -34,7 +35,7 @@ private:
   QState  *fullscreenStateOff;
 
   VideoAcquisitionDockWidget *_videoAcquisitionDockWidget;
-  
+  Figure *_display;
 };
 
 //namespace ends

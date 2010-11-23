@@ -81,25 +81,6 @@ int main(int argc, char *argv[])
   QApplication app(argc,argv);
   Init();
   fetch::ui::MainWindow mainwindow(gp_microscope);
-
-  QGraphicsScene scene;
-  QGraphicsView  view(&scene);
-
-  // This will eventually be the viewport for the view.  Make it here so we
-  // can go ahead and make the GL context current.
-  QGLWidget *viewport = new QGLWidget;
-
-  view.setBackgroundBrush(QBrush(QColor("black")));
-  
-  // Make sure OpenGL gets set up right
-  viewport->makeCurrent();
-  INIT_EXTENSIONS;
-  printOpenGLInfo();
-  checkGLError();
-
-  
-
-  mainwindow.setCentralWidget(&view);
   mainwindow.show();
 
   unsigned int eflag = app.exec();

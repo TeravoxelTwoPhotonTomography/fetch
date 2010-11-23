@@ -117,10 +117,14 @@ source_group("GLSL Shaders\\Fragments Programs" REGULAR_EXPRESSION \\.frag$)
 
 qt4_wrap_cpp(MOC_SRCS
   src/ui/MainWindow.h
+  src/ui/Player.h
+  src/ui/Figure.h
   src/ui/VideoAcquisitionDockWidget.h
 )
 qt4_add_resources(RCC_SRCS
   src/ui/icons.qrc
+  src/ui/shaders.qrc
+  src/ui/colormaps.qrc
   src/apps/fetch.qrc
 )
 source_group("Source Files\\Qt Generated" FILES

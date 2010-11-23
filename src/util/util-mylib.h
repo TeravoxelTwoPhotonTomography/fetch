@@ -9,6 +9,9 @@ namespace mylib
   // to synchronize mylib access.
   void lock(void);
   void unlock(void);
+
+  Array_Type fetchTypeToArrayType(Basic_Type_ID id);
+  size_t fetchTypeToArrayScale(Basic_Type_ID id);
 }//end namespace mylib
 
 namespace mytiff

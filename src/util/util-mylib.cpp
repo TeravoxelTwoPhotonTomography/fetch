@@ -18,6 +18,47 @@ namespace mylib
   CS _g_cs;
   void lock()   {_g_cs.lock();}
   void unlock() {_g_cs.unlock();}
+
+  static Array_Type frameTypeToArrayType[] = {
+    UINT8,//id_u8 = 0,
+    UINT16,//id_u16,
+    UINT32,//id_u32,
+    UINT64,//id_u64,
+    INT8,//id_i8,
+    INT16,//id_i16,
+    INT32,//id_i32,
+    INT64,//id_i64,
+    FLOAT32,//id_f32,
+    FLOAT64//id_f64,
+  };
+
+  Array_Type fetchTypeToArrayType(Basic_Type_ID id)
+  {
+    assert(id != id_unspecified);
+    assert(id<MAX_TYPE_ID);
+    return frameTypeToArrayType[id];
+  }
+
+  static size_t frameTypeToArrayScale[] = {
+    8,//id_u8 = 0,
+    16,//id_u16,
+    32,//id_u32,
+    64,//id_u64,
+    8,//id_i8,
+    16,//id_i16,
+    32,//id_i32,
+    64,//id_i64,
+    32,//id_f32,
+    64//id_f64,
+  };
+
+  size_t fetchTypeToArrayScale(Basic_Type_ID id)
+  {
+    assert(id!=id_unspecified);
+    assert(id<MAX_TYPE_ID);
+    return frameTypeToArrayScale[id];
+  }
+
 } //end namespace mylib
 
 namespace mytiff {

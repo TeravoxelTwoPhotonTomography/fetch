@@ -1,0 +1,7 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix="/shaders">
+  <file alias='vert/trivial'>resources/shaders/trivial.vert</file>
+  <file alias='frag/cmap'>resources/shaders/tex3d.frag</file>
+  <file alias='frag/cmapplane'>resources/shaders/tex2d.frag</file>
+</qresource>
+</RCC>
