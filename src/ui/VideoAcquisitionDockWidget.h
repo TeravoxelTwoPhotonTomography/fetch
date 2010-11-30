@@ -15,20 +15,29 @@ namespace fetch{
 
       VideoAcquisitionDockWidget(device::Microscope *dc, QWidget* parent=NULL);
 
+
+
     public:
       QLineEdit *_leResonantTurn;
       //QLineEdit *_leDuty;
       QLineEdit *_leLines;
       QLineEdit *_leVerticalRange;
       QLineEdit *_lePockels;
+      QPushButton *_btnFocus;
+
+      QStateMachine _focusButtonStateMachine;
 
     public slots:
+
+      // Handlers for events from the form widgets
       void setTurn();
       void setLines();
       void setVerticalRange();
       void setPockels();
 
-    private:
+    private:      
+      void createForm();
+
       device::Microscope *_dc;
     };
 

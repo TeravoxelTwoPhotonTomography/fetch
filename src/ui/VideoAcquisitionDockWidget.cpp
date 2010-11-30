@@ -40,32 +40,16 @@ namespace ui {
     :QDockWidget("Video Acquisition",parent)
     ,_dc(dc)
   {
-    Config c = _dc->get_config();
-    _leResonantTurn     = new QLineEdit(QString().setNum(c.resonant_wrap().turn_px(),'f',1));
-    //_leDuty           = new QLineEdit;
-    _leLines            = new QLineEdit(QString().setNum(c.scanner3d().scanner2d().nscans()*2));
-    _leVerticalRange    = new QLineEdit(QString().setNum(_dc->LSM()->getAmplitudeVolts()));
-    _lePockels          = new QLineEdit(QString().setNum(_dc->pockels()->getOpenVolts()*1000));
-
-    QWidget *formwidget = new QWidget(this);
-    QFormLayout *form = new QFormLayout;
-    form->addRow("&Turn (px)",_leResonantTurn);
-    form->addRow("&Lines (px)",_leLines);
-    form->addRow("&Y Range (Vpp)",_leVerticalRange);
-    form->addRow("&Pockels (mV)",_lePockels);
-    formwidget->setLayout(form);
-    setWidget(formwidget);
+    createForm();
     
-    _leResonantTurn->setValidator( new QDoubleValidator (0.0, 2048.0, 1, formwidget));
-    _leLines->setValidator(        new  EvenIntValidator(2,   4096,      formwidget));
-    _leVerticalRange->setValidator(new QDoubleValidator (0.0, 20.0,   3, formwidget));
-    _lePockels->setValidator(      new QIntValidator    (0,   2000,      formwidget));
+    QState *taskUnattached = new QState,
+           *taskReadyToRun = new QState,
+           *taskRunning = new QState;
+    taskUnattached->assignProperty(_btnFocus,"text","Off");
+    taskReadyToRun->assignProperty(_btnFocus,"text","Go");
+    taskRunning->assignProperty(_btnFocus,"text","Stop");
 
-    connect(_leResonantTurn,SIGNAL(editingFinished()),this,SLOT(setTurn()));
-    connect(_leLines,SIGNAL(editingFinished()),this,SLOT(setLines()));
-    connect(_leVerticalRange,SIGNAL(editingFinished()),this,SLOT(setVerticalRange()));
-    connect(_lePockels,SIGNAL(editingFinished()),this,SLOT(setPockels()));
-    
+
   }
 
   void VideoAcquisitionDockWidget::setTurn()
@@ -133,6 +117,37 @@ ConversionFailed:
 ConversionFailed:
     warning("Couldn't interpret contents of line edit control.\r\n");
     return;
+  }
+
+  void VideoAcquisitionDockWidget::createForm()
+  {
+    Config c = _dc->get_config();
+    _leResonantTurn     = new QLineEdit(QString().setNum(c.resonant_wrap().turn_px(),'f',1));
+    //_leDuty           = new QLineEdit;
+    _leLines            = new QLineEdit(QString().setNum(c.scanner3d().scanner2d().nscans()*2));
+    _leVerticalRange    = new QLineEdit(QString().setNum(_dc->LSM()->getAmplitudeVolts()));
+    _lePockels          = new QLineEdit(QString().setNum(_dc->pockels()->getOpenVolts()*1000));
+    _btnFocus           = new QPushButton("Focus");
+
+    QWidget *formwidget = new QWidget(this);
+    QFormLayout *form = new QFormLayout;
+    form->addRow("&Turn (px)",_leResonantTurn);
+    form->addRow("&Lines (px)",_leLines);
+    form->addRow("&Y Range (Vpp)",_leVerticalRange);
+    form->addRow("&Pockels (mV)",_lePockels);
+    form->addRow(_btnFocus);
+    formwidget->setLayout(form);
+    setWidget(formwidget);
+
+    _leResonantTurn->setValidator( new QDoubleValidator (0.0, 2048.0, 1, formwidget));
+    _leLines->setValidator(        new  EvenIntValidator(2,   4096,      formwidget));
+    _leVerticalRange->setValidator(new QDoubleValidator (0.0, 20.0,   3, formwidget));
+    _lePockels->setValidator(      new QIntValidator    (0,   2000,      formwidget));
+
+    connect(_leResonantTurn,SIGNAL(editingFinished()),this,SLOT(setTurn()));
+    connect(_leLines,SIGNAL(editingFinished()),this,SLOT(setLines()));
+    connect(_leVerticalRange,SIGNAL(editingFinished()),this,SLOT(setVerticalRange()));
+    connect(_lePockels,SIGNAL(editingFinished()),this,SLOT(setPockels()));
   }
 
 //end namespace fetch::ui
