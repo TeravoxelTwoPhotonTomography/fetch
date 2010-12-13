@@ -1,5 +1,6 @@
 #include <QtGui>
 #include "devices/Microscope.h"
+#include "AgentController.h"
 namespace fetch{
 
   
@@ -13,9 +14,7 @@ namespace fetch{
     public:
       typedef device::Microscope::Config Config;
 
-      VideoAcquisitionDockWidget(device::Microscope *dc, QWidget* parent=NULL);
-
-
+      VideoAcquisitionDockWidget(device::Microscope *dc, AgentController *ac, QWidget* parent=NULL);
 
     public:
       QLineEdit *_leResonantTurn;
@@ -27,6 +26,10 @@ namespace fetch{
 
       QStateMachine _focusButtonStateMachine;
 
+    signals:
+
+      void onArmVideoTask();
+
     public slots:
 
       // Handlers for events from the form widgets
@@ -34,6 +37,8 @@ namespace fetch{
       void setLines();
       void setVerticalRange();
       void setPockels();
+
+      void onArmFilter(Task* t);
 
     private:      
       void createForm();

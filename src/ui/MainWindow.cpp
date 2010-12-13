@@ -101,7 +101,7 @@ void fetch::ui::MainWindow::createStateMachines()
 
 void fetch::ui::MainWindow::createDockWidgets()
 {
-  _videoAcquisitionDockWidget = new VideoAcquisitionDockWidget(_dc);
+  _videoAcquisitionDockWidget = new VideoAcquisitionDockWidget(_dc,&_scope_state_broadcast);
   addDockWidget(Qt::LeftDockWidgetArea,_videoAcquisitionDockWidget);
   viewMenu->addAction(_videoAcquisitionDockWidget->toggleViewAction());
 }

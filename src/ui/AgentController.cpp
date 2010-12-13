@@ -51,7 +51,7 @@ void AgentController::handleTransition(AgentController::RunLevel src, AgentContr
       break;
 
     case ARMED:
-      if(src==ATTACHED) emit onArm();
+      if(src==ATTACHED) emit onArm(agent_->_task);
       else if(src==RUNNING) emit onStop();
       else UNREACHABLE;
       break;

@@ -1,5 +1,6 @@
 #include "VideoAcquisitionDockWidget.h"
 #include "devices\microscope.h"
+#include "AgentController.h"
 
 namespace fetch {
 namespace ui {
@@ -36,19 +37,37 @@ namespace ui {
     }
   };
 
-  VideoAcquisitionDockWidget::VideoAcquisitionDockWidget(device::Microscope *dc,QWidget *parent/*=NULL*/)
+  VideoAcquisitionDockWidget::VideoAcquisitionDockWidget(device::Microscope *dc, AgentController *ac, QWidget *parent/*=NULL*/)
     :QDockWidget("Video Acquisition",parent)
     ,_dc(dc)
   {
     createForm();
     
-    QState *taskUnattached = new QState,
-           *taskReadyToRun = new QState,
-           *taskRunning = new QState;
-    taskUnattached->assignProperty(_btnFocus,"text","Off");
-    taskReadyToRun->assignProperty(_btnFocus,"text","Go");
+    QState *taskDetached = new QState,
+           *taskAttached = new QState,
+           *taskArmed    = new QState,
+           *taskRunning  = new QState;
+    taskDetached->assignProperty(_btnFocus,"text","Attach");
+    taskAttached->assignProperty(_btnFocus,"text","Arm");
+    taskArmed->assignProperty(_btnFocus,"text","Go");
     taskRunning->assignProperty(_btnFocus,"text","Stop");
 
+    taskDetached->addTransition(ac,SIGNAL(onAttach()),taskAttached);
+    taskAttached->addTransition(ac,SIGNAL(onDetach()),taskDetached);
+
+    connect(ac,SIGNAL(onArm(Task*)),this,SLOT(onArmFilter(Task*)));
+    taskAttached->addTransition(this,SIGNAL(onArmVideoTask()),taskArmed);
+
+    taskArmed->addTransition(ac,SIGNAL(onDisarm()),taskAttached);
+    taskArmed->addTransition(ac,SIGNAL(onRun()),taskRunning);
+    taskRunning->addTransition(ac,SIGNAL(onStop()),taskArmed);
+    
+    _focusButtonStateMachine.addState(taskArmed);
+    _focusButtonStateMachine.addState(taskAttached);
+    _focusButtonStateMachine.addState(taskDetached);
+    _focusButtonStateMachine.addState(taskRunning);
+    _focusButtonStateMachine.setInitialState(taskDetached);
+    _focusButtonStateMachine.start();
 
   }
 
@@ -148,6 +167,12 @@ ConversionFailed:
     connect(_leLines,SIGNAL(editingFinished()),this,SLOT(setLines()));
     connect(_leVerticalRange,SIGNAL(editingFinished()),this,SLOT(setVerticalRange()));
     connect(_lePockels,SIGNAL(editingFinished()),this,SLOT(setPockels()));
+  }
+
+  void VideoAcquisitionDockWidget::onArmFilter( Task* t )
+  {
+    if(t==&_dc->interaction_task)
+      emit onArmVideoTask();
   }
 
 //end namespace fetch::ui
