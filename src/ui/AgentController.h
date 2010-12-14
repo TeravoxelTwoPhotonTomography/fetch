@@ -21,6 +21,13 @@ namespace ui {
 
     protected slots:
       void poll();
+
+      void attach();
+      void detach();
+      void arm(Task *t);
+      void disarm();
+      void run();
+      void stop();
         
     protected:
       Agent* agent_;

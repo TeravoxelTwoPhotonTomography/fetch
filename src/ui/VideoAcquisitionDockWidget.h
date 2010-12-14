@@ -44,6 +44,7 @@ namespace fetch{
       void createForm();
 
       device::Microscope *_dc;
+      AgentController *_ac;
     };
 
     //end namespace fetch::ui

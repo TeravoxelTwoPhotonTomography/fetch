@@ -103,7 +103,7 @@ FrmFmt::FrmFmt()
         Bpp(0)
 {}
 
-FrmFmt::FrmFmt(u16 width, u16 height, u8 nchan, Basic_Type_ID type)
+FrmFmt::FrmFmt(u32 width, u32 height, u8 nchan, Basic_Type_ID type)
       : Message(FORMAT_INVALID, sizeof(Frame)),
         width(width),
         height(height),
@@ -112,7 +112,7 @@ FrmFmt::FrmFmt(u16 width, u16 height, u8 nchan, Basic_Type_ID type)
         Bpp( g_type_attributes[type].bytes )
 {}
 
-FrmFmt::FrmFmt(u16 width, u16 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size)
+FrmFmt::FrmFmt(u32 width, u32 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size)
       : Message(id, self_size),
         width(width),
         height(height),
@@ -197,7 +197,7 @@ FrmFmt::format(Message* unformatted)
  */
 
 Frame_With_Interleaved_Pixels::
-  Frame_With_Interleaved_Pixels(u16 width, u16 height, u8 nchan, Basic_Type_ID type)
+  Frame_With_Interleaved_Pixels(u32 width, u32 height, u8 nchan, Basic_Type_ID type)
                               : Frame(width,
                                       height,
                                       nchan,
@@ -290,7 +290,7 @@ Frame_With_Interleaved_Pixels::get_shape( size_t n[3] )
  */
 
 Frame_With_Interleaved_Lines::
-  Frame_With_Interleaved_Lines(u16 width, u16 height, u8 nchan, Basic_Type_ID type)
+  Frame_With_Interleaved_Lines(u32 width, u32 height, u8 nchan, Basic_Type_ID type)
                              : Frame(width,
                                      height,
                                      nchan,
@@ -381,7 +381,7 @@ Frame_With_Interleaved_Lines::get_shape( size_t n[3] )
  */
 
 Frame_With_Interleaved_Planes::
-  Frame_With_Interleaved_Planes(u16 width, u16 height, u8 nchan, Basic_Type_ID type)
+  Frame_With_Interleaved_Planes(u32 width, u32 height, u8 nchan, Basic_Type_ID type)
                               : Frame(width,
                                       height,
                                       nchan,
@@ -395,12 +395,12 @@ copy_channel( void *dst, size_t rowpitch, size_t ichan )
 { size_t pp = this->Bpp,
          dstw = rowpitch/pp,
          shape[] = {1,
-                    MIN( this->width, dstw ),
+                    pp*MIN( this->width, dstw ),
                     this->height},
          dst_pitch[4],
          src_pitch[4];
-  Compute_Pitch( dst_pitch,           1, this->height,        dstw, pp );
-  Compute_Pitch( src_pitch, this->nchan, this->height, this->width, pp );
+  Compute_Pitch( dst_pitch,           1, this->height,        dstw*pp, 1 );
+  Compute_Pitch( src_pitch, this->nchan, this->height, this->width*pp, 1 );
   imCopy<u8,u8>((u8*) dst,                              dst_pitch,
                 (u8*) this->data + ichan * src_pitch[1],src_pitch,
                 shape);

@@ -74,5 +74,35 @@ AgentController::RunLevel AgentController::queryRunLevel()
   return OFF;
 }
 
+void AgentController::attach()
+{
+  Guarded_Assert_WinErr(agent_->attach_nowait());
+}
+
+void AgentController::detach()
+{
+  Guarded_Assert_WinErr(agent_->detach_nowait());
+}
+
+void AgentController::arm( Task *t )
+{
+  Guarded_Assert_WinErr(agent_->arm_nowait(t,agent_->_owner,INFINITE));
+}
+
+void AgentController::disarm()
+{
+  Guarded_Assert_WinErr(agent_->disarm_nowait(INFINITE));
+}
+
+void AgentController::run()
+{
+  Guarded_Assert_WinErr(agent_->run_nowait());
+}
+
+void AgentController::stop()
+{
+  Guarded_Assert_WinErr(agent_->stop_nowait(INFINITE));
+}
+
 
 }} //end fetch::ui

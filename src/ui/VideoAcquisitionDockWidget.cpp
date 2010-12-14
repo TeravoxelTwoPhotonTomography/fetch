@@ -40,6 +40,7 @@ namespace ui {
   VideoAcquisitionDockWidget::VideoAcquisitionDockWidget(device::Microscope *dc, AgentController *ac, QWidget *parent/*=NULL*/)
     :QDockWidget("Video Acquisition",parent)
     ,_dc(dc)
+    ,_ac(ac)
   {
     createForm();
     
@@ -155,6 +156,32 @@ ConversionFailed:
     form->addRow("&Y Range (Vpp)",_leVerticalRange);
     form->addRow("&Pockels (mV)",_lePockels);
     form->addRow(_btnFocus);
+    
+    QPushButton 
+      *btnDetach = new QPushButton("Detach"),
+      *btnAttach = new QPushButton("Attach"),
+      *btnArm    = new QPushButton("Arm"),
+      *btnDisarm = new QPushButton("Disarm"),
+      *btnRun    = new QPushButton("Run"),
+      *btnStop   = new QPushButton("Stop");
+    QObject::connect(btnDetach,SIGNAL(clicked()),_ac,SLOT(detach()));
+    QObject::connect(btnAttach,SIGNAL(clicked()),_ac,SLOT(attach()));
+    //QObject::connect(btnArm,SIGNAL(clicked()),this,SLOT(armVideoTask()));
+    QObject::connect(btnDisarm,SIGNAL(clicked()),_ac,SLOT(disarm()));
+    QObject::connect(btnRun,SIGNAL(clicked()),_ac,SLOT(run()));
+    QObject::connect(btnStop,SIGNAL(clicked()),_ac,SLOT(stop()));
+    QHBoxLayout *layout;
+    layout = new QHBoxLayout;
+    layout->addWidget(btnAttach);
+    layout->addWidget(btnArm);
+    layout->addWidget(btnRun);
+    form->addRow(layout);
+    layout = new QHBoxLayout;
+    layout->addWidget(btnDetach);
+    layout->addWidget(btnDisarm);
+    layout->addWidget(btnStop);
+    form->addRow(layout);
+
     formwidget->setLayout(form);
     setWidget(formwidget);
 

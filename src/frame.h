@@ -185,15 +185,15 @@ class Message
 
 class FrmFmt : public Message
 { public:
-    u16           width;
-    u16           height;
+    u32           width;
+    u32           height;
     u8            nchan;
     u8            Bpp;
     Basic_Type_ID rtti;
 
     FrmFmt(void);
-    FrmFmt(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
-    FrmFmt(u16 width, u16 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size);
+    FrmFmt(u32 width, u32 height, u8 nchan, Basic_Type_ID type);
+    FrmFmt(u32 width, u32 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size);
 
     unsigned int   is_equivalent( FrmFmt *ref );
     void           dump( const char *filename,... );                    // performs printf-style string formating on filename.  Thread-safe.
@@ -205,8 +205,8 @@ class FrmFmt : public Message
 class Frame : public FrmFmt
 { public:
     Frame(void)                                                                                      {}
-    Frame(u16 width, u16 height, u8 nchan, Basic_Type_ID type)                                       : FrmFmt(width,height,nchan,type) {}
-    Frame(u16 width, u16 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size) : FrmFmt(width,height,nchan,type,id,self_size) {}
+    Frame(u32 width, u32 height, u8 nchan, Basic_Type_ID type)                                       : FrmFmt(width,height,nchan,type) {}
+    Frame(u32 width, u32 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size) : FrmFmt(width,height,nchan,type,id,self_size) {}
 
 
     virtual void   copy_channel    ( void *dst, size_t rowpitch, size_t ichan ) = 0;
@@ -220,7 +220,7 @@ class Frame : public FrmFmt
 class Frame_With_Interleaved_Pixels : public Frame
 { public:
     Frame_With_Interleaved_Pixels(void) {}
-    Frame_With_Interleaved_Pixels(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
+    Frame_With_Interleaved_Pixels(u32 width, u32 height, u8 nchan, Basic_Type_ID type);
 
               void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
     static  size_t   translate    ( Message *dst, Message *src );
@@ -232,7 +232,7 @@ class Frame_With_Interleaved_Pixels : public Frame
 class Frame_With_Interleaved_Lines : public Frame
 { public:
     Frame_With_Interleaved_Lines(void) {}
-    Frame_With_Interleaved_Lines(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
+    Frame_With_Interleaved_Lines(u32 width, u32 height, u8 nchan, Basic_Type_ID type);
 
               void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
     static  size_t   translate    ( Message *dst, Message *src );
@@ -244,7 +244,7 @@ class Frame_With_Interleaved_Lines : public Frame
 class Frame_With_Interleaved_Planes : public Frame
 { public:
     Frame_With_Interleaved_Planes(void) {}
-    Frame_With_Interleaved_Planes(u16 width, u16 height, u8 nchan, Basic_Type_ID type);
+    Frame_With_Interleaved_Planes(u32 width, u32 height, u8 nchan, Basic_Type_ID type);
 
               void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
     static  size_t   translate    ( Message *dst, Message *src );
