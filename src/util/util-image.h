@@ -2,7 +2,6 @@
 #include "../stdafx.h"
 #include <string.h>
 #include <stdio.h>
-#include "../types.h"
 
 // N-dimensions
 // Optimized copy ops could go N-dimensional using recursion.
@@ -63,7 +62,7 @@ imCastCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size
   for(i=0;i<n[0];++i)
     for(j=0;j<n[1];++j)
       for(k=0;k<n[2];++k)
-        dst[dp0*i + dp1*j + dp2*k] = Saturate<Tdst,Tsrc>(src[sp0*i + sp1*j + sp2*k]);
+        dst[dp0*i + dp1*j + dp2*k] = (Tdst) src[sp0*i + sp1*j + sp2*k];
 }
 #endif // #ifdef __cplusplus
 
@@ -150,7 +149,7 @@ imCopy( Tdst *dst, size_t dst_pitch[4], Tsrc *src, size_t src_pitch[4], size_t n
             for(k=0;k<n[2];++k)
 #pragma warning( push )
 #pragma warning( disable:4244 )
-              dst[dp0*i + dp1*j + dp2*k] = Saturate<Tdst,Tsrc>(src[sp0*i + sp1*j + sp2*k]);
+              dst[dp0*i + dp1*j + dp2*k] = src[sp0*i + sp1*j + sp2*k];
 #pragma warning( pop )              
       }
       break;

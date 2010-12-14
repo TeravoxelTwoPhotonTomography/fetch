@@ -44,31 +44,7 @@ namespace ui {
   {
     createForm();
     
-    QState *taskDetached = new QState,
-           *taskAttached = new QState,
-           *taskArmed    = new QState,
-           *taskRunning  = new QState;
-    taskDetached->assignProperty(_btnFocus,"text","Attach");
-    taskAttached->assignProperty(_btnFocus,"text","Arm");
-    taskArmed->assignProperty(_btnFocus,"text","Go");
-    taskRunning->assignProperty(_btnFocus,"text","Stop");
 
-    taskDetached->addTransition(ac,SIGNAL(onAttach()),taskAttached);
-    taskAttached->addTransition(ac,SIGNAL(onDetach()),taskDetached);
-
-    connect(ac,SIGNAL(onArm(Task*)),this,SLOT(onArmFilter(Task*)));
-    taskAttached->addTransition(this,SIGNAL(onArmVideoTask()),taskArmed);
-
-    taskArmed->addTransition(ac,SIGNAL(onDisarm()),taskAttached);
-    taskArmed->addTransition(ac,SIGNAL(onRun()),taskRunning);
-    taskRunning->addTransition(ac,SIGNAL(onStop()),taskArmed);
-    
-    _focusButtonStateMachine.addState(taskArmed);
-    _focusButtonStateMachine.addState(taskAttached);
-    _focusButtonStateMachine.addState(taskDetached);
-    _focusButtonStateMachine.addState(taskRunning);
-    _focusButtonStateMachine.setInitialState(taskDetached);
-    _focusButtonStateMachine.start();
 
   }
 
@@ -194,6 +170,72 @@ ConversionFailed:
     connect(_leLines,SIGNAL(editingFinished()),this,SLOT(setLines()));
     connect(_leVerticalRange,SIGNAL(editingFinished()),this,SLOT(setVerticalRange()));
     connect(_lePockels,SIGNAL(editingFinished()),this,SLOT(setPockels()));
+
+    //
+    // State machine
+    //
+    QState 
+      *taskDetached = new QState,
+      *taskAttached = new QState,
+      *taskArmed    = new QState,
+      *taskRunning  = new QState;
+
+    taskDetached->addTransition(_ac,SIGNAL(onAttach()),taskAttached);
+    taskAttached->addTransition(_ac,SIGNAL(onDetach()),taskDetached);
+
+    connect(_ac,SIGNAL(onArm(Task*)),this,SLOT(onArmFilter(Task*)));
+    taskAttached->addTransition(this,SIGNAL(onArmVideoTask()),taskArmed);
+
+    taskArmed->addTransition(_ac,SIGNAL(onDisarm()),taskAttached);
+    taskArmed->addTransition(_ac,SIGNAL(onRun()),taskRunning);
+    taskRunning->addTransition(_ac,SIGNAL(onStop()),taskArmed);
+
+    _focusButtonStateMachine.addState(taskArmed);
+    _focusButtonStateMachine.addState(taskAttached);
+    _focusButtonStateMachine.addState(taskDetached);
+    _focusButtonStateMachine.addState(taskRunning);
+    _focusButtonStateMachine.setInitialState(taskDetached);
+    _focusButtonStateMachine.start();
+
+    taskDetached->assignProperty(_btnFocus,"text","Attach");
+    taskAttached->assignProperty(_btnFocus,"text","Arm");
+    taskArmed->assignProperty(_btnFocus,"text","Go");
+    taskRunning->assignProperty(_btnFocus,"text","Stop");
+    {
+      QState *c = taskDetached;
+      c->assignProperty(btnDetach,"enabled",false);
+      c->assignProperty(btnAttach,"enabled",true);
+      c->assignProperty(btnArm,   "enabled",false);
+      c->assignProperty(btnDisarm,"enabled",false);
+      c->assignProperty(btnRun,   "enabled",false);
+      c->assignProperty(btnStop,  "enabled",false);
+
+      c = taskAttached;
+      c->assignProperty(btnDetach,"enabled",true);
+      c->assignProperty(btnAttach,"enabled",false);
+      c->assignProperty(btnArm,   "enabled",true);
+      c->assignProperty(btnDisarm,"enabled",false);
+      c->assignProperty(btnRun,   "enabled",false);
+      c->assignProperty(btnStop,  "enabled",false);
+
+      c = taskArmed;
+      c->assignProperty(btnDetach,"enabled",true);
+      c->assignProperty(btnAttach,"enabled",false);
+      c->assignProperty(btnArm,   "enabled",false);
+      c->assignProperty(btnDisarm,"enabled",true);
+      c->assignProperty(btnRun,   "enabled",true);
+      c->assignProperty(btnStop,  "enabled",false);
+
+      c = taskRunning;
+      c->assignProperty(btnDetach,"enabled",true);
+      c->assignProperty(btnAttach,"enabled",false);
+      c->assignProperty(btnArm,   "enabled",false);
+      c->assignProperty(btnDisarm,"enabled",true);
+      c->assignProperty(btnRun,   "enabled",false);
+      c->assignProperty(btnStop,  "enabled",true);
+
+    }
+
   }
 
   void VideoAcquisitionDockWidget::onArmFilter( Task* t )
