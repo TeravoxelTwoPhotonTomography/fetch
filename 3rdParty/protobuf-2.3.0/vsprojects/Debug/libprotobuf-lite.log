@@ -1,0 +1,27 @@
+﻿Build started 12/14/2010 3:27:23 PM.
+     1>Project "C:\Users\clackn\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\libprotobuf-lite.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Creating "Debug\libprotobuf-lite.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         All outputs are up-to-date.
+       Lib:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\Lib.exe /OUT:"Debug\libprotobuf-lite.lib" /NOLOGO Debug\coded_stream.obj
+         Debug\common.obj
+         Debug\extension_set.obj
+         Debug\generated_message_util.obj
+         Debug\hash.obj
+         Debug\message_lite.obj
+         Debug\once.obj
+         Debug\repeated_field.obj
+         Debug\wire_format_lite.obj
+         Debug\zero_copy_stream.obj
+         Debug\zero_copy_stream_impl_lite.obj
+         libprotobuf-lite.vcxproj -> C:\Users\clackn\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\Debug\libprotobuf-lite.lib
+       FinalizeBuildStatus:
+         Deleting file "Debug\libprotobuf-lite.unsuccessfulbuild".
+         Touching "Debug\libprotobuf-lite.lastbuildstate".
+     1>Done Building Project "C:\Users\clackn\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\libprotobuf-lite.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:00.17

@@ -1,0 +1,17 @@
+﻿Build started 12/14/2010 4:10:43 PM.
+     1>Project "C:\Users\clackn\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\libprotobuf.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Creating "Release\libprotobuf.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         All outputs are up-to-date.
+       Lib:
+         All outputs are up-to-date.
+         libprotobuf.vcxproj -> C:\Users\clackn\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\Release\libprotobuf.lib
+       FinalizeBuildStatus:
+         Deleting file "Release\libprotobuf.unsuccessfulbuild".
+         Touching "Release\libprotobuf.lastbuildstate".
+     1>Done Building Project "C:\Users\clackn\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\libprotobuf.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:00.12
