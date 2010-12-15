@@ -77,12 +77,15 @@ namespace fetch
 
       Guarded_Assert(filename.length()<DISKSTREAM_MAX_PATH);
       Guarded_Assert(mode.length()<DISKSTREAM_MAX_MODE);
+
+      // Close the acting stream if it's open.
+      _agent->detach(); // allows open() to be called from any state.
+
       Config c = get_config();
       c.set_path(filename);
       c.set_mode(mode);
       set_config(c);
-
-      _agent->detach(); // allows open() to be called from any state
+      
       if( _agent->attach()!=0 )  // open the file handle
         return 1;// failure to open                      
 
