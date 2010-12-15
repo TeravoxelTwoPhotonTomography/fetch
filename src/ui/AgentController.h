@@ -22,6 +22,7 @@ namespace ui {
     protected slots:
       void poll();
 
+    public slots:
       void attach();
       void detach();
       void arm(Task *t);

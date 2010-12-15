@@ -39,6 +39,7 @@ namespace fetch{
       void setPockels();
 
       void onArmFilter(Task* t);
+      void armVideoTask();
 
     private:      
       void createForm();

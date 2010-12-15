@@ -247,17 +247,17 @@ namespace fetch {
       unsigned int attach (void);                      // Returns 0 on success, nonzero otherwise.
       unsigned int detach (void);                      // Returns 0 on success, nonzero otherwise.  Should attempt to disarm if running.  Should not panic if possible.
 
-      unsigned int arm    (Task *t, IDevice *dc, DWORD timeout_ms); // Returns 0 on success, nonzero otherwise.
-      unsigned int disarm (DWORD timeout_ms);          // Returns 0 on success, nonzero otherwise.
+      unsigned int arm    (Task *t, IDevice *dc, DWORD timeout_ms=INFINITE); // Returns 0 on success, nonzero otherwise.
+      unsigned int disarm (DWORD timeout_ms=INFINITE); // Returns 0 on success, nonzero otherwise.
       unsigned int run    (void);                      // Returns 0 on success, nonzero otherwise.
-      unsigned int stop   (DWORD timeout_ms);          // Returns 0 on success, nonzero otherwise.
+      unsigned int stop   (DWORD timeout_ms=INFINITE); // Returns 0 on success, nonzero otherwise.
       
       BOOL      attach_nowait (void);
       BOOL      detach_nowait (void);
-      BOOL         arm_nowait (Task *t, IDevice *dc, DWORD timeout_ms);
-      BOOL      disarm_nowait (DWORD timeout_ms);
+      BOOL         arm_nowait (Task *t, IDevice *dc, DWORD timeout_ms=INFINITE);
+      BOOL      disarm_nowait (DWORD timeout_ms=INFINITE);
       BOOL         run_nowait (void);
-      BOOL        stop_nowait (DWORD timeout_ms);
+      BOOL        stop_nowait (DWORD timeout_ms=INFINITE);
 
       // State query functions      
       unsigned int is_attached(void);  // True in all but the instanced state.
@@ -268,8 +268,8 @@ namespace fetch {
       unsigned int is_stopping(void);  // use this for testing for main-loop termination in Tasks.
                                        // FIXME: not clear from name that is_stopping is very different from is_running
                                        
-      unsigned int wait_till_stopped(DWORD timeout_ms);   //returns 1 on success, 0 otherwise
-      unsigned int wait_till_available(DWORD timeout_ms); //returns 1 on success, 0 otherwise
+      unsigned int wait_till_stopped(DWORD timeout_ms=INFINITE);   //returns 1 on success, 0 otherwise
+      unsigned int wait_till_available(DWORD timeout_ms=INFINITE); //returns 1 on success, 0 otherwise
       
     public:
       IDevice         *_owner;

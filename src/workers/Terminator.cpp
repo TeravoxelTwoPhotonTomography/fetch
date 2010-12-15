@@ -44,7 +44,7 @@ namespace fetch
       }
 
       // main loop
-      do
+      while(!d->_agent->is_stopping())
       { 
 #if 0
         if( !Asynq_Is_Empty(q[0]) ) DBG("Convenient break point\r\n");
@@ -54,7 +54,7 @@ namespace fetch
           szs[i%n] = q[i%n]->q->buffer_size_bytes;
         }
         i++;
-      } while (!d->_agent->is_stopping());
+      }
       
       // cleanup
       for (i = 0; i < n; i++)

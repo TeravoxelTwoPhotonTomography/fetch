@@ -142,7 +142,7 @@ ConversionFailed:
       *btnStop   = new QPushButton("Stop");
     QObject::connect(btnDetach,SIGNAL(clicked()),_ac,SLOT(detach()));
     QObject::connect(btnAttach,SIGNAL(clicked()),_ac,SLOT(attach()));
-    //QObject::connect(btnArm,SIGNAL(clicked()),this,SLOT(armVideoTask()));
+    QObject::connect(btnArm,SIGNAL(clicked()),this,SLOT(armVideoTask()));
     QObject::connect(btnDisarm,SIGNAL(clicked()),_ac,SLOT(disarm()));
     QObject::connect(btnRun,SIGNAL(clicked()),_ac,SLOT(run()));
     QObject::connect(btnStop,SIGNAL(clicked()),_ac,SLOT(stop()));
@@ -242,6 +242,11 @@ ConversionFailed:
   {
     if(t==&_dc->interaction_task)
       emit onArmVideoTask();
+  }
+
+  void VideoAcquisitionDockWidget::armVideoTask()
+  {
+    emit _ac->arm(&_dc->interaction_task);
   }
 
 //end namespace fetch::ui

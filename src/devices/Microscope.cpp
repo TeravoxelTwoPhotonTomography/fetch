@@ -92,24 +92,24 @@
     Microscope::detach(void)
     { 
       int eflag = 0; // 0 success, 1 failure
-      eflag |= scanner.detach(); //scanner.detach();
-      eflag |= frame_averager.detach();
-      eflag |= pixel_averager.detach();
-      eflag |= inverter.detach();
-      eflag |= trash.detach();
-      eflag |= disk.detach();
+      eflag |= scanner._agent->detach(); //scanner.detach();
+      eflag |= frame_averager._agent->detach();
+      eflag |= pixel_averager._agent->detach();
+      eflag |= inverter._agent->detach();
+      eflag |= trash._agent->detach();
+      eflag |= disk._agent->detach();
       return eflag;  
     }
     
     unsigned int Microscope::disarm()
     {
       unsigned int sts = 1; // success      
-      sts &= scanner.disarm();
-      sts &= frame_averager.disarm();
-      sts &= pixel_averager.disarm();
-      sts &= inverter.disarm();
-      sts &= trash.disarm();
-      sts &= disk.disarm();
+      sts &= scanner._agent->disarm();
+      sts &= frame_averager._agent->disarm();
+      sts &= pixel_averager._agent->disarm();
+      sts &= inverter._agent->disarm();
+      sts &= trash._agent->disarm();
+      sts &= disk._agent->disarm();
       
       return sts;
     }
@@ -145,7 +145,7 @@
       cur =  inverter.apply(cur);
       cur =  cast_to_i16.apply(cur);
       cur =  wrap.apply(cur);
-      return &wrap;
+      return cur;
     }
 
     void Microscope::__common_setup()

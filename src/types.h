@@ -1,5 +1,8 @@
 #pragma once
-#include "common.h"
+#include "stdafx.h"
+
+#include <limits.h>
+#include <float.h>
 
 typedef enum _basic_type_id
 { id_unspecified = -1,
@@ -64,3 +67,39 @@ template<> inline char* TypeStr<i32>(void) {return "i32";}
 template<> inline char* TypeStr<i64>(void) {return "i64";}
 template<> inline char* TypeStr<f32>(void) {return "f32";}
 template<> inline char* TypeStr<f64>(void) {return "f64";}
+
+//
+// Saturation
+//
+
+template<typename T> inline T TypeMax();
+template<> inline u8  TypeMax<u8 >() {return UCHAR_MAX;}
+template<> inline u16 TypeMax<u16>() {return USHRT_MAX;}
+template<> inline u32 TypeMax<u32>() {return UINT_MAX;}
+template<> inline u64 TypeMax<u64>() {return ULLONG_MAX;}
+template<> inline i8  TypeMax<i8 >() {return  CHAR_MAX;}
+template<> inline i16 TypeMax<i16>() {return  SHRT_MAX;}
+template<> inline i32 TypeMax<i32>() {return  INT_MAX;}
+template<> inline i64 TypeMax<i64>() {return  LLONG_MAX;}
+template<> inline f32 TypeMax<f32>() {return  FLT_MAX;}
+template<> inline f64 TypeMax<f64>() {return  DBL_MAX;}
+
+template<typename T> inline T TypeMin();
+template<> inline u8  TypeMin<u8 >() {return 0;}
+template<> inline u16 TypeMin<u16>() {return 0;}
+template<> inline u32 TypeMin<u32>() {return 0;}
+template<> inline u64 TypeMin<u64>() {return 0;}
+template<> inline i8  TypeMin<i8 >() {return  CHAR_MIN;}
+template<> inline i16 TypeMin<i16>() {return  SHRT_MIN;}
+template<> inline i32 TypeMin<i32>() {return  INT_MIN;}
+template<> inline i64 TypeMin<i64>() {return  LLONG_MIN;}
+template<> inline f32 TypeMin<f32>() {return -FLT_MAX;}
+template<> inline f64 TypeMin<f64>() {return -DBL_MAX;}
+
+template<typename Tdst,typename Tsrc> inline Tdst Saturate(Tsrc x) 
+{ 
+#pragma warning(push)
+#pragma warning(disable:4244 4018)
+  return (x>TypeMax<Tdst>())?TypeMax<Tdst>():((x<TypeMin<Tdst>())?TypeMin<Tdst>():x); 
+#pragma warning(pop)  
+}

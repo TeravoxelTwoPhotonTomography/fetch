@@ -3,7 +3,7 @@
 
 extern const
 Basic_Type_Attribute g_type_attributes[] = {
-          /*Bpp,bpp   signed? floating? */
+          /*Bpp   signed?   floating? */
           {   1, 8,    0,           0 } ,  //id_u8
           {   2,16,    0,           0 } ,  //id_u16
           {   4,32,    0,           0 } ,  //id_u32

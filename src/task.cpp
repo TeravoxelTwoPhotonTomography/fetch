@@ -18,9 +18,17 @@ namespace fetch
       a->_is_running = 0;  
       CloseHandle(a->_thread);
       a->_thread = INVALID_HANDLE_VALUE;
+
+      // Re-config() again.
+      if(!(task->config)(dc))
+        goto Error;
       a->unlock();
       
       return result;  
+Error:      
+      a->unlock();
+      error("While re-configuring task, something went wrong.\r\n");
+      return 2; //failure - shouldn't get here.  
     }
 
 // VTREF
