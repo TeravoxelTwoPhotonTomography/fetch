@@ -385,11 +385,12 @@ Error:
     unsigned int Agent::stop(DWORD timeout_ms)
     {
       DWORD res;
+      HANDLE t;
       this->lock();
       DBG("Agent: Stopping %s 0x%p\r\n",name(), this);
       if( this->_is_running )
       { if( this->_thread != INVALID_HANDLE_VALUE)
-        { SetEvent(this->_notify_stop);                  // Signal task to stop
+        { Guarded_Assert_WinErr(SetEvent(this->_notify_stop));  // Signal task to stop
           {                                             // Signal push/pop/peeks on waiting queues to abort
             unsigned i;
             if(_owner->_in)
@@ -399,9 +400,10 @@ Error:
 //            for(i=0;i<this->out->nelem;++i)
 //              Guarded_Assert_WinErr(SetEvent(this->out->contents[i]->notify_abort));
           }
+          t = _thread;
           this->unlock();
-          if(this->_thread!=INVALID_HANDLE_VALUE)
-            res = WaitForSingleObject(this->_thread, timeout_ms); // wait for running thread to stop
+          if(t!=INVALID_HANDLE_VALUE)
+            res = WaitForSingleObject(t, timeout_ms); // wait for running thread to stop
           this->lock();
           ResetEvent(this->_notify_stop);
           //{ size_t i;
@@ -416,8 +418,11 @@ Error:
           { warning("[5s] Timed out waiting for task thread (0x%p) to stop.  Forcing termination.\r\n",name(), this->_thread);
             Guarded_Assert_WinErr(TerminateThread(this->_thread,127)); // Force the thread to stop
           } 
-          CloseHandle(this->_thread);
-          this->_thread = INVALID_HANDLE_VALUE;
+
+          if(_thread!=INVALID_HANDLE_VALUE)
+          { CloseHandle(this->_thread);
+            this->_thread = INVALID_HANDLE_VALUE;
+          }
         } 
         this->_is_running = 0;
       }
