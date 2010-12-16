@@ -99,10 +99,10 @@ namespace fetch
         Guarded_Assert(dc->__scan_agent.is_runnable());
         Guarded_Assert(dc->__io_agent.is_running());
 
-        eflag |= dc->__scan_agent.run();
+        eflag |= dc->__scan_agent.run() != 1;
 
         { HANDLE hs[] = {dc->__scan_agent._thread,          
-                         dc->__scan_agent._notify_stop};
+                         dc->__self_agent._notify_stop};
           DWORD res;
           std::string filename;
           int   t;
@@ -163,7 +163,7 @@ namespace fetch
           return run_simulated(s);
           break;
         default:
-          error("Video<>::run() - Got invalid kind() for Digitizer.get_config\r\n");          
+          warning("ScanStack<>::run() - Got invalid kind() for Digitizer.get_config\r\n");          
         }
         return 0; //failure
       }
@@ -292,14 +292,14 @@ Error:
         template<class TPixel>
         unsigned int fetch::task::scanner::ScanStack<TPixel>::run_simulated( device::Scanner3D *d )
         {
-          error("Implement me!\r\n");
+          warning("Implement me!\r\n");
           return 1;
         }
 
         template<class TPixel>
         unsigned int fetch::task::scanner::ScanStack<TPixel>::run_alazar( device::Scanner3D *d )
         {
-          error("Implement me!\r\n");
+          warning("Implement me!\r\n");
           return 1;
         }
     }

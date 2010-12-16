@@ -20,23 +20,44 @@
 
     Microscope::Microscope()
       :IConfigurableDevice<Config>(&__self_agent)
-      ,__self_agent(NULL)
-      ,__scan_agent(&scanner)
-      ,__io_agent(&disk)
+      ,__self_agent("Microscope",NULL)
+      ,__scan_agent("Scanner",&scanner)
+      ,__io_agent("IO",&disk)
       ,scanner(&__scan_agent)    
       ,disk(&__io_agent)
+      ,frame_averager("FrameAverager")
+      ,pixel_averager("PixelAverager")
+      ,cast_to_i16("i16Cast")
+      ,inverter("inverter")
+      ,wrap()
+      ,trash("Trash")
     {      
       set_config(_config);
       __common_setup();
     }  
+    /*
+    worker::FrameAverageAgent 	   frame_averager;
+    worker::HorizontalDownsampleAgent pixel_averager;
+    worker::FrameCastAgent_i16     cast_to_i16;
+    worker::FrameInvertAgent       inverter;
+    worker::ResonantWrapAgent      wrap;
 
+    worker::TerminalAgent		       trash;    
+    */
     Microscope::Microscope( const Config &cfg )
       :IConfigurableDevice<Config>(&__self_agent)
-      ,__self_agent(NULL)
-      ,__scan_agent(&scanner)
-      ,__io_agent(&disk)
+      ,__self_agent("Microscope",NULL)
+      ,__scan_agent("Scanner",&scanner)
+      ,__io_agent("IO",&disk)
       ,scanner(&__scan_agent)    
       ,disk(&__io_agent)
+      ,frame_averager("FrameAverager")
+      ,pixel_averager("PixelAverager")
+      ,cast_to_i16("i16Cast")
+      ,inverter("inverter")
+      ,wrap()
+      ,trash("Trash")
+      ,file_series()
     {
       set_config(cfg);
       __common_setup();
@@ -44,14 +65,16 @@
 
     Microscope::Microscope(Config *cfg )
       :IConfigurableDevice<Config>(&__self_agent,cfg)
-      ,__self_agent(NULL)
-      ,__scan_agent(&scanner)
-      ,__io_agent(&disk)
+      ,__self_agent("Microscope",NULL)
+      ,__scan_agent("Scanner",&scanner)
+      ,__io_agent("IO",&disk)
       ,scanner(&__scan_agent,cfg->mutable_scanner3d())
       ,disk(&__io_agent)
-      ,frame_averager(cfg->mutable_frame_average())
-      ,pixel_averager(cfg->mutable_horizontal_downsample())
+      ,frame_averager(cfg->mutable_frame_average(),"FrameAverager")
+      ,pixel_averager(cfg->mutable_horizontal_downsample(),"PixelAverager")
+      ,cast_to_i16("i16Cast")
       ,wrap(cfg->mutable_resonant_wrap())
+      ,trash("Trash")
       ,file_series(cfg->mutable_file_series())
     {
       __common_setup();

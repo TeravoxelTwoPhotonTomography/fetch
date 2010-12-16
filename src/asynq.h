@@ -95,7 +95,7 @@ unsigned int Asynq_Peek       ( asynq *self, void **pbuf, size_t sz );
 unsigned int Asynq_Peek_Try   ( asynq *self, void **pbuf, size_t sz );
 unsigned int Asynq_Peek_Timed ( asynq *self, void **pbuf, size_t sz, DWORD timeout_ms );
 
-       void  Asynq_Flush_Waiting_Consumers( asynq *self );
+       void  Asynq_Flush( asynq *self ); //Bad name, really aborts waits
 
 inline void  Asynq_Lock    ( asynq *self );
 inline void  Asynq_Unlock  ( asynq *self );

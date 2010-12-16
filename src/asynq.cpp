@@ -18,6 +18,14 @@
 #define DEBUG_ASYNQ_UNREF
 #endif
 
+#if 0
+#define DBG(...) debug(__VA_ARGS__)
+#define LOCKDBG(...) 
+#else
+#define DBG(...)
+#define LOCKDBG(...)
+#endif
+
 //
 // Benchmarks
 // ----------
@@ -27,8 +35,8 @@
 //   Notes
 //   -----
 //   - An "op" (as in ops/sec.) is a single push/pop cycle.
-//   - The push/pop time should be independant of the cargo size.
-//     It should also be nearly independant of queue size.
+//   - The push/pop time should be independent of the cargo size.
+//     It should also be nearly independent of queue size.
 //
 asynq*
 Asynq_Alloc(size_t buffer_count, size_t buffer_size_bytes )
@@ -109,7 +117,18 @@ Asynq_Unref( asynq *self )
 
 inline void 
 Asynq_Lock ( asynq *self )
-{ EnterCriticalSection( &self->_lock );
+{ 
+  LOCKDBG("[0x%p] (-) LockCount: %d\r\n",self,self->_lock.LockCount);
+  EnterCriticalSection( &self->_lock );
+  LOCKDBG("[0x%p] (+) LockCount: %d\r\n",self,self->_lock.LockCount);
+}
+
+inline void 
+Asynq_Unlock ( asynq *self )
+{ 
+  LOCKDBG("[0x%p] (+) Un LockCount: %d\r\n",self,self->_lock.LockCount);
+  LeaveCriticalSection( &self->_lock );
+  LOCKDBG("[0x%p] (-) Un LockCount: %d\r\n",self,self->_lock.LockCount);
 }
 
 /* Returns 1 on success, 0 otherwise.
@@ -160,11 +179,6 @@ _handle_wait_for_multiple_result(DWORD result, int n, const char* msg)
   return 0;
 }
 
-inline void 
-Asynq_Unlock ( asynq *self )
-{ LeaveCriticalSection( &self->_lock );
-}
-
 //
 // Fundamental pop/push behavior
 //
@@ -176,7 +190,7 @@ _asynq_wait_for_space( asynq *self, DWORD timeout_ms, const char* msg )
   
   Guarded_Assert_WinErr( ResetEvent( notify[0] ) );
   Guarded_Assert_WinErr( ResetEvent( notify[1] ) );
-  self->waiting_producers++;    
+  self->waiting_producers++;
   Asynq_Unlock(self);
   res = WaitForMultipleObjects(2, notify, FALSE /*any*/, timeout_ms );
   Asynq_Lock(self);    
@@ -194,14 +208,16 @@ _asynq_wait_for_data__pop( asynq *self, DWORD timeout_ms, const char* msg )
 { HANDLE notify[2] = {self->notify_data, self->notify_abort};
   DWORD res;
   
+  DBG("ASYNQ (0x%p): [POP ][1] About to ResetEvent (0x%p)\r\n",self,self->notify_abort);
   Guarded_Assert_WinErr( ResetEvent( notify[0] ) );
   Guarded_Assert_WinErr( ResetEvent( notify[1] ) );
   self->waiting_poppers++;
+  //DBG("ASYNQ (0x%p): [POP ][2] Wait for data (waiting: %d)\r\n",self,self->waiting_poppers);
   Asynq_Unlock(self);
   res = WaitForMultipleObjects(2, notify, FALSE/*any*/,timeout_ms );
   Asynq_Lock(self);
   self->waiting_poppers--;
-  
+  DBG("ASYNQ (0x%p): [POP ][3] Wait for data (waiting: %d)\r\n",self,self->waiting_poppers);
   if(  _handle_wait_for_multiple_result(res,2,msg)==0 ||  /* checks for timeout/abandoned */
        res==WAIT_OBJECT_0+1 )                             /* the abort event notified...  */
     return 0;
@@ -473,9 +489,12 @@ Asynq_Peek_Timed( asynq *self, void **buf, size_t sz, DWORD timeout_ms )
 // Producer/Consumer management
 //
 
-void Asynq_Flush_Waiting_Consumers( asynq *self )
-{ Asynq_Lock(self);               // don't set the event if someone else has the lock
-  SetEvent( self->notify_abort );
+void Asynq_Flush( asynq *self )
+{ 
+  Asynq_Lock(self);               // don't set the event if someone else has the lock
+  DBG("ASYNQ (0x%p): Flush (0x%p)\r\n",self,self->notify_abort);
+  Guarded_Assert_WinErr(SetEvent( self->notify_abort ));  
+  
   Asynq_Unlock(self);
 }
 

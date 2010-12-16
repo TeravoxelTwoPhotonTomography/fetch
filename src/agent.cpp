@@ -4,10 +4,12 @@
 
 #define DEBUG_AGENT__HANDLE_WAIT_FOR_RESULT
 
-#if 1
+#if 0
 #define DBG(...) debug(__VA_ARGS__)
+#define LOCKDBG(...)  DBG(__VA_ARGS__)
 #else
 #define DBG(...)
+#define LOCKDBG(...)
 #endif
 
 namespace fetch
@@ -16,12 +18,18 @@ namespace fetch
 
   inline void
     Agent::lock(void)
-    { EnterCriticalSection(&_lock);
+  { 
+      LOCKDBG("[%s] (-) LockCount: %d\r\n",name(),_lock.LockCount);
+      EnterCriticalSection(&_lock);
+      LOCKDBG("[%s] (+) LockCount: %d\r\n",name(),_lock.LockCount);
     }
 
   inline void
     Agent::unlock(void)
-    { LeaveCriticalSection(&_lock);
+    { 
+      LOCKDBG("[%s] (+) Un LockCount: %d\r\n",name(), _lock.LockCount);
+      LeaveCriticalSection(&_lock);
+      LOCKDBG("[%s] (-) Un LockCount: %d\r\n",name(), _lock.LockCount);
     }
 
     Agent::Agent(IDevice *owner) :
@@ -30,26 +38,22 @@ namespace fetch
       _is_running(0),
       _owner(owner),
       _task(NULL),
-      _num_waiting(0)
+      _num_waiting(0),
+      _name(0)
     {
-        // default security attr
-        // manual reset
-        // initially unsignaled
-        Guarded_Assert_WinErr(  
-        this->_notify_available = CreateEvent( NULL,  // default security attr
-                                              TRUE,   // manual reset
-                                              FALSE,  // initially unsignalled
-                                              NULL ));
-        // default security attr
-        // manual reset
-        // initially unsignaled
-        Guarded_Assert_WinErr(  
-        this->_notify_stop      = CreateEvent( NULL,  // default security attr
-                                              TRUE,   // manual reset
-                                              FALSE,  // initially unsignalled
-                                              NULL ));
-        Guarded_Assert_WinErr(
-        InitializeCriticalSectionAndSpinCount( &_lock, 0x8000400 ));
+       __common_setup();
+    }
+    
+    Agent::Agent(char *name, IDevice *owner) :
+      _thread(INVALID_HANDLE_VALUE),
+      _is_available(0),
+      _is_running(0),
+      _owner(owner),
+      _task(NULL),
+      _num_waiting(0),
+      _name(name)
+    {
+      __common_setup();
     }
 
     inline static void _safe_free_handle(HANDLE *h)
@@ -66,7 +70,7 @@ namespace fetch
         //    warning("~Agent : Attempt to detach() timed out.\r\n");
 
         if(_num_waiting > 0)
-            warning("~Agent : Agent has waiting tasks.\r\n         Try calling Agent::detach first.\r\n.");
+            warning("[%s] ~Agent : Agent has waiting tasks.\r\n         Try calling Agent::detach first.\r\n.",name());
         _safe_free_handle(&_thread);
         _safe_free_handle(&_notify_available);
         _safe_free_handle(&_notify_stop);
@@ -181,13 +185,13 @@ namespace fetch
       this->lock(); // Source state can not be "armed" or "running"
       if(!_request_available_unlocked(0/*is try*/, timeout_ms))// Blocks till agent is available
       {
-        warning("Agent unavailable.  Perhaps another task is running?\r\n\tAborting attempt to arm.\r\n");
+        warning("[%s] Agent unavailable.  Perhaps another task is running?\r\n\tAborting attempt to arm.\r\n",name());
         goto Error;
       }
       this->_task = task; // save the task
       // Exec task config function
       if(!(task->config)(dc)){
-        warning("While loading task, something went wrong with the task configuration.\r\n\tAgent not armed.\r\n");
+        warning("[%s] While loading task, something went wrong with the task configuration.\r\n\tAgent not armed.\r\n",name());
         goto Error;
       }
       // Create thread for running task
@@ -200,7 +204,7 @@ namespace fetch
         NULL )); // don't worry about the thread id
       this->_is_available = 0;
       this->unlock();
-      DBG("Armed 0x%p\r\n",this);
+      DBG("Armed %s 0x%p\r\n",name(), this);
       return 1;
 Error:
       this->_task = NULL;
@@ -242,7 +246,7 @@ Error:
             q = Asynq_Alloc(32, sizeof (T));
 
         if(!Asynq_Push_Copy(q, &args, sizeof(T), TRUE)){
-            warning("In Agent::arm_nonblocking: Could not push request arguments to queue.");
+            warning("[%s] In Agent::arm_nonblocking: Could not push request arguments to queue.",name());
             return 0;
         }
         return QueueUserWorkItem(&_agent_arm_thread_proc, (void*)q, NULL /*default flags*/);
@@ -260,7 +264,7 @@ Error:
       this->set_available();
       sts &= _owner->disarm();
       this->unlock();
-      DBG("Disarmed 0x%p\r\n",this);
+      DBG("Disarmed %s 0x%p\r\n",name(), this);
       return sts;
     }
     
@@ -293,7 +297,7 @@ Error:
             q = Asynq_Alloc(32, sizeof (T));
 
         if(!Asynq_Push_Copy(q, &args, sizeof(T), TRUE)){
-            warning("In Agent::disarm_nonblocking:\r\n\tCould not push request arguments to queue.\r\n");
+            warning("[%s] In Agent::disarm_nonblocking:\r\n\tCould not push request arguments to queue.\r\n",name());
             return 0;
         }
         return QueueUserWorkItem(&_agent_disarm_thread_proc, (void*)q, NULL /*default flags*/);
@@ -321,7 +325,7 @@ Error:
             this->_thread = CreateThread(0, // use default access rights
             0,                  // use default stack size (1 MB)
             this->_task->thread_main, // main function
-            this,               // arguments
+            this->_owner,       // arguments
             0,                  // run immediately
             NULL ));            // don't worry about the thread id
 #if 0
@@ -329,14 +333,15 @@ Error:
             SetThreadPriority( this->thread,
             THREAD_PRIORITY_TIME_CRITICAL ));
 #endif
-          DBG("Run:4b\r\n");
+          DBG("Run: %s\r\n",name());
         }
       } else //(then not runnable)
       { 
-        warning("Attempted to run an unarmed or already running Agent.\r\n"
-          "\tAborting the run attempt.\r\n");
+        warning(
+          "[%s] Attempted to run an unarmed or already running Agent.\r\n"
+          "\tAborting the run attempt.\r\n",name());
       }
-      DBG("Agent Run: 0x%p (sts %d) thread 0x%p\r\n", this, sts, this->_thread);
+      DBG("Agent Run: %s 0x%p (sts %d) thread 0x%p\r\n", name(), this, sts, this->_thread);
       this->unlock();
       return sts;
     }
@@ -369,7 +374,7 @@ Error:
             q = Asynq_Alloc(32, sizeof (T));
 
         if(!Asynq_Push_Copy(q, &args, sizeof(T), TRUE)){
-            warning("In Agent_Run_Nonblocking:\r\n\tCould not push request arguments to queue.\r\n");
+            warning("[%s] In Agent_Run_Nonblocking:\r\n\tCould not push request arguments to queue.\r\n",name());
             return 0;
         }
         return QueueUserWorkItem(&_agent_run_thread_proc, (void*)q, NULL /*default flags*/);
@@ -381,6 +386,7 @@ Error:
     {
       DWORD res;
       this->lock();
+      DBG("Agent: Stopping %s 0x%p\r\n",name(), this);
       if( this->_is_running )
       { if( this->_thread != INVALID_HANDLE_VALUE)
         { SetEvent(this->_notify_stop);                  // Signal task to stop
@@ -388,28 +394,26 @@ Error:
             unsigned i;
             if(_owner->_in)
               for(i=0;i<_owner->_in->nelem;++i) 
-                Guarded_Assert_WinErr(SetEvent(_owner->_in->contents[i]->notify_abort));
+                Asynq_Flush(_owner->_in->contents[i]);               
 //          if(this->out)                                                                // Only notify input queues.  This way output queues will be drained if those agents are still running.
 //            for(i=0;i<this->out->nelem;++i)
 //              Guarded_Assert_WinErr(SetEvent(this->out->contents[i]->notify_abort));
           }
           this->unlock();
-          res = WaitForSingleObject(this->_thread, timeout_ms); // wait for running thread to stop
+          if(this->_thread!=INVALID_HANDLE_VALUE)
+            res = WaitForSingleObject(this->_thread, timeout_ms); // wait for running thread to stop
           this->lock();
           ResetEvent(this->_notify_stop);
-          { size_t i;
-            if(_owner->_in)
-              for(i=0;i<_owner->_in->nelem;++i) 
-                Guarded_Assert_WinErr(ResetEvent(_owner->_in->contents[i]->notify_abort));
-//          if(this->out)
-//            for(i=0;i<this->out->nelem;++i) 
-//              Guarded_Assert_WinErr(ResetEvent(this->out->contents[i]->notify_abort));
-          }
-          
+          //{ size_t i;
+          //  if(_owner->_in)
+          //    for(i=0;i<_owner->_in->nelem;++i) 
+          //      Guarded_Assert_WinErr(ResetEvent(_owner->_in->contents[i]->notify_abort));
+          //}
+          //
 
           // Handle a timeout on the wait.  
           if( !_handle_wait_for_result(res, "Agent stop: Wait for thread."))
-          { warning("Timed out waiting for task thread (0x%p) to stop.  Forcing termination.\r\n",this->_thread);
+          { warning("[5s] Timed out waiting for task thread (0x%p) to stop.  Forcing termination.\r\n",name(), this->_thread);
             Guarded_Assert_WinErr(TerminateThread(this->_thread,127)); // Force the thread to stop
           } 
           CloseHandle(this->_thread);
@@ -418,7 +422,7 @@ Error:
         this->_is_running = 0;
       }
       this->unlock();
-      DBG("Agent: Stopped 0x%p\r\n",this);
+      DBG("Agent: Stopped %s 0x%p\r\n",name(), this);
       return 1;
     }
 
@@ -451,7 +455,7 @@ Error:
             q = Asynq_Alloc(32, sizeof (T));
 
         if(!Asynq_Push_Copy(q, &args, sizeof(T), TRUE)){
-            warning("In Agent::stop_nonblocking:\r\n\tCould not push request arguments to queue.\r\n");
+            warning("[%s] In Agent::stop_nonblocking:\r\n\tCould not push request arguments to queue.\r\n",name());
             return 0;
         }
         return QueueUserWorkItem(&_agent_stop_thread_proc, (void*)q, NULL /*default flags*/);
@@ -487,7 +491,7 @@ Error:
     if(sts==0)
       set_available();
     else
-      warning("Agent's owner did not attach properly.\r\n\tFile: %s (%d)",__FILE__,__LINE__);
+      warning("[%s] Agent's owner did not attach properly.\r\n\tFile: %s (%d)",name(),__FILE__,__LINE__);
     unlock();
     return sts;
   }
@@ -499,12 +503,34 @@ Error:
   {
     unsigned int sts=1;
     if(!disarm(AGENT_DEFAULT_TIMEOUT))
-      warning("Could not cleanly disarm (device at 0x%p)\r\n",_owner);
+      warning("[%s] Could not cleanly disarm (device at 0x%p)\r\n",name(), _owner);
     lock();
     sts = _owner->detach();
     _is_available=0;
     unlock();
     return sts;
+  }
+
+  void Agent::__common_setup()
+  {
+    // default security attr
+    // manual reset
+    // initially unsignaled
+    Guarded_Assert_WinErr(  
+      this->_notify_available = CreateEvent( NULL,  // default security attr
+      TRUE,   // manual reset
+      FALSE,  // initially unsignalled
+      NULL ));
+    // default security attr
+    // manual reset
+    // initially unsignaled
+    Guarded_Assert_WinErr(  
+      this->_notify_stop      = CreateEvent( NULL,  // default security attr
+      TRUE,   // manual reset
+      FALSE,  // initially unsignalled
+      NULL ));
+    Guarded_Assert_WinErr(
+      InitializeCriticalSectionAndSpinCount( &_lock, 0x8000400 ));
   }
 
 

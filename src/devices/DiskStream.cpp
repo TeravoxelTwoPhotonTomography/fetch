@@ -67,7 +67,7 @@ namespace fetch
         asynq **beg =       _in->contents,
               **cur = beg + _in->nelem;
         while(cur-- > beg)
-          Asynq_Flush_Waiting_Consumers( cur[0] );
+          Asynq_Flush( cur[0] );
       }
     }
 

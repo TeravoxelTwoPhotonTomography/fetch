@@ -56,9 +56,9 @@ namespace fetch
   public:
     typedef TWorkTask TaskType;
 
-    WorkAgent();                                           // Will configure only.  Use apply() to connect, arm, and run.  config is set to TConfig().
-    WorkAgent(TConfig *config);                            // Will configure only.  Use apply() to connect, arm, and run.
-    WorkAgent(IDevice *source, int ichan, TConfig *config);  // Will connect, configure, arm, and run
+    WorkAgent(char* name=NULL);                                              // Will configure only.  Use apply() to connect, arm, and run.  config is set to TConfig().
+    WorkAgent(TConfig *config,char* name=NULL);                              // Will configure only.  Use apply() to connect, arm, and run.
+    WorkAgent(IDevice *source, int ichan, TConfig *config,char* name=NULL);  // Will connect, configure, arm, and run
 
     WorkAgent<TWorkTask,TConfig>* apply(IDevice *source, int ichan=0); // returns <this>
 
@@ -77,27 +77,27 @@ namespace fetch
   ////////////////////////////////////////////////////////////////////////////
   
   template<typename TWorkTask,typename TConfig>
-  WorkAgent<TWorkTask,TConfig>::WorkAgent()
+  WorkAgent<TWorkTask,TConfig>::WorkAgent(char* name)
     :IConfigurableDevice<TConfig>(&__agent_instance)
-    ,__agent_instance(NULL)    
+    ,__agent_instance(name,NULL)    
   {
     __agent_instance._owner = this;
     _agent->attach(); 
   }
 
   template<typename TWorkTask,typename TConfig>
-  WorkAgent<TWorkTask,TConfig>::WorkAgent(TConfig *config)
+  WorkAgent<TWorkTask,TConfig>::WorkAgent(TConfig *config,char* name)
     :IConfigurableDevice<TConfig>(&__agent_instance,config)
-    ,__agent_instance(NULL)
+    ,__agent_instance(name,NULL)
   { 
     __agent_instance._owner = this;
     _agent->attach(); 
   }
 
   template<typename TWorkTask,typename TConfig>
-  WorkAgent<TWorkTask,TConfig>::WorkAgent(IDevice *source, int ichan, TConfig *config)
+  WorkAgent<TWorkTask,TConfig>::WorkAgent(IDevice *source, int ichan, TConfig *config,char* name)
     :IConfigurableDevice<TConfig>(&__agent_instance,config)
-    ,__agent_instance(this)
+    ,__agent_instance(name,this)
   { 
     _agent->attach();
     apply(source,ichan);

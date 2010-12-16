@@ -241,7 +241,11 @@ namespace fetch {
   { 
     public:
                Agent(IDevice *owner);
-      virtual ~Agent();
+               Agent(char* name, IDevice *owner);
+
+               void __common_setup();
+
+               virtual ~Agent();
 
       // State transition functions
       unsigned int attach (void);                      // Returns 0 on success, nonzero otherwise.
@@ -270,10 +274,14 @@ namespace fetch {
                                        
       unsigned int wait_till_stopped(DWORD timeout_ms=INFINITE);   //returns 1 on success, 0 otherwise
       unsigned int wait_till_available(DWORD timeout_ms=INFINITE); //returns 1 on success, 0 otherwise
+
+      char *name() {return _name?_name:" \0";}
       
     public:
       IDevice         *_owner;
       Task            *_task;
+
+      char *_name;
       
     protected:
       friend class Task;

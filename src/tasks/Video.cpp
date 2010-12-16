@@ -82,7 +82,7 @@ namespace fetch
           return run_simulated(s);
           break;
         default:
-          error("Video<>::run() - Got invalid kind() for Digitizer.get_config\r\n");          
+          warning("Video<>::run() - Got invalid kind() for Digitizer.get_config\r\n");          
         }
         return 0; //failure 
       }
@@ -244,14 +244,14 @@ Error:
       template<class TPixel>
       unsigned int fetch::task::scanner::Video<TPixel>::run_simulated( device::Scanner2D *d )
       {
-        error("Implement me!\r\n");
+        warning("Implement me!\r\n");
         return 1;
       }
 
       template<class TPixel>
       unsigned int fetch::task::scanner::Video<TPixel>::run_alazar( device::Scanner2D *d )
       {
-        error("Implement me!\r\n");
+        warning("Implement me!\r\n");
         return 1;
       }
 

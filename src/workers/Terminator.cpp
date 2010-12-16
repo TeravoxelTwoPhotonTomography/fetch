@@ -13,7 +13,7 @@
 #include "stdafx.h"
 #include "Terminator.h"
 
-#if 0
+#if 1
 #define DBG(...) debug(__VA_ARGS__)
 #else
 #define DBG(...)
@@ -49,7 +49,7 @@ namespace fetch
 #if 0
         if( !Asynq_Is_Empty(q[0]) ) DBG("Convenient break point\r\n");
 #endif
-        if( Asynq_Pop(q[i % n], buf + i%n,szs[i%n]) )
+        if( !d->_agent->is_stopping() && Asynq_Pop(q[i % n], buf + i%n,szs[i%n]) )
         { DBG("Task: Terminator: trashing buffer on queue %d (iter: %d)\r\n",i%n,i);
           szs[i%n] = q[i%n]->q->buffer_size_bytes;
         }

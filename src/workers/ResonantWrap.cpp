@@ -80,14 +80,15 @@ namespace fetch
   namespace worker {
 
     ResonantWrapAgent::ResonantWrapAgent()
-    : _notify_out_of_bounds_update(INVALID_HANDLE_VALUE),
+      : WorkAgent<TaskType,Config>("ResonantWrap")
+      ,_notify_out_of_bounds_update(INVALID_HANDLE_VALUE),
       _is_in_bounds(false)
     { 
       __common_setup();
     }
 
     ResonantWrapAgent::ResonantWrapAgent( Config *config )
-      :WorkAgent<TaskType,Config>(config)
+      :WorkAgent<TaskType,Config>(config,"ResonantWrap")
       ,_notify_out_of_bounds_update(INVALID_HANDLE_VALUE)
       ,_is_in_bounds(false)
     { 
