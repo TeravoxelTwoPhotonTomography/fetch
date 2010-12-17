@@ -5,3 +5,4 @@ buildvs
 msvc
 vs
 *.swp
+*~
