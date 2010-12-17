@@ -1,0 +1,4 @@
+#cmakedefine HAVE_NIDAQMX
+#cmakedefine HAVE_NISCOPE
+#cmakedefine HAVE_ALAZAR
+#cmakedefine HAVE_C843

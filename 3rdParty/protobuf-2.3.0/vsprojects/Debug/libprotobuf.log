@@ -1,5 +1,5 @@
-﻿Build started 12/14/2010 3:26:29 PM.
-     1>Project "C:\Users\clackn\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\libprotobuf.vcxproj" on node 3 (build target(s)).
+﻿Build started 12/16/2010 11:07:40 PM.
+     1>Project "C:\Users\Clack\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\libprotobuf.vcxproj" on node 3 (build target(s)).
      1>InitializeBuildStatus:
          Creating "Debug\libprotobuf.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
@@ -73,12 +73,12 @@
          Debug\zero_copy_stream_impl.obj
          Debug\zero_copy_stream_impl_lite.obj
      1>hash.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
-         libprotobuf.vcxproj -> C:\Users\clackn\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\Debug\libprotobuf.lib
+         libprotobuf.vcxproj -> C:\Users\Clack\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\Debug\libprotobuf.lib
        FinalizeBuildStatus:
          Deleting file "Debug\libprotobuf.unsuccessfulbuild".
          Touching "Debug\libprotobuf.lastbuildstate".
-     1>Done Building Project "C:\Users\clackn\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\libprotobuf.vcxproj" (build target(s)).
+     1>Done Building Project "C:\Users\Clack\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\libprotobuf.vcxproj" (build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:17.34
+Time Elapsed 00:00:18.65

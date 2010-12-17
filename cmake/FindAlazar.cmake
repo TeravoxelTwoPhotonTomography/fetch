@@ -6,6 +6,7 @@
 # ALAZAR_LIBRARY
 # ALAZAR_INCLUDE_DIR
 # ALAZAR_FOUND
+# HAVE_ALAZAR         - Used with #cmakedefine for configuration.
 #
 
 #
@@ -21,6 +22,7 @@ ENDFUNCTION(_ALAZAR_ASSERT)
 
 #
 set(ALAZAR_FOUND "NO")
+set(HAVE_ALAZAR 0)
 
 find_path(ALAZAR_INCLUDE_DIR AlazarApi.h
     HINTS
@@ -37,6 +39,7 @@ find_library(ALAZAR_LIBRARY ATSApi.lib
 _ALAZAR_ASSERT(ALAZAR_LIBRARY "Could not find ATSApi.lib")
 
 set(ALAZAR_FOUND "YES")
+set(HAVE_ALAZAR 1)
 # message("ALAZAR_INCLUDE_DIR is ${ALAZAR_INCLUDE_DIR}")
 # message("ALAZAR_LIBRARY is ${ALAZAR_LIBRARY}")
 

@@ -1,17 +1,84 @@
-﻿Build started 12/14/2010 4:10:43 PM.
-     1>Project "C:\Users\clackn\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\libprotobuf.vcxproj" on node 2 (build target(s)).
+﻿Build started 12/16/2010 11:07:18 PM.
+     1>Project "C:\Users\Clack\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\libprotobuf.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
          Creating "Release\libprotobuf.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
-         All outputs are up-to-date.
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I../src /I. /Zi /nologo /W3 /WX- /O2 /Oy- /D WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D LIBPROTOBUF_EXPORTS /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ..\src\google\protobuf\io\coded_stream.cc ..\src\google\protobuf\stubs\common.cc ..\src\google\protobuf\descriptor.cc ..\src\google\protobuf\descriptor.pb.cc ..\src\google\protobuf\descriptor_database.cc ..\src\google\protobuf\dynamic_message.cc ..\src\google\protobuf\extension_set.cc ..\src\google\protobuf\extension_set_heavy.cc ..\src\google\protobuf\generated_message_reflection.cc ..\src\google\protobuf\generated_message_util.cc ..\src\google\protobuf\io\gzip_stream.cc ..\src\google\protobuf\stubs\hash.cc ..\src\google\protobuf\compiler\importer.cc ..\src\google\protobuf\message.cc ..\src\google\protobuf\message_lite.cc ..\src\google\protobuf\stubs\once.cc ..\src\google\protobuf\compiler\parser.cc ..\src\google\protobuf\io\printer.cc ..\src\google\protobuf\reflection_ops.cc ..\src\google\protobuf\repeated_field.cc ..\src\google\protobuf\service.cc ..\src\google\protobuf\stubs\structurally_valid.cc ..\src\google\protobuf\stubs\strutil.cc ..\src\google\protobuf\stubs\substitute.cc ..\src\google\protobuf\text_format.cc ..\src\google\protobuf\io\tokenizer.cc ..\src\google\protobuf\unknown_field_set.cc ..\src\google\protobuf\wire_format.cc ..\src\google\protobuf\wire_format_lite.cc ..\src\google\protobuf\io\zero_copy_stream.cc ..\src\google\protobuf\io\zero_copy_stream_impl.cc ..\src\google\protobuf\io\zero_copy_stream_impl_lite.cc /wd4244 /wd4267 /wd4018 /wd4355 /wd4800 /wd4251 /wd4996 /wd4146 /wd4305 
+         coded_stream.cc
+         common.cc
+         descriptor.cc
+         descriptor.pb.cc
+         descriptor_database.cc
+         dynamic_message.cc
+         extension_set.cc
+         extension_set_heavy.cc
+         generated_message_reflection.cc
+         generated_message_util.cc
+         gzip_stream.cc
+         hash.cc
+         importer.cc
+         message.cc
+         message_lite.cc
+         once.cc
+         parser.cc
+         printer.cc
+         reflection_ops.cc
+         repeated_field.cc
+         Generating Code...
+         Compiling...
+         service.cc
+         structurally_valid.cc
+         strutil.cc
+         substitute.cc
+         text_format.cc
+         tokenizer.cc
+         unknown_field_set.cc
+         wire_format.cc
+         wire_format_lite.cc
+         zero_copy_stream.cc
+         zero_copy_stream_impl.cc
+         zero_copy_stream_impl_lite.cc
+         Generating Code...
        Lib:
-         All outputs are up-to-date.
-         libprotobuf.vcxproj -> C:\Users\clackn\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\Release\libprotobuf.lib
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\Lib.exe /OUT:"Release\libprotobuf.lib" /NOLOGO Release\coded_stream.obj
+         Release\common.obj
+         Release\descriptor.obj
+         Release\descriptor.pb.obj
+         Release\descriptor_database.obj
+         Release\dynamic_message.obj
+         Release\extension_set.obj
+         Release\extension_set_heavy.obj
+         Release\generated_message_reflection.obj
+         Release\generated_message_util.obj
+         Release\gzip_stream.obj
+         Release\hash.obj
+         Release\importer.obj
+         Release\message.obj
+         Release\message_lite.obj
+         Release\once.obj
+         Release\parser.obj
+         Release\printer.obj
+         Release\reflection_ops.obj
+         Release\repeated_field.obj
+         Release\service.obj
+         Release\structurally_valid.obj
+         Release\strutil.obj
+         Release\substitute.obj
+         Release\text_format.obj
+         Release\tokenizer.obj
+         Release\unknown_field_set.obj
+         Release\wire_format.obj
+         Release\wire_format_lite.obj
+         Release\zero_copy_stream.obj
+         Release\zero_copy_stream_impl.obj
+         Release\zero_copy_stream_impl_lite.obj
+     1>hash.obj : warning LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
+         libprotobuf.vcxproj -> C:\Users\Clack\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\Release\libprotobuf.lib
        FinalizeBuildStatus:
          Deleting file "Release\libprotobuf.unsuccessfulbuild".
          Touching "Release\libprotobuf.lastbuildstate".
-     1>Done Building Project "C:\Users\clackn\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\libprotobuf.vcxproj" (build target(s)).
+     1>Done Building Project "C:\Users\Clack\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\libprotobuf.vcxproj" (build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:00.12
+Time Elapsed 00:00:21.96

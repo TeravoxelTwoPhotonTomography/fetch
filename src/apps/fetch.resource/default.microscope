@@ -140,7 +140,7 @@ frame_average {
   ntimes: 1
 }
 file_series {
-  root: "D:\\temp"
+  root: "C:\\temp"
   date: "unknown"
   seriesno: 0
   pathsep: "\\"

@@ -7,6 +7,7 @@
 #
 cmake_minimum_required(VERSION 2.6)
 project(fetch)
+set(CMAKE_VERBOSE_MAKEFILE 1) ## Useful for debuging the build
 
 ##
 # 3rdParty
@@ -25,24 +26,30 @@ set(ROOT_3RDPARTY_PATH
 #
 
 #protobuf
-set(PROTO_DIR "src/proto")
+set(PROTO_DIR "${PROJECT_SOURCE_DIR}/src/proto")
 include("${PROTO_DIR}/GenProto.cmake")
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 #nidaq
-find_package(NIDAQmx REQUIRED)
-include_directories(${NIDAQMX_INCLUDE_DIR})
+find_package(NIDAQmx)
+if(NIDAQMX_FOUND)
+        set(OPTIONAL_LIBS ${OPTIONAL_LIBS} ${NIDAQMX_LIBRARY})
+        include_directories(${NIDAQMX_INCLUDE_DIR})
+endif(NIDAQMX_FOUND)
 
 #niscope
-find_package(NIScope REQUIRED)
-include_directories(${NISCOPE_INCLUDE_DIR})
+find_package(NIScope)
+if(NISCOPE_FOUND)
+        set(OPTIONAL_LIBS ${OPTIONAL_LIBS} ${NISCOPE_LIBRARIES})
+        include_directories(${NISCOPE_INCLUDE_DIR})
+endif(NISCOPE_FOUND)
 
 #mylib
 find_package(MyLib REQUIRED)
 include_directories(${MYLIB_INCLUDE_DIR})
 
 #OpenGL
-find_package(OpenGL)
+find_package(OpenGL REQUIRED)
 
 # #[depricated] DirectX
 #find_package(DirectX)
@@ -55,12 +62,18 @@ include_directories(${GLEW_INCLUDE_DIR})
 endif(WIN32)
 
 #Alazar
-find_package(Alazar REQUIRED)
-include_directories(${ALAZAR_INCLUDE_DIR})
+find_package(Alazar)
+if(ALAZAR_FOUND)
+        set(OPTIONAL_LIBS ${OPTIONAL_LIBS} ${ALAZAR_LIBRARY})
+        include_directories(${ALAZAR_INCLUDE_DIR})
+endif(ALAZAR_FOUND)
 
 #PI C-843 Stage controller
-find_package(C843 REQUIRED)
-include_directories(${C843_INCLUDE_DIR})
+find_package(C843)
+if(C843_FOUND)
+        set(OPTIONAL_LIBS ${OPTIONAL_LIBS} ${C843_LIBRARY})
+        include_directories(${C843_INCLUDE_DIR})
+endif(C843_FOUND)
 
 #Qt
 SET(QTLIBLIST
@@ -76,6 +89,12 @@ find_package(Qt4 4.7
 )
 include(${QT_USE_FILE})
 include_directories(${QT_INCLUDE_DIRS})
+
+configure_file(
+        "${PROJECT_SOURCE_DIR}/config.h.in"
+        "${PROJECT_BINARY_DIR}/config.h"
+        )
+include_directories("${PROJECT_BINARY_DIR}")
 
 ##
 # Fetch
@@ -170,14 +189,11 @@ add_executable(fetch
 target_link_libraries(fetch
   ${GTEST_BOTH_LIBRARIES}
   ${PROTOBUF_LIBRARIES}
-  ${NIDAQMX_LIBRARY}
-  ${NISCOPE_LIBRARIES}
   ${MYLIB_LIBRARIES}
   ${QT_LIBRARIES}
   ${OPENGL_LIBRARY}
   ${GLEW_LIBRARIES}
-  ${ALAZAR_LIBRARY}
-  ${C843_LIBRARY}
+  ${OPTIONAL_LIBS}
 # ${DIRECTX_LIBRARIES} 
 )
 
@@ -199,16 +215,19 @@ target_link_libraries(dumpMessage
   ${PROTOBUF_LIBRARIES}
   )
 
-add_executable(queryStages
-    src/apps/queryStages.cc
-    src/common.h
-    src/common.cpp
-    )
-target_link_libraries(queryStages
-    ${C843_LIBRARY}
-    )
+if(C843_FOUND)
+        message("HERE: C843_FOUND is ${C843_FOUND}")
+        add_executable(queryStages
+            src/apps/queryStages.cc
+            src/common.h
+            src/common.cpp
+            )
+        target_link_libraries(queryStages
+            ${C843_LIBRARY}
+            )
+endif(C843_FOUND)
 ##
 # Testing
 #
-enable_testing(true)
-add_subdirectory(tests)
+#enable_testing(true)
+#add_subdirectory(tests)

@@ -1,5 +1,5 @@
-﻿Build started 12/14/2010 3:27:06 PM.
-     1>Project "C:\Users\clackn\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\libprotoc.vcxproj" on node 2 (build target(s)).
+﻿Build started 12/16/2010 11:08:19 PM.
+     1>Project "C:\Users\Clack\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\libprotoc.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
          Creating "Debug\libprotoc.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
@@ -68,12 +68,12 @@
          Debug\java_primitive_field.obj
          Debug\java_service.obj
          Debug\python_generator.obj
-         libprotoc.vcxproj -> C:\Users\clackn\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\Debug\libprotoc.lib
+         libprotoc.vcxproj -> C:\Users\Clack\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\Debug\libprotoc.lib
        FinalizeBuildStatus:
          Deleting file "Debug\libprotoc.unsuccessfulbuild".
          Touching "Debug\libprotoc.lastbuildstate".
-     1>Done Building Project "C:\Users\clackn\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\libprotoc.vcxproj" (build target(s)).
+     1>Done Building Project "C:\Users\Clack\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\libprotoc.vcxproj" (build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:17.16
+Time Elapsed 00:00:18.62

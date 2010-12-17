@@ -95,28 +95,7 @@ FIND_LIBRARY(MYLIB_MYFFT_LIBRARY
 )
 _MYLIB_ASSERT(MYLIB_MYFFT_LIBRARY "Could not find Mylib FFT library.")
 
-IF(WIN32)
-  #snprintf
-  FIND_LIBRARY(MYLIB_SNPRINTF_LIBRARY
-    snprintf.lib
-    HINTS ${_MYLIB_HINTS}
-    PATH_SUFFIXES build/3rdParty/snprintf/Debug
-                  build/3rdParty/snprintf/Release
-                  build/3rdParty/snprintf
-                  xcode/3rdParty/snprintf/Debug
-                  xcode/3rdParty/snprintf/Release
-                  xcode/3rdParty/snprintf
-                  vc2010/3rdParty/snprintf
-                  vc2010/3rdParty/snprintf/Debug
-                  vc2010/3rdParty/snprintf/Release
-                  vc2010x64/3rdParty/snprintf
-                  vc2010x64/3rdParty/snprintf/Debug
-                  vc2010x64/3rdParty/snprintf/Release
-    DOC "Location of 3rd party snprintf compatibility library"
-  )
-  _MYLIB_ASSERT(MYLIB_SNPRINTF_LIBRARY "Could not find snprintf compatibility library.")
-ENDIF(WIN32)
-SET(MYLIB_LIBRARIES ${MYLIB_MYLIB_LIBRARY} ${MYLIB_MYTIFF_LIBRARY} ${MYLIB_MYFFT_LIBRARY} ${MYLIB_SNPRINTF_LIBRARY})
+SET(MYLIB_LIBRARIES ${MYLIB_MYLIB_LIBRARY} ${MYLIB_MYTIFF_LIBRARY} ${MYLIB_MYFFT_LIBRARY} )
 SET(MYLIB_DIR ${MYLIB_INCLUDE_DIR})
 SET(MYLIB_FOUND TRUE)
 
