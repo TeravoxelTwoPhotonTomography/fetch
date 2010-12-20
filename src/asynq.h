@@ -75,6 +75,8 @@ typedef struct _asynq
   HANDLE             notify_data;     // triggered when queue is not empty (has available data).
   HANDLE             notify_peek;     // triggered after a peek.  Notifies a pop to proceed.
   HANDLE             notify_abort;    // triggered to abort any pending operations (e.g. for shutdown).
+
+  vector_u8         *_workspace;      // Token buffer used for push/pop operations.
 } asynq;
 
 asynq *Asynq_Alloc   ( size_t buffer_count, size_t buffer_size_bytes );

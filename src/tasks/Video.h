@@ -14,6 +14,7 @@
 #pragma once
 #include "task.h"
 #include "devices/scanner2D.h"
+#include "devices/scanner3D.h"
 #include "agent.h"
 
 namespace fetch
@@ -28,7 +29,8 @@ namespace fetch
       {
         public:
           unsigned int config (IDevice *d);
-          unsigned int run    (IDevice *d);
+          unsigned int run    (device::Scanner2D *d);
+          unsigned int run    (device::Scanner3D *d);
           unsigned int update (IDevice *d);
           
           unsigned int config (device::Scanner2D *d);          
@@ -37,6 +39,9 @@ namespace fetch
           unsigned int run_niscope(device::Scanner2D *d);
           unsigned int run_alazar(device::Scanner2D *d);
           unsigned int run_simulated(device::Scanner2D *d);
+
+        protected:
+          unsigned int run    (IDevice *d);
       };
 
       template<typename T>

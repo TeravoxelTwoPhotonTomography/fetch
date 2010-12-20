@@ -38,7 +38,7 @@ namespace fetch
 	      IDevice *cur;
         cur =  dc->configPipeline();
 	      cur =  dc->trash.apply(cur);
-	      
+	              
         dc->__scan_agent.arm(&focus,&dc->scanner._scanner2d);
 	      //dc->__scan_agent.arm_nowait(&focus,&dc->scanner._scanner2d,INFINITE);
 	      
@@ -89,7 +89,7 @@ namespace fetch
           }
 
         }
-        dc->__scan_agent.disarm();
+        //dc->__scan_agent.disarm();
         return eflag;
       }
     }

@@ -53,8 +53,8 @@ void Init(void)
   gp_microscope = NULL;
 
   //Shutdown
-  Register_New_Shutdown_Callback(QtShutdownCallback);
   Register_New_Shutdown_Callback(KillMicroscopeCallback);
+  Register_New_Shutdown_Callback(QtShutdownCallback);
 
   //Logging
   Reporting_Setup_Log_To_VSDebugger_Console();

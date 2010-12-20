@@ -18,12 +18,15 @@ namespace fetch
       a->_is_running = 0;  
       CloseHandle(a->_thread);
       a->_thread = INVALID_HANDLE_VALUE;
-
-      // Re-config() again.
-      if(!(task->config)(dc))
-        goto Error;
       a->unlock();
       
+      
+      // Re-config() again.?
+      // [Note] Don't do it here.  run() should return things to a post-configured state.
+      //        This function should be responsible for reconfiguring.
+      //if(!(task->config)(dc))
+      //  goto Error;
+
       return result;  
 Error:      
       a->unlock();

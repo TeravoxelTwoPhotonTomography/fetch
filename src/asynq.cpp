@@ -49,6 +49,8 @@ Asynq_Alloc(size_t buffer_count, size_t buffer_size_bytes )
   self->waiting_poppers   = 0;
   self->waiting_peekers   = 0;
 
+  self->_workspace = vector_u8_alloc(128);
+
   // For spin count,
   //    set high bit to preallocate event used in EnterCriticalSection for W2K
   //    see: http://msdn.microsoft.com/en-us/library/ms683472(VS.85).aspx
@@ -103,6 +105,8 @@ Asynq_Unref( asynq *self )
     if( !CloseHandle( self->notify_peek  )) ReportLastWindowsError();
     if( !CloseHandle( self->notify_space )) ReportLastWindowsError();
     if( !CloseHandle( self->notify_abort )) ReportLastWindowsError();
+    if( self->_workspace )
+      vector_u8_free(self->_workspace);
     if( self->q )
       RingFIFO_Free( self->q );
     self->q = NULL;
@@ -346,21 +350,10 @@ Asynq_Push( asynq *self, void **pbuf, size_t sz, int expand_on_full )
 unsigned int
 Asynq_Push_Copy(asynq *self, void *buf, size_t sz, int expand_on_full )
 { unsigned int result;
-  static void *token = 0;
-  static size_t capacity;
   Asynq_Lock(self);
-  if( !token ) // one-time-initialize working space
-  {
-    capacity = self->q->buffer_size_bytes;
-    token = Asynq_Token_Buffer_Alloc(self);
-  }
-  if(capacity<self->q->buffer_size_bytes)
-  {
-    capacity = self->q->buffer_size_bytes;
-    token = realloc(token,capacity);
-  }
-  memcpy(token,buf, self->q->buffer_size_bytes);
-  result = _asynq_push_unlocked(self, &token, sz, expand_on_full, FALSE, FALSE, INFINITE );
+  vector_u8_request(self->_workspace,sz+1);  
+  memcpy(self->_workspace->contents,buf,sz);
+  result = _asynq_push_unlocked(self, (void**) &(self->_workspace->contents), sz, expand_on_full, FALSE, FALSE, INFINITE );
   Asynq_Unlock(self);
   return result;
 }
@@ -418,23 +411,12 @@ Asynq_Pop_Try( asynq *self, void **pbuf, size_t sz)
 unsigned int
 Asynq_Pop_Copy_Try( asynq *self, void *buf, size_t sz)
 { unsigned int result;
-  static void* token = 0;
-  static size_t capacity;
   Asynq_Lock(self);
-  if( !token ) // one-time-initialize working space
-  {
-    capacity = self->q->buffer_size_bytes;
-    token = Asynq_Token_Buffer_Alloc(self);
-  }
-  if(capacity<self->q->buffer_size_bytes)
-  {
-    capacity = self->q->buffer_size_bytes;
-    token = realloc(token,capacity);
-  }
-  result = _asynq_pop_unlocked(self, &token, sz,
+  vector_u8_request(self->_workspace,sz+1);
+  result = _asynq_pop_unlocked(self, (void**) &(self->_workspace->contents), sz,
                                 TRUE,       // try
                                 INFINITE ); // timeout
-  memcpy(buf,token,self->q->buffer_size_bytes);
+  memcpy(buf,self->_workspace->contents,sz);
   Asynq_Unlock(self);
   return result;
 }

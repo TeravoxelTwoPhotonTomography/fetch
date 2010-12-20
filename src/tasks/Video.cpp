@@ -29,6 +29,8 @@
 #include "util/util-nidaqmx.h"
 #include "agent.h"
 
+#include "types.h"
+
 #define SCANNER_VIDEO_TASK_FETCH_TIMEOUT  10.0  //10.0, //(-1=infinite) (0.0=immediate)
                                                 // Setting this to infinite can sometimes make the application difficult to quit
 #if 0
@@ -66,9 +68,22 @@ namespace fetch
       template<class TPixel> unsigned int Video<TPixel>::config (IDevice *d)      {return config(dynamic_cast<device::Scanner2D*>(d));}      
       template<class TPixel> unsigned int Video<TPixel>::update (IDevice *d)      {return update(dynamic_cast<device::Scanner2D*>(d));}
      
-      template<class TPixel> unsigned int Video<TPixel>::run    (IDevice *d)
+      
+      template<class TPixel> unsigned int Video<TPixel>::run(device::Scanner3D* d)  {return run(&d->_scanner2d);}
+      template<class TPixel> unsigned int Video<TPixel>::run(IDevice *d)
+      {
+        { device::Scanner2D *s = dynamic_cast<device::Scanner2D*>(d);
+          if(s) return run(s);
+        }
+        { device::Scanner3D *s = dynamic_cast<device::Scanner3D*>(d);
+          if(s) return run(s);
+        }
+      }
+
+      template<class TPixel> unsigned int Video<TPixel>::run(device::Scanner2D* s)
       { 
-        device::Scanner2D *s = dynamic_cast<device::Scanner2D*>(d);
+        //device::Scanner2D *s;
+        //Guarded_Assert(s = dynamic_cast<device::Scanner2D*>(d));
         device::Digitizer::Config digcfg = s->_digitizer.get_config();
         switch(digcfg.kind())
         {
@@ -243,9 +258,51 @@ Error:
 
       template<class TPixel>
       unsigned int fetch::task::scanner::Video<TPixel>::run_simulated( device::Scanner2D *d )
-      {
-        warning("Implement me!\r\n");
-        return 1;
+      { asynq *qdata = d->_out->contents[0];
+        Frame *frm   = NULL;        
+        Frame_With_Interleaved_Planes ref(1024,1024,3,TypeID<TPixel>());
+        size_t nbytes;
+        int status = 1; // status == 0 implies success, error otherwise
+        
+        nbytes = ref.size_bytes();        
+        Asynq_Resize_Buffers(qdata, nbytes);
+        frm = (Frame*)Asynq_Token_Buffer_Alloc(qdata);
+        ref.format(frm);
+
+        warning("Simulated Video!\r\n");
+        while(!d->_agent->is_stopping())
+        { size_t pitch[4];
+          frm->compute_pitches(pitch);
+          //Fill frame
+          { TPixel *c,*e;
+            const f32 low = TypeMin<TPixel>(),
+                     high = TypeMax<TPixel>(),
+                      ptp = high - low,
+                      rmx = RAND_MAX;
+            c=e=(TPixel*)frm->data;
+            e+=pitch[0]/pitch[3];
+            for(;c<e;++c)
+              *c = (TPixel) ((ptp*rand()/(float)RAND_MAX) + low);
+          }
+          DBG("Task: Video<%s>: pushing frame\r\n",TypeStr<TPixel>());
+#ifdef SCANNER_DEBUG_FAIL_WHEN_FULL                     //"fail fast"          
+          if(  !Asynq_Push_Try( qdata,(void**) &frm,nbytes ))
+#elif defined( SCANNER_DEBUG_SPIN_WHEN_FULL )           //"fail proof" - overwrites when full
+          if(  !Asynq_Push( qdata,(void**) &frm, nbytes, FALSE ))
+#else
+          error("Choose a push behavior by compiling with the appropriate define.\r\n");
+#endif
+          { warning("Scanner output frame queue overflowed.\r\n\tAborting acquisition task.\r\n");
+            goto Error;
+          }
+          ref.format(frm);
+        }
+Finalize:
+        free( frm );
+        return status; // status == 0 implies success, error otherwise
+Error:
+        warning("Error occurred during Video<%s> task.\r\n",TypeStr<TPixel>());
+        goto Finalize;
       }
 
       template<class TPixel>
