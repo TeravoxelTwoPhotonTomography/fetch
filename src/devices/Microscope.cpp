@@ -149,6 +149,9 @@
     void Microscope::_set_config( Config IN *cfg )
     {
       scanner._set_config(cfg->mutable_scanner3d());
+      pixel_averager._set_config(cfg->mutable_horizontal_downsample());
+      frame_averager._set_config(cfg->mutable_frame_average());
+      wrap._set_config(cfg->mutable_resonant_wrap());
       file_series._desc = cfg->mutable_file_series();
     }
 

@@ -44,8 +44,6 @@ namespace ui {
   {
     createForm();
     
-
-
   }
 
   void VideoAcquisitionDockWidget::setTurn()

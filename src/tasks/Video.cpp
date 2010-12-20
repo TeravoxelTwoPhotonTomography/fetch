@@ -260,9 +260,10 @@ Error:
       unsigned int fetch::task::scanner::Video<TPixel>::run_simulated( device::Scanner2D *d )
       { asynq *qdata = d->_out->contents[0];
         Frame *frm   = NULL;        
-        Frame_With_Interleaved_Planes ref(1024,1024,3,TypeID<TPixel>());
+        Frame_With_Interleaved_Planes ref(512,512,3,TypeID<TPixel>());
         size_t nbytes;
         int status = 1; // status == 0 implies success, error otherwise
+        size_t count = 0;
         
         nbytes = ref.size_bytes();        
         Asynq_Resize_Buffers(qdata, nbytes);
@@ -272,8 +273,12 @@ Error:
         debug("Simulated Video!\r\n");
         while(!d->_agent->is_stopping())
         { size_t pitch[4];
+          size_t n[3];
           frm->compute_pitches(pitch);
-          //Fill frame
+          frm->get_shape(n);
+
+#if 1
+          //Fill frame w random colors.
           { TPixel *c,*e;
             const f32 low = TypeMin<TPixel>(),
                      high = TypeMax<TPixel>(),
@@ -284,6 +289,22 @@ Error:
             for(;c<e;++c)
               *c = (TPixel) ((ptp*rand()/(float)RAND_MAX) + low);
           }
+#endif
+
+#if 0
+          // Walking px
+          { 
+            const TPixel low = TypeMin<TPixel>(),
+                        high = TypeMax<TPixel>();
+            for(size_t  ichan=0;ichan<n[0];++ichan)
+            { 
+              TPixel *p = (TPixel*)((u8*)frm->data + ichan*pitch[1]);
+              memset(p,0,pitch[1]);
+              p[(ichan*count)%pitch[1]]=low; //high;
+            }                       
+          }
+#endif
+
           DBG("Task: Video<%s>: pushing frame\r\n",TypeStr<TPixel>());
 #ifdef SCANNER_DEBUG_FAIL_WHEN_FULL                     //"fail fast"          
           if(  !Asynq_Push_Try( qdata,(void**) &frm,nbytes ))
@@ -296,6 +317,7 @@ Error:
             goto Error;
           }
           ref.format(frm);
+          ++count;
         }
 Finalize:
         free( frm );

@@ -8,6 +8,7 @@
 #include "stdafx.h"
 #include "WorkAgent.h"
 #include "HorizontalDownsampler.h"
+#include "util\util-image.h"
 
 #if 0
 #define DBG(...) debug(__VA_ARGS__)
@@ -47,7 +48,31 @@ namespace fetch
         nbytes = fsrc->size_bytes(),
         nelem  = (nbytes - sizeof(Frame))/fsrc->Bpp;
         
-      N = dc->get_config().ntimes();
+      N = dc->get_config().ntimes();      
+      if(N==1)
+      {
+        size_t sp[4],dp[4],ds[3],ss[3];
+        fdst->compute_pitches(dp);
+        fsrc->compute_pitches(sp);
+        fdst->get_shape(ds);
+        fsrc->get_shape(ss);
+        switch(fsrc->rtti)
+        {
+        case id_u8 : imCopy<f32,u8> ((f32*)fdst->data,dp,(u8* )fsrc->data,sp,ss); break;
+        case id_u16: imCopy<f32,u16>((f32*)fdst->data,dp,(u16*)fsrc->data,sp,ss); break;
+        case id_u32: imCopy<f32,u32>((f32*)fdst->data,dp,(u32*)fsrc->data,sp,ss); break;
+        case id_u64: imCopy<f32,u64>((f32*)fdst->data,dp,(u64*)fsrc->data,sp,ss); break;
+        case id_i8 : imCopy<f32,i8> ((f32*)fdst->data,dp,(i8* )fsrc->data,sp,ss); break;
+        case id_i16: imCopy<f32,i16>((f32*)fdst->data,dp,(i16*)fsrc->data,sp,ss); break;
+        case id_i32: imCopy<f32,i32>((f32*)fdst->data,dp,(i32*)fsrc->data,sp,ss); break;
+        case id_i64: imCopy<f32,i64>((f32*)fdst->data,dp,(i64*)fsrc->data,sp,ss); break;
+        case id_f32: imCopy<f32,f32>((f32*)fdst->data,dp,(f32*)fsrc->data,sp,ss); break;
+          //case id_f64: pwa<f64>(fdst->data,fsrc->data,N,nelem); break;
+        default:
+          error("Unrecognized source type (id=%d).\r\n",fsrc->rtti);        
+        }
+        return 1; //success
+      }
 
       DBG("In HorizontalDownsampler::work.\r\n");
       //fsrc->dump("HorizontalDownsampler-src.%s",TypeStrFromID(fsrc->rtti));
