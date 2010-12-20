@@ -43,15 +43,13 @@ namespace fetch
     work(IDevice *idc, Frame *fdst, Frame *fsrc)
     { HorizontalDownsampleAgent *dc = dynamic_cast<HorizontalDownsampleAgent*>(idc);
       int N;
-      size_t nbytes = fsrc->size_bytes(),
-             nelem  = (nbytes - sizeof(Frame))/fsrc->Bpp;
-      //fsrc->dump("pixel-averager-source.f32");
-      
+      size_t 
+        nbytes = fsrc->size_bytes(),
+        nelem  = (nbytes - sizeof(Frame))/fsrc->Bpp;
+        
       N = dc->get_config().ntimes();
-      fdst->width /= N;      // Adjust output format
-      fdst->rtti   = id_f32;
-      fdst->Bpp    = 4;
-      DBG("In HorizontalDownsampler::work.\r\n");      
+
+      DBG("In HorizontalDownsampler::work.\r\n");
       //fsrc->dump("HorizontalDownsampler-src.%s",TypeStrFromID(fsrc->rtti));
       switch(fsrc->rtti)
       { 
@@ -70,6 +68,21 @@ namespace fetch
       }
       //fdst->dump("HorizontalDownsampler-dst.%s",TypeStrFromID(fdst->rtti));
       return 1; // success
+    }
+
+    unsigned int HorizontalDownsampler::reshape( IDevice *d, Frame *fdst )
+    {
+      HorizontalDownsampleAgent *dc = dynamic_cast<HorizontalDownsampleAgent*>(d);
+      int N;
+      size_t 
+        nbytes = fdst->size_bytes(),
+        nelem  = (nbytes - sizeof(Frame))/fdst->Bpp;
+
+      N = dc->get_config().ntimes();
+      fdst->width /= N;      // Adjust output format
+      fdst->rtti   = id_f32;
+      fdst->Bpp    = 4;
+      return 1; //success
     }
 
   }

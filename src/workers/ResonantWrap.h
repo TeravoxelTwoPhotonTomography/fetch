@@ -27,6 +27,7 @@ namespace fetch
     class ResonantWrap : public fetch::task::OneToOneWorkTask<Frame>
     {
       public:
+        unsigned int reshape(IDevice *d, Frame *dst);
         unsigned int work(IDevice *d, Frame *dst, Frame *src);
     };
 

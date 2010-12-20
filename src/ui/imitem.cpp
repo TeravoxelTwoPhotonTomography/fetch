@@ -111,7 +111,7 @@ GLuint typeMapMylibToGLType(mylib::Array **pa)
   ret = table[a->type];
   if(ret == (GLuint)-1)
   { *pa = mylib::Convert_Image_Copy(a,mylib::PLAIN_KIND,mylib::FLOAT32,32);
-    Free_Array(a); // release the old reference
+    //Free_Array(a); // release the old reference //[ngx] don't do this...owner is still responsible for his array.
     ret = GL_FLOAT;
   }
   return ret;
@@ -212,7 +212,7 @@ void ImItem::_setupShader()
 	QImage cmap;
   glActiveTexture(GL_TEXTURE1);
 	glEnable(GL_TEXTURE_2D);
-	assert(cmap.load(":/cmap/3","JPG"));
+	assert(cmap.load(":/cmap/2","JPG"));
   //qDebug()<<cmap.format();
 	glGenTextures(1, &_hTexCmap);
 	glBindTexture(GL_TEXTURE_2D, _hTexCmap);

@@ -130,9 +130,10 @@ file(GLOB FETCH_CORE_HDRS src/*.h)
 file(GLOB FETCH_CORE_SRCS src/*.cpp)
 include_directories(src)
 
-file(GLOB FETCH_MICROSCOPE_CONFIG apps/fetch.resource/*.microscope)
+file(GLOB FETCH_MICROSCOPE_CONFIG src/apps/fetch.resource/*.microscope)
 source_group("Config" FILES ${FETCH_MICROSCOPE_CONFIG})
 
+file(GLOB SHADERS src/ui/resources/shaders/*.*)
 source_group("DirectX Shaders" REGULAR_EXPRESSION \\.fx$)
 source_group("GLSL Shaders\\Vertex Programs" REGULAR_EXPRESSION \\.vert$)
 source_group("GLSL Shaders\\Fragments Programs" REGULAR_EXPRESSION \\.frag$)
@@ -185,6 +186,7 @@ add_executable(fetch
   ${MOC_SRCS}
   ${RCC_SRCS}
   ${FETCH_MICROSCOPE_CONFIG}
+  ${SHADERS}
 )
 target_link_libraries(fetch
   ${GTEST_BOTH_LIBRARIES}
@@ -216,7 +218,7 @@ target_link_libraries(dumpMessage
   )
 
 if(C843_FOUND)
-        message("HERE: C843_FOUND is ${C843_FOUND}")
+#message("HERE: C843_FOUND is ${C843_FOUND}")
         add_executable(queryStages
             src/apps/queryStages.cc
             src/common.h

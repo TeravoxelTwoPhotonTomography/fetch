@@ -45,7 +45,9 @@
  *      single result, work(e), is pushed onto the result queue.
  *
  *      This is a pretty common form, so the run() loop is already written.
- *      Subclasses just need to define the work() function.
+ *      Subclasses just need to define the work() function.  The reshape()
+ *      function should be reimplemented if the destination frame's shape
+ *      is different than the source's.
  *
  *      See FrameCaster.h for an example.
  */
@@ -74,6 +76,7 @@ namespace fetch
     { public:
                 unsigned int run(IDevice *d);
         virtual unsigned int work(IDevice *agent, TMessage *dst, TMessage *src) = 0;
+        virtual unsigned int reshape(IDevice *d, TMessage *dst) {return 1;}
     };
 
     template<typename TMessage>
@@ -97,34 +100,54 @@ namespace fetch
       TMessage *fsrc =  (TMessage*)Asynq_Token_Buffer_Alloc(qsrc),
                *fdst =  (TMessage*)Asynq_Token_Buffer_Alloc(qdst);
       size_t nbytes_in  = qsrc->q->buffer_size_bytes,
-             nbytes_out = qdst->q->buffer_size_bytes,
-             sz;
+             nbytes_out = qdst->q->buffer_size_bytes;
       
       while( !d->_agent->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, nbytes_in) )
         { //debug("In  OneToOneWorkTask::run - just popped\r\n");
           nbytes_in = fsrc->size_bytes();
           fsrc->format(fdst);
           goto_if_fail(
+            reshape(d,fdst),
+            FormatFunctionFailure);
+          nbytes_out = fdst->size_bytes();
+          if(nbytes_out>qdst->q->buffer_size_bytes)
+          { Asynq_Resize_Buffers(qdst,nbytes_out);
+            goto_if_fail(
+              fdst = (TMessage *) realloc(fdst,nbytes_out),
+              MemoryError
+              );
+            fsrc->format(fdst);
+            goto_if_fail(
+              reshape(d,fdst),
+              FormatFunctionFailure);
+          }
+          goto_if_fail(
             work(d,fdst,fsrc),
             WorkFunctionFailure);
-          sz = fdst->size_bytes();                           
-          nbytes_out = MAX( qdst->q->buffer_size_bytes, sz ); // XXX - awkward
           goto_if_fail(
             Asynq_Push_Timed( qdst, (void**)&fdst, nbytes_out, WORKER_DEFAULT_TIMEOUT ),
             OutputQueueTimeoutError);
         }      
 
-    Finalize:
+Finalize:
       Asynq_Token_Buffer_Free(fsrc);
       Asynq_Token_Buffer_Free(fdst);
       return sts;
     // Error handling
-    WorkFunctionFailure:
-      warning("Work function failed.\r\n");
+MemoryError:
+      warning("[%s] Could not reallocate destination buffer.\r\n",d->_agent->_name);
       sts = 1;
       goto Finalize;
-    OutputQueueTimeoutError:
-      warning("Pushing to output queue timed out.\r\n");
+FormatFunctionFailure:
+      warning("[%s] Work function failed.\r\n",d->_agent->_name);
+      sts = 1;
+      goto Finalize;
+WorkFunctionFailure:
+      warning("[%s] Work function failed.\r\n",d->_agent->_name);
+      sts = 1;
+      goto Finalize;
+OutputQueueTimeoutError:
+      warning("[%s] Pushing to output queue timed out.\r\n",d->_agent->_name);
       sts = 1;
       goto Finalize;
     }

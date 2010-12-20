@@ -77,6 +77,19 @@ namespace mylib
   //     castFetchFrameToDummyArray(&im,frame,dims);
   // 
   //
+  template<class T> void reverse(size_t N, T* d)
+  {
+    T *a = d,
+      *b = d+N-1;
+    T t;
+    for(;a<b;++a,--b)
+    {
+       t=*a;
+      *a=*b;
+      *b=t;
+    }
+  }
+
   void castFetchFrameToDummyArray(Array* dest, Frame* src, size_t dims[3])
   {
     assert(sizeof(size_t)==sizeof(mylib::Dimn_Type));
@@ -89,6 +102,7 @@ namespace mylib
     dest->type  = fetchTypeToArrayType(src->rtti);
     dest->scale = fetchTypeToArrayScale(src->rtti);
     src->get_shape(dims);
+    reverse<mylib::Dimn_Type>(dest->ndims,dims);
     dest->size = dims[0]*dims[1]*dims[2];
   }
 } //end namespace mylib

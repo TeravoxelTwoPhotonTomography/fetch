@@ -269,7 +269,7 @@ Error:
         frm = (Frame*)Asynq_Token_Buffer_Alloc(qdata);
         ref.format(frm);
 
-        warning("Simulated Video!\r\n");
+        debug("Simulated Video!\r\n");
         while(!d->_agent->is_stopping())
         { size_t pitch[4];
           frm->compute_pitches(pitch);

@@ -24,6 +24,7 @@ namespace fetch
     
     class HorizontalDownsampler : public OneToOneWorkTask<Frame>
     { public:
+        unsigned int reshape(IDevice *d, Frame *dst);
         unsigned int work(IDevice *agent, Frame *dst, Frame *src);
     };    
   }

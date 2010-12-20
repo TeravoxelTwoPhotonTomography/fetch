@@ -248,6 +248,10 @@ void Shutdown_Hard(unsigned int err)
 { exit( err | Shutdown_Soft() );
 }
 
+void Shutdown_Hard_Nonblocking(unsigned int err)
+{ exit( err | Shutdown_Soft_Nonblocking() );
+}
+
 // ------------------------------------
 // Error, Debug, and Warning reporting
 // ------------------------------------
@@ -473,7 +477,7 @@ void error(const char* fmt, ...)
   }
   LeaveCriticalSection( _get_reporting_critical_section() );
   // cleanup and shutdown
-  Shutdown_Hard(1);
+  Shutdown_Hard_Nonblocking(1);
 }
 
 void warning(const char* fmt, ...)

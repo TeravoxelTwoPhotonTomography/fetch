@@ -29,30 +29,50 @@ namespace fetch
 
   namespace task
   {
+    unsigned int ResonantWrap::reshape( IDevice *d, Frame *fdst )
+    { 
+      ResonantWrapAgent *dc = dynamic_cast<ResonantWrapAgent*>(d);
+      float turn;
+      int ow,oh,iw,ih;
+
+      Guarded_Assert(dc);
+
+      turn = dc->get_config().turn_px();
+      iw = fdst->width;
+      ih = fdst->height;
+
+      if(!get_dim(iw,ih,turn,&ow,&oh) || ow<0.1*iw) // output width must be >= 10% of input width
+      {
+        // turn parameter out-of-bounds
+        dc->setIsInBounds(false);
+        return 1; //success
+      } else
+      { 
+        dc->setIsInBounds(true);
+      }
+      fdst->width =ow;
+      fdst->height=oh;
+
+      return 1; // success
+    }
 
     unsigned int
     ResonantWrap::work(IDevice *idc, Frame *fdst, Frame *fsrc)
     { ResonantWrapAgent *dc = dynamic_cast<ResonantWrapAgent*>(idc);
       float turn;
-      int ow,oh,iw,ih;
+      int iw,ih;
+
+      Guarded_Assert(dc);
 
       turn = dc->get_config().turn_px();
       iw = fsrc->width;
       ih = fsrc->height;
 
-      if(!get_dim(iw,ih,turn,&ow,&oh) || ow<0.1*iw) // output width must be >= 10% of input width
-      { // turn parameter out-of-bounds
+      if(!dc->isInBounds())// turn parameter out-of-bounds
+      { 
         Frame::copy_data(fdst,fsrc);     // just pass the data through - if fsrc and fdst were pointers to pointers we could avoid this copy
-        //warning("task: ResonantWrap: turn parameter out of bounds.  turn = %f\r\n",turn);
-        dc->setIsInBounds(false);
         return 1; //return success - [ ] what happens if I return fail here?
-      } else
-      { dc->setIsInBounds(true);
-      }
-
-
-      fdst->width =ow;
-      fdst->height=oh;
+      } 
       DBG("In ResonantWrap::work.\r\n");
 
       //fsrc->dump("ResonantWrap-src.%s",TypeStrFromID(fsrc->rtti));
@@ -74,6 +94,8 @@ namespace fetch
       return 1; // success
 
     }
+
+
 
   } // end namespace task
 

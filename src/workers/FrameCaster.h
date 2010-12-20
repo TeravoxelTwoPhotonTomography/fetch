@@ -37,7 +37,8 @@ namespace fetch
     template<typename Tdst>
     class FrameCast : public fetch::task::OneToOneWorkTask<Frame>
     {
-      public:
+    public:
+        unsigned int reshape(IDevice *d, Frame *dst);
         unsigned int work(IDevice *dc, Frame *fdst, Frame *fsrc);
         
         virtual void alloc_output_queues(IDevice *dc);
@@ -47,19 +48,27 @@ namespace fetch
 
     /*
      * Implementation
-     */
+     */    
+    template<typename Tdst>
+    inline unsigned int
+      FrameCast<Tdst>::
+      reshape(IDevice *idc, Frame *fdst)
+    { 
+      fdst->rtti = TypeID<Tdst> ();
+      fdst->Bpp  = g_type_attributes[TypeID<Tdst> ()].bytes;
+
+      return 1; // success
+    }
+
+
     template<typename Tdst>
     inline unsigned int
     FrameCast<Tdst>::
     work(IDevice *idc, Frame *fdst, Frame *fsrc)
     { 
-      typedef WorkAgent<task::FrameCast<Tdst>> FrameCastAgent;
-      FrameCastAgent *dc = dynamic_cast<FrameCastAgent*>(idc); //up cast
       void  *s;
       Tdst  *d;
       size_t dst_pitch[4], src_pitch[4], n[3];
-      fdst->rtti = TypeID<Tdst> ();
-      fdst->Bpp = g_type_attributes[TypeID<Tdst> ()].bytes;
       fdst->compute_pitches(dst_pitch);
       fsrc->compute_pitches(src_pitch);
       fsrc->get_shape(n);
