@@ -125,11 +125,23 @@ ConversionFailed:
 
     QWidget *formwidget = new QWidget(this);
     QFormLayout *form = new QFormLayout;
+    formwidget->setLayout(form);
+    setWidget(formwidget);
     form->addRow("&Turn (px)",_leResonantTurn);
     form->addRow("&Lines (px)",_leLines);
     form->addRow("&Y Range (Vpp)",_leVerticalRange);
     form->addRow("&Pockels (mV)",_lePockels);
     form->addRow(_btnFocus);
+
+    _leResonantTurn->setValidator( new QDoubleValidator (0.0, 2048.0, 1, formwidget));
+    _leLines->setValidator(        new  EvenIntValidator(2,   4096,      formwidget));
+    _leVerticalRange->setValidator(new QDoubleValidator (0.0, 20.0,   3, formwidget));
+    _lePockels->setValidator(      new QIntValidator    (0,   2000,      formwidget));
+
+    connect(_leResonantTurn,SIGNAL(editingFinished()),this,SLOT(setTurn()));
+    connect(_leLines,SIGNAL(editingFinished()),this,SLOT(setLines()));
+    connect(_leVerticalRange,SIGNAL(editingFinished()),this,SLOT(setVerticalRange()));
+    connect(_lePockels,SIGNAL(editingFinished()),this,SLOT(setPockels()));
     
     QPushButton 
       *btnDetach = new QPushButton("Detach"),
@@ -144,30 +156,7 @@ ConversionFailed:
     QObject::connect(btnDisarm,SIGNAL(clicked()),_ac,SLOT(disarm()));
     QObject::connect(btnRun,SIGNAL(clicked()),_ac,SLOT(run()));
     QObject::connect(btnStop,SIGNAL(clicked()),_ac,SLOT(stop()));
-    QHBoxLayout *layout;
-    layout = new QHBoxLayout;
-    layout->addWidget(btnAttach);
-    layout->addWidget(btnArm);
-    layout->addWidget(btnRun);
-    form->addRow(layout);
-    layout = new QHBoxLayout;
-    layout->addWidget(btnDetach);
-    layout->addWidget(btnDisarm);
-    layout->addWidget(btnStop);
-    form->addRow(layout);
 
-    formwidget->setLayout(form);
-    setWidget(formwidget);
-
-    _leResonantTurn->setValidator( new QDoubleValidator (0.0, 2048.0, 1, formwidget));
-    _leLines->setValidator(        new  EvenIntValidator(2,   4096,      formwidget));
-    _leVerticalRange->setValidator(new QDoubleValidator (0.0, 20.0,   3, formwidget));
-    _lePockels->setValidator(      new QIntValidator    (0,   2000,      formwidget));
-
-    connect(_leResonantTurn,SIGNAL(editingFinished()),this,SLOT(setTurn()));
-    connect(_leLines,SIGNAL(editingFinished()),this,SLOT(setLines()));
-    connect(_leVerticalRange,SIGNAL(editingFinished()),this,SLOT(setVerticalRange()));
-    connect(_lePockels,SIGNAL(editingFinished()),this,SLOT(setPockels()));
 
     //
     // State machine
@@ -231,9 +220,19 @@ ConversionFailed:
       c->assignProperty(btnDisarm,"enabled",true);
       c->assignProperty(btnRun,   "enabled",false);
       c->assignProperty(btnStop,  "enabled",true);
-
     }
 
+    QHBoxLayout *layout;
+    layout = new QHBoxLayout;
+    layout->addWidget(btnAttach);
+    layout->addWidget(btnArm);
+    layout->addWidget(btnRun);
+    form->addRow(layout);
+    layout = new QHBoxLayout;
+    layout->addWidget(btnDetach);
+    layout->addWidget(btnDisarm);
+    layout->addWidget(btnStop);
+    form->addRow(layout);
   }
 
   void VideoAcquisitionDockWidget::onArmFilter( Task* t )
