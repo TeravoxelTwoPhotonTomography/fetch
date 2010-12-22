@@ -47,4 +47,21 @@ namespace ui {
       void handleTransition(RunLevel src, RunLevel dst);
   };
 
+  class AgentControllerButtonPanel : public QWidget
+  {
+    Q_OBJECT
+
+    QStateMachine     stateMachine_;
+    Task             *armTarget_;
+    AgentController  *ac_;
+  public:
+    AgentControllerButtonPanel(AgentController *ac, Task *task=NULL);
+
+  signals:
+      void onArmVideoTask();
+  public slots:
+    void onArmFilter(Task* t);
+    void armTargetTask();
+  };
+
 }} //end fetch::ui

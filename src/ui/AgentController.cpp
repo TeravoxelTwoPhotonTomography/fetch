@@ -104,5 +104,122 @@ void AgentController::stop()
   Guarded_Assert_WinErr(agent_->stop_nowait(INFINITE));
 }
 
+/**
+  class AgentControllerButtonPanel : public QWidget
+  {
+    Q_OBJECT
+
+    QStateMachine stateMachine_;
+    Task         *armTarget_;
+    AgentController  *ac_;
+  public:
+    AgentControllerButtonPanel(AgentController *ac, Task *task=NULL);
+
+  public slots:
+    void onArmFilter(Task* t);
+  };
+**/
+AgentControllerButtonPanel::AgentControllerButtonPanel(AgentController *ac, Task *task)
+  : armTarget_(task)
+  , ac_(ac)
+{
+    QPushButton 
+      *btnDetach = new QPushButton("Detach"),
+      *btnAttach = new QPushButton("Attach"),
+      *btnArm    = new QPushButton("Arm"),
+      *btnDisarm = new QPushButton("Disarm"),
+      *btnRun    = new QPushButton("Run"),
+      *btnStop   = new QPushButton("Stop");
+    QObject::connect(btnDetach,SIGNAL(clicked()),ac_,SLOT(detach()));
+    QObject::connect(btnAttach,SIGNAL(clicked()),ac_,SLOT(attach()));
+    QObject::connect(btnArm,SIGNAL(clicked()),this,SLOT(armTargetTask()));
+    QObject::connect(btnDisarm,SIGNAL(clicked()),ac_,SLOT(disarm()));
+    QObject::connect(btnRun,SIGNAL(clicked()),ac_,SLOT(run()));
+    QObject::connect(btnStop,SIGNAL(clicked()),ac_,SLOT(stop()));
+
+
+    //
+    // State machine
+    //
+    QState 
+      *taskDetached = new QState,
+      *taskAttached = new QState,
+      *taskArmed    = new QState,
+      *taskRunning  = new QState;
+
+    taskDetached->addTransition(ac_,SIGNAL(onAttach()),taskAttached);
+    taskAttached->addTransition(ac_,SIGNAL(onDetach()),taskDetached);
+
+    connect(ac_,SIGNAL(onArm(Task*)),this,SLOT(onArmFilter(Task*)));
+    taskAttached->addTransition(this,SIGNAL(armTargetTask()),taskArmed);
+
+    taskArmed->addTransition(ac_,SIGNAL(onDisarm()),taskAttached);
+    taskArmed->addTransition(ac_,SIGNAL(onRun()),taskRunning);
+    taskRunning->addTransition(ac_,SIGNAL(onStop()),taskArmed);
+
+    stateMachine_.addState(taskArmed);
+    stateMachine_.addState(taskAttached);
+    stateMachine_.addState(taskDetached);
+    stateMachine_.addState(taskRunning);
+    stateMachine_.setInitialState(taskDetached);
+    stateMachine_.start();
+
+    {
+      QState *c = taskDetached;
+      c->assignProperty(btnDetach,"enabled",false);
+      c->assignProperty(btnAttach,"enabled",true);
+      c->assignProperty(btnArm,   "enabled",false);
+      c->assignProperty(btnDisarm,"enabled",false);
+      c->assignProperty(btnRun,   "enabled",false);
+      c->assignProperty(btnStop,  "enabled",false);
+
+      c = taskAttached;
+      c->assignProperty(btnDetach,"enabled",true);
+      c->assignProperty(btnAttach,"enabled",false);
+      c->assignProperty(btnArm,   "enabled",true);
+      c->assignProperty(btnDisarm,"enabled",false);
+      c->assignProperty(btnRun,   "enabled",false);
+      c->assignProperty(btnStop,  "enabled",false);
+
+      c = taskArmed;
+      c->assignProperty(btnDetach,"enabled",true);
+      c->assignProperty(btnAttach,"enabled",false);
+      c->assignProperty(btnArm,   "enabled",false);
+      c->assignProperty(btnDisarm,"enabled",true);
+      c->assignProperty(btnRun,   "enabled",true);
+      c->assignProperty(btnStop,  "enabled",false);
+
+      c = taskRunning;
+      c->assignProperty(btnDetach,"enabled",true);
+      c->assignProperty(btnAttach,"enabled",false);
+      c->assignProperty(btnArm,   "enabled",false);
+      c->assignProperty(btnDisarm,"enabled",true);
+      c->assignProperty(btnRun,   "enabled",false);
+      c->assignProperty(btnStop,  "enabled",true);
+    }
+
+    QGridLayout *layout;
+    layout = new QGridLayout;
+    layout->addWidget(btnAttach,0,0);
+    layout->addWidget(btnArm,0,1);
+    layout->addWidget(btnRun,0,2);
+    
+    layout->addWidget(btnDetach,1,0);
+    layout->addWidget(btnDisarm,1,1);
+    layout->addWidget(btnStop,1,2);
+    setLayout(layout);    
+}
+
+void AgentControllerButtonPanel::onArmFilter( Task* t )
+{
+  if(t==armTarget_)
+    emit onArmVideoTask();
+}
+
+void AgentControllerButtonPanel::armTargetTask()
+{
+  emit ac_->arm(armTarget_);
+}
+
 
 }} //end fetch::ui
