@@ -119,6 +119,8 @@
       eflag |= frame_averager._agent->detach();
       eflag |= pixel_averager._agent->detach();
       eflag |= inverter._agent->detach();
+      eflag |= cast_to_i16._agent->detach();
+      eflag |= wrap._agent->detach();
       eflag |= trash._agent->detach();
       eflag |= disk._agent->detach();
       return eflag;  
@@ -131,6 +133,8 @@
       sts &= frame_averager._agent->disarm();
       sts &= pixel_averager._agent->disarm();
       sts &= inverter._agent->disarm();
+      sts &= cast_to_i16._agent->disarm();
+      sts &= wrap._agent->disarm();
       sts &= trash._agent->disarm();
       sts &= disk._agent->disarm();
       

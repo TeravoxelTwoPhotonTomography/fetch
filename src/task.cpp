@@ -13,24 +13,12 @@ namespace fetch
       Agent   *a    = dc->_agent;
       Task    *task = a->_task;
       result = task->run(dc);
-      // Transition back to stop state when run returns
-      a->lock();
-      a->_is_running = 0;  
-      CloseHandle(a->_thread);
-      a->_thread = INVALID_HANDLE_VALUE;
-      a->unlock();
-      
-      
-      // Re-config() again.?
-      // [Note] Don't do it here.  run() should return things to a post-configured state.
-      //        This function should be responsible for reconfiguring.
-      //if(!(task->config)(dc))
-      //  goto Error;
-
+      // Note to self: should probably take care of any
+      //               cleanup in the Agent::stop() function
       return result;  
 Error:      
       a->unlock();
-      error("While re-configuring task, something went wrong.\r\n");
+      error("While endig the task, something went wrong.\r\n");
       return 2; //failure - shouldn't get here.  
     }
 

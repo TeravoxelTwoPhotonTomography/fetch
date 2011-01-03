@@ -123,13 +123,14 @@ AgentControllerButtonPanel::AgentControllerButtonPanel(AgentController *ac, Task
   : armTarget_(task)
   , ac_(ac)
 {
-    QPushButton 
-      *btnDetach = new QPushButton("Detach"),
-      *btnAttach = new QPushButton("Attach"),
-      *btnArm    = new QPushButton("Arm"),
-      *btnDisarm = new QPushButton("Disarm"),
-      *btnRun    = new QPushButton("Run"),
-      *btnStop   = new QPushButton("Stop");
+     
+    btnDetach = new QPushButton("Detach");
+    btnAttach = new QPushButton("Attach");
+    btnArm    = new QPushButton("Arm");
+    btnDisarm = new QPushButton("Disarm");
+    btnRun    = new QPushButton("Run");
+    btnStop   = new QPushButton("Stop");
+
     QObject::connect(btnDetach,SIGNAL(clicked()),ac_,SLOT(detach()));
     QObject::connect(btnAttach,SIGNAL(clicked()),ac_,SLOT(attach()));
     QObject::connect(btnArm,SIGNAL(clicked()),this,SLOT(armTargetTask()));
@@ -140,18 +141,17 @@ AgentControllerButtonPanel::AgentControllerButtonPanel(AgentController *ac, Task
 
     //
     // State machine
-    //
-    QState 
-      *taskDetached = new QState,
-      *taskAttached = new QState,
-      *taskArmed    = new QState,
-      *taskRunning  = new QState;
+    //     
+    taskDetached = new QState;
+    taskAttached = new QState;
+    taskArmed    = new QState;
+    taskRunning  = new QState;
 
     taskDetached->addTransition(ac_,SIGNAL(onAttach()),taskAttached);
     taskAttached->addTransition(ac_,SIGNAL(onDetach()),taskDetached);
 
     connect(ac_,SIGNAL(onArm(Task*)),this,SLOT(onArmFilter(Task*)));
-    taskAttached->addTransition(this,SIGNAL(armTargetTask()),taskArmed);
+    taskAttached->addTransition(this,SIGNAL(onArmTargetTask()),taskArmed);
 
     taskArmed->addTransition(ac_,SIGNAL(onDisarm()),taskAttached);
     taskArmed->addTransition(ac_,SIGNAL(onRun()),taskRunning);
@@ -213,7 +213,7 @@ AgentControllerButtonPanel::AgentControllerButtonPanel(AgentController *ac, Task
 void AgentControllerButtonPanel::onArmFilter( Task* t )
 {
   if(t==armTarget_)
-    emit onArmVideoTask();
+    emit onArmTargetTask();
 }
 
 void AgentControllerButtonPanel::armTargetTask()

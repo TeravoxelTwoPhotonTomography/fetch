@@ -3,7 +3,7 @@
 #endif
 #include <QtGui>
 #include "ImItem.h"
-
+#include <util/util-mylib.h>
 namespace mylib {
 #include <array.h>
 #include <image.h>
@@ -110,7 +110,10 @@ GLuint typeMapMylibToGLType(mylib::Array **pa)
   };
   ret = table[a->type];
   if(ret == (GLuint)-1)
-  { *pa = mylib::Convert_Image_Copy(a,mylib::PLAIN_KIND,mylib::FLOAT32,32);
+  { 
+    mylib::lock();
+    *pa = mylib::Convert_Image_Copy(a,mylib::PLAIN_KIND,mylib::FLOAT32,32);
+    mylib::unlock();
     //Free_Array(a); // release the old reference //[ngx] don't do this...owner is still responsible for his array.
     ret = GL_FLOAT;
   }

@@ -57,8 +57,22 @@ namespace ui {
   public:
     AgentControllerButtonPanel(AgentController *ac, Task *task=NULL);
 
+  public:
+    QState 
+      *taskDetached,
+      *taskAttached,
+      *taskArmed,
+      *taskRunning;
+    QPushButton 
+      *btnDetach,
+      *btnAttach,
+      *btnArm,
+      *btnDisarm,
+      *btnRun,
+      *btnStop;
+
   signals:
-      void onArmVideoTask();
+      void onArmTargetTask();
   public slots:
     void onArmFilter(Task* t);
     void armTargetTask();

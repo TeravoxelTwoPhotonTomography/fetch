@@ -405,6 +405,16 @@ Error:
           if(t!=INVALID_HANDLE_VALUE)
             res = WaitForSingleObject(t, timeout_ms); // wait for running thread to stop
           this->lock();
+          // Handle a timeout on the wait.  
+          if( !_handle_wait_for_result(res, "Agent stop: Wait for thread."))
+          { warning("[5s] Timed out waiting for task thread (0x%p) to stop.  Forcing termination.\r\n",name(), this->_thread);
+            Guarded_Assert_WinErr(TerminateThread(this->_thread,127)); // Force the thread to stop
+          }
+
+          _is_running = 0;  
+          CloseHandle(_thread);
+          _thread = INVALID_HANDLE_VALUE;
+
           ResetEvent(this->_notify_stop);
           //{ size_t i;
           //  if(_owner->_in)
@@ -412,12 +422,6 @@ Error:
           //      Guarded_Assert_WinErr(ResetEvent(_owner->_in->contents[i]->notify_abort));
           //}
           //
-
-          // Handle a timeout on the wait.  
-          if( !_handle_wait_for_result(res, "Agent stop: Wait for thread."))
-          { warning("[5s] Timed out waiting for task thread (0x%p) to stop.  Forcing termination.\r\n",name(), this->_thread);
-            Guarded_Assert_WinErr(TerminateThread(this->_thread,127)); // Force the thread to stop
-          } 
 
           if(_thread!=INVALID_HANDLE_VALUE)
           { CloseHandle(this->_thread);
