@@ -306,6 +306,9 @@ Error:
 #endif
 
           DBG("Task: Video<%s>: pushing frame\r\n",TypeStr<TPixel>());
+
+          //frm->dump("simulated.%s",TypeStr<TPixel>());
+
 #ifdef SCANNER_DEBUG_FAIL_WHEN_FULL                     //"fail fast"          
           if(  !Asynq_Push_Try( qdata,(void**) &frm,nbytes ))
 #elif defined( SCANNER_DEBUG_SPIN_WHEN_FULL )           //"fail proof" - overwrites when full

@@ -56,6 +56,7 @@ namespace fetch
         fsrc->compute_pitches(sp);
         fdst->get_shape(ds);
         fsrc->get_shape(ss);
+        //fsrc->dump("HorizontalDownsampler-src.%s",TypeStrFromID(fsrc->rtti));
         switch(fsrc->rtti)
         {
         case id_u8 : imCopy<f32,u8> ((f32*)fdst->data,dp,(u8* )fsrc->data,sp,ss); break;
@@ -71,6 +72,7 @@ namespace fetch
         default:
           error("Unrecognized source type (id=%d).\r\n",fsrc->rtti);        
         }
+        //fdst->dump("HorizontalDownsampler-dst.%s",TypeStrFromID(fdst->rtti));
         return 1; //success
       }
 

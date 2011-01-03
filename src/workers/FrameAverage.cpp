@@ -52,18 +52,30 @@ namespace fetch
           // First one
           if(!dc->_agent->is_stopping() && Asynq_Pop(qsrc,(void**)&fsrc,src_bytes))
           {
+
+            src_bytes = fsrc->size_bytes();
+            nbytes    = src_bytes - sizeof(Frame); //bytes in acc
+            nelem     = nbytes / sizeof(f32);
+
             if(fsrc->size_bytes()>dst_bytes)
               Guarded_Assert(fdst = (Frame*) realloc(fdst,dst_bytes = fsrc->size_bytes()));
 
             fsrc->format(fdst);
             acc = (f32*) fdst->data;
-            memcpy(acc,fsrc->data,nbytes);
+            memcpy(acc,fsrc->data,src_bytes);
           } else
             continue;
 
           // The rest
           while(!dc->_agent->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, fsrc->size_bytes()) )
           { buf = (f32*) fsrc->data;
+
+            src_bytes = fsrc->size_bytes();
+            nbytes    = src_bytes - sizeof(Frame); //bytes in acc
+            nelem     = nbytes / sizeof(f32);
+
+            //fsrc->dump("FrameAveragerIn_%03d.%s",count,TypeStrFromID(fdst->rtti));
+            //fdst->dump("FrameAveragerOut_%03d.%s",count,TypeStrFromID(fdst->rtti));
 
             ++count;
             if( count % every == 0 )           // emit and reset every so often
@@ -78,7 +90,7 @@ namespace fetch
                   Guarded_Assert(fdst = (Frame*)realloc(fdst,dst_bytes = fsrc->size_bytes()));
               fsrc->format(fdst);              // Initialize the accumulator
               acc = (f32*)fdst->data;
-              memcpy(acc,fsrc->data,nbytes);
+              memcpy(acc,fsrc->data,dst_bytes);
             } else
             { for (i = 0; i < nelem; ++i)      // accumulate
                 acc[i] += buf[i];

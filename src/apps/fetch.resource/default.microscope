@@ -137,7 +137,7 @@ horizontal_downsample {
   ntimes: 1
 }
 frame_average {
-  ntimes: 2
+  ntimes: 1
 }
 file_series {
   root: "C:\\temp"

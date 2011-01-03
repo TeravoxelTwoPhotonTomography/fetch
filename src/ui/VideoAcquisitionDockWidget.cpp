@@ -121,7 +121,7 @@ ConversionFailed:
     _leLines            = new QLineEdit(QString().setNum(c.scanner3d().scanner2d().nscans()*2));
     _leVerticalRange    = new QLineEdit(QString().setNum(_dc->LSM()->getAmplitudeVolts()));
     _lePockels          = new QLineEdit(QString().setNum(_dc->pockels()->getOpenVolts()*1000));
-    _btnFocus           = new QPushButton("Focus");
+    //_btnFocus           = new QPushButton("Focus");
 
     QWidget *formwidget = new QWidget(this);
     QFormLayout *form = new QFormLayout;
@@ -131,7 +131,7 @@ ConversionFailed:
     form->addRow("&Lines (px)",_leLines);
     form->addRow("&Y Range (Vpp)",_leVerticalRange);
     form->addRow("&Pockels (mV)",_lePockels);
-    form->addRow(_btnFocus);
+    //form->addRow(_btnFocus);
 
     _leResonantTurn->setValidator( new QDoubleValidator (0.0, 2048.0, 1, formwidget));
     _leLines->setValidator(        new  EvenIntValidator(2,   4096,      formwidget));
@@ -146,24 +146,14 @@ ConversionFailed:
 //
     AgentControllerButtonPanel *btns = new AgentControllerButtonPanel(_ac,&_dc->interaction_task);
 
-    btns->taskDetached->assignProperty(_btnFocus,"text","Attach");
-    btns->taskAttached->assignProperty(_btnFocus,"text","Arm");
-    btns->taskArmed->assignProperty(_btnFocus,"text","Go");
-    btns->taskRunning->assignProperty(_btnFocus,"text","Stop");
+    //btns->taskDetached->assignProperty(_btnFocus,"text","Attach");
+    //btns->taskAttached->assignProperty(_btnFocus,"text","Arm");
+    //btns->taskArmed->assignProperty(_btnFocus,"text","Go");
+    //btns->taskRunning->assignProperty(_btnFocus,"text","Stop");
 
     form->addRow(btns);
   }
 
-  void VideoAcquisitionDockWidget::onArmFilter( Task* t )
-  {
-    if(t==&_dc->interaction_task)
-      emit onArmVideoTask();
-  }
-
-  void VideoAcquisitionDockWidget::armVideoTask()
-  {
-    emit _ac->arm(&_dc->interaction_task);
-  }
 
 //end namespace fetch::ui
 }

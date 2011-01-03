@@ -22,13 +22,8 @@ namespace fetch{
       QLineEdit *_leLines;
       QLineEdit *_leVerticalRange;
       QLineEdit *_lePockels;
-      QPushButton *_btnFocus;
 
       QStateMachine _focusButtonStateMachine;
-
-    signals:
-
-      void onArmVideoTask();
 
     public slots:
 
@@ -37,9 +32,6 @@ namespace fetch{
       void setLines();
       void setVerticalRange();
       void setPockels();
-
-      void onArmFilter(Task* t);
-      void armVideoTask();
 
     private:      
       void createForm();
