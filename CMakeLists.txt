@@ -144,7 +144,7 @@ qt4_wrap_cpp(MOC_SRCS
   src/ui/Figure.h
   src/ui/VideoAcquisitionDockWidget.h
   src/ui/AgentController.h
-  src/ui/WorkerController.h
+  src/ui/DevicePropController.h
 )
 qt4_add_resources(RCC_SRCS
   src/ui/icons.qrc

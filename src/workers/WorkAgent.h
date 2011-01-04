@@ -113,7 +113,7 @@ namespace fetch
   template<typename TWorkTask,typename TConfig>
   unsigned int WorkAgent<TWorkTask,TConfig>::
   detach(void) 
-  { debug("Attempting WorkAgent::detach() for task at 0x%p.\r\n",&this->__task_instance);    
+  { debug("Attempting WorkAgent::detach() for task at 0x%p [%s].\r\n",&this->__task_instance,_agent->name());    
     return 0; /*0 success, 1 failure*/
   }
   

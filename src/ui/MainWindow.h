@@ -1,5 +1,7 @@
+#pragma once
 #include <QtGui>
 #include "ui/AgentController.h"
+#include "DevicePropController.h"
 
 namespace fetch {
 namespace device {class Microscope;}
@@ -20,7 +22,7 @@ public:
 protected:
   void closeEvent(QCloseEvent *event);
 
-private:
+public: // semi-private
   void createStateMachines();
   void createMenus();
   void createActions();
@@ -45,7 +47,14 @@ private:
   IPlayerThread *_player;
   
   QTimer _poller;
-  AgentController _scope_state_broadcast;  
+  AgentController _scope_state_controller;  
+  
+  // Property controllers
+  ResonantTurnController*     _resonant_turn_controller;
+  LinesController*            _vlines_controller;
+  LSMVerticalRangeController* _lsm_vert_range_controller;
+  PockelsController*          _pockels_controller;
+
 };
 
 //namespace ends

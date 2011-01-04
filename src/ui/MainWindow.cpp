@@ -17,15 +17,25 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,_videoAcquisitionDockWidget(0)
   ,_display(0)
   ,_player(0)
-  ,_scope_state_broadcast(&dc->__self_agent)
-{
+  ,_scope_state_controller(&dc->__self_agent)
+  ,_resonant_turn_controller(NULL)
+  ,_vlines_controller(NULL)
+  ,_lsm_vert_range_controller(NULL)
+  ,_pockels_controller(NULL)
+{  
+
+  _resonant_turn_controller = new ResonantTurnController(dc,"&Turn (px)");
+  _vlines_controller        = new LinesController(dc,"Y &Lines (px)");
+  _lsm_vert_range_controller= new LSMVerticalRangeController(dc->LSM(),"&Y Range (Vpp)");
+  _pockels_controller       = new PockelsController(dc->pockels(),"&Pockels (mV)");
+
   createActions();
   createStateMachines();
   createMenus();
   createDockWidgets();
   createViews();
   
-  connect(&_poller,SIGNAL(timeout()),&_scope_state_broadcast,SLOT(poll()));
+  connect(&_poller,SIGNAL(timeout()),&_scope_state_controller,SLOT(poll()));
   _poller.start(50 /*ms*/);  
 }
 
@@ -101,7 +111,7 @@ void fetch::ui::MainWindow::createStateMachines()
 
 void fetch::ui::MainWindow::createDockWidgets()
 {
-  _videoAcquisitionDockWidget = new VideoAcquisitionDockWidget(_dc,&_scope_state_broadcast);
+  _videoAcquisitionDockWidget = new VideoAcquisitionDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_videoAcquisitionDockWidget);
   viewMenu->addAction(_videoAcquisitionDockWidget->toggleViewAction());
 }
@@ -120,7 +130,15 @@ void fetch::ui::MainWindow::closeEvent( QCloseEvent *event )
   _poller.stop();
 }
 
+#define SAFE_DELETE(expr) if(expr) delete (expr)
+
 fetch::ui::MainWindow::~MainWindow()
 {
-  if(_player) delete _player;
+  SAFE_DELETE(_player);
+
+  SAFE_DELETE(_resonant_turn_controller);
+  SAFE_DELETE(_vlines_controller);
+  SAFE_DELETE(_lsm_vert_range_controller);
+  SAFE_DELETE(_pockels_controller);
+  
 }
