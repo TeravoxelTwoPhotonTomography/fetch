@@ -144,6 +144,7 @@ qt4_wrap_cpp(MOC_SRCS
   src/ui/Figure.h
   src/ui/VideoAcquisitionDockWidget.h
   src/ui/AgentController.h
+  src/ui/WorkerController.h
 )
 qt4_add_resources(RCC_SRCS
   src/ui/icons.qrc
@@ -162,7 +163,7 @@ source_group("Source Files\\Qt Generated" FILES
 # Executable
 #
 
-# FETCH_SRCS is used by testing, for example
+# FETCH_SRCS is used below and by testing framework
 set(FETCH_SRCS
   ${PROTO_FILES}
   ${FETCH_WORKERS_HDRS}

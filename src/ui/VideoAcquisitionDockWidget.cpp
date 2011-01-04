@@ -49,11 +49,11 @@ namespace ui {
   void VideoAcquisitionDockWidget::setTurn()
   {   
     HERE;
-    Config c = _dc->get_config();
     bool ok=0;    
     double px = _leResonantTurn->text().toDouble(&ok);
     if(!ok) goto ConversionFailed;
         
+    Config c = _dc->get_config();
     c.mutable_resonant_wrap()->set_turn_px(px);
     Guarded_Assert(_dc->set_config_nowait(c));
 
