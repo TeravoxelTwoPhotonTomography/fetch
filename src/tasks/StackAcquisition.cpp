@@ -15,6 +15,7 @@
 #include "Video.h"
 #include "frame.h"
 #include "devices\digitizer.h"
+#include "devices\Microscope.h"
 
 #if 0
 #define DBG(...) debug(__VA_ARGS__);
@@ -58,6 +59,8 @@ namespace fetch
       { 
         static task::scanner::ScanStack<i16> grabstack;
         std::string filename;
+
+        Guarded_Assert(d);
 
         //Assemble pipeline here
         IDevice *cur;

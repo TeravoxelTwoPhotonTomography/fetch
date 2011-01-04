@@ -8,6 +8,7 @@ namespace device {class Microscope;}
 namespace ui {
 
 class VideoAcquisitionDockWidget;
+class StackAcquisitionDockWidget;
 class Figure;
 class IPlayerThread;
 
@@ -43,6 +44,7 @@ public: // semi-private
   QState  *fullscreenStateOff;
 
   VideoAcquisitionDockWidget *_videoAcquisitionDockWidget;
+  StackAcquisitionDockWidget *_stackAcquisitionDockWidget;
   Figure *_display;
   IPlayerThread *_player;
   

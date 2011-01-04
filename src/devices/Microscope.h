@@ -25,23 +25,15 @@
 #include "workers/FrameInvert.h"
 
 #include "DiskStream.h"
-#include <string>
-#include "tasks/microscope-interaction.h"
 #include "LinearScanMirror.h"
 #include "pockels.h"
+#include <string>
+#include "tasks\microscope-interaction.h"
+#include "tasks\StackAcquisition.h"
 
 #define MICROSCOPE_MAX_WORKERS     10
 #define MICROSCOPE_DEFAULT_TIMEOUT INFINITE
 
-
-// forward declare
-namespace fetch {
-  namespace task {
-    namespace microscope {
-      class Interaction;
-    }
-  }
-}
 
 namespace fetch
 { namespace device
@@ -106,8 +98,9 @@ namespace fetch
 
       worker::TerminalAgent		       trash;                
       device::TiffStream             disk;
-
-      task::microscope::Interaction  interaction_task;      
+                                                       
+      task::microscope::Interaction      interaction_task;
+      task::microscope::StackAcquisition stack_task;      
 
       inline asynq *getVideoChannel() {return wrap._out->contents[0];}
       inline LinearScanMirror  *LSM() {return &scanner._scanner2d._LSM;}

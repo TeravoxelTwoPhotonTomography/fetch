@@ -13,10 +13,17 @@
 
 #pragma once
 
-#include "../stdafx.h"
-#include "../task.h"
-#include "../devices/Scanner3d.h"
-#include "../devices/Microscope.h"
+#include "task.h"
+
+namespace fetch {
+namespace device {
+  class Scanner3D;
+  class Microscope;
+}
+}
+
+// #include "devices\Scanner3d.h"
+// #include "devices\Microscope.h"
 
 #define SCANNER_STACKACQ_TASK_FETCH_TIMEOUT 15.0
 

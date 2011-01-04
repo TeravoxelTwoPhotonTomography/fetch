@@ -6,3 +6,5 @@ msvc
 vs
 *.swp
 *~
+*.log
+*.tlog

@@ -73,10 +73,10 @@ namespace fetch
       template<class TPixel> unsigned int Video<TPixel>::run(IDevice *d)
       {
         { device::Scanner2D *s = dynamic_cast<device::Scanner2D*>(d);
-          if(s) return run(s);
+          if(s) return run(s); else return 2;
         }
         { device::Scanner3D *s = dynamic_cast<device::Scanner3D*>(d);
-          if(s) return run(s);
+          if(s) return run(s); else return 2;
         }
       }
 

@@ -5,6 +5,7 @@
 #include "VideoAcquisitionDockWidget.h"
 #include "Figure.h"
 #include "Player.h"
+#include "StackAcquisitionDockWidget.h"
 
 fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   :_dc(dc)
@@ -114,6 +115,10 @@ void fetch::ui::MainWindow::createDockWidgets()
   _videoAcquisitionDockWidget = new VideoAcquisitionDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_videoAcquisitionDockWidget);
   viewMenu->addAction(_videoAcquisitionDockWidget->toggleViewAction());
+
+  _stackAcquisitionDockWidget = new StackAcquisitionDockWidget(_dc,this);
+  addDockWidget(Qt::LeftDockWidgetArea,_stackAcquisitionDockWidget);
+  viewMenu->addAction(_stackAcquisitionDockWidget->toggleViewAction());
 }
 
 void fetch::ui::MainWindow::createViews()

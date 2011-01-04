@@ -143,6 +143,7 @@ qt4_wrap_cpp(MOC_SRCS
   src/ui/Player.h
   src/ui/Figure.h
   src/ui/VideoAcquisitionDockWidget.h
+  src/ui/StackAcquisitionDockWidget.h
   src/ui/AgentController.h
   src/ui/DevicePropController.h
 )
