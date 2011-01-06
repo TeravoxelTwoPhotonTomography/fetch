@@ -145,6 +145,7 @@ AgentControllerButtonPanel::AgentControllerButtonPanel(AgentController *ac, Task
     taskDetached = new QState;
     taskAttached = new QState;
     taskArmed    = new QState;
+    taskArmedNonTarget = new QState;
     taskRunning  = new QState;
 
     taskDetached->addTransition(ac_,SIGNAL(onAttach()),taskAttached);
@@ -152,12 +153,15 @@ AgentControllerButtonPanel::AgentControllerButtonPanel(AgentController *ac, Task
 
     connect(ac_,SIGNAL(onArm(Task*)),this,SLOT(onArmFilter(Task*)));
     taskAttached->addTransition(this,SIGNAL(onArmTargetTask()),taskArmed);
+    taskAttached->addTransition(this,SIGNAL(onArmNonTargetTask()),taskArmedNonTarget);
 
     taskArmed->addTransition(ac_,SIGNAL(onDisarm()),taskAttached);
     taskArmed->addTransition(ac_,SIGNAL(onRun()),taskRunning);
+    taskArmedNonTarget->addTransition(ac_,SIGNAL(onDisarm()),taskAttached);
     taskRunning->addTransition(ac_,SIGNAL(onStop()),taskArmed);
 
     stateMachine_.addState(taskArmed);
+    stateMachine_.addState(taskArmedNonTarget);
     stateMachine_.addState(taskAttached);
     stateMachine_.addState(taskDetached);
     stateMachine_.addState(taskRunning);
@@ -189,6 +193,14 @@ AgentControllerButtonPanel::AgentControllerButtonPanel(AgentController *ac, Task
       c->assignProperty(btnRun,   "enabled",true);
       c->assignProperty(btnStop,  "enabled",false);
 
+      c = taskArmedNonTarget;
+      c->assignProperty(btnDetach,"enabled",true);
+      c->assignProperty(btnAttach,"enabled",false);
+      c->assignProperty(btnArm,   "enabled",false);
+      c->assignProperty(btnDisarm,"enabled",true);
+      c->assignProperty(btnRun,   "enabled",false);
+      c->assignProperty(btnStop,  "enabled",false);
+
       c = taskRunning;
       c->assignProperty(btnDetach,"enabled",true);
       c->assignProperty(btnAttach,"enabled",false);
@@ -214,6 +226,8 @@ void AgentControllerButtonPanel::onArmFilter( Task* t )
 {
   if(t==armTarget_)
     emit onArmTargetTask();
+  else
+    emit onArmNonTargetTask();
 }
 
 void AgentControllerButtonPanel::armTargetTask()

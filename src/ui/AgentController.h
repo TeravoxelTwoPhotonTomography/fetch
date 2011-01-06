@@ -62,6 +62,7 @@ namespace ui {
       *taskDetached,
       *taskAttached,
       *taskArmed,
+      *taskArmedNonTarget,
       *taskRunning;
     QPushButton 
       *btnDetach,
@@ -73,6 +74,7 @@ namespace ui {
 
   signals:
       void onArmTargetTask();
+      void onArmNonTargetTask();
   public slots:
     void onArmFilter(Task* t);
     void armTargetTask();
