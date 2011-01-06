@@ -202,11 +202,11 @@ namespace fetch
         dc,                 // arguments
         CREATE_SUSPENDED,   // don't start yet
         NULL )); // don't worry about the thread id
-      this->_is_available = 0;
       this->unlock();
       DBG("Armed %s 0x%p\r\n",name(), this);
       return 1;
-Error:
+Error:             
+      this->_is_available = 1;
       this->_task = NULL;
       this->unlock();
       return 0;

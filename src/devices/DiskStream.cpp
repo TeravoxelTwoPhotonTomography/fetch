@@ -103,7 +103,7 @@ namespace fetch
         error("IDiskStream::open() -- Couldn't interpret mode.  Got %s\r\n",mode);
       }
 
-      _agent->run();
+      eflag |= _agent->run()==0;
       return eflag;
     }
 

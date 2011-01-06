@@ -106,7 +106,7 @@
 
       std::string stackname = _config->file_prefix()+_config->stack_extension();
       file_series.ensurePathExists();
-       eflag |= disk.open(file_series.getFullPath(stackname),"w");    
+      eflag |= disk.open(file_series.getFullPath(stackname),"w");    
 
       return eflag;  
     }

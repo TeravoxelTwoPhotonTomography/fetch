@@ -66,10 +66,11 @@ namespace fetch
         IDevice *cur;
         cur = d->configPipeline();
 
-        d->next_filename();
+        //d->next_filename();
         filename = d->next_filename();
         Guarded_Assert( d->disk.close()==0 );
         IDevice::connect(&d->disk,0,cur,0);
+        d->file_series.ensurePathExists();
         Guarded_Assert( d->disk.open(filename,"w"));
 
         d->__scan_agent.arm_nowait(&grabstack,&d->scanner,INFINITE);
