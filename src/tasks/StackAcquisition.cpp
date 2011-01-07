@@ -71,7 +71,7 @@ namespace fetch
         Guarded_Assert( d->disk.close()==0 );
         IDevice::connect(&d->disk,0,cur,0);
         d->file_series.ensurePathExists();
-        Guarded_Assert( d->disk.open(filename,"w"));
+        Guarded_Assert( d->disk.open(filename,"w")==0);
 
         d->__scan_agent.arm_nowait(&grabstack,&d->scanner,INFINITE);
 
@@ -117,7 +117,7 @@ namespace fetch
           switch(t)
           { case 0:       // in this case, the scanner thread stopped.  Nothing left to do.
               eflag |= 0; // success
-              break; 
+              //break; 
             case 1:       // in this case, the stop event triggered and must be propagated.
               eflag |= dc->__scan_agent.stop(SCANNER2D_DEFAULT_TIMEOUT) != 1;
               break;
@@ -128,6 +128,7 @@ namespace fetch
           // Increment file
           eflag |= dc->disk.close();
           filename = dc->next_filename();          
+          dc->file_series.ensurePathExists();
           dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
           eflag |= dc->disk.open(filename,"w");
           

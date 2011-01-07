@@ -12,13 +12,13 @@ namespace fetch
       IDevice *dc   = (IDevice *) lpParam;
       Agent   *a    = dc->_agent;
       Task    *task = a->_task;
-      result = task->run(dc);
+      result =  task->run(dc);
+      a->stop_nowait();
       // Note to self: should probably take care of any
       //               cleanup in the Agent::stop() function
       return result;  
 Error:      
-      a->unlock();
-      error("While endig the task, something went wrong.\r\n");
+      error("While ending the task, something went wrong.\r\n");
       return 2; //failure - shouldn't get here.  
     }
 
