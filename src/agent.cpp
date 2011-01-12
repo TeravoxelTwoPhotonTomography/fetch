@@ -402,6 +402,7 @@ Error:
           }
           t = _thread;
           this->unlock();
+          // [?] Maybe should use SignalObjectAndWait?
           if(t!=INVALID_HANDLE_VALUE)
             res = WaitForSingleObject(t, timeout_ms); // wait for running thread to stop
           this->lock();
