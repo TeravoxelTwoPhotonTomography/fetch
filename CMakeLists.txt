@@ -1,12 +1,30 @@
+cmake_minimum_required(VERSION 2.6)
 ##
 # NOTES:
 #
 # - Had to modify the stock FindProtobuf.cmake module.  My changes can be found
 #   in a personal git repo mirroring the stock installed Modules.  See
 #   \\dm11.isi.janelia.org\myerslab\clackn\repo\cmake-modules
+# - There's some cross-platform config stuff included here even though
+#   this is a windows only build, really.  It's here because some parts
+#   of the code base are used in other projects that are cross-platform.
 #
-cmake_minimum_required(VERSION 2.6)
 project(fetch)
+
+######################################################################
+#  Table of contents (for assisted text searching)
+#  
+#   o   Useful options
+#   o   Config
+#   o   Source groups
+#   o   Targets
+#   o   Tests
+#  
+######################################################################
+
+######################################################################
+#  Useful options 
+######################################################################
 set(CMAKE_VERBOSE_MAKEFILE 1) ## Useful for debuging the build
 
 ##
@@ -17,13 +35,33 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 #Paths
 set(ROOT_3RDPARTY_PATH
   ${CMAKE_SOURCE_DIR}/3rdParty
+  ${CMAKE_SOURCE_DIR}/../3rdParty
 # "$ENV{USERPROFILE}/Desktop/src/libs"
   CACHE PATH "Root Location of 3rd party libraries"
 )
 
-##
-# Config
-#
+###############################################################################
+#  Config
+###############################################################################
+
+include(CheckFunctionExists)
+include(CheckIncludeFile)
+include(CheckCSourceCompiles)
+include(CheckTypeSize)
+check_type_size(size_t SIZET_BYTES)
+check_function_exists(usleep HAVE_USLEEP)
+check_c_source_compiles("main(){int a=0; return __sync_add_and_fetch(&a,10);}" HAVE_ATOMIC_INTRINSICS_GCC)
+if(WIN32)
+  set(HAVE_ATOMIC_INTRINSICS_MSVC TRUE)
+else()
+  set(HAVE_ATOMIC_INTRINSICS_MSVC FALSE)
+endif()
+check_include_file(unistd.h HAVE_UNISTD)
+check_include_file(stdint.h HAVE_STDINT)
+
+find_package(Threads)
+set(USE_PTHREAD       ${CMAKE_USE_PTHREADS_INIT})
+set(USE_WIN32_THREADS ${CMAKE_USE_WIN32_THREADS_INIT})
 
 #protobuf
 set(PROTO_DIR "${PROJECT_SOURCE_DIR}/src/proto")
@@ -96,6 +134,10 @@ configure_file(
         )
 include_directories("${PROJECT_BINARY_DIR}")
 
+###############################################################################
+#  Source groups
+###############################################################################
+
 ##
 # Fetch
 # Source groups
@@ -127,7 +169,7 @@ file(GLOB FETCH_UTIL_SRCS src/util/*.cpp)
 source_group("Source Files\\util" FILES ${FETCH_UTIL_SRCS})
 
 file(GLOB FETCH_CORE_HDRS src/*.h)
-file(GLOB FETCH_CORE_SRCS src/*.cpp)
+file(GLOB FETCH_CORE_SRCS src/*.cpp src/*.c)
 include_directories(src)
 
 file(GLOB FETCH_MICROSCOPE_CONFIG src/apps/fetch.resource/*.microscope)
@@ -158,6 +200,10 @@ source_group("Source Files\\Qt Generated" FILES
   ${RCC_SRCS}
 )
 #  REGULAR_EXPRESSION "(qrc|moc)_.+\\.cxx$")
+
+###############################################################################
+#  Targets
+###############################################################################
 
 ##
 # Fetch
@@ -230,8 +276,9 @@ if(C843_FOUND)
             ${C843_LIBRARY}
             )
 endif(C843_FOUND)
-##
-# Testing
-#
-#enable_testing(true)
-#add_subdirectory(tests)
+
+###############################################################################
+#  Test  
+###############################################################################
+enable_testing(true)
+add_subdirectory(tests)

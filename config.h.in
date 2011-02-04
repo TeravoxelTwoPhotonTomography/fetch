@@ -1,4 +1,131 @@
+#pragma once
+//////////////////////////////////////////////////////////////////////
+// ** Generating file **
+// config.h.in is transformed into config.h by CMake's config system
+// Edit config.h.in rather than config.h if any changes must be made.
+//////////////////////////////////////////////////////////////////////
+#pragma warning(disable: 4996 95 4800) // MSVC deprication warnings
+
+//////////////////////////////////////////////////////////////////////
+// Notes
+//
+// o  cross platform-ish 
+//
+//    Development of Fetch is basically restricted to Windows, but
+//    some of the useful bits of code used in Fetch are developed
+//    for cross-platform use.  When integrating these useful bits,
+//    I bring their cross-platform configuration along with them.
+//    As a result you'll see some addictional cruft here and in the
+//    CMakeLists.txt file.  Just ignore.  This isn't really
+//    cross-platform. 
+//////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////
+// Device libraries
+//////////////////////////////////////////////////////////////////////
+
 #cmakedefine HAVE_NIDAQMX
 #cmakedefine HAVE_NISCOPE
 #cmakedefine HAVE_ALAZAR
 #cmakedefine HAVE_C843
+
+//////////////////////////////////////////////////////////////////////
+// Line endiings
+//////////////////////////////////////////////////////////////////////
+
+#ifdef WIN32
+#define ENDL "\r\n"
+#else
+#define ENDL "\n"
+#endif
+
+//////////////////////////////////////////////////////////////////////
+// inline
+//////////////////////////////////////////////////////////////////////
+
+#ifndef __cplusplus
+#ifdef __GCC__
+#define inline __inline__
+#endif
+#ifdef WIN32
+#define inline __inline
+#endif
+#endif
+
+//////////////////////////////////////////////////////////////////////
+// sleep, usleep, etc...  
+// - prefer the *nix syntax
+//////////////////////////////////////////////////////////////////////
+
+#cmakedefine HAVE_USLEEP
+#ifndef HAVE_USLEEP
+
+#ifdef WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#define usleep(e) Sleep((unsigned long)((e)/1000.0)) // us -> ms
+#define  sleep(e) Sleep((unsigned long)((e)*1000.0)) //  s -> ms
+#else
+// Not windows and missing usleep (not *nix?)
+#error "Can't find replacement for usleep(), etc.."
+#endif
+
+#endif //HAVE_USLEEP not defined
+
+//////////////////////////////////////////////////////////////////////
+// Random number generator
+// - prefer the drand48 syntax
+//////////////////////////////////////////////////////////////////////
+
+#cmakedefine HAVE_UNISTD
+#ifdef HAVE_UNISTD
+#include <unistd.h>
+#else
+
+#ifdef WIN32
+#define seed48(e)     srand(*(e))
+#define drand48() (( (double)rand() )/RAND_MAX)
+#else
+#error "Don't know how to choose a random number generator"
+#endif
+
+#endif // HAVE_UNISTD not defined
+
+//////////////////////////////////////////////////////////////////////
+// Threading
+//////////////////////////////////////////////////////////////////////
+
+#cmakedefine USE_PTHREAD
+#cmakedefine USE_WIN32_THREADS
+#if !defined(USE_WIN32_THREADS) && !defined(USE_PTHREAD)
+#error "No threading library found.  pthreads or win32 supported."
+#endif
+
+//////////////////////////////////////////////////////////////////////
+// Atomic intrinsics
+// - prefer the windows syntax
+//////////////////////////////////////////////////////////////////////
+
+#cmakedefine HAVE_ATOMIC_INTRINSICS_GCC
+#cmakedefine HAVE_ATOMIC_INTRINSICS_MSVC
+#if !defined(HAVE_ATOMIC_INTRINSICS_GCC) && !defined(HAVE_ATOMIC_INTRINSICS_MSVC)
+#error "Don't know how to choose atomic intrinsics"
+#endif
+
+#ifdef HAVE_ATOMIC_INTRINSICS_GCC
+#define InterlockedIncrement(e) __sync_add_and_fetch((e),1)
+#define InterlockedDecrement(e) __sync_sub_and_fetch((e),1)
+#endif
+
+//////////////////////////////////////////////////////////////////////
+// Types
+//////////////////////////////////////////////////////////////////////
+@SIZET_BYTES_CODE@
+
+#cmakedefine HAVE_STDINT
+#ifdef HAVE_STDINT
+#include <stdint.h>
+#else
+#error "No stdint.  what to do?"
+#endif

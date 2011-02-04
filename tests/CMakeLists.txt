@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 2.8)
 #
 # INPUT VARIABLES
 # ---------------
@@ -6,11 +7,9 @@
 #
 
 #Some stuff to let this CMakeLists.txt stand alone, if needed
-cmake_minimum_required(VERSION 2.8)
 enable_testing(true)
 
 #find gtest
-message(${ROOT_3RDPARTY_PATH})
 set(GTEST_ROOT "${ROOT_3RDPARTY_PATH}/gtest-1.5.0")
 set(GTEST_MSVC_SEARCH MD)
 find_package(GTest REQUIRED)
@@ -20,8 +19,10 @@ include_directories(${GTEST_INCLUDE_DIRS})
 # Config
 #
 
+find_package(OpenMP)
+
 #protobuf
-set(PROTO_DIR "../src/proto")
+set(PROTO_DIR "${PROJECT_SOURCE_DIR}/src/proto")
 include("${PROTO_DIR}/GenProto.cmake")
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
@@ -72,12 +73,15 @@ endif()
 ##
 # Add tests
 #
-set(PRIMARY_TEST_SOURCES
-  integration.cc
-  test.cc
-  file.cc
-  alazar.cc
-  )
+file(GLOB PRIMARY_TEST_SOURCES 
+    *.cc
+    *.cpp)
+#set(PRIMARY_TEST_SOURCES
+#  integration.cc
+#  test.cc
+#  file.cc
+#  alazar.cc
+#  )
 set(OTHER_SOURCES
   ${FETCH_SRCS}
   ${PROTO_SRCS}
@@ -98,5 +102,10 @@ target_link_libraries(alltests
   ${GLEW_LIBRARIES}
   ${ALAZAR_LIBRARY}
   ${C843_LIBRARY}
+)
+set_target_properties(
+  alltests
+  PROPERTIES
+    COMPILE_FLAGS ${OpenMP_C_FLAGS}
 )
 gtest_add_tests(alltests " " ${PRIMARY_TEST_SOURCES})

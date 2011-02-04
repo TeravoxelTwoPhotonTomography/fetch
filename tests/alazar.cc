@@ -237,7 +237,7 @@ TEST_F(AlazarBoardQuery,CheckMinimumPCIELinkWidth)
   for(int i=0;i<nhandles;++i)
   { 
     U32 link_width;
-    EXPECT_EQ(AlazarQueryCapability(handles[i],GET_PCIE_LINK_WIDTH,0,&link_width),ApiSuccess);
+    EXPECT_EQ(ApiSuccess,AlazarQueryCapability(handles[i],GET_PCIE_LINK_WIDTH,0,&link_width));
     EXPECT_GE(link_width,(U32)8);
     printf("Board 0x%p PCIe Link Width: %u\n",handles[i],link_width);
   }
