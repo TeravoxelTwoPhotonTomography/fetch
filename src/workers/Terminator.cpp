@@ -32,6 +32,8 @@ namespace fetch
       unsigned int i, n, any;
       
       n = d->_in->nelem;
+      q   = (Chan **) (Guarded_Malloc(n*sizeof(Chan*),
+                                     "Worker device task - Terminator"));
       buf = (void**)  (Guarded_Malloc(n * sizeof(void*),
                                      "Worker device task - Terminator"));
       szs = (size_t*) (Guarded_Malloc(n * sizeof(size_t),

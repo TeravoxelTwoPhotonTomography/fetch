@@ -427,7 +427,7 @@ namespace fetch {
     }
 
     writer=Chan_Open(q,CHAN_WRITE);
-    if(!CHAN_SUCCESS( Chan_Next_Copy(q, &v, sizeof(T)) ))
+    if(!CHAN_SUCCESS( Chan_Next_Copy(writer, &v, sizeof(T)) ))
     { 
       warning("In set_config_nowait(): Could not push request arguments to queue.");
       return 0;

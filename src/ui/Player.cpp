@@ -92,37 +92,39 @@ void ArrayPlayer::run()
 /* AsynqPlayer                                                          */
 /************************************************************************/
 
-AsynqPlayer::AsynqPlayer( asynq *in, Figure *w/*=0*/ )
+AsynqPlayer::AsynqPlayer( Chan *in, Figure *w/*=0*/ )
   :IPlayerThread(w)
   ,in_(0)  
   ,peek_timeout_ms_(10)
 {
-  in_ = Asynq_Ref(in);
+  in_ = Chan_Open(in,CHAN_NONE);
 }
 
 AsynqPlayer::~AsynqPlayer()
 {
-  Asynq_Unref(in_);
+  Chan_Close(in_);
   in_ = NULL;
 }
 
 void AsynqPlayer::run()
 {
   Frame *buf =  (Frame*)Chan_Token_Buffer_Alloc(in_);
-  size_t nbytes  = in_->q->buffer_size_bytes;
+  size_t nbytes  = Chan_Buffer_Size_Bytes(in_);
   mylib::Array im;
   size_t dims[3];
+  Chan *reader = Chan_Open(in_,CHAN_READ);
   running_ = 1;
   // Notes: o Peek copies from current data into frame buffer.
   //        o Peek might realloc the input frame buffer.
   while(running())
   {
-    if( Asynq_Peek_Timed(in_,(void**)&buf,nbytes,peek_timeout_ms_) )
+    if(CHAN_SUCCESS( Chan_Peek_Timed(reader,(void**)&buf,nbytes,peek_timeout_ms_) ))
     { nbytes = buf->size_bytes();
       castFetchFrameToDummyArray(&im,buf,dims);
       emit imageReady(&im); //blocks until receiver returns
     }
   }
+  Chan_Close(reader);
   Chan_Token_Buffer_Free(buf);
 }
 

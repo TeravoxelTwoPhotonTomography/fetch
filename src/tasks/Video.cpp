@@ -219,9 +219,9 @@ namespace fetch
           Chan_Next( qwfm,(void**) &wfm, nbytes_info );
           DBG("Task: Video<%s>: pushing frame\r\n",TypeStr<TPixel>());
 #ifdef SCANNER_DEBUG_FAIL_WHEN_FULL                     //"fail fast"          
-          if(  !Chan_Next_Try( qdata,(void**) &frm,nbytes ))
+          if(CHAN_FAILURE( Chan_Next_Try( qdata,(void**) &frm,nbytes) ))
 #elif defined( SCANNER_DEBUG_SPIN_WHEN_FULL )           //"fail proof" - waits when full
-          if(  !Chan_Next( qdata,(void**) &frm, nbytes ))
+          if(CHAN_FAILURE( Chan_Next( qdata,(void**) &frm, nbytes ) ))
 #else
           error("Choose a push behavior by compiling with the appropriate define.\r\n");
 #endif

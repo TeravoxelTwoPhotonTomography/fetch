@@ -224,7 +224,7 @@ Error:
       Chan *reader, *q = (Chan*)(lparam);
       T args = {0, 0, 0, 0};
       reader = Chan_Open(q,CHAN_READ);
-      if(!Chan_Next_Copy_Try(reader, &args, sizeof(T)))
+      if(CHAN_FAILURE( Chan_Next_Copy_Try(reader, &args, sizeof(T)) ))
       {
         warning("In Agent::arm_nonblocking work procedure:"ENDL
                 "\tCould not pop arguments from queue."ENDL);
@@ -253,7 +253,7 @@ Error:
         }
 
         writer = Chan_Open(q, CHAN_WRITE);
-        if(!Chan_Next_Copy(writer,&args,sizeof(T))){
+        if(CHAN_FAILURE( Chan_Next_Copy(writer,&args,sizeof(T)) )){
             warning("[%s] In Agent::arm_nonblocking: Could not push request arguments to queue.",name());
             return 0;
         }
@@ -287,7 +287,7 @@ Error:
         Chan *reader, *q = (Chan*)(lparam);
         struct T args = {0, 0};
         reader = Chan_Open(q,CHAN_READ);
-        if(!Chan_Next_Copy_Try(reader, &args, sizeof(T))){
+        if(CHAN_FAILURE( Chan_Next_Copy_Try(reader, &args, sizeof(T)) )){
             warning("In Agent::disarm_nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
             return 0;
         }
@@ -311,7 +311,7 @@ Error:
         }
 
         writer = Chan_Open(q, CHAN_WRITE);
-        if(!Chan_Next_Copy(q, &args, sizeof(T))){
+        if(CHAN_FAILURE( Chan_Next_Copy(writer, &args, sizeof(T)) )){
             warning("[%s] In Agent::disarm_nonblocking:\r\n\tCould not push request arguments to queue.\r\n",name());
             return 0;
         }
@@ -371,7 +371,7 @@ Error:
         Chan *reader,*q = (Chan*)(lparam);
         struct T args = {0};
         reader=Chan_Open(q,CHAN_READ);        
-        if(!Chan_Next_Copy_Try(reader, &args, sizeof(T))){
+        if(CHAN_FAILURE( Chan_Next_Copy_Try(reader, &args, sizeof(T)) )){
             warning("In Agent::run_nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
             return 0;
         }
@@ -395,7 +395,7 @@ Error:
         }
 
         writer=Chan_Open(q,CHAN_WRITE);
-        if(!Chan_Next_Copy(writer, &args, sizeof(T))){
+        if(CHAN_FAILURE( Chan_Next_Copy(writer, &args, sizeof(T)) )){
             warning("[%s] In Agent_Run_Nonblocking:\r\n\tCould not push request arguments to queue.\r\n",name());
             return 0;
         }
@@ -453,7 +453,7 @@ Error:
         Chan *reader,*q = (Chan*)(lparam);
         struct T args = {0, 0};
         reader=Chan_Open(q,CHAN_READ);
-        if(!Chan_Next_Copy_Try(reader, &args, sizeof(T))){
+        if(CHAN_FAILURE( Chan_Next_Copy_Try(reader, &args, sizeof(T)) )){
             warning("In Agent_Stop_Nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
             return 0;
         }
@@ -477,7 +477,7 @@ Error:
         }
 
         writer=Chan_Open(q,CHAN_WRITE);
-        if(!Chan_Next_Copy(writer, &args, sizeof(T))){
+        if(CHAN_FAILURE( Chan_Next_Copy(writer, &args, sizeof(T)) )){
             warning("[%s] In Agent::stop_nonblocking:\r\n\tCould not push request arguments to queue.\r\n",name());
             return 0;
         }
@@ -637,7 +637,7 @@ Error:
       if( dst_channel < dst->_in->nelem )
       { 
         Chan **d = dst->_in->contents + dst_channel;
-        s=Chan_Open(*d,CHAN_NONE);
+        s=Chan_Open(s,CHAN_NONE);
         Chan_Close(*d);
         *d=s;
       } else

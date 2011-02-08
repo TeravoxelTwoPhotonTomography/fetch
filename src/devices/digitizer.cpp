@@ -13,7 +13,7 @@
 #include "common.h"
 #include "util/util-niscope.h"
 #include "digitizer.h"
-#include "asynq.h"
+#include "Chan.h"
 #include "AlazarCmd.h"
 
 #pragma warning(push)

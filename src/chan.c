@@ -8,13 +8,15 @@
 #define SUCCESS (0) 
 #define FAILURE (1)
 
-//#define DEBUG_CHAN
+#define DEBUG_CHAN
 
 //////////////////////////////////////////////////////////////////////
 //  Logging    ///////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////// 
+void chan_breakme() {}
 #define chan_warning(...) printf(__VA_ARGS__);
-#define chan_error(...)   do{fprintf(stderr,__VA_ARGS__);exit(-1);}while(0)
+#define chan_error(...)   do{fprintf(stderr,__VA_ARGS__);chan_breakme(); exit(-1);}while(0)
 
 #ifdef DEBUG_CHAN
 #define chan_debug(...)   printf(__VA_ARGS__)
@@ -33,8 +35,12 @@
 #endif
 
 #define CHAN_ERR__INVALID_MODE chan_error("Error: At %s(%d)"ENDL \
-                                          "Channel has invalid read/write mode."ENDL, \
+                                          "\tChannel has invalid read/write mode."ENDL, \
                                           __FILE__,__LINE__)
+
+#define CHAN_WRN__NULL_ARG(e)  chan_warning("Warning: At %s(%d)"ENDL \
+                                            "\tArgument <%s> was NULL."ENDL, \
+                                            __FILE__,__LINE__,#e)
 
 #define HERE printf("HERE: Line % 5d File: %s\n",__LINE__,__FILE__)
 
@@ -106,11 +112,16 @@ Chan* Chan_Alloc( size_t buffer_count, size_t buffer_size_bytes)
 { chan_t   *c=0;
   __chan_t *q=0;
   if(q=chan_alloc(buffer_count,buffer_size_bytes))
-  { Chan_Assert(c=malloc(sizeof(chan_t)));
+  { Chan_Assert(c=(chan_t*)malloc(sizeof(chan_t)));
     c->q = q;
     c->mode = CHAN_NONE;
   }
   return (Chan*)c;
+}
+
+inline
+Chan *Chan_Alloc_Copy( Chan *chan)
+{ return Chan_Alloc(Chan_Buffer_Count(chan),Chan_Buffer_Size_Bytes(chan));
 }
 
 // must be called from inside a lock
@@ -162,6 +173,8 @@ Chan* Chan_Open( Chan *self, ChanMode mode)
       n->q->flush=0;
       Condition_Notify_All(&n->q->haveWriter);
       break;
+    case CHAN_NONE:
+      break;
     default:
       CHAN_ERR__INVALID_MODE;
       break;
@@ -177,6 +190,11 @@ ErrorIncref:
 int Chan_Close( Chan *self_ )
 { chan_t *self = (chan_t*)self_;
   int notify=0;
+  if(!self)
+  {
+    CHAN_WRN__NULL_ARG(self);
+    return SUCCESS;
+  }
   Mutex_Lock(&self->q->lock);
   { __chan_t *q = self->q;
     switch(self->mode)

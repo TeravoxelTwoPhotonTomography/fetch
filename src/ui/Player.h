@@ -2,7 +2,7 @@
 
 #include <QtGui>
 #include "Figure.h"
-#include "asynq.h"
+#include "Chan.h"
 namespace mylib {
 #include <utilities.h>
 #include <image.h>
@@ -75,14 +75,14 @@ class ArrayPlayer:public IPlayerThread
 class AsynqPlayer:public IPlayerThread
 {
 public:
-  AsynqPlayer(asynq *in, Figure *w=0);
+  AsynqPlayer(Chan *in, Figure *w=0);
   virtual ~AsynqPlayer();
 
 protected:
   virtual void run();
 
 protected:
-  asynq *in_;
+  Chan *in_;
   int peek_timeout_ms_;
 };
 

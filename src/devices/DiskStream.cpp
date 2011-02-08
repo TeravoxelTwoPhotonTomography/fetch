@@ -20,7 +20,7 @@
 #include "common.h"
 #include "DiskStream.h"
 #include "tasks/File.h"
-#include "asynq.h"
+#include "Chan.h"
 #include "MY_TIFF/tiff.io.h"
 #include "util/util-mylib.h"
 #include "MY_TIFF/tiff.image.h"
