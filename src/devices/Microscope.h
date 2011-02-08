@@ -102,7 +102,7 @@ namespace fetch
       task::microscope::Interaction      interaction_task;
       task::microscope::StackAcquisition stack_task;      
 
-      inline asynq *getVideoChannel() {return wrap._out->contents[0];}
+      inline Chan *getVideoChannel() {return wrap._out->contents[0];}
       inline LinearScanMirror  *LSM() {return &scanner._scanner2d._LSM;}
       inline Pockels       *pockels() {return &scanner._scanner2d._pockels;}
     

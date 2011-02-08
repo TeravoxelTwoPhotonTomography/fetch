@@ -62,23 +62,26 @@ namespace file {
 
   unsigned int
   ReadRaw::run(device::HFILEDiskStreamBase *dc)
-  { asynq *q  = dc->_out->contents[0];
-    void *buf = Asynq_Token_Buffer_Alloc(q);
-    DWORD nbytes = q->q->buffer_size_bytes,
+  { Chan *q  = dc->_out->contents[0],
+         *writer;
+    void *buf = Chan_Token_Buffer_Alloc(q);
+    DWORD nbytes = Chan_Buffer_Size_Bytes(q),
           bytes_read;
     TicTocTimer t = tic();
     const char* filename = dc->get_config().path().c_str();
+    writer=Chan_Open(q,CHAN_WRITE);
     do
     { double dt;
       Guarded_Assert_WinErr(
         ReadFile( dc->_hfile, buf, nbytes, &bytes_read, NULL ));
-      Guarded_Assert( Asynq_Push_Timed(q, &buf, nbytes, DISKSTREAM_DEFAULT_TIMEOUT) );
+      Guarded_Assert(CHAN_SUCCESS( Chan_Next(writer,&buf,nbytes) ));
       dt = toc(&t);
       debug("Read %s bytes: %d\r\n"
             "\t%-7.1f bytes per second (dt: %f)\r\n",
             filename, nbytes, nbytes/dt, dt );
     } while ( nbytes && !dc->_agent->is_stopping() );
-    Asynq_Token_Buffer_Free(buf);
+    Chan_Close(writer);
+    Chan_Token_Buffer_Free(buf);
     return 0; // success
   }
 
@@ -92,24 +95,24 @@ namespace file {
 
   unsigned int
   WriteRaw::run(device::HFILEDiskStreamBase *dc)
-  { asynq *q  = dc->_in->contents[0];
-    void *buf = Asynq_Token_Buffer_Alloc(q);
-    DWORD nbytes = q->q->buffer_size_bytes,
+  { Chan *q  = Chan_Open(dc->_in->contents[0],CHAN_READ);
+    void *buf = Chan_Token_Buffer_Alloc(q);
+    DWORD nbytes = Chan_Buffer_Size_Bytes(q),
           written;
 
     TicTocTimer t = tic();
     
-    while( !dc->_agent->is_stopping() && Asynq_Pop(q, &buf, nbytes) )
+    while( CHAN_SUCCESS(Chan_Next(q,&buf,nbytes)) ) //!dc->_agent->is_stopping() && 
       { double dt = toc(&t);
-        nbytes = q->q->buffer_size_bytes;
+        nbytes = Chan_Buffer_Size_Bytes(q);
         disk_stream_debug("FPS: %3.1f Frame time: %5.4f            MB/s: %3.1f Q: %3d Write %8d bytes to %s\r\n",
                 1.0/dt, dt,                      nbytes/1000000.0/dt,
                 q->q->head - q->q->tail,nbytes, stream->path );
         Guarded_Assert_WinErr( WriteFile( dc->_hfile, buf, nbytes, &written, NULL ));
         Guarded_Assert( written == nbytes );
       }
-    
-    Asynq_Token_Buffer_Free(buf);
+    Chan_Close(q);
+    Chan_Token_Buffer_Free(buf);
     return 0; // success
   }
 
@@ -124,7 +127,7 @@ namespace file {
 
   unsigned int
   ReadMessage::run(device::HFILEDiskStreamBase *dc)
-  { asynq   *q   = dc->_out->contents[0];
+  { Chan   *q   = Chan_Open(dc->_out->contents[0],CHAN_WRITE);
     Message *buf = NULL;
     DWORD    nbytes;
     i64      sz,
@@ -142,8 +145,8 @@ namespace file {
       w32file::setpos(dc->_hfile,0,FILE_BEGIN);                // rewind
       debug("Max buffer size of %lld found in %f seconds\r\n",maxsize,toc(&t));  
     }
-    Asynq_Resize_Buffers(q,(size_t)maxsize);                     // Make sure the queue's sized right
-    buf = (Message*)Asynq_Token_Buffer_Alloc(q);                 // get the first container
+    Chan_Resize(q,(size_t)maxsize);                     // Make sure the queue's sized right
+    buf = (Message*)Chan_Token_Buffer_Alloc(q);                 // get the first container
 
     // Producer loop
     TicTocTimer t = tic();
@@ -162,13 +165,14 @@ namespace file {
       // of Messages so I won't take it out yet.  Maybe I can still convert data I've already
       // taken.
       buf->cast(); // dark magic - casts to specific message class corresponding to buf->id.      
-      Guarded_Assert( Asynq_Push_Timed(q, (void**)&buf, nbytes, DISKSTREAM_DEFAULT_TIMEOUT));  // push
+      Guarded_Assert(CHAN_SUCCESS( Chan_Next(q,(void**)&buf,nbytes) ));  // push
       dt = toc(&t);
       debug("Read %s bytes: %d\r\n"
         "\t%-7.1f bytes per second (dt: %f)\r\n",
         filename, nbytes, nbytes/dt, dt );
     }
-    Asynq_Token_Buffer_Free(buf);
+    Chan_Close(q);
+    Chan_Token_Buffer_Free(buf);
     return 0; // success
   }
 
@@ -178,12 +182,12 @@ namespace file {
 
   unsigned int
   WriteMessage::run(device::HFILEDiskStreamBase *dc)
-  { asynq *q  = dc->_in->contents[0];
-    void *buf = Asynq_Token_Buffer_Alloc(q);
-    DWORD nbytes = q->q->buffer_size_bytes;
+  { Chan *q   = Chan_Open(dc->_in->contents[0],CHAN_READ);
+    void *buf = Chan_Token_Buffer_Alloc(q);
+    DWORD nbytes = Chan_Buffer_Size_Bytes(q);
 
     TicTocTimer t = tic();
-    while( !dc->_agent->is_stopping() && Asynq_Pop(q, &buf, nbytes) )
+    while(CHAN_SUCCESS( Chan_Next(q,&buf,nbytes) ))                 //!dc->_agent->is_stopping() &&
       { double dt = toc(&t);
         nbytes = ((Message*)buf)->size_bytes();
         disk_stream_debug("FPS: %3.1f Frame time: %5.4f            MB/s: %3.1f Q: %3d Write %8d bytes to %s\r\n",
@@ -191,7 +195,8 @@ namespace file {
                 q->q->head - q->q->tail,nbytes, dc->path );
         ((Message*)buf)->to_file(dc->_hfile);
       }
-    Asynq_Token_Buffer_Free(buf);
+    Chan_Close(q);
+    Chan_Token_Buffer_Free(buf);
     return 0; // success
   }
 
@@ -201,13 +206,13 @@ namespace file {
 
   unsigned int
   WriteMessageAsRaw::run(device::HFILEDiskStreamBase *dc)
-  { asynq *q  = dc->_in->contents[0];
-    Message *buf = (Message*) Asynq_Token_Buffer_Alloc(q);
-    DWORD nbytes = q->q->buffer_size_bytes;
+  { Chan *q  = Chan_Open(dc->_in->contents[0],CHAN_READ);
+    Message *buf = (Message*) Chan_Token_Buffer_Alloc(q);
+    DWORD nbytes = Chan_Buffer_Size_Bytes(q);
     DWORD written;
 
     TicTocTimer t = tic();
-    while(!dc->_agent->is_stopping() && Asynq_Pop(q, (void**)&buf, nbytes) )
+    while(CHAN_SUCCESS( Chan_Next(q,(void**)&buf,nbytes) ))        //!dc->_agent->is_stopping() && 
       { double dt = toc(&t);
         nbytes = buf->size_bytes() - buf->self_size;
         disk_stream_debug("FPS: %3.1f Frame time: %5.4f            MB/s: %3.1f Q: %3d Write %8d bytes to %s\r\n",
@@ -216,7 +221,7 @@ namespace file {
         Guarded_Assert_WinErr( WriteFile( dc->_hfile, buf->data, nbytes, &written, NULL ));
         Guarded_Assert( written == nbytes );
       }
-    Asynq_Token_Buffer_Free(buf);
+    Chan_Token_Buffer_Free(buf);
     return 0; // success
   }
 
@@ -231,7 +236,7 @@ namespace file {
 
   unsigned int TiffStreamReadTask::run( device::TiffStream *dc )
   {
-    asynq *q = dc->_out->contents[0];
+    Chan *q = Chan_Open(dc->_out->contents[0],CHAN_WRITE);
     Tiff_IFD *ifd;
     Tiff_Image *tim;
     Tiff_Reader *tif = dc->_tiff_reader;
@@ -239,6 +244,7 @@ namespace file {
     size_t maxsize = 0,
            maxchan = 0;
     u8 **planes = NULL;
+    int eflag=0;
 
     // compute max image size
     { 
@@ -258,8 +264,8 @@ namespace file {
     }
 
     // Resize Queue if necessary
-    Asynq_Resize_Buffers(q,maxsize);                                   // Make sure the queue's sized right
-    buf = (Frame_With_Interleaved_Planes*)Asynq_Token_Buffer_Alloc(q); // get the first container
+    Chan_Resize(q,maxsize);                                   // Make sure the queue's sized right
+    buf = (Frame_With_Interleaved_Planes*)Chan_Token_Buffer_Alloc(q); // get the first container
 
     // Producer loop
     planes = (u8**)malloc(sizeof(u8*)*maxchan);
@@ -281,28 +287,32 @@ namespace file {
       Free_Tiff_Image(tim);
       Free_Tiff_IFD(ifd);
       mytiff::unlock();
-      goto_if_fail(Asynq_Push_Timed(q, (void**)&buf, nbytes, DISKSTREAM_DEFAULT_TIMEOUT),FailedPush);  // push
+      goto_if_fail(
+        CHAN_SUCCESS(Chan_Next(q,(void**)&buf,nbytes)),
+        FailedPush);
     }
-    Asynq_Token_Buffer_Free(buf);
-    return 0; // success
-FailedPush:
-    Asynq_Token_Buffer_Free(buf);
+Finalize:
+    Chan_Token_Buffer_Free(buf);
+    Chan_Close(q);
+    return eflag; // success
+FailedPush:    
     if(planes) free(planes);
     error("Failed push while reading Tiff\r\n.");
-    return 1; //fail
-FailedImageGet:
+    eflag=1;
+    goto Finalize;    
+FailedImageGet:    
     warning("Failed to interpret IFD (0x%p) from TIFF while streaming.\r\n\tGot: %s\r\n\t In: %s\r\n",ifd,Tiff_Error_String(),Tiff_Error_Source());
     Free_Tiff_IFD(ifd);
-    mytiff::unlock();
-    Asynq_Token_Buffer_Free(buf);
-    if(planes) free(planes);
-    return 1; //fail
-FailedIFDRead:
+    mytiff::unlock();    
+    if(planes) free(planes);    
+    eflag=2;
+    goto Finalize;
+FailedIFDRead:    
     warning("Failed to read IFD from TIFF while streaming.\r\n\tGot: %s\r\n\t In: %s\r\n",Tiff_Error_String(),Tiff_Error_Source());
     mytiff::unlock();
-    Asynq_Token_Buffer_Free(buf);
-    if(planes) free(planes);
-    return 1; //fail
+    if(planes) free(planes);   
+    eflag=3;
+    goto Finalize;
   }
 
   unsigned int TiffStreamWriteTask::config( device::TiffStream *dc )
@@ -311,14 +321,15 @@ FailedIFDRead:
   }
   unsigned int TiffStreamWriteTask::run( device::TiffStream *dc )
   {
-    asynq *q  = dc->_in->contents[0];
-    Frame_With_Interleaved_Planes *buf = (Frame_With_Interleaved_Planes*)Asynq_Token_Buffer_Alloc(q);
+    Chan *q  = Chan_Open(dc->_in->contents[0],CHAN_READ);
+    Frame_With_Interleaved_Planes *buf = (Frame_With_Interleaved_Planes*)Chan_Token_Buffer_Alloc(q);
     Tiff_Writer *tif = dc->_tiff_writer;
     Tiff_Image *tim;
     Tiff_IFD *ifd;
-    size_t nbytes = q->q->buffer_size_bytes;
+    size_t nbytes = Chan_Buffer_Size_Bytes(q);
+    int eflag;
 
-    while( !dc->_agent->is_stopping() && Asynq_Pop(q, (void**)&buf, nbytes) )
+    while(CHAN_SUCCESS( Chan_Next(q,(void**)&buf,nbytes) ))      //!dc->_agent->is_stopping() && 
     { 
       goto_if_fail(buf->id==FRAME_INTERLEAVED_PLANES,FailureBufferHasWrongFormat);
       nbytes = buf->size_bytes();
@@ -344,37 +355,39 @@ FailedIFDRead:
       }
       mytiff::unlock();
     }
-
-    Asynq_Token_Buffer_Free(buf);
-    return 0; // success
+    eflag=0; //success
+Finalize:
+    Chan_Close(q);
+    Chan_Token_Buffer_Free(buf);
+    return eflag;
 FailureBufferHasWrongFormat:
     warning("Received a buffer from the input queue with an unexpected format. (wanted FRAME_INTERLEAVED_PLANES)\r\n\tGot: %d\r\n",buf->id);
-    Asynq_Token_Buffer_Free(buf);
-    return 1; // fail
+    eflag=1;
+    goto Finalize;
 FailedCreateTIFFImage:
     warning("Failed to create TIFF image while streaming.\r\n\tGot: %s\r\n\t In: %s\r\n",Tiff_Error_String(),Tiff_Error_Source());
     mytiff::unlock();
-    Asynq_Token_Buffer_Free(buf);
-    return 1; // fail
+    eflag=2;
+    goto Finalize;
 FailedAddChannel:
     warning("Adding a channel to a tiff image (0x%p) failed.\r\n\tGot: %s\r\n\t In: %s\r\n",tim,Tiff_Error_String(),Tiff_Error_Source());
     Free_Tiff_Image(tim);
     mytiff::unlock();
-    Asynq_Token_Buffer_Free(buf);
-    return 1; // fail
+    eflag=3;
+    goto Finalize;
 FailedMakeIFD:
     warning("Failed to make Tiff IFD for tiff image (0x%p).\r\n\tGot: %s\r\n\t In: %s\r\n",tim,Tiff_Error_String(),Tiff_Error_Source());
     Free_Tiff_Image(tim);
     mytiff::unlock();
-    Asynq_Token_Buffer_Free(buf);
-    return 1; // fail
+    eflag=4;
+    goto Finalize;
 FailedWriteIFD:
     warning("Write Tiff IFD failed. Reader: 0x%p IFD: 0x%p.\r\n\tGot: %s\r\n\t In: %s\r\n",tim,ifd,Tiff_Error_String(),Tiff_Error_Source());
     Free_Tiff_IFD(ifd);
     Free_Tiff_Image(tim);
     mytiff::unlock();
-    Asynq_Token_Buffer_Free(buf);
-    return 1; // fail
+    eflag=5;
+    goto Finalize;
   }
 
 }  // namespace file

@@ -95,14 +95,17 @@ namespace fetch
     unsigned int
     OneToOneWorkTask<TMessage>::run(IDevice *d)
     { unsigned int sts = 0; // success=0, fail=1
-      asynq *qsrc = d->_in->contents[0],
-            *qdst = d->_out->contents[0];
-      TMessage *fsrc =  (TMessage*)Asynq_Token_Buffer_Alloc(qsrc),
-               *fdst =  (TMessage*)Asynq_Token_Buffer_Alloc(qdst);
-      size_t nbytes_in  = qsrc->q->buffer_size_bytes,
-             nbytes_out = qdst->q->buffer_size_bytes;
+      Chan *reader,*writer,
+           *qsrc = d->_in->contents[0],
+           *qdst = d->_out->contents[0];
+      TMessage *fsrc =  (TMessage*)Chan_Token_Buffer_Alloc(qsrc),
+               *fdst =  (TMessage*)Chan_Token_Buffer_Alloc(qdst);
+      size_t nbytes_in  = Chan_Buffer_Size_Bytes(qsrc),
+             nbytes_out = Chan_Buffer_Size_Bytes(qdst);
       
-      while( !d->_agent->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, nbytes_in) )
+      reader = Chan_Open(qsrc,CHAN_READ);
+      writer = Chan_Open(qdst,CHAN_WRITE);
+      while(CHAN_SUCCESS( Chan_Next(reader, (void**)&fsrc, nbytes_in) )) // !d->_agent->is_stopping() && 
         { //debug("In  OneToOneWorkTask::run - just popped\r\n");
           nbytes_in = fsrc->size_bytes();
           fsrc->format(fdst);
@@ -110,8 +113,8 @@ namespace fetch
             reshape(d,fdst),
             FormatFunctionFailure);
           nbytes_out = fdst->size_bytes();
-          if(nbytes_out>qdst->q->buffer_size_bytes)
-          { Asynq_Resize_Buffers(qdst,nbytes_out);
+          if(nbytes_out>Chan_Buffer_Size_Bytes(qdst))
+          { Chan_Resize(writer,nbytes_out);
             goto_if_fail(
               fdst = (TMessage *) realloc(fdst,nbytes_out),
               MemoryError
@@ -125,13 +128,15 @@ namespace fetch
             work(d,fdst,fsrc),
             WorkFunctionFailure);
           goto_if_fail(
-            Asynq_Push_Timed( qdst, (void**)&fdst, nbytes_out, WORKER_DEFAULT_TIMEOUT ),
+            CHAN_SUCCESS(Chan_Next(writer,(void**)&fdst, nbytes_out)),
             OutputQueueTimeoutError);
         }      
 
 Finalize:
-      Asynq_Token_Buffer_Free(fsrc);
-      Asynq_Token_Buffer_Free(fdst);
+      Chan_Close(reader);
+      Chan_Close(writer);
+      Chan_Token_Buffer_Free(fsrc);
+      Chan_Token_Buffer_Free(fdst);
       return sts;
     // Error handling
 MemoryError:
@@ -157,26 +162,33 @@ OutputQueueTimeoutError:
     unsigned int
     InPlaceWorkTask<TMessage>::run(IDevice *d)
     { unsigned int sts = 0; // success=0, fail=1
-      asynq *qsrc = d->_in->contents[0],
-            *qdst = d->_out->contents[0];
-      TMessage *fsrc =  (TMessage*)Asynq_Token_Buffer_Alloc(qsrc);
-      size_t nbytes_in  = qsrc->q->buffer_size_bytes;
+      Chan  
+        *reader,
+        *writer,
+        *qsrc = d->_in->contents[0],
+        *qdst = d->_out->contents[0];
+      TMessage *fsrc =  (TMessage*)Chan_Token_Buffer_Alloc(qsrc);      
+      size_t nbytes_in  = Chan_Buffer_Size_Bytes(qsrc);
       
-      while(!d->_agent->is_stopping() && Asynq_Pop(qsrc, (void**)&fsrc, nbytes_in) )
+      reader = Chan_Open(qsrc,CHAN_READ);
+      writer = Chan_Open(qdst,CHAN_WRITE);
+      while(CHAN_SUCCESS( Chan_Next(reader,(void**)&fsrc,nbytes_in) )) //!d->_agent->is_stopping() && 
         { //debug("In  OneToOneWorkTask::run - just popped\r\n");
           nbytes_in = fsrc->size_bytes();
           goto_if_fail(
             work(d,fsrc),
             WorkFunctionFailure);                           
-          nbytes_in = MAX( qdst->q->buffer_size_bytes, nbytes_in ); // XXX - awkward
+          nbytes_in = MAX( Chan_Buffer_Size_Bytes(qdst), nbytes_in ); // XXX - awkward
           goto_if_fail(
-            Asynq_Push_Timed( qdst, (void**)&fsrc, nbytes_in, WORKER_DEFAULT_TIMEOUT ),
+            CHAN_SUCCESS(Chan_Next(writer,(void**)&fsrc, nbytes_in)),            
             OutputQueueTimeoutError);
         }
       
 
     Finalize:
-      Asynq_Token_Buffer_Free(fsrc);
+      Chan_Close(reader);
+      Chan_Close(writer);
+      Chan_Token_Buffer_Free(fsrc);
       return sts;
     // Error handling
     WorkFunctionFailure:

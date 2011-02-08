@@ -52,8 +52,8 @@ namespace fetch
       if(!_out)
       {
         // Reference the video output channel
-        _out=vector_PASYNQ_alloc(1);
-        Guarded_Assert(_out->contents[0] = Asynq_Ref(_scanner2d.getVideoChannel()));
+        _out=vector_PCHAN_alloc(1);
+        Guarded_Assert(_out->contents[0] = Chan_Open(_scanner2d.getVideoChannel(),CHAN_NONE) );
       }      
       //
       return eflag;

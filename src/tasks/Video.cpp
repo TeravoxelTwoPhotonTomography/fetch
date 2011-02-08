@@ -160,8 +160,8 @@ namespace fetch
       template<class TPixel>
       unsigned int
       Video<TPixel>::run_niscope(device::Scanner2D *d)
-      { asynq *qdata = d->_out->contents[0],
-              *qwfm  = d->_out->contents[1];
+      { Chan *qdata = Chan_Open(d->_out->contents[0],CHAN_WRITE),
+              *qwfm = Chan_Open(d->_out->contents[1],CHAN_WRITE);
         Frame *frm   = NULL;
         Frame_With_Interleaved_Lines ref;
         struct niScope_wfmInfo *wfm = NULL;
@@ -186,12 +186,12 @@ namespace fetch
         nbytes = ref.size_bytes();
         nbytes_info = nwfm*sizeof(struct niScope_wfmInfo);
         //
-        Asynq_Resize_Buffers(qdata, nbytes);
-        Asynq_Resize_Buffers(qwfm,  nbytes_info);
-        frm = (Frame*)                  Asynq_Token_Buffer_Alloc(qdata);
-        wfm = (struct niScope_wfmInfo*) Asynq_Token_Buffer_Alloc(qwfm);
-        nbytes      = qdata->q->buffer_size_bytes;
-        nbytes_info = qwfm->q->buffer_size_bytes;
+        Chan_Resize(qdata, nbytes);
+        Chan_Resize(qwfm,  nbytes_info);
+        frm = (Frame*)                  Chan_Token_Buffer_Alloc(qdata);
+        wfm = (struct niScope_wfmInfo*) Chan_Token_Buffer_Alloc(qwfm);
+        nbytes      = Chan_Buffer_Size_Bytes(qdata);
+        nbytes_info = Chan_Buffer_Size_Bytes(qwfm);
         //
         ref.format(frm);
 
@@ -216,12 +216,12 @@ namespace fetch
 
            // Push the acquired data down the output pipes
           DBG("Task: Video<%s>: pushing wfm\r\n",TypeStr<TPixel>());
-          Asynq_Push( qwfm,(void**) &wfm, nbytes_info, 0 );
+          Chan_Next( qwfm,(void**) &wfm, nbytes_info );
           DBG("Task: Video<%s>: pushing frame\r\n",TypeStr<TPixel>());
 #ifdef SCANNER_DEBUG_FAIL_WHEN_FULL                     //"fail fast"          
-          if(  !Asynq_Push_Try( qdata,(void**) &frm,nbytes ))
-#elif defined( SCANNER_DEBUG_SPIN_WHEN_FULL )           //"fail proof" - overwrites when full
-          if(  !Asynq_Push( qdata,(void**) &frm, nbytes, FALSE ))
+          if(  !Chan_Next_Try( qdata,(void**) &frm,nbytes ))
+#elif defined( SCANNER_DEBUG_SPIN_WHEN_FULL )           //"fail proof" - waits when full
+          if(  !Chan_Next( qdata,(void**) &frm, nbytes ))
 #else
           error("Choose a push behavior by compiling with the appropriate define.\r\n");
 #endif
@@ -244,6 +244,8 @@ Finalize:
         d->_shutter.Shut();
         free( frm );
         free( wfm );
+        Chan_Close(qdata);
+        Chan_Close(qwfm);
         niscope_debug_print_status(vi);
 
         CHKERR(d->_daq.stopAO());
@@ -258,7 +260,7 @@ Error:
 
       template<class TPixel>
       unsigned int fetch::task::scanner::Video<TPixel>::run_simulated( device::Scanner2D *d )
-      { asynq *qdata = d->_out->contents[0];
+      { Chan *qdata = Chan_Open(d->_out->contents[0],CHAN_WRITE);
         Frame *frm   = NULL;        
         Frame_With_Interleaved_Planes ref(512,512,3,TypeID<TPixel>());
         size_t nbytes;
@@ -266,8 +268,8 @@ Error:
         size_t count = 0;
         
         nbytes = ref.size_bytes();        
-        Asynq_Resize_Buffers(qdata, nbytes);
-        frm = (Frame*)Asynq_Token_Buffer_Alloc(qdata);
+        Chan_Resize(qdata, nbytes);
+        frm = (Frame*)Chan_Token_Buffer_Alloc(qdata);
         ref.format(frm);
 
         debug("Simulated Video!\r\n");
@@ -310,9 +312,9 @@ Error:
           //frm->dump("simulated.%s",TypeStr<TPixel>());
 
 #ifdef SCANNER_DEBUG_FAIL_WHEN_FULL                     //"fail fast"          
-          if(  !Asynq_Push_Try( qdata,(void**) &frm,nbytes ))
-#elif defined( SCANNER_DEBUG_SPIN_WHEN_FULL )           //"fail proof" - overwrites when full
-          if(  !Asynq_Push( qdata,(void**) &frm, nbytes, FALSE ))
+          if(CHAN_FAILURE( Chan_Next_Try( qdata,(void**) &frm,nbytes) ))
+#elif defined( SCANNER_DEBUG_SPIN_WHEN_FULL )           //"fail proof" - wait when full
+          if(CHAN_FAILURE( Chan_Next( qdata,(void**) &frm, nbytes) ))
 #else
           error("Choose a push behavior by compiling with the appropriate define.\r\n");
 #endif

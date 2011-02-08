@@ -88,7 +88,7 @@ class ChanPCNetTest: public ::testing::Test
 };
 
 typedef struct _input
-{ int            id;
+{ size_t         id;
   Chan          *chan;
   ChanPCNetTest *test;
   struct _input *next;
@@ -191,7 +191,7 @@ void ChanPCNetTest::execnet(int *graph, int nrows)
 void* producer(void* arg)
 { Chan* writer;
   int*  buf;
-  int id;
+  size_t id;
   ChanPCNetTest *test = GETTEST(arg);
   
   id = GETID(arg);
@@ -224,7 +224,8 @@ void* producer(void* arg)
 
 void* consumer(void* arg)
 { Chan* reader;
-  int*  buf,id;
+  int*  buf;
+  size_t id;
   ChanPCNetTest *test = GETTEST(arg);
   
   id = GETID(arg);
@@ -248,7 +249,8 @@ void* consumer(void* arg)
 
 void* processor(void* arg)
 { Chan *reader,*writer;
-  int  *buf,id;
+  int  *buf;
+  size_t id;
   ChanPCNetTest *test = GETTEST(arg);
   
   id = GETID(arg);
@@ -338,4 +340,30 @@ TEST_F(ChanPCNetTest,Tree)
   execnet(net,9);
   EXPECT_EQ(pmax,cmax);
   EXPECT_EQ(pmax,ppmax);
+}
+
+void *apc(void *q_)
+{ typedef struct _T { int a,b,c; } T;
+  Chan *q = (Chan*) q_;
+  Chan *reader = Chan_Open(q,CHAN_READ);
+  T v;
+  EXPECT_TRUE(CHAN_SUCCESS(Chan_Next_Copy_Try(reader,&v,sizeof(T)) ));
+  return (void*)(v.a*v.b*v.c);
+}
+
+TEST_F(ChanPCNetTest,AsynchronousProcedureCallPattern)
+{ typedef struct _T { int a,b,c; } T;
+  T arg = {1,2,3};
+  Chan *q,*writer;
+
+  writer = Chan_Open(
+      q=Chan_Alloc(2,sizeof(T)),
+      CHAN_WRITE);
+
+  Chan_Next_Copy(writer,&arg,sizeof(T));
+  Chan_Close(writer);
+
+  Thread *t = Thread_Alloc(apc,(void*)q);
+  EXPECT_EQ(6,(size_t) Thread_Join(t));
+  Chan_Close(q);
 }

@@ -12,7 +12,8 @@
  */
 #pragma once
 
-#include "asynq.h"
+#include "common.h"
+#include "chan.h"
 #include "object.h"
 #include "util\util-protobuf.h"
 
@@ -28,7 +29,7 @@
 //      1. an abstract context.  For example, a handle to a hardware resource.
 //      2. a dedicated thread
 //      3. a Task (see class Task)
-//      4. communication channels (see asynq)
+//      4. communication channels (see Chan)
 //
 // Switching between tasks is performed by transitioning through a series of
 // states, as follows:
@@ -119,9 +120,9 @@ transitions to/from different run-states.
 
 namespace fetch {
 
-  typedef asynq* PASYNQ;  
+  typedef Chan* PCHAN;  
   
-  TYPE_VECTOR_DECLARE(PASYNQ);
+  TYPE_VECTOR_DECLARE(PCHAN);
 
   class Task;
   class Agent;
@@ -143,7 +144,7 @@ namespace fetch {
 
     // Don't call directly.  This is a hook called from Agent::disarm()
     // It's called from within the Agent's mutex.
-    // Use it to disarm subdevices.
+    // Use it to disarm sub-devices.
     // eg. Used by fetch::device::Microscope to disarm running workers.
     virtual unsigned int disarm(void) {return 1;/*success*/} // Returns 1 on success, 0 otherwise
 
@@ -154,8 +155,8 @@ namespace fetch {
 
     Agent* _agent;
 
-    vector_PASYNQ   *_in,         // Input  pipes
-                    *_out;        // Output pipes    
+    vector_PCHAN   *_in,         // Input  pipes
+                   *_out;        // Output pipes    
 
   public:
     // _alloc_qs
@@ -171,9 +172,9 @@ namespace fetch {
     //   Safe for calling with *<qs>==NULL. <qs> must not be NULL.
     //   Sets *qs to NULL after releasing queues.
     // 
-    static void _alloc_qs      (vector_PASYNQ **qs, size_t n, size_t *nbuf, size_t *nbytes);
-    static void _alloc_qs_easy (vector_PASYNQ **qs, size_t n, size_t nbuf, size_t nbytes);
-    static void _free_qs       (vector_PASYNQ **qs);
+    static void _alloc_qs      (vector_PCHAN **qs, size_t n, size_t *nbuf, size_t *nbytes);
+    static void _alloc_qs_easy (vector_PCHAN **qs, size_t n, size_t nbuf, size_t nbytes);
+    static void _free_qs       (vector_PCHAN **qs);
 
   private:
     IDevice() {};
@@ -409,7 +410,7 @@ namespace fetch {
 	  typedef IConfigurableDevice<Tcfg> TSelf;
     struct T {TSelf *self;u8 data[CONFIG_BUFFER_MAX_BYTES]; size_t size; int time;};
     struct T v = {0};
-    static asynq *q=NULL;
+    static Chan *writer, *q=NULL;
     static int timestamp=0;
     //memset(&v,0,sizeof(v));
     v.self = this;
@@ -421,13 +422,17 @@ namespace fetch {
 
 
     if( !q )
-      q = Asynq_Alloc(2, sizeof(T) );    
+    { q = Chan_Alloc(2, sizeof(T) );
+      Chan_Set_Expand_On_Full(q,1);
+    }
 
-    if( !Asynq_Push_Copy(q, &v, sizeof(T), TRUE /*expand queue when full*/) )
+    writer=Chan_Open(q,CHAN_WRITE);
+    if(!CHAN_SUCCESS( Chan_Next_Copy(q, &v, sizeof(T)) ))
     { 
       warning("In set_config_nowait(): Could not push request arguments to queue.");
       return 0;
     }
+    Chan_Close(writer);
     return QueueUserWorkItem(&TSelf::_set_config_nowait__helper, (void*)q, NULL /*default flags*/);
   }
 
@@ -438,12 +443,13 @@ namespace fetch {
     typedef IConfigurableDevice<Tcfg> TSelf;
     struct T {TSelf *self;u8 data[CONFIG_BUFFER_MAX_BYTES]; size_t size; int time;};
     struct T v = {0};
-    asynq *q = (asynq*) lparam;
+    Chan *reader,*q = (Chan*) lparam;
     static int lasttime=0;
 
     //memset(&v,0,sizeof(v));
 
-    if(!Asynq_Pop_Copy_Try(q,&v,sizeof(T)))
+    reader = Chan_Open(q,CHAN_READ);
+    if(!CHAN_SUCCESS( Chan_Next_Copy_Try(reader,&v,sizeof(T)) ))
     { 
       warning(
         "In set_config_nowait helper procedure:\r\n"
@@ -455,13 +461,12 @@ namespace fetch {
     v.self->transaction_lock();
     if( (v.time - lasttime) > 0 )  // The <time> is used to synchronize "simultaneous" requests
     { 
-      lasttime = v.time;             // Only process requests dated after the last request.
-      
-      goto_if_fail(v.self->_config->ParseFromArray(v.data,v.size),FailedToParse);
-      
+      lasttime = v.time;             // Only process requests dated after the last request.      
+      goto_if_fail(v.self->_config->ParseFromArray(v.data,v.size),FailedToParse);      
       v.self->update();
     }
 Finalize:
+    Chan_Close(reader);
     v.self->transaction_unlock();
     return err;
 FailedToParse:

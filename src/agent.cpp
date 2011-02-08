@@ -14,7 +14,7 @@
 
 namespace fetch
 {
-    TYPE_VECTOR_DEFINE( PASYNQ );
+    TYPE_VECTOR_DEFINE( PCHAN );
 
   inline void
     Agent::lock(void)
@@ -221,13 +221,16 @@ Error:
         Task *dt;
         DWORD timeout;
       };
-      asynq *q = (asynq*)(lparam);
+      Chan *reader, *q = (Chan*)(lparam);
       T args = {0, 0, 0, 0};
-      if(!Asynq_Pop_Copy_Try(q, &args, sizeof(T)))
+      reader = Chan_Open(q,CHAN_READ);
+      if(!Chan_Next_Copy_Try(reader, &args, sizeof(T)))
       {
-        warning("In Agent::arm_nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
+        warning("In Agent::arm_nonblocking work procedure:"ENDL
+                "\tCould not pop arguments from queue."ENDL);
         return 0;
       }
+      Chan_Close(reader);
       return args.d->arm(args.dt, args.dc, args.timeout);
     }
 
@@ -241,14 +244,20 @@ Error:
             DWORD timeout;
         };
         struct T args = {this, dc, task, timeout_ms};
-        static asynq *q = NULL;
+        static Chan *q = NULL;
+        Chan *writer;
         if(!q)
-            q = Asynq_Alloc(32, sizeof (T));
+        {
+          q = Chan_Alloc(32, sizeof (T));
+          Chan_Set_Expand_On_Full(q,1);
+        }
 
-        if(!Asynq_Push_Copy(q, &args, sizeof(T), TRUE)){
+        writer = Chan_Open(q, CHAN_WRITE);
+        if(!Chan_Next_Copy(writer,&args,sizeof(T))){
             warning("[%s] In Agent::arm_nonblocking: Could not push request arguments to queue.",name());
             return 0;
         }
+        Chan_Close(writer);
         return QueueUserWorkItem(&_agent_arm_thread_proc, (void*)q, NULL /*default flags*/);
     }
 
@@ -275,12 +284,14 @@ Error:
             Agent *d;
             DWORD timeout;
         };
-        asynq *q = (asynq*)(lparam);
+        Chan *reader, *q = (Chan*)(lparam);
         struct T args = {0, 0};
-        if(!Asynq_Pop_Copy_Try(q, &args, sizeof(T))){
+        reader = Chan_Open(q,CHAN_READ);
+        if(!Chan_Next_Copy_Try(reader, &args, sizeof(T))){
             warning("In Agent::disarm_nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
             return 0;
         }
+        Chan_Close(reader);
         return args.d->disarm(args.timeout);
     }
 
@@ -292,14 +303,19 @@ Error:
             DWORD timeout;
         };
         struct T args = {this, timeout_ms};
-        static asynq *q = NULL;
+        static Chan *q = NULL;
+        Chan *writer;
         if(!q)
-            q = Asynq_Alloc(32, sizeof (T));
+        {   q = Chan_Alloc(32, sizeof (T));
+            Chan_Set_Expand_On_Full(q,1);
+        }
 
-        if(!Asynq_Push_Copy(q, &args, sizeof(T), TRUE)){
+        writer = Chan_Open(q, CHAN_WRITE);
+        if(!Chan_Next_Copy(q, &args, sizeof(T))){
             warning("[%s] In Agent::disarm_nonblocking:\r\n\tCould not push request arguments to queue.\r\n",name());
             return 0;
         }
+        Chan_Close(writer);
         return QueueUserWorkItem(&_agent_disarm_thread_proc, (void*)q, NULL /*default flags*/);
     }
 
@@ -352,12 +368,14 @@ Error:
         {
             Agent *d;
         };
-        asynq *q = (asynq*)(lparam);
+        Chan *reader,*q = (Chan*)(lparam);
         struct T args = {0};
-        if(!Asynq_Pop_Copy_Try(q, &args, sizeof(T))){
+        reader=Chan_Open(q,CHAN_READ);        
+        if(!Chan_Next_Copy_Try(reader, &args, sizeof(T))){
             warning("In Agent::run_nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
             return 0;
         }
+        Chan_Close(reader);
         return args.d->run();
     }
 
@@ -368,15 +386,20 @@ Error:
             Agent *d;
         };
         struct T args = {this};
-        static asynq *q = NULL;
+        static Chan *q = NULL;
+        Chan *writer;
         return_val_if_fail( this, 0 );
         if(!q)
-            q = Asynq_Alloc(32, sizeof (T));
+        {   q = Chan_Alloc(32, sizeof (T));
+            Chan_Set_Expand_On_Full(q,1);
+        }
 
-        if(!Asynq_Push_Copy(q, &args, sizeof(T), TRUE)){
+        writer=Chan_Open(q,CHAN_WRITE);
+        if(!Chan_Next_Copy(writer, &args, sizeof(T))){
             warning("[%s] In Agent_Run_Nonblocking:\r\n\tCould not push request arguments to queue.\r\n",name());
             return 0;
         }
+        Chan_Close(writer);
         return QueueUserWorkItem(&_agent_run_thread_proc, (void*)q, NULL /*default flags*/);
     }
 
@@ -390,26 +413,16 @@ Error:
       DBG("Agent: Stopping %s 0x%p\r\n",name(), this);
       if( this->_is_running )
       { if( this->_thread != INVALID_HANDLE_VALUE)
-        { Guarded_Assert_WinErr(SetEvent(this->_notify_stop));  // Signal task to stop
-          {                                             // Signal push/pop/peeks on waiting queues to abort
-            unsigned i;
-            if(_owner->_in)
-              for(i=0;i<_owner->_in->nelem;++i) 
-                Asynq_Flush(_owner->_in->contents[i]);               
-//          if(this->out)                                                                // Only notify input queues.  This way output queues will be drained if those agents are still running.
-//            for(i=0;i<this->out->nelem;++i)
-//              Guarded_Assert_WinErr(SetEvent(this->out->contents[i]->notify_abort));
-          }
-          t = _thread;
-          this->unlock();
-          // [?] Maybe should use SignalObjectAndWait?
+        { t = _thread;
+          this->unlock();          
           if(t!=INVALID_HANDLE_VALUE)
-            res = WaitForSingleObject(t, timeout_ms); // wait for running thread to stop
+            res = SignalObjectAndWait(_notify_stop,t,timeout_ms,FALSE);
+            //res = WaitForSingleObject(t, timeout_ms); // wait for running thread to stop
           this->lock();
           // Handle a timeout on the wait.  
           if( !_handle_wait_for_result(res, "Agent stop: Wait for thread."))
-          { warning("[5s] Timed out waiting for task thread (0x%p) to stop.  Forcing termination.\r\n",name(), this->_thread);
-            Guarded_Assert_WinErr(TerminateThread(this->_thread,127)); // Force the thread to stop
+          { warning("[5s] Timed out waiting for task thread (0x%p) to stop.  Forcing termination.\r\n",name(), _thread);
+            Guarded_Assert_WinErr(TerminateThread(_thread,127)); // Force the thread to stop
           }
 
           _is_running = 0;  
@@ -417,12 +430,6 @@ Error:
           _thread = INVALID_HANDLE_VALUE;
 
           ResetEvent(this->_notify_stop);
-          //{ size_t i;
-          //  if(_owner->_in)
-          //    for(i=0;i<_owner->_in->nelem;++i) 
-          //      Guarded_Assert_WinErr(ResetEvent(_owner->_in->contents[i]->notify_abort));
-          //}
-          //
 
           if(_thread!=INVALID_HANDLE_VALUE)
           { CloseHandle(this->_thread);
@@ -443,12 +450,14 @@ Error:
             Agent *d;
             DWORD timeout;
         };
-        asynq *q = (asynq*)(lparam);
+        Chan *reader,*q = (Chan*)(lparam);
         struct T args = {0, 0};
-        if(!Asynq_Pop_Copy_Try(q, &args, sizeof(T))){
+        reader=Chan_Open(q,CHAN_READ);
+        if(!Chan_Next_Copy_Try(reader, &args, sizeof(T))){
             warning("In Agent_Stop_Nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
             return 0;
         }
+        Chan_Close(reader);
         return args.d->stop(args.timeout);
     }
 
@@ -460,14 +469,19 @@ Error:
             DWORD timeout;
         };
         struct T args = {this, timeout_ms};
-        static asynq *q = NULL;
+        static Chan *q = NULL;
+        Chan * writer;
         if(!q)
-            q = Asynq_Alloc(32, sizeof (T));
+        {   q = Chan_Alloc(32, sizeof (T));
+            Chan_Set_Expand_On_Full(q,1);
+        }
 
-        if(!Asynq_Push_Copy(q, &args, sizeof(T), TRUE)){
+        writer=Chan_Open(q,CHAN_WRITE);
+        if(!Chan_Next_Copy(writer, &args, sizeof(T))){
             warning("[%s] In Agent::stop_nonblocking:\r\n\tCould not push request arguments to queue.\r\n",name());
             return 0;
         }
+        Chan_Close(writer);
         return QueueUserWorkItem(&_agent_stop_thread_proc, (void*)q, NULL /*default flags*/);
     }
 
@@ -560,42 +574,42 @@ Error:
     _free_qs(&_out);
   }
 
-  void IDevice::_free_qs(vector_PASYNQ **pqs)
+  void IDevice::_free_qs(vector_PCHAN **pqs)
   {
-    vector_PASYNQ *qs = *pqs;
+    vector_PCHAN *qs = *pqs;
     if( qs )
     { 
       size_t n = qs->count;
       int sts = 1;
       while(n--)
-        sts &= Asynq_Unref( qs->contents[n] );      //qs[n] isn't necessarily deleted. Unref returns 0 if references remain
+        sts &= Chan_Close( qs->contents[n] );      //qs[n] isn't necessarily deleted. Unref returns 0 if references remain
       if(sts)
       { 
-        vector_PASYNQ_free( qs );
+        vector_PCHAN_free( qs );
         *pqs = NULL;
       }
     }
   }
 
-  void IDevice::_alloc_qs(vector_PASYNQ **pqs, size_t n, size_t *nbuf, size_t *nbytes)
+  void IDevice::_alloc_qs(vector_PCHAN **pqs, size_t n, size_t *nbuf, size_t *nbytes)
   {
     if(n){
       IDevice::_free_qs(pqs); // Release existing queues.
-      *pqs = vector_PASYNQ_alloc(n);
+      *pqs = vector_PCHAN_alloc(n);
       while(n--)
-        (*pqs)->contents[n] = Asynq_Alloc(nbuf[n], nbytes[n]);
+        (*pqs)->contents[n] = Chan_Alloc(nbuf[n], nbytes[n]);
 
       (*pqs)->count = (*pqs)->nelem; // This is so we can resize correctly later.
     }
   }
 
-  void IDevice::_alloc_qs_easy(vector_PASYNQ **pqs, size_t n, size_t nbuf, size_t nbytes)
+  void IDevice::_alloc_qs_easy(vector_PCHAN **pqs, size_t n, size_t nbuf, size_t nbytes)
   {
     if(n){
       IDevice::_free_qs(pqs); // Release existing queues.
-      *pqs = vector_PASYNQ_alloc(n);
+      *pqs = vector_PCHAN_alloc(n);
       while(n--)
-        (*pqs)->contents[n] = Asynq_Alloc(nbuf, nbytes);
+        (*pqs)->contents[n] = Chan_Alloc(nbuf, nbytes);
 
       (*pqs)->count = (*pqs)->nelem; // This is so we can resize correctly later.
     }
@@ -611,31 +625,31 @@ Error:
   { // alloc in/out channels if necessary
     Guarded_Assert( src->_out!=NULL || dst->_in!=NULL ); // can't both be NULL
     if( src->_out == NULL )
-      src->_out = vector_PASYNQ_alloc(src_channel + 1);
+      src->_out = vector_PCHAN_alloc(src_channel + 1);
     if( dst->_in == NULL )
-      dst->_in = vector_PASYNQ_alloc(dst_channel + 1);
+      dst->_in = vector_PCHAN_alloc(dst_channel + 1);
     Guarded_Assert( src->_out && dst->_in ); // neither can be NULL
 
     if( src_channel < src->_out->nelem )                // source channel exists
     { 
-      asynq *s = src->_out->contents[src_channel];
+      Chan *s = src->_out->contents[src_channel];
 
       if( dst_channel < dst->_in->nelem )
       { 
-        asynq **d = dst->_in->contents + dst_channel;
-        Asynq_Ref(s);
-        Asynq_Unref(*d);
+        Chan **d = dst->_in->contents + dst_channel;
+        s=Chan_Open(*d,CHAN_NONE);
+        Chan_Close(*d);
         *d=s;
       } else
       { 
-        vector_PASYNQ_request( dst->_in, dst_channel );  // make space
-        dst->_in->contents[ dst_channel ] = Asynq_Ref( s );
+        vector_PCHAN_request( dst->_in, dst_channel );  // make space
+        dst->_in->contents[ dst_channel ] = Chan_Open( s,CHAN_NONE );
       }
     } else if( dst_channel < dst->_in->nelem )           // dst exists, but not src
     { 
-      asynq *d = dst->_in->contents[dst_channel];
-      vector_PASYNQ_request( src->_out, src_channel );   // make space
-      src->_out->contents[src_channel] = Asynq_Ref( d );
+      Chan *d = dst->_in->contents[dst_channel];
+      vector_PCHAN_request( src->_out, src_channel );   // make space
+      src->_out->contents[src_channel] = Chan_Open( d,CHAN_NONE );
     } else
     { 
       error("In Agent::connect: Neither channel exists.\r\n");

@@ -26,12 +26,11 @@ namespace fetch
     unsigned int
     Terminator::run(IDevice *d)
     {
-      asynq **q;   // input queues (all input channels)
+      Chan **q;   // input queues (all input channels)
       void **buf;  // array of token buffers
       size_t *szs; // array of buffer sizes
-      unsigned int i, n;
-
-      q = d->_in->contents;
+      unsigned int i, n, any;
+      
       n = d->_in->nelem;
       buf = (void**)  (Guarded_Malloc(n * sizeof(void*),
                                      "Worker device task - Terminator"));
@@ -39,26 +38,30 @@ namespace fetch
                                      "Worker device task - Terminator"));
       // alloc the token buffers
       for (i = 0; i < n; i++)
-      { buf[i] = Asynq_Token_Buffer_Alloc(q[i]);
-        szs[i] = q[i]->q->buffer_size_bytes;
+      { q[i]   = Chan_Open(d->_in->contents[i],CHAN_READ);
+        buf[i] = Chan_Token_Buffer_Alloc(q[i]);
+        szs[i] = Chan_Buffer_Size_Bytes(q[i]);
       }
 
-      // main loop
-      while(!d->_agent->is_stopping())
+      // main loop      
+      
+      do
       { 
 #if 0
-        if( !Asynq_Is_Empty(q[0]) ) DBG("Convenient break point\r\n");
+        if( !Chan_Is_Empty(q[0]) ) DBG("Convenient break point\r\n");
 #endif
-        if( !d->_agent->is_stopping() && Asynq_Pop(q[i % n], buf + i%n,szs[i%n]) )
-        { DBG("Task: Terminator: trashing buffer on queue %d (iter: %d)\r\n",i%n,i);
-          szs[i%n] = q[i%n]->q->buffer_size_bytes;
-        }
-        i++;
-      }
+        any=0;
+        for(i=0;i<n;++i)
+        { any |= CHAN_SUCCESS(Chan_Next(q[i],buf+i,szs[i]));
+          szs[i] = Chan_Buffer_Size_Bytes(q[i]);
+        }        
+      } while(any);
       
       // cleanup
       for (i = 0; i < n; i++)
-        Asynq_Token_Buffer_Free(buf[i]);
+      { Chan_Token_Buffer_Free(buf[i]);
+        Chan_Close(q[i]);
+      }
 
       free(buf);
       return 0; // success

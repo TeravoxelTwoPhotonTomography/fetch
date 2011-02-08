@@ -46,7 +46,7 @@ namespace fetch
         virtual unsigned int open(const std::string& filename, const std::string& mode);     // 0=success, 1=failure.  Attaches, arms, and runs
         inline  unsigned int close (void) {return _agent->detach();};                                //synonymous with detach()
 
-        void flush(); // Causes input queues to flush.  They stop blocking.
+        void flush(); // Wait till input queues are empty
 
         // Children still need to define
         //   detach()

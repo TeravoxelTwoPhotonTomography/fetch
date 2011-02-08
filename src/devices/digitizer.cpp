@@ -114,11 +114,11 @@ Error:
       size_t
         Bpp = 2, //bytes per pixel to initially allocated for
         nbuf[2] = {DIGITIZER_BUFFER_NUM_FRAMES,
-        DIGITIZER_BUFFER_NUM_FRAMES},
+                   DIGITIZER_BUFFER_NUM_FRAMES},
         sz[2] = { 
           _config->num_records() * _config->record_size() * _config->nchannels() * Bpp,
           _config->num_records() * sizeof(struct niScope_wfmInfo)};
-          _alloc_qs( &_out, 2, nbuf, sz );
+        _alloc_qs( &_out, 2, nbuf, sz );
     }
 
     void NIScopeDigitizer::setup(int nrecords, double record_frequency_Hz, double duty)

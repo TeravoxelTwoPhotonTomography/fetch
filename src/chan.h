@@ -15,7 +15,6 @@ typedef enum _chan_mode
 } ChanMode;
 
 Chan  *Chan_Alloc              ( size_t buffer_count, size_t buffer_size_bytes);
-Chan  *Chan_Alloc_And_Open     ( size_t buffer_count, size_t buffer_size_bytes, ChanMode mode);
 Chan  *Chan_Open               ( Chan *self, ChanMode mode);                                    // does ref counting and access type
 int    Chan_Close              ( Chan *self );                                                  // does ref counting
 
@@ -42,10 +41,11 @@ void     Chan_Set_Expand_On_Full ( Chan* self, int  expand_on_full);            
 // Try    Fails immediately              Fails immediately.
 // Timed  Waits.  Fails after timeout.   Fails immediately if no sources, otherwise waits till timeout.
 
-unsigned int Chan_Next       ( Chan *self, void **pbuf, size_t sz); 
-unsigned int Chan_Next_Copy  ( Chan *self, void  *buf,  size_t sz); 
-unsigned int Chan_Next_Try   ( Chan *self, void **pbuf, size_t sz);                     
-unsigned int Chan_Next_Timed ( Chan *self, void **pbuf, size_t sz, unsigned timeout_ms );
+unsigned int Chan_Next         ( Chan *self,  void **pbuf, size_t sz);
+unsigned int Chan_Next_Copy    ( Chan *self,  void  *buf,  size_t sz);
+unsigned int Chan_Next_Try     ( Chan *self,  void **pbuf, size_t sz);
+unsigned int Chan_Next_Copy_Try( Chan *self_, void  *buf,  size_t sz);
+unsigned int Chan_Next_Timed   ( Chan *self,  void **pbuf, size_t sz,   unsigned timeout_ms );
 
 // ----
 // Peek
@@ -65,12 +65,13 @@ unsigned int Chan_Peek_Timed ( Chan *self, void **pbuf, size_t sz, unsigned time
 
 int         Chan_Is_Full                    ( Chan *self );
 int         Chan_Is_Empty                   ( Chan *self );
-inline void Chan_Resize                     ( Chan *self, size_t nbytes);
+extern void Chan_Resize                     ( Chan *self, size_t nbytes);
 
 void*       Chan_Token_Buffer_Alloc         ( Chan *self );
 void*       Chan_Token_Buffer_Alloc_And_Copy( Chan *self, void *src );
 void        Chan_Token_Buffer_Free          ( void *buf );
-size_t      Chan_Buffer_Size_Bytes          ( Chan *self );
+extern size_t Chan_Buffer_Size_Bytes        ( Chan *self );
+extern size_t Chan_Buffer_Count             ( Chan *self );
 
 
 #define CHAN_SUCCESS(expr) ((expr)==0)

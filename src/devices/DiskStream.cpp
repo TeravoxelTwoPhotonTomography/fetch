@@ -64,10 +64,10 @@ namespace fetch
       warning("IDiskStream::flsuh() called.  Need to be sure this is necessary.  Could lose data.\r\n");
       if(_in)
       { 
-        asynq **beg =       _in->contents,
-              **cur = beg + _in->nelem;
+        Chan **beg =       _in->contents,
+             **cur = beg + _in->nelem;
         while(cur-- > beg)
-          Asynq_Flush( cur[0] );
+          Guarded_Assert(Chan_Is_Empty(*cur)); //should be empty here.  If not, need to wait till emtpy          
       }
     }
 

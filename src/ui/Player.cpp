@@ -8,6 +8,7 @@ namespace mylib {
 }
 #include <frame.h>
 #include <util/util-mylib.h>
+#include "chan.h"
 
 using namespace ::mylib;
 
@@ -107,7 +108,7 @@ AsynqPlayer::~AsynqPlayer()
 
 void AsynqPlayer::run()
 {
-  Frame *buf =  (Frame*)Asynq_Token_Buffer_Alloc(in_);
+  Frame *buf =  (Frame*)Chan_Token_Buffer_Alloc(in_);
   size_t nbytes  = in_->q->buffer_size_bytes;
   mylib::Array im;
   size_t dims[3];
@@ -122,7 +123,7 @@ void AsynqPlayer::run()
       emit imageReady(&im); //blocks until receiver returns
     }
   }
-  Asynq_Token_Buffer_Free(buf);
+  Chan_Token_Buffer_Free(buf);
 }
 
 

@@ -81,15 +81,15 @@ namespace fetch
         FetchForever<TPixel>::run(device::NIScopeDigitizer *dig)
         { ViSession   vi = dig->_vi;
           ViChar   *chan = const_cast<ViChar*>(dig->_config->chan_names().c_str());
-          asynq   *qdata = dig->_out->contents[0],
-                   *qwfm = dig->_out->contents[1];
+          Chan    *qdata = Chan_Open(dig->_out->contents[0],CHAN_WRITE),
+                   *qwfm = Chan_Open(dig->_out->contents[1],CHAN_WRITE);
           ViInt32  nelem,
                     nwfm,
                      ttl = 0,ttl2=0,
                old_state;
           u32   nfetches = 0,
-                nframes  = 0,
-                every    = 32;  // must be power of two - used for reporting FPS
+                 nframes = 0,
+                   every = 32;  // must be power of two - used for reporting FPS
           TicTocTimer t, delay_clock;
           double delay, maxdelay = 0.0, accdelay = 0.0;
           u32    last_max_fetch = 0;  
@@ -148,17 +148,17 @@ namespace fetch
               }
               ++nfetches;     
               ttl += wfm->actualSamples;  // add the chunk size to the total samples count     
-              Asynq_Push( qwfm,(void**) &wfm, nwfm*sizeof(struct niScope_wfmInfo), 0 );    // Push (swap) the info from the last fetch
+              Chan_Next(qwfm,(void**)&wfm,nwfm*sizeof(struct niScope_wfmInfo));
             } while(ttl!=nelem);
             
             // Handle the full buffer
             { //double dt;
 #ifdef DIGITIZER_DEBUG_FAIL_WHEN_FULL
-              if(  !Asynq_Push_Try( qdata,(void**) &frm, nbytes ))    //   Push buffer and reset total samples count
+              if(CHAN_FAILURE( Chan_Next_Try(qdata,(void**)&frm,nbytes) ))    //   Push buffer and reset total samples count
 #elif defined( DIGITIZER_DEBUG_SPIN_WHEN_FULL )
-              if(  !Asynq_Push( qdata,(void**) &frm, nbytes, FALSE )) //   Push buffer and reset total samples count
+              if(CHAN_FAILURE( Chan_Next(qdata,(void**)&frm,nbytes) )) //   Push buffer and reset total samples count
 #else
-                error("Choose a push behavior for digitizer by compileing with the appropriate define.\r\n");
+#error("Choose a push behavior for digitizer by compiling with the appropriate define.\r\n");
 #endif
               { warning("Digitizer output queue overflowed.\r\n\tAborting acquisition task.\r\n");
                 goto Error;
@@ -186,6 +186,8 @@ namespace fetch
                                                   old_state ));
           free( frm );
           free( wfm );
+          Chan_Close(qdata);
+          Chan_Close(qwfm);
           debug("Digitizer: nfetches: %u nframes: %u\r\n"
                 "\tDelay - max: %g (on fetch %d) mean:%g\r\n"
                 "\tTotal acquired samples %f MS\r\n",nfetches, nframes,maxdelay, last_max_fetch,accdelay/nfetches,ttl2/1024.0/1024.0);

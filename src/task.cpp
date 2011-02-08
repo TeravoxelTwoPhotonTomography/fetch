@@ -17,9 +17,9 @@ namespace fetch
       // Note to self: should probably take care of any
       //               cleanup in the Agent::stop() function
       return result;  
-Error:      
-      error("While ending the task, something went wrong.\r\n");
-      return 2; //failure - shouldn't get here.  
+//Error:      
+//      error("While ending the task, something went wrong.\r\n");
+//      return 2; //failure - shouldn't get here.  
     }
 
 // VTREF
