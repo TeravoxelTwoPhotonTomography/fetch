@@ -1,10 +1,12 @@
-#include "stdafx.h"
+#include "common.h"
 #include "frame.h"
 #include "util/util-file.h"
 #include "util/util-image.h"
 
 #define FRAME_WARN_ON_DUMP
 
+namespace fetch
+{
 /*
  * MESSAGE
  */
@@ -467,3 +469,5 @@ Frame_With_Interleaved_Planes::get_shape( size_t n[3] )
   n[1] = this->height;
   n[2] = this->width;
 }
+
+} //end namespace fetch

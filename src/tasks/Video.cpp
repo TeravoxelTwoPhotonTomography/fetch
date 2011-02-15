@@ -33,7 +33,7 @@
 
 #define SCANNER_VIDEO_TASK_FETCH_TIMEOUT  10.0  //10.0, //(-1=infinite) (0.0=immediate)
                                                 // Setting this to infinite can sometimes make the application difficult to quit
-#if 0
+#if 1
 #define DBG(...) debug(__VA_ARGS__)
 #else
 #define DBG(...)
@@ -52,6 +52,14 @@
 #define SCANNER_DEBUG_FAIL_WHEN_FULL
 #else
 #define SCANNER_DEBUG_SPIN_WHEN_FULL
+#endif
+
+#ifdef SCANNER_DEBUG_FAIL_WHEN_FULL
+#define SCANNER_PUSH(...) Chan_Next_Try(__VA_ARGS__)
+#elif defined(SCANNER_DEBUG_SPIN_WHEN_FULL)
+#define SCANNER_PUSH(...) Chan_Next(__VA_ARGS__)
+#else
+#error("An overflow behavior for the scanner should be specified");
 #endif
 
 namespace fetch
@@ -218,13 +226,7 @@ namespace fetch
           DBG("Task: Video<%s>: pushing wfm\r\n",TypeStr<TPixel>());
           Chan_Next( qwfm,(void**) &wfm, nbytes_info );
           DBG("Task: Video<%s>: pushing frame\r\n",TypeStr<TPixel>());
-#ifdef SCANNER_DEBUG_FAIL_WHEN_FULL                     //"fail fast"          
-          if(CHAN_FAILURE( Chan_Next_Try( qdata,(void**) &frm,nbytes) ))
-#elif defined( SCANNER_DEBUG_SPIN_WHEN_FULL )           //"fail proof" - waits when full
-          if(CHAN_FAILURE( Chan_Next( qdata,(void**) &frm, nbytes ) ))
-#else
-          error("Choose a push behavior by compiling with the appropriate define.\r\n");
-#endif
+          if(CHAN_FAILURE( SCANNER_PUSH(qdata,(void**)&frm,nbytes) ))
           { warning("Scanner output frame queue overflowed.\r\n\tAborting acquisition task.\r\n");
             goto Error;
           }
@@ -311,13 +313,7 @@ Error:
 
           //frm->dump("simulated.%s",TypeStr<TPixel>());
 
-#ifdef SCANNER_DEBUG_FAIL_WHEN_FULL                     //"fail fast"          
-          if(CHAN_FAILURE( Chan_Next_Try( qdata,(void**) &frm,nbytes) ))
-#elif defined( SCANNER_DEBUG_SPIN_WHEN_FULL )           //"fail proof" - wait when full
-          if(CHAN_FAILURE( Chan_Next( qdata,(void**) &frm, nbytes) ))
-#else
-          error("Choose a push behavior by compiling with the appropriate define.\r\n");
-#endif
+          if(CHAN_FAILURE( SCANNER_PUSH(qdata,(void**)&frm,nbytes) ))
           { warning("Scanner output frame queue overflowed.\r\n\tAborting acquisition task.\r\n");
             goto Error;
           }
@@ -325,6 +321,7 @@ Error:
           ++count;
         }
 Finalize:
+        Chan_Close(qdata);
         free( frm );
         return status; // status == 0 implies success, error otherwise
 Error:

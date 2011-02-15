@@ -112,7 +112,7 @@ GLuint typeMapMylibToGLType(mylib::Array **pa)
   if(ret == (GLuint)-1)
   { 
     mylib::lock();
-    *pa = mylib::Convert_Image_Copy(a,mylib::PLAIN_KIND,mylib::FLOAT32,32);
+    *pa = mylib::Convert_Image(a,mylib::PLAIN_KIND,mylib::FLOAT32,32);
     mylib::unlock();
     //Free_Array(a); // release the old reference //[ngx] don't do this...owner is still responsible for his array.
     ret = GL_FLOAT;

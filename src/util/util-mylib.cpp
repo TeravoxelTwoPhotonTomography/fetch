@@ -17,8 +17,11 @@ struct CS
 namespace mylib 
 {
   CS _g_cs;
-  void lock()   {_g_cs.lock();}
-  void unlock() {_g_cs.unlock();}
+  //void lock()   {_g_cs.lock();}
+  //void unlock() {_g_cs.unlock();}
+  
+  void lock()   {} // shouldn't need these now that Gene's library is thread-safe
+  void unlock() {}
 
   static Array_Type frameTypeToArrayType[] = {
     UINT8,//id_u8 = 0,
@@ -90,7 +93,7 @@ namespace mylib
     }
   }
 
-  void castFetchFrameToDummyArray(Array* dest, Frame* src, size_t dims[3])
+  void castFetchFrameToDummyArray(Array* dest, fetch::Frame* src, size_t dims[3])
   {
     assert(sizeof(size_t)==sizeof(mylib::Dimn_Type));
     dest->dims = (Dimn_Type*) dims;

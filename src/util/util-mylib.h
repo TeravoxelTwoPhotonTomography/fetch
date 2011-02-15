@@ -1,7 +1,8 @@
 
 #include "types.h"
+#include "frame.h"
 #include "MY_TIFF\tiff.image.h"
-class Frame;
+
 namespace mylib
 { 
   #include <array.h>
@@ -12,7 +13,7 @@ namespace mylib
 
   Array_Type fetchTypeToArrayType(Basic_Type_ID id);
   size_t fetchTypeToArrayScale(Basic_Type_ID id);
-  void castFetchFrameToDummyArray(Array* dest, Frame* src, size_t dims[3]);
+  void castFetchFrameToDummyArray(Array* dest, fetch::Frame* src, size_t dims[3]);
 }//end namespace mylib
 
 namespace mytiff
