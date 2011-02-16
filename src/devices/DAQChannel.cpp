@@ -35,11 +35,11 @@ namespace fetch
     }
     
     NIDAQChannel::~NIDAQChannel(void)
-    { if(this->detach()>0)
+    { if(this->on_detach()>0)
         warning("Couldn't cleanly detach NIDAQChannel: %s\r\n.",this->_daqtaskname);
     }
 
-    unsigned int NIDAQChannel::detach(void)
+    unsigned int NIDAQChannel::on_detach(void)
     { unsigned int status=1; //success 0, failure 1
 
       if(daqtask)
@@ -53,7 +53,7 @@ namespace fetch
       return status;
     }
 
-    unsigned int NIDAQChannel::attach(void)
+    unsigned int NIDAQChannel::on_attach(void)
     { unsigned int status = 1; //success 0, failure 1;
       Guarded_Assert(daqtask==NULL);
       DAQJMP(status=DAQmxCreateTask(_daqtaskname,&daqtask))
@@ -70,12 +70,12 @@ namespace fetch
       memcpy(_name,name,MIN(strlen(name),strlen(_name)));
     }
 
-    unsigned int SimulatedDAQChannel::attach()
+    unsigned int SimulatedDAQChannel::on_attach()
     {
       return 0;
     }
 
-    unsigned int SimulatedDAQChannel::detach()
+    unsigned int SimulatedDAQChannel::on_detach()
     {
       return 0;
     }

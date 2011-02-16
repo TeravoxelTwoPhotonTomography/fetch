@@ -47,8 +47,8 @@ namespace fetch
       NIDAQZPiezo(Agent *agent);
       NIDAQZPiezo(Agent *agent, Config *cfg);
 
-      unsigned int attach();
-      unsigned int detach();
+      unsigned int on_attach();
+      unsigned int on_detach();
 
       virtual void computeConstWaveform(float64 z_um, float64 *data, int n);
       virtual void computeRampWaveform(float64 z_um, float64 *data, int n);
@@ -66,8 +66,8 @@ namespace fetch
       SimulatedZPiezo(Agent *agent);
       SimulatedZPiezo(Agent *agent, Config *cfg);
 
-      unsigned int attach() {return 0;}
-      unsigned int detach() {return 0;}
+      unsigned int on_attach() {return 0;}
+      unsigned int on_detach() {return 0;}
 
       virtual void computeConstWaveform(float64 z_um, float64 *data, int n);
       virtual void computeRampWaveform(float64 z_um, float64 *data, int n);
@@ -88,8 +88,8 @@ namespace fetch
       ZPiezo(Agent *agent, Config *cfg);
       ~ZPiezo();
 
-      virtual unsigned int attach() {return _idevice->attach();}
-      virtual unsigned int detach() {return _idevice->detach();}
+      virtual unsigned int on_attach() {return _idevice->on_attach();}
+      virtual unsigned int on_detach() {return _idevice->on_detach();}
       void _set_config( Config IN *cfg );
       void _set_config( const Config &cfg );
 

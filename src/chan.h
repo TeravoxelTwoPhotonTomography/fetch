@@ -52,7 +52,7 @@ unsigned int Chan_Next_Timed   ( Chan *self,  void **pbuf, size_t sz,   unsigned
 // Peek
 // ----
 //
-// Does not require a mode to be set.
+// Requires read mode.
 //
 unsigned int Chan_Peek       ( Chan *self, void **pbuf, size_t sz );
 unsigned int Chan_Peek_Try   ( Chan *self, void **pbuf, size_t sz );

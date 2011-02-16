@@ -30,8 +30,8 @@
  *
  * Methods
  * -------
- * attach
- * detach
+ * on_attach
+ * on_detach
  *      These are required for usable Agent subclasses.  They create/destroy
  *      the channel specified in the configuration.
  *
@@ -54,7 +54,7 @@
  *       NIDAQChannel\
  *                  Pockels
  *
- * NIDAQChannel implements (detach)attach methods that (de)initialize a NI-DAQmx
+ * NIDAQChannel implements (on_detach)on_attach methods that (de)initialize a NI-DAQmx
  * task.
  */
 
@@ -110,8 +110,8 @@ namespace fetch
 
       virtual ~NIDAQPockels();
 
-      virtual unsigned int attach() {return daq.attach();}
-      virtual unsigned int detach() {return daq.detach();}
+      virtual unsigned int on_attach() {return daq.on_attach();}
+      virtual unsigned int on_detach() {return daq.on_detach();}
 
       virtual int isValidOpenVolts(f64 volts);
       virtual int setOpenVolts(f64 volts);
@@ -130,8 +130,8 @@ class SimulatedPockels:public PockelsBase<cfg::device::SimulatedPockels>
       SimulatedPockels(Agent *agent);
       SimulatedPockels(Agent *agent, Config *cfg);
 
-      virtual unsigned int attach() {return 0;}
-      virtual unsigned int detach() {return 0;}
+      virtual unsigned int on_attach() {return 0;}
+      virtual unsigned int on_detach() {return 0;}
 
       virtual int isValidOpenVolts(f64 volts);
       virtual int setOpenVolts(f64 volts);
@@ -154,8 +154,8 @@ class SimulatedPockels:public PockelsBase<cfg::device::SimulatedPockels>
       Pockels(Agent *agent, Config *cfg);
       ~Pockels();
 
-      virtual unsigned int attach();
-      virtual unsigned int detach();
+      virtual unsigned int on_attach();
+      virtual unsigned int on_detach();
 
       void setKind(Config::PockelsType kind);
       void _set_config( Config IN *cfg );

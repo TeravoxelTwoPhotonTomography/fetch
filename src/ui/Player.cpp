@@ -39,7 +39,7 @@ void IPlayerThread::setFigure( Figure *w )
   {
     connect(
       this,SIGNAL(imageReady(mylib::Array*)),
-      w_ ,SLOT  (imshow(mylib::Array*)),
+      w_ ,SLOT   (imshow(mylib::Array*)),
       Qt::BlockingQueuedConnection);
   }
 }
@@ -120,12 +120,13 @@ void AsynqPlayer::run()
   {
     if(CHAN_SUCCESS( Chan_Peek_Timed(reader,(void**)&buf,nbytes,peek_timeout_ms_) ))
     { nbytes = buf->size_bytes();
+      buf->format(buf);                                                    // resets the data pointer  - super gross and icky
       castFetchFrameToDummyArray(&im,buf,dims);
-      emit imageReady(&im); //blocks until receiver returns
+      emit imageReady(&im);                                                // blocks until receiver returns      
     }
   }
-  Chan_Close(reader);
-  Chan_Token_Buffer_Free(buf);
+  Chan_Close(reader);  
+  Chan_Token_Buffer_Free(buf);  
 }
 
 

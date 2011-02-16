@@ -65,19 +65,19 @@ namespace fetch {
         (void*)this));                     //data passed to callback 
     }
 
-    unsigned int NationalInstrumentsDAQ::attach()
+    unsigned int NationalInstrumentsDAQ::on_attach()
     {
       int sts = 0;
-      sts  = _clk.attach();
-      sts |= _ao.attach();
+      sts  = _clk.on_attach();
+      sts |= _ao.on_attach();
       return sts;
     }
 
-    unsigned int NationalInstrumentsDAQ::detach()
+    unsigned int NationalInstrumentsDAQ::on_detach()
     {
       int sts = 0;
-      sts  = _ao.detach();
-      sts |= _clk.detach();
+      sts  = _ao.on_detach();
+      sts |= _clk.on_detach();
       return sts;
     }
 

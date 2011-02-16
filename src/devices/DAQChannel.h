@@ -11,11 +11,11 @@
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
 /*
- * Agent's that attach to NI-DAQmx resources through calls to:
+ * Agent's that on_attach to NI-DAQmx resources through calls to:
  *
  *    DAQmxCreateTask
  *
- * should inherit from this class.  This class provides the attach/detach
+ * should inherit from this class.  This class provides the on_attach/on_detach
  * functions required of the Agent interface.
  */
 
@@ -43,8 +43,8 @@ namespace fetch
       NIDAQChannel(Agent *agent, char *name);
       ~NIDAQChannel(void);
 
-      unsigned int attach();
-      unsigned int detach();
+      unsigned int on_attach();
+      unsigned int on_detach();
       
       virtual char* name() {return _daqtaskname;}
     public:
@@ -56,8 +56,8 @@ namespace fetch
     { char _name[128];
     public:
       SimulatedDAQChannel(Agent *agent, char *name);
-      unsigned int attach();
-      unsigned int detach();
+      unsigned int on_attach();
+      unsigned int on_detach();
 
       virtual char* name() {return _name;}
     };

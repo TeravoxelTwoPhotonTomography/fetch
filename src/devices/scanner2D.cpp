@@ -52,14 +52,14 @@ namespace fetch
       __common_setup();
     }
 
-    unsigned int Scanner2D::attach()
+    unsigned int Scanner2D::on_attach()
     {
       unsigned int eflag = 0; //success = 0, error = 1
-      return_val_if(eflag |= _shutter.attach()  ,eflag);
-      return_val_if(eflag |= _digitizer.attach(),eflag);
-      return_val_if(eflag |= _daq.attach()      ,eflag);
-      return_val_if(eflag |= _LSM.attach()      ,eflag);
-      return_val_if(eflag |= _pockels.attach()  ,eflag);
+      return_val_if(eflag |= _shutter.on_attach()  ,eflag);
+      return_val_if(eflag |= _digitizer.on_attach(),eflag);
+      return_val_if(eflag |= _daq.on_attach()      ,eflag);
+      return_val_if(eflag |= _LSM.on_attach()      ,eflag);
+      return_val_if(eflag |= _pockels.on_attach()  ,eflag);
 
       if(!_out)
       { 
@@ -75,14 +75,14 @@ namespace fetch
       return eflag;
     }
 
-    unsigned int Scanner2D::detach()
+    unsigned int Scanner2D::on_detach()
     {      
       unsigned int eflag = 0; //success = 0, error = 1
-      return_val_if(eflag |= _shutter.detach()  ,eflag);
-      return_val_if(eflag |= _digitizer.detach(),eflag);
-      return_val_if(eflag |= _daq.detach()      ,eflag);
-      return_val_if(eflag |= _LSM.detach()      ,eflag);
-      return_val_if(eflag |= _pockels.detach()  ,eflag);
+      return_val_if(eflag |= _shutter.on_detach()  ,eflag);
+      return_val_if(eflag |= _digitizer.on_detach(),eflag);
+      return_val_if(eflag |= _daq.on_detach()      ,eflag);
+      return_val_if(eflag |= _LSM.on_detach()      ,eflag);
+      return_val_if(eflag |= _pockels.on_detach()  ,eflag);
       return eflag;
     }
 

@@ -89,7 +89,7 @@
     } 
 
     unsigned int
-    Microscope::attach(void)
+    Microscope::on_attach(void)
     { 
       int eflag = 0; // 0 success, 1 failure
 
@@ -112,7 +112,7 @@
     }
     
     unsigned int
-    Microscope::detach(void)
+    Microscope::on_detach(void)
     { 
       int eflag = 0; // 0 success, 1 failure
       eflag |= scanner._agent->detach(); //scanner.detach();
@@ -126,7 +126,7 @@
       return eflag;  
     }
     
-    unsigned int Microscope::disarm()
+    unsigned int Microscope::on_disarm()
     {
       unsigned int sts = 1; // success      
       sts &= scanner._agent->disarm();

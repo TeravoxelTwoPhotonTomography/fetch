@@ -37,7 +37,7 @@
  *
  * Notes
  * -----
- *  - attach/detach just call Scanner2D's implementations.  Redefining them here
+ *  - on_attach/on_detach just call Scanner2D's implementations.  Redefining them here
  *    just makes the call explicit (could implicitly do it with inheritence order, I think).
  *
  *  - writing enough data for a frame across three channels requires more than the 
@@ -67,8 +67,8 @@ namespace fetch
 
       void __common_setup();
 
-      virtual unsigned int attach(); // returns 0 on success, 1 on failure
-      virtual unsigned int detach(); // returns 0 on success, 1 on failure
+      virtual unsigned int on_attach(); // returns 0 on success, 1 on failure
+      virtual unsigned int on_detach(); // returns 0 on success, 1 on failure
 
       virtual void _set_config(Config IN *cfg);
       virtual void _set_config(const Config& cfg);

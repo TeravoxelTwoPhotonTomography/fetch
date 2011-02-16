@@ -82,8 +82,8 @@ namespace fetch
       NIScopeDigitizer(Agent *agent, Config *cfg);
       ~NIScopeDigitizer();
 
-      unsigned int attach(void);
-      unsigned int detach(void);
+      unsigned int on_attach(void);
+      unsigned int on_detach(void);
 
       virtual void   setup(int nrecords, double record_frequency_Hz, double duty);
       virtual size_t record_size(double record_frequency_Hz, double duty);
@@ -102,8 +102,8 @@ namespace fetch
       AlazarDigitizer(Agent *agent)             : DigitizerBase<cfg::device::AlazarDigitizer>(agent) {}
       AlazarDigitizer(Agent *agent, Config *cfg): DigitizerBase<cfg::device::AlazarDigitizer>(agent,cfg) {}
 
-      unsigned int attach() {return 0;}
-      unsigned int detach() {return 0;}
+      unsigned int on_attach() {return 0;}
+      unsigned int on_detach() {return 0;}
 
       virtual void setup(int nrecords, double record_frequency_Hz, double duty);
       virtual size_t record_size(double record_frequency_Hz, double duty);
@@ -119,8 +119,8 @@ namespace fetch
       SimulatedDigitizer(Agent *agent) : DigitizerBase<cfg::device::SimulatedDigitizer>(agent) {}
       SimulatedDigitizer(Agent *agent, Config *cfg): DigitizerBase<cfg::device::SimulatedDigitizer>(agent,cfg) {}
 
-      unsigned int attach() {return 0;}
-      unsigned int detach() {return 0;}
+      unsigned int on_attach() {return 0;}
+      unsigned int on_detach() {return 0;}
 
       virtual void setup(int nrecords, double record_frequency_Hz, double duty) {}
       size_t SimulatedDigitizer::record_size( double record_frequency_Hz, double duty );
@@ -135,8 +135,8 @@ namespace fetch
       Digitizer(Agent *agent, Config *cfg);
       ~Digitizer();
 
-      virtual unsigned int attach();
-      virtual unsigned int detach();
+      virtual unsigned int on_attach();
+      virtual unsigned int on_detach();
 
       void setKind(Config::DigitizerType kind);
       virtual void _set_config(Config IN *cfg);

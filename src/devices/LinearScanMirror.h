@@ -51,8 +51,8 @@ namespace fetch
       NIDAQLinearScanMirror(Agent *agent);
       NIDAQLinearScanMirror(Agent *agent, Config *cfg);
 
-      virtual unsigned int attach() {return daq.attach();}
-      virtual unsigned int detach() {return daq.detach();}
+      virtual unsigned int on_attach() {return daq.on_attach();}
+      virtual unsigned int on_detach() {return daq.on_detach();}
       
       virtual void computeSawtooth(float64 *data, int n);
 
@@ -71,8 +71,8 @@ namespace fetch
       SimulatedLinearScanMirror(Agent *agent);
       SimulatedLinearScanMirror(Agent *agent, Config *cfg);
 
-      virtual unsigned int attach() {return 0;}
-      virtual unsigned int detach() {return 0;}
+      virtual unsigned int on_attach() {return 0;}
+      virtual unsigned int on_detach() {return 0;}
 
       virtual void computeSawtooth(float64 *data, int n);
 
@@ -96,8 +96,8 @@ namespace fetch
 
      void setKind(Config::LinearScanMirrorType kind);
 
-     virtual unsigned int attach() {return _idevice->attach();}
-     virtual unsigned int detach() {return _idevice->detach();}
+     virtual unsigned int on_attach() {return _idevice->on_attach();}
+     virtual unsigned int on_detach() {return _idevice->on_detach();}
      void _set_config( Config IN *cfg );
      void _set_config( const Config &cfg );
 

@@ -62,8 +62,8 @@ namespace device {
 
       void setKind(Config::StageType kind);
 
-      virtual unsigned int attach() {return _idevice->attach();}
-      virtual unsigned int detach() {return _idevice->detach();}
+      virtual unsigned int on_attach() {return _idevice->on_attach();}
+      virtual unsigned int on_detach() {return _idevice->on_detach();}
       void _set_config( Config IN *cfg );
       void _set_config( const Config &cfg );
 

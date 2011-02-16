@@ -37,17 +37,17 @@ namespace fetch
     {
     }
 
-    unsigned int NIDAQShutter::attach()
+    unsigned int NIDAQShutter::on_attach()
     {
-      unsigned int sts = daq.attach();
+      unsigned int sts = daq.on_attach();
       if(sts==0) // 0 is success
         Bind();
       return sts;
     }
 
-    unsigned int NIDAQShutter::detach()
+    unsigned int NIDAQShutter::on_detach()
     {
-      return daq.detach();
+      return daq.on_detach();
     }
 
 

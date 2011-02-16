@@ -32,14 +32,14 @@ namespace fetch
     {
     }
 
-    unsigned int NIDAQZPiezo::attach()
+    unsigned int NIDAQZPiezo::on_attach()
     {
-      return daq.attach();
+      return daq.on_attach();
     }
 
-    unsigned int NIDAQZPiezo::detach()
+    unsigned int NIDAQZPiezo::on_detach()
     {
-      return daq.detach();
+      return daq.on_detach();
     }
 
     /*

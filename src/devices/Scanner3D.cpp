@@ -43,11 +43,11 @@ namespace fetch
       __common_setup();
     }
 
-    unsigned int Scanner3D::attach()
+    unsigned int Scanner3D::on_attach()
     {
       unsigned int eflag = 0; //success = 0, error = 1
-      return_val_if(eflag |= _scanner2d.attach()  ,eflag);
-      return_val_if(eflag |= _zpiezo.attach()     ,eflag);
+      return_val_if(eflag |= _scanner2d.on_attach()  ,eflag);
+      return_val_if(eflag |= _zpiezo.on_attach()     ,eflag);
       
       if(!_out)
       {
@@ -59,11 +59,11 @@ namespace fetch
       return eflag;
     }
 
-    unsigned int Scanner3D::detach()
+    unsigned int Scanner3D::on_detach()
     {
       unsigned int eflag = 0; //success = 0, error = 1
-      return_val_if(eflag |= _scanner2d.detach()  ,eflag);
-      return_val_if(eflag |= _zpiezo.detach()     ,eflag);
+      return_val_if(eflag |= _scanner2d.on_detach()  ,eflag);
+      return_val_if(eflag |= _zpiezo.on_detach()     ,eflag);
       return eflag;
     }
 

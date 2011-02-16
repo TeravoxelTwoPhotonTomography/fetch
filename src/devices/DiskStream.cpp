@@ -138,7 +138,7 @@ namespace fetch
     }
 
     template<typename TReader,typename TWriter>
-    unsigned int fetch::device::HFILEDiskStream<TReader, TWriter>::attach( void )
+    unsigned int fetch::device::HFILEDiskStream<TReader, TWriter>::on_attach( void )
     {
       DWORD desired_access, share_mode, creation_disposition, flags_and_attr;
       unsigned int eflag = 0; //success
@@ -169,7 +169,7 @@ namespace fetch
         break;
       default:
         { 
-          warning("IDiskStream::attach() -- Couldn't interpret mode.  Got %s\r\n",mode);
+          warning("IDiskStream::on_attach() -- Couldn't interpret mode.  Got %s\r\n",mode);
           return 1; //failure
         }
       }
@@ -197,7 +197,7 @@ namespace fetch
     }
 
     template<typename TReader,typename TWriter>
-    unsigned int fetch::device::HFILEDiskStream<TReader, TWriter>::detach( void )
+    unsigned int fetch::device::HFILEDiskStream<TReader, TWriter>::on_detach( void )
     {
       unsigned int eflag = 1; //error
       const char *mode,*filename;
@@ -250,7 +250,7 @@ Error:
       _reader = &_read_task;
     }
 
-    unsigned int TiffStream::attach()
+    unsigned int TiffStream::on_attach()
     {
       unsigned int eflag = 0; //success
       char *mode,*filename;
@@ -273,7 +273,7 @@ Error:
       return eflag;
     }
 
-    unsigned int TiffStream::detach()
+    unsigned int TiffStream::on_detach()
     {
       if(_tiff_writer)
       {
@@ -292,7 +292,7 @@ Error:
 #pragma warning(disable:4533) // initialization is skipped by GOTO
     unsigned int TiffStream::_attach_reader( char * filename )
     {
-      Guarded_Assert(_tiff_reader); // open() should call detach() before attach().  detach() should set open handles to null.
+      Guarded_Assert(_tiff_reader); // open() should call on_detach() before on_attach().  on_detach() should set open handles to null.
       mytiff::lock();
       goto_if_fail(_tiff_reader = Open_Tiff_Reader(filename,NULL,NULL,mytiff::islsm(filename)),FailedOpen);   
 
@@ -333,7 +333,7 @@ FailedImageGet:
 #pragma warning(disable:4533) // initialization is skipped by GOTO
     unsigned int TiffStream::_attach_writer( char * filename )
     {
-      Guarded_Assert(_tiff_writer==NULL); // open() should call detach() before attach().  detach() should set open handles to null.
+      Guarded_Assert(_tiff_writer==NULL); // open() should call on_detach() before on_attach().  on_detach() should set open handles to null.
       mytiff::lock();
       goto_if_fail(_tiff_writer = Open_Tiff_Writer(filename,FALSE/*32 bit*/,mytiff::islsm(filename)),FailedOpen);
       mytiff::unlock();

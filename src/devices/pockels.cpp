@@ -218,16 +218,16 @@ namespace device {
     return _ipockels->setOpenVoltsNoWait(volts);
   }
 
-  unsigned int Pockels::attach()
+  unsigned int Pockels::on_attach()
   {
     Guarded_Assert(_idevice);
-    return _idevice->attach();
+    return _idevice->on_attach();
   }
 
-  unsigned int Pockels::detach()
+  unsigned int Pockels::on_detach()
   {
     Guarded_Assert(_idevice);
-    return _idevice->detach();
+    return _idevice->on_detach();
   }
 
 } //end device namespace

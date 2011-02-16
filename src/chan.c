@@ -87,7 +87,7 @@ __chan_t* chan_alloc(size_t buffer_count, size_t buffer_size_bytes)
 { __chan_t *c=0;
   Fifo *fifo;
   if(fifo=Fifo_Alloc(buffer_count,buffer_size_bytes))
-  { Chan_Assert(c=calloc(1,sizeof(__chan_t)));
+  { Chan_Assert(c=(__chan_t*)calloc(1,sizeof(__chan_t)));
     c->fifo = fifo;
     c->lock = MUTEX_INITIALIZER;
     Condition_Initialize(&c->notfull);

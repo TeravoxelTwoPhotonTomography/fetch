@@ -62,8 +62,8 @@ namespace fetch
 
     WorkAgent<TWorkTask,TConfig>* apply(IDevice *source, int ichan=0); // returns <this>
 
-    unsigned int attach(void);
-    unsigned int detach(void);
+    unsigned int on_attach(void);
+    unsigned int on_detach(void);
 
   public: //data
     TWorkTask __task_instance;
@@ -105,15 +105,15 @@ namespace fetch
   
   template<typename TWorkTask,typename TConfig>
   unsigned int WorkAgent<TWorkTask,TConfig>::
-  attach(void) 
+  on_attach(void) 
   {
     return 0; /*0 success, 1 failure*/
   }
   
   template<typename TWorkTask,typename TConfig>
   unsigned int WorkAgent<TWorkTask,TConfig>::
-  detach(void) 
-  { debug("Attempting WorkAgent::detach() for task at 0x%p [%s].\r\n",&this->__task_instance,_agent->name());    
+  on_detach(void) 
+  { debug("Attempting WorkAgent::on_detach() for task at 0x%p [%s].\r\n",&this->__task_instance,_agent->name());    
     return 0; /*0 success, 1 failure*/
   }
   

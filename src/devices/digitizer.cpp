@@ -73,7 +73,7 @@ namespace fetch
     }
 
     unsigned int
-      NIScopeDigitizer::detach(void)
+      NIScopeDigitizer::on_detach(void)
     { ViStatus status = 1; //error
 
     digitizer_debug("Digitizer: Attempting to disarm. vi: %d\r\n", this->_vi);
@@ -87,7 +87,7 @@ Error:
     }
 
     unsigned int
-      NIScopeDigitizer::attach(void)
+      NIScopeDigitizer::on_attach(void)
     {
       ViStatus status = VI_SUCCESS;      
       digitizer_debug("NIScopeDigitizer: Attach\r\n");      
@@ -377,16 +377,16 @@ Error:
       _niscope->set_config_nowait(cfg);
     }
 
-    unsigned int Digitizer::attach()
+    unsigned int Digitizer::on_attach()
     {
       Guarded_Assert(_idevice);
-      return _idevice->attach();
+      return _idevice->on_attach();
     }
 
-    unsigned int Digitizer::detach()
+    unsigned int Digitizer::on_detach()
     {
       Guarded_Assert(_idevice);
-      return _idevice->detach();
+      return _idevice->on_detach();
     }
 
     void Digitizer::_set_config( Config IN *cfg )

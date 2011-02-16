@@ -31,7 +31,7 @@
  *                           |
  *                        Scanner2D
  *
- * The NIDAQAgent and Digitizer classes both provide the attach/detach
+ * The NIDAQAgent and Digitizer classes both provide the on_attach/on_detach
  * functions required of a class implementing the Agent interface.
  * The NIDAQAgent class is _not_ virtually inherited so each of the Pockels,
  * Shutter, and LinearScanMirror classes bring in a hardware context handle:
@@ -39,7 +39,7 @@
  * the <daqtask> member, a down cast is required.
  *
  * It's possible to get independent task handles for the pockels cell, the
- * shutter and the linear scan mirror by calling the attach() function for each.
+ * shutter and the linear scan mirror by calling the on_attach() function for each.
  * Here, however, the Pockels cell and linear scan mirror should be associated
  * with the same analog output task.  This is done by keeping attaching to
  * a separate task stored by the Scanner2D class; the <daqtask> handles for
@@ -50,7 +50,7 @@
  * (b) committing changes to hardware via the associated Task.  Because hardware
  * commits are routed through the Task, the specific <daqtask> used is up to the
  * Task. The Shutter class, does _not_ follow this pattern.  In it's current
- * form, Shutter::attach() _must_ be used in order to use Shutter::Open() and
+ * form, Shutter::on_attach() _must_ be used in order to use Shutter::Open() and
  * Shutter::Closed().
  *
  * Clear as Mud.
@@ -97,8 +97,8 @@ namespace fetch
       Scanner2D(Agent *agent);
       Scanner2D(Agent *agent, Config *cfg);
 
-      virtual unsigned int attach(); // returns 0 on success, 1 on failure
-      virtual unsigned int detach(); // returns 0 on success, 1 on failure
+      virtual unsigned int on_attach(); // returns 0 on success, 1 on failure
+      virtual unsigned int on_detach(); // returns 0 on success, 1 on failure
 
       virtual void _set_config(Config IN *cfg);
       virtual void _set_config(const Config& cfg);

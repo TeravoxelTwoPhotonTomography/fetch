@@ -50,14 +50,14 @@ namespace fetch
       NIDAQShutter(Agent *agent);
       NIDAQShutter(Agent *agent, Config *cfg);
 
-      unsigned int attach();
-      unsigned int detach();
+      unsigned int on_attach();
+      unsigned int on_detach();
 
       void Set          (u8 val);
       void Shut         (void);
       void Open         (void);
       
-      void Bind         (void);   // Binds the digital output channel to the daq task. - called by attach()
+      void Bind         (void);   // Binds the digital output channel to the daq task. - called by on_attach()
     };
 
     class SimulatedShutter:public ShutterBase<cfg::device::SimulatedShutter>
@@ -66,8 +66,8 @@ namespace fetch
       SimulatedShutter(Agent *agent);
       SimulatedShutter(Agent *agent, Config *cfg);
 
-      unsigned int attach() {return 0;}
-      unsigned int detach() {return 0;}
+      unsigned int on_attach() {return 0;}
+      unsigned int on_detach() {return 0;}
 
       void update(void) {}
 
@@ -87,8 +87,8 @@ namespace fetch
       Shutter(Agent *agent, Config *cfg);
       ~Shutter();
 
-      virtual unsigned int attach() {return _idevice->attach();}
-      virtual unsigned int detach() {return _idevice->detach();}
+      virtual unsigned int on_attach() {return _idevice->on_attach();}
+      virtual unsigned int on_detach() {return _idevice->on_detach();}
       void _set_config( Config IN *cfg );
       void _set_config( const Config &cfg );
 

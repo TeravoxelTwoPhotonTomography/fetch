@@ -68,8 +68,8 @@ namespace fetch
       NationalInstrumentsDAQ(Agent *agent, Config *cfg);
       ~NationalInstrumentsDAQ();
 
-      virtual unsigned int attach();
-      virtual unsigned int detach();
+      virtual unsigned int on_attach();
+      virtual unsigned int on_detach();
 
       int waitForDone(DWORD timeout_ms=INFINITE);
 
@@ -100,8 +100,8 @@ namespace fetch
       SimulatedDAQ(Agent *agent);
       SimulatedDAQ(Agent *agent, Config *cfg);
 
-      virtual unsigned int attach() {return 0;}
-      virtual unsigned int detach() {return 0;}
+      virtual unsigned int on_attach() {return 0;}
+      virtual unsigned int on_detach() {return 0;}
 
       int waitForDone(DWORD timeout_ms=INFINITE) {return 0;}
 
@@ -135,8 +135,8 @@ namespace fetch
      void _set_config( Config IN *cfg );
      void _set_config( const Config &cfg );
 
-     virtual unsigned int attach() {return _idevice->attach();}
-     virtual unsigned int detach() {return _idevice->detach();}
+     virtual unsigned int on_attach() {return _idevice->on_attach();}
+     virtual unsigned int on_detach() {return _idevice->on_detach();}
 
      int waitForDone(DWORD timeout_ms=INFINITE) {return _idaq->waitForDone(timeout_ms);}
 

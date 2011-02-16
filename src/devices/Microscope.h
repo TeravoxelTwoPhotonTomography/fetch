@@ -64,7 +64,7 @@ namespace fetch
     class Microscope : public IConfigurableDevice<cfg::device::Microscope>
     { 
     public:     
-      // Will attach and arm the default task on construction
+      // Will on_attach and arm the default task on construction
       Microscope();
       Microscope(const Config &cfg);
       Microscope(Config *cfg);
@@ -73,10 +73,10 @@ namespace fetch
 
       ~Microscope();
 
-      unsigned int attach(void);
-      unsigned int detach(void);
+      unsigned int on_attach(void);
+      unsigned int on_detach(void);
 
-      unsigned int disarm();
+      unsigned int on_disarm();
 
       virtual void _set_config(Config IN *cfg);
       virtual void _set_config(const Config& cfg);

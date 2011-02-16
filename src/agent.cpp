@@ -4,7 +4,7 @@
 
 #define DEBUG_AGENT__HANDLE_WAIT_FOR_RESULT
 
-#if 1
+#if 0
 #define DBG(...) debug(__VA_ARGS__)
 #define LOCKDBG(...)  DBG(__VA_ARGS__)
 #else
@@ -271,7 +271,7 @@ Error:
       this->lock();
       this->_task = NULL;
       this->set_available();
-      sts &= _owner->disarm();
+      sts &= _owner->on_disarm();
       this->unlock();
       DBG("Disarmed %s 0x%p\r\n",name(), this);
       return sts;
@@ -511,7 +511,7 @@ Error:
   unsigned int Agent::attach( void )
   { unsigned int sts = 0;
     lock();
-    sts |= _owner->attach();
+    sts |= _owner->on_attach();
     if(sts==0)
       set_available();
     else
@@ -529,7 +529,7 @@ Error:
     if(!disarm(AGENT_DEFAULT_TIMEOUT))
       warning("[%s] Could not cleanly disarm (device at 0x%p)\r\n",name(), _owner);
     lock();
-    sts = _owner->detach();
+    sts = _owner->on_detach();
     _is_available=0;
     unlock();
     return sts;

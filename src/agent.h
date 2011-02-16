@@ -109,8 +109,8 @@ IDevice
 
 Interface class defining two methods:
 
-  - attach()
-  - detach()
+  - on_attach()
+  - on_detach()
 
 These functions are called by the Agent class during 
 transitions to/from different run-states.
@@ -139,14 +139,14 @@ namespace fetch {
 
     // Don't call these directly.  They're called through Agent::attach()/detach()
     // The agent class takes care of synchronization and non-blocking calls.
-    virtual unsigned int attach(void)=0;// Returns 0 on success, nonzero otherwise.
-    virtual unsigned int detach(void)=0;// Returns 0 on success, nonzero otherwise.  Should attempt to disarm if running.  Should not panic if possible.
+    virtual unsigned int on_attach(void)=0;// Returns 0 on success, nonzero otherwise.
+    virtual unsigned int on_detach(void)=0;// Returns 0 on success, nonzero otherwise.  Should attempt to disarm if running.  Should not panic if possible.
 
     // Don't call directly.  This is a hook called from Agent::disarm()
     // It's called from within the Agent's mutex.
     // Use it to disarm sub-devices.
     // eg. Used by fetch::device::Microscope to disarm running workers.
-    virtual unsigned int disarm(void) {return 1;/*success*/} // Returns 1 on success, 0 otherwise
+    virtual unsigned int on_disarm(void) {return 1;/*success*/} // Returns 1 on success, 0 otherwise
 
     // Queue manipulation
     static void connect(IDevice *dst, size_t dst_chan, IDevice *src, size_t src_chan);

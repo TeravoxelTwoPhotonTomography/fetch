@@ -44,13 +44,13 @@ namespace fetch
         IDiskStream(Agent *agent, char *filename, char *mode);
 
         virtual unsigned int open(const std::string& filename, const std::string& mode);     // 0=success, 1=failure.  Attaches, arms, and runs
-        inline  unsigned int close (void) {return _agent->detach();};                                //synonymous with detach()
+        inline  unsigned int close (void) {return _agent->detach();};                        //synonymous with detach()
 
         void flush(); // Wait till input queues are empty
 
         // Children still need to define
-        //   detach()
-        //   attach()
+        //   on_detach()
+        //   on_attach()
         // Children need to set the _reader and _writer pointers
 
     protected:
@@ -65,9 +65,9 @@ namespace fetch
       TiffStream(Agent *agent);
       TiffStream(Agent *agent, Config *config);
 
-      unsigned int detach();
+      unsigned int on_detach();
     protected:
-      unsigned int attach();
+      unsigned int on_attach();
 
       unsigned int _attach_writer( char * filename );
 
@@ -83,8 +83,8 @@ namespace fetch
     class HFILEDiskStreamBase : public IDiskStream
     {    
       // Children still need to define
-      //   detach()
-      //   attach()
+      //   on_detach()
+      //   on_attach()
       // Children need to set the _reader and _writer pointers
     public:
       HFILEDiskStreamBase(Agent *agent);
@@ -100,10 +100,10 @@ namespace fetch
       HFILEDiskStream(Agent *agent);
       HFILEDiskStream(Agent *agent, Config *config);
       
-      unsigned int detach(void);
+      unsigned int on_detach(void);
 
     protected:
-      unsigned int attach(void);                       // use open() instead        
+      unsigned int on_attach(void);                       // use open() instead        
 
     private:
       TReader _inst_reader;
