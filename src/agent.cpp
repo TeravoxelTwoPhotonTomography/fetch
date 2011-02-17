@@ -4,9 +4,9 @@
 
 #define DEBUG_AGENT__HANDLE_WAIT_FOR_RESULT
 
-#if 0
+#if 1
 #define DBG(...) debug(__VA_ARGS__)
-#define LOCKDBG(...)  DBG(__VA_ARGS__)
+#define LOCKDBG(...)  //DBG(__VA_ARGS__)
 #else
 #define DBG(...)
 #define LOCKDBG(...)
@@ -410,22 +410,21 @@ Error:
       DWORD res;
       HANDLE t;
       lock();
-      DBG("Agent: Stopping %s 0x%p\r\n",name(), this);
+      DBG("Agent: [ ] Stopping %s 0x%p\r\n",name(), this);
       if( _is_running )
-      { if( _thread != INVALID_HANDLE_VALUE)
+      { 
+        _is_running = 0;
+        if( _thread != INVALID_HANDLE_VALUE)
         { t = _thread;
           unlock();          
-          if(t!=INVALID_HANDLE_VALUE)
-            res = SignalObjectAndWait(_notify_stop,t,timeout_ms,FALSE);
+          res = SignalObjectAndWait(_notify_stop,t,timeout_ms,FALSE);
             //res = WaitForSingleObject(t, timeout_ms); // wait for running thread to stop
           lock();
           // Handle a timeout on the wait.  
           if( !_handle_wait_for_result(res, "Agent stop: Wait for thread."))
           { warning("[5s] Timed out waiting for task thread (0x%p) to stop.  Forcing termination.\r\n",name(), _thread);
             Guarded_Assert_WinErr(TerminateThread(_thread,127)); // Force the thread to stop
-          }
-
-          _is_running = 0;  
+          }  
           CloseHandle(_thread);
           _thread = INVALID_HANDLE_VALUE;
 
@@ -435,11 +434,10 @@ Error:
           { CloseHandle(_thread);
             _thread = INVALID_HANDLE_VALUE;
           }
-        } 
-        _is_running = 0;
+        }
       }
       unlock();
-      DBG("Agent: Stopped %s 0x%p\r\n",name(), this);
+      DBG("Agent: [x] Stopped %s 0x%p\r\n",name(), this);
       return 1;
     }
 
