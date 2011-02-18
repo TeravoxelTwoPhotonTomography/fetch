@@ -195,12 +195,23 @@
       return (sts!=1); // returns 1 on fail and 0 on success
     }
 
-    ////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////
+    // FileSeries
+    ///////////////////////////////////////////////////////////////////////
     
     FileSeries& FileSeries::inc( void )
     {
-      int n = _desc->seriesno();
-      _desc->set_seriesno(n+1);      
+      int n = _desc->seriesno();   
+      
+      // reset series number when series path changes
+      updateDate();                // get the current date
+      std::string seriespath = _desc->root() + _desc->pathsep() + _desc->date();
+      if(seriespath.compare(_lastpath)!=0)
+      { _desc->set_seriesno(0);
+        _lastpath = seriespath;
+      } else
+      { _desc->set_seriesno(n+1);
+      }
       return *this;
     }
 
@@ -208,14 +219,7 @@
     {
       char strSeriesNo[32];
       renderSeriesNo(strSeriesNo,sizeof(strSeriesNo));
-      updateDate();
-
-      // reset series number when series path changes
       std::string seriespath = _desc->root() + _desc->pathsep() + _desc->date();
-      if(seriespath.compare(_lastpath)!=0)
-        _desc->set_seriesno(0); // for next time
-      _lastpath = seriespath;
-
       return seriespath
         + _desc->pathsep()
         + strSeriesNo

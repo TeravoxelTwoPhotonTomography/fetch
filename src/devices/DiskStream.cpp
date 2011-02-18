@@ -335,7 +335,9 @@ FailedImageGet:
     {
       Guarded_Assert(_tiff_writer==NULL); // open() should call on_detach() before on_attach().  on_detach() should set open handles to null.
       mytiff::lock();
-      goto_if_fail(_tiff_writer = Open_Tiff_Writer(filename,FALSE/*32 bit*/,mytiff::islsm(filename)),FailedOpen);
+      goto_if_fail(
+        _tiff_writer = Open_Tiff_Writer(filename,FALSE/*32 bit*/,mytiff::islsm(filename)),
+        FailedOpen);
       mytiff::unlock();
 
       Frame_With_Interleaved_Planes fmt(1024,1024,3,id_u16);

@@ -211,9 +211,9 @@ int Chan_Close( Chan *self_ )
         break;
     }
   }
-  Mutex_Unlock(&self->q->lock);
   if(notify)
     Condition_Notify_All(&self->q->notempty);
+  Mutex_Unlock(&self->q->lock);
   decref(&self);
   return SUCCESS;
 }
