@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////
 // CONFIG
 //////////////////////////////////////////////////////////////////////
-#ifdef _WIN32
+#ifdef _MSC_VER
 #define USE_WIN32_THREADS
 #else
 #define USE_PTHREAD
@@ -49,9 +49,16 @@ typedef pthread_t       native_thread_t;
 typedef pthread_t       native_thread_id_t;
 typedef pthread_mutex_t native_mutex_t;
 typedef pthread_cond_t  native_cond_t;
+#define MUTEX_INITIALIZER     {PTHREAD_MUTEX_INITIALIZER,PTHREAD_MUTEX_INITIALIZER,0}
+#define CONDITION_INITIALIZER PTHREAD_COND_INITIALIZER
 #endif //USE_PTHREAD
 
 #ifdef USE_WIN32_THREADS
+#ifndef RTL_CONDITION_VARIABLE_INIT
+#define RTL_CONDITION_VARIABLE_INIT {0}
+#endif
+#define MUTEX_INITIALIZER     {0,0,0}
+#define CONDITION_INITIALIZER RTL_CONDITION_VARIABLE_INIT
 //#include <windows.h> // can't do this bc windows defines UINT8 etc... these collide with mylib names
                        // so we fake it
 typedef void*               _HANDLE;
@@ -70,25 +77,28 @@ typedef struct _mutex_t
 { native_mutex_t  lock; 
   native_mutex_t  self_lock;  
   native_thread_id_t owner;
+  int is_owned;
 } Mutex;
        
 typedef void          Thread;
 typedef native_cond_t Condition;
             
-extern const Mutex     MUTEX_INITIALIZER;
-extern const Condition CONDITION_INITIALIZER;
+extern const Mutex     MUTEX_INITIALIZER_INSTANCE;
+extern const Condition CONDITION_INITIALIZER_INSTANCE;
 
 //Prefer pthread-style thread proc specification
 typedef void* (*ThreadProc)(void*);
 typedef void* ThreadProcArg;
 typedef void* ThreadProcRet;
 
-Thread* Thread_Alloc ( ThreadProc function, ThreadProcArg arg);
-void    Thread_Free  ( Thread* self);
-void*   Thread_Join  ( Thread* self);
-void    Thread_Exit  ( unsigned exitcode);
-extern native_thread_id_t Thread_SelfID( );
-void    Thread_Self  ( Thread* out );
+Thread*  Thread_Alloc       ( ThreadProc function, ThreadProcArg arg);
+void     Thread_Free        ( Thread* self);
+void*    Thread_Join        ( Thread* self);
+void     Thread_Exit        ( unsigned exitcode);
+void     Thread_Self        ( Thread* out );
+extern int                Thread_Equal  ( native_thread_id_t a, native_thread_id_t b);
+extern native_thread_id_t Thread_SelfID ( );
+
 
 Mutex*  Mutex_Alloc ( );
 void    Mutex_Free  ( Mutex* self);

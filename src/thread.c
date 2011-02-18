@@ -5,17 +5,18 @@
 #ifdef __GCC__
 #define inline __inline__
 #endif
-#ifdef WIN32
+#ifdef _MSC_VER
 #define inline __inline
 #endif
 #endif
 
-#ifdef WIN32
+#ifdef _MSC_VER
 #include <windows.h>
 #define ENDL "\r\n"
 #else
 #define ENDL "\n"
-#endif //WIN32
+#endif //_MSC_VER
+
 #define thread_error(...)    do{fprintf(stderr,__VA_ARGS__);exit(-1);}while(0)
 #define thread_assert(e)     if(!(e)) thread_error("Assert failed in thread module" ENDL \
 																									 "\tFailed: %s" ENDL \
@@ -27,21 +28,9 @@ typedef struct _closure_t
   ThreadProcRet ret;
 } closure_t;
 
-#ifdef USE_PTHREAD
-#include <pthread.h>
-#define _MUTEX_INITIALIZER     {PTHREAD_MUTEX_INITIALIZER,PTHREAD_MUTEX_INITIALIZER,0}
-#define _CONDITION_INITIALIZER PTHREAD_COND_INITIALIZER
-#endif //USE_PTHREAD
 
-#ifdef USE_WIN32_THREADS
-#ifndef RTL_CONDITION_VARIABLE_INIT
-#define RTL_CONDITION_VARIABLE_INIT {0}
-#endif
-#define _MUTEX_INITIALIZER     {0,0,0}
-#define _CONDITION_INITIALIZER RTL_CONDITION_VARIABLE_INIT
-#endif //USE_WIN32_THREADS
-extern const Mutex     MUTEX_INITIALIZER     = _MUTEX_INITIALIZER;
-extern const Condition CONDITION_INITIALIZER = _CONDITION_INITIALIZER;
+extern const Mutex     MUTEX_INITIALIZER_INSTANCE     = MUTEX_INITIALIZER;
+extern const Condition CONDITION_INITIALIZER_INSTANCE = CONDITION_INITIALIZER;
 
 #ifdef USE_WIN32_THREADS
 #include <strsafe.h>
@@ -165,6 +154,11 @@ void Thread_Self(Thread* out)
   memset(out,0,sizeof(thread_t));
   self->handle = GetCurrentThread();
   self->id     = GetThreadId(self->handle);
+}
+
+inline int Thread_Equal( native_thread_id_t a, native_thread_id_t b)
+{ 
+  return a==b;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -329,6 +323,11 @@ void Thread_Self(Thread* out_)
 { thread_t *out= (thread_t*)out_; 
   out->handle = pthread_self();
 }
+
+inline int Thread_Equal( native_thread_id_t a, native_thread_id_t b)
+{ return pthread_equal(a,b);
+}
+
 //////////////////////////////////////////////////////////////////////
 //  Mutex  ///////////////////////////////////////////////////////////
 //
@@ -365,7 +364,7 @@ void Mutex_Lock(Mutex* self)
 { 
   pthread_t caller = pthread_self();
   pth_asrt_success(pthread_mutex_lock(M_SELF(self)));
-  if(self->owner && pthread_equal(caller,self->owner))
+  if( (self->is_owned) && pthread_equal(caller,self->owner) )
     goto ErrorAttemptedRecursiveLock;
   pth_asrt_success(pthread_mutex_lock(M_NATIVE(self)));
   self->owner=caller;
@@ -378,11 +377,11 @@ ErrorAttemptedRecursiveLock:
 void Mutex_Unlock(Mutex* self)
 { 
   pthread_t caller = pthread_self();
-  if(!self->owner)
+  if(!self->is_owned)
     goto ErrorUnownedUnlock;
   if(!pthread_equal(caller,self->owner))
     goto ErrorStolenUnlock;
-  self->owner = 0;
+  self->is_owned=0;
 	pth_asrt_success(pthread_mutex_unlock(M_NATIVE(self)));
   return;
 ErrorUnownedUnlock:
@@ -390,6 +389,7 @@ ErrorUnownedUnlock:
 ErrorStolenUnlock:
   thread_error("Detected an attempt to unlock a mutex by a thread that's not the owner.  This isn't allowed."ENDL);
 }
+
 
 //////////////////////////////////////////////////////////////////////
 //  Condition Variables //////////////////////////////////////////////
