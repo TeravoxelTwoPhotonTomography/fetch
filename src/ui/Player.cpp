@@ -112,7 +112,7 @@ void AsynqPlayer::run()
   size_t nbytes  = Chan_Buffer_Size_Bytes(in_);
   mylib::Array im;
   size_t dims[3];
-  Chan *reader = Chan_Open(in_,CHAN_READ);
+  Chan *reader = Chan_Open(in_,CHAN_PEEK);
   running_ = 1;
   // Notes: o Peek copies from current data into frame buffer.
   //        o Peek might realloc the input frame buffer.

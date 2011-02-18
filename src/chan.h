@@ -9,6 +9,7 @@ typedef void  Chan;
 
 typedef enum _chan_mode
 { CHAN_NONE=0,
+  CHAN_PEEK=0,
   CHAN_READ,
   CHAN_WRITE,
   CHAN_MODE_MAX,
