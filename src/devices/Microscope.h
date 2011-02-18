@@ -82,6 +82,7 @@ namespace fetch
       virtual void _set_config(const Config& cfg);
 
       IDevice* configPipeline();  // returns the end of the pipeline
+      unsigned int runPipeline();
 
       inline IDevice* pipelineEnd() {return &wrap;}
     public:

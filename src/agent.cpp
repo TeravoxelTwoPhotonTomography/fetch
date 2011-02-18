@@ -357,7 +357,7 @@ Error:
           "[%s] Attempted to run an unarmed or already running Agent.\r\n"
           "\tAborting the run attempt.\r\n",name());
       }
-      DBG("Agent Run: %s 0x%p (sts %d) thread 0x%p\r\n", name(), this, sts, this->_thread);
+      DBG("Agent Run: [thread %04d] 0x%p (sts %d) >>> %s\r\n", GetThreadId(_thread), this, sts, name());
       this->unlock();
       return sts;
     }
@@ -422,7 +422,7 @@ Error:
           lock();
           // Handle a timeout on the wait.  
           if( !_handle_wait_for_result(res, "Agent stop: Wait for thread."))
-          { warning("[5s] Timed out waiting for task thread (0x%p) to stop.  Forcing termination.\r\n",name(), _thread);
+          { warning("[5s] Timed out waiting for task thread (%d) to stop.  Forcing termination.\r\n",name(), GetThreadId(_thread));
             Guarded_Assert_WinErr(TerminateThread(_thread,127)); // Force the thread to stop
           }  
           CloseHandle(_thread);

@@ -185,6 +185,16 @@
       Guarded_Assert(_agent->arm(&interaction_task,this,INFINITE));
     }
 
+    unsigned int Microscope::runPipeline()
+    { int sts = 1;
+      sts &= wrap._agent->run();
+      sts &= cast_to_i16._agent->run();
+      sts &= inverter._agent->run();
+      sts &= frame_averager._agent->run();
+      sts &= pixel_averager._agent->run();      
+      return (sts!=1); // returns 1 on fail and 0 on success
+    }
+
     ////////////////////////////////////
     
     FileSeries& FileSeries::inc( void )

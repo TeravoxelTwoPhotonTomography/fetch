@@ -199,9 +199,10 @@ int Chan_Close( Chan *self_ )
   { __chan_t *q = self->q;
     switch(self->mode)
     { case CHAN_READ:  
-        Chan_Assert( (--(q->nreaders))>=0 ); break;
+        Chan_Assert( (--(q->nreaders))>=0 );
         if(q->nreaders==0)
-          q->flush=0;
+          q->flush=0;     
+        break;
       case CHAN_WRITE:
         Chan_Assert( (--(q->nwriters))>=0 );
         Condition_Notify_All(&q->haveWriter);
@@ -350,8 +351,7 @@ unsigned int chan_peek(chan_t *self, void **pbuf, size_t sz, unsigned timeout_ms
     goto_if(Fifo_Is_Empty(q->fifo) && q->nwriters==0,NoPeek); // possibly avoid the resize/copy
     goto_if(CHAN_FAILURE(chan_peek__locked(q,pbuf,sz,timeout_ms)),NoPeek);
   }
-  Mutex_Unlock(&self->q->lock);
-  Condition_Notify(&self->q->notfull);
+  Mutex_Unlock(&self->q->lock);  
   return SUCCESS;
 NoPeek:
   Mutex_Unlock(&self->q->lock);
