@@ -7,17 +7,6 @@
 #
 SET(MYLIB_FOUND FALSE)
 
-#
-FUNCTION(_MYLIB_ASSERT _VAR _MSG)
-IF(NOT ${_VAR})
-  IF(${MYLIB_FIND_REQUIRED})
-    MESSAGE(FATAL_ERROR ${_MSG}) 
-  ELSE()
-    MESSAGE(STATUS ${_MSG}) 
-  ENDIF()
-ENDIF()
-ENDFUNCTION(_MYLIB_ASSERT)
-
 # The HINTS variable is used for values computed from the system
 SET(_MYLIB_HINTS
   ~/src/mylib
@@ -30,7 +19,6 @@ FIND_PATH(MYLIB_INCLUDE_DIR
   HINTS ${_MYLIB_HINTS}
   DOC "Root directory for Mylib include files."
 )
-_MYLIB_ASSERT(MYLIB_INCLUDE_DIR "Could not find Mylib include files.")
 
 #mylib
 FIND_LIBRARY(MYLIB_MYLIB_LIBRARY
@@ -51,7 +39,6 @@ FIND_LIBRARY(MYLIB_MYLIB_LIBRARY
                 vc2010x64/Release
   DOC "Location of Mylib library"
 )
-_MYLIB_ASSERT(MYLIB_MYLIB_LIBRARY "Could not find Mylib library.")
 
 #mytiff
 FIND_LIBRARY(MYLIB_MYTIFF_LIBRARY
@@ -72,7 +59,6 @@ FIND_LIBRARY(MYLIB_MYTIFF_LIBRARY
                 vc2010x64/MY_TIFF/Release
   DOC "Location of Mylib TIFF library"
 )
-_MYLIB_ASSERT(MYLIB_MYTIFF_LIBRARY "Could not find Mylib TIFF library.")
 
 #myfft
 FIND_LIBRARY(MYLIB_MYFFT_LIBRARY
@@ -93,8 +79,15 @@ FIND_LIBRARY(MYLIB_MYFFT_LIBRARY
                 vc2010x64/MY_FFT/Release
   DOC "Location of Mylib FFT library"
 )
-_MYLIB_ASSERT(MYLIB_MYFFT_LIBRARY "Could not find Mylib FFT library.")
 
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(MYLIB
+        REQUIRED_VARS
+          MYLIB_MYLIB_LIBRARY
+          MYLIB_MYTIFF_LIBRARY
+          MYLIB_MYFFT_LIBRARY
+          MYLIB_INCLUDE_DIR
+          )
 SET(MYLIB_LIBRARIES ${MYLIB_MYLIB_LIBRARY} ${MYLIB_MYTIFF_LIBRARY} ${MYLIB_MYFFT_LIBRARY} )
 SET(MYLIB_DIR ${MYLIB_INCLUDE_DIR})
 SET(MYLIB_FOUND TRUE)

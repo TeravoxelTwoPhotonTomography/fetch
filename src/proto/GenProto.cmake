@@ -20,14 +20,17 @@
 
 set(CMAKE_LIBRARY_PATH
   ${CMAKE_LIBRARY_PATH}
+  "${ROOT_3RDPARTY_PATH}/protobuf-2.4.0a/vsprojects/Debug"
   "${ROOT_3RDPARTY_PATH}/protobuf-2.3.0/vsprojects/Debug"
 )
 set(CMAKE_INCLUDE_PATH
   ${CMAKE_INCLUDE_PATH}
+  "${ROOT_3RDPARTY_PATH}/protobuf-2.4.0a/src"
   "${ROOT_3RDPARTY_PATH}/protobuf-2.3.0/src"
 )
 set(CMAKE_PROGRAM_PATH
   ${CMAKE_PROGRAM_PATH}
+  "${ROOT_3RDPARTY_PATH}/protobuf-2.4.0a/vsprojects/Release"
   "${ROOT_3RDPARTY_PATH}/protobuf-2.3.0/vsprojects/Release"
 )
 

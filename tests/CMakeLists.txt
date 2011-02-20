@@ -50,8 +50,11 @@ find_package(Alazar REQUIRED)
 include_directories(${ALAZAR_INCLUDE_DIR})
 
 #PI C-843 Stage controller
-find_package(C843 REQUIRED)
-include_directories(${C843_INCLUDE_DIR})
+find_package(C843)
+if(C843_FOUND)
+        set(OPTIONAL_LIBS ${OPTIONAL_LIBS} ${C843_LIBRARY})
+        include_directories(${C843_INCLUDE_DIR})
+endif(C843_FOUND)
 
 #Qt
 if(NOT ${QT_FOUND})
@@ -101,7 +104,7 @@ target_link_libraries(alltests
   ${OPENGL_LIBRARY}
   ${GLEW_LIBRARIES}
   ${ALAZAR_LIBRARY}
-  ${C843_LIBRARY}
+  ${OPTIONAL_LIBS}
 )
 set_target_properties(
   alltests

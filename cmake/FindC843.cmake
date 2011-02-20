@@ -35,7 +35,7 @@ find_path(C843_INCLUDE_DIR C843_GCS_DLL.H
     HINTS
     ${_C843_HINTS}
 )
-_C843_ASSERT(C843_INCLUDE_DIR "[C843] Could not find C843_GCS_DLL.h")
+#_C843_ASSERT(C843_INCLUDE_DIR "[C843] Could not find C843_GCS_DLL.h")
 
 find_library(C843_LIBRARY C843_GCS_DLL.lib
   HINTS
@@ -44,12 +44,14 @@ find_library(C843_LIBRARY C843_GCS_DLL.lib
     win32
     x64
 )
-_C843_ASSERT(C843_LIBRARY "[C843] Could not find C843_GCS_DLL.lib")
+#_C843_ASSERT(C843_LIBRARY "[C843] Could not find C843_GCS_DLL.lib")
 
-if(C843_LIBRARY)
-  set(C843_FOUND "YES")
-  set(HAVE_C843 1)
-endif()
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(C843
+        REQUIRED_VARS
+          C843_INCLUDE_DIR
+          C843_LIBRARY)
+
 # message("C843_INCLUDE_DIR is ${C843_INCLUDE_DIR}")
 # message("C843_LIBRARY is ${C843_LIBRARY}")
 
