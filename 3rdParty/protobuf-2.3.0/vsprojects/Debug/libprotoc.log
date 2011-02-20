@@ -1,73 +1,11 @@
-﻿Build started 12/16/2010 11:08:19 PM.
+﻿Build started 2/19/2011 5:24:02 PM.
      1>Project "C:\Users\Clack\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\libprotoc.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
          Creating "Debug\libprotoc.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I../src /I. /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D LIBPROTOC_EXPORTS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ..\src\google\protobuf\compiler\code_generator.cc ..\src\google\protobuf\compiler\command_line_interface.cc ..\src\google\protobuf\compiler\subprocess.cc ..\src\google\protobuf\compiler\zip_writer.cc ..\src\google\protobuf\compiler\plugin.cc ..\src\google\protobuf\compiler\plugin.pb.cc ..\src\google\protobuf\compiler\cpp\cpp_enum.cc ..\src\google\protobuf\compiler\cpp\cpp_enum_field.cc ..\src\google\protobuf\compiler\cpp\cpp_extension.cc ..\src\google\protobuf\compiler\cpp\cpp_field.cc ..\src\google\protobuf\compiler\cpp\cpp_file.cc ..\src\google\protobuf\compiler\cpp\cpp_generator.cc ..\src\google\protobuf\compiler\cpp\cpp_helpers.cc ..\src\google\protobuf\compiler\cpp\cpp_message.cc ..\src\google\protobuf\compiler\cpp\cpp_message_field.cc ..\src\google\protobuf\compiler\cpp\cpp_primitive_field.cc ..\src\google\protobuf\compiler\cpp\cpp_service.cc ..\src\google\protobuf\compiler\cpp\cpp_string_field.cc ..\src\google\protobuf\compiler\java\java_enum.cc ..\src\google\protobuf\compiler\java\java_enum_field.cc ..\src\google\protobuf\compiler\java\java_extension.cc ..\src\google\protobuf\compiler\java\java_field.cc ..\src\google\protobuf\compiler\java\java_file.cc ..\src\google\protobuf\compiler\java\java_generator.cc ..\src\google\protobuf\compiler\java\java_helpers.cc ..\src\google\protobuf\compiler\java\java_message.cc ..\src\google\protobuf\compiler\java\java_message_field.cc ..\src\google\protobuf\compiler\java\java_primitive_field.cc ..\src\google\protobuf\compiler\java\java_service.cc ..\src\google\protobuf\compiler\python\python_generator.cc /wd4244 /wd4267 /wd4018 /wd4355 /wd4800 /wd4251 /wd4996 /wd4146 /wd4305 
-         python_generator.cc
-         java_service.cc
-         java_primitive_field.cc
-         java_message_field.cc
-         java_message.cc
-         java_helpers.cc
-         java_generator.cc
-         java_file.cc
-         java_field.cc
-         java_extension.cc
-         java_enum_field.cc
-         java_enum.cc
-         cpp_string_field.cc
-         cpp_service.cc
-         cpp_primitive_field.cc
-         cpp_message_field.cc
-         cpp_message.cc
-         cpp_helpers.cc
-         cpp_generator.cc
-         cpp_file.cc
-         Generating Code...
-         Compiling...
-         cpp_field.cc
-         cpp_extension.cc
-         cpp_enum_field.cc
-         cpp_enum.cc
-         plugin.pb.cc
-         plugin.cc
-         zip_writer.cc
-         subprocess.cc
-         command_line_interface.cc
-         code_generator.cc
-         Generating Code...
+         All outputs are up-to-date.
        Lib:
-         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\Lib.exe /OUT:"Debug\libprotoc.lib" /NOLOGO Debug\code_generator.obj
-         Debug\command_line_interface.obj
-         Debug\subprocess.obj
-         Debug\zip_writer.obj
-         Debug\plugin.obj
-         Debug\plugin.pb.obj
-         Debug\cpp_enum.obj
-         Debug\cpp_enum_field.obj
-         Debug\cpp_extension.obj
-         Debug\cpp_field.obj
-         Debug\cpp_file.obj
-         Debug\cpp_generator.obj
-         Debug\cpp_helpers.obj
-         Debug\cpp_message.obj
-         Debug\cpp_message_field.obj
-         Debug\cpp_primitive_field.obj
-         Debug\cpp_service.obj
-         Debug\cpp_string_field.obj
-         Debug\java_enum.obj
-         Debug\java_enum_field.obj
-         Debug\java_extension.obj
-         Debug\java_field.obj
-         Debug\java_file.obj
-         Debug\java_generator.obj
-         Debug\java_helpers.obj
-         Debug\java_message.obj
-         Debug\java_message_field.obj
-         Debug\java_primitive_field.obj
-         Debug\java_service.obj
-         Debug\python_generator.obj
+         All outputs are up-to-date.
          libprotoc.vcxproj -> C:\Users\Clack\Desktop\src\fetch\3rdParty\protobuf-2.3.0\vsprojects\Debug\libprotoc.lib
        FinalizeBuildStatus:
          Deleting file "Debug\libprotoc.unsuccessfulbuild".
@@ -76,4 +14,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:18.62
+Time Elapsed 00:00:00.13
