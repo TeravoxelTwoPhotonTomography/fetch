@@ -149,6 +149,14 @@
       transaction_unlock();
       return file_series.getFullPath(stackname);
     }
+    
+    const std::string Microscope::filename()
+    {     
+      transaction_lock();
+      std::string stackname = _config->file_prefix()+_config->stack_extension();
+      transaction_unlock();
+      return file_series.getFullPath(stackname);
+    }
 
     void Microscope::_set_config( Config IN *cfg )
     {

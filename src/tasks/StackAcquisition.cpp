@@ -71,7 +71,7 @@ namespace fetch
         filename = d->next_filename();
         Guarded_Assert( d->disk.close()==0 );
         IDevice::connect(&d->disk,0,cur,0);
-        Guarded_Assert( d->disk.open(filename,"w")==0);
+        //Guarded_Assert( d->disk.open(filename,"w")==0);
 
         d->__scan_agent.arm_nowait(&grabstack,&d->scanner,INFINITE);       // why is this arm_nowait?
 
@@ -98,20 +98,23 @@ namespace fetch
 
       unsigned int StackAcquisition::run(device::Microscope *dc)
       { 
+        std::string filename;
         unsigned int eflag = 0; // success
         
         Guarded_Assert(dc->__scan_agent.is_runnable());
-        Guarded_Assert(dc->__io_agent.is_running());
+        //Guarded_Assert(dc->__io_agent.is_running());
 
+        filename = dc->filename(); 
+        eflag |= dc->disk.open(filename,"w");
         eflag |= dc->runPipeline();
         eflag |= dc->__scan_agent.run() != 1;
 
-        Chan_Wait_For_Writer_Count(dc->__scan_agent._owner->_out->contents[0],1);
+
+        //Chan_Wait_For_Writer_Count(dc->__scan_agent._owner->_out->contents[0],1);
 
         { HANDLE hs[] = {dc->__scan_agent._thread,          
                          dc->__self_agent._notify_stop};
           DWORD res;
-          std::string filename;
           int   t;
 
           // wait for scan to complete (or cancel)
@@ -129,11 +132,10 @@ namespace fetch
           }
           
           // Increment file
-          eflag |= dc->disk.close();          
+          eflag |= dc->disk.close();         
+          dc->file_series.inc();
           dc->file_series.ensurePathExists();
-          filename = dc->next_filename();
           dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
-          eflag |= dc->disk.open(filename,"w");
           
         }
         return eflag;

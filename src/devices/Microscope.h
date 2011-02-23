@@ -87,6 +87,7 @@ namespace fetch
       inline IDevice* pipelineEnd() {return &wrap;}
     public:
       const std::string next_filename(); // increment the file series counter
+      const std::string      filename(); // get the current file
 
     public:
       device::Scanner3D              scanner;
