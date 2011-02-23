@@ -135,7 +135,7 @@ namespace fetch
           eflag |= dc->disk.close();         
           dc->file_series.inc();
           dc->file_series.ensurePathExists();
-          dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
+          //dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
           
         }
         return eflag;
