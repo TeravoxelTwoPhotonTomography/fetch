@@ -1,4 +1,5 @@
-#include "stdafx.h"
+
+#include "common.h"
 
 namespace w32file {
 

@@ -20,13 +20,19 @@
 #include "common.h"
 #include "DiskStream.h"
 #include "tasks/File.h"
-#include "Chan.h"
-#include "MY_TIFF/tiff.io.h"
+#include "Chan.h"         
+
 #include "util/util-mylib.h"
-#include "MY_TIFF/tiff.image.h"
 #include "frame.h"
 #include "types.h"
 
+namespace mylib
+{  
+#include "MY_TIFF/tiff.image.h"
+#include "MY_TIFF/tiff.io.h"
+}
+
+using namespace mylib;
 
 namespace fetch
 { 
@@ -293,7 +299,7 @@ Error:
     unsigned int TiffStream::_attach_reader( char * filename )
     {
       Guarded_Assert(_tiff_reader); // open() should call on_detach() before on_attach().  on_detach() should set open handles to null.
-      mytiff::lock();
+      
       goto_if_fail(_tiff_reader = Open_Tiff_Reader(filename,NULL,NULL,mytiff::islsm(filename)),FailedOpen);   
 
       // alloc queues
@@ -305,26 +311,26 @@ Error:
       Free_Tiff_Image(tim);
       Free_Tiff_IFD(ifd);
       Rewind_Tiff_Reader(_tiff_reader);
-      mytiff::unlock();
+      
       if(_out==NULL)
         _alloc_qs_easy(&_out,1,4,fmt.size_bytes());
       return 0; //success
 FailedOpen:
       warning("Could not open %s for TIFF reading.\r\n",filename);
-      mytiff::unlock();
+      
       return 1; //failure
 FailedIFD:
       warning("Failed to read first IFD in %s\r\n",filename);
       Free_Tiff_Reader(_tiff_reader);
       _tiff_reader = NULL;
-      mytiff::unlock();
+      
       return 1; //failure
 FailedImageGet:
       warning("Failed to read image params from first IFD (0x%p).\r\n\tFile: %s\r\n",ifd,filename);
       Free_Tiff_IFD(ifd);
       Free_Tiff_Reader(_tiff_reader);
       _tiff_reader = NULL;
-      mytiff::unlock();
+      
       return 1; //failure
     }
 #pragma warning(pop)
@@ -334,11 +340,11 @@ FailedImageGet:
     unsigned int TiffStream::_attach_writer( char * filename )
     {
       Guarded_Assert(_tiff_writer==NULL); // open() should call on_detach() before on_attach().  on_detach() should set open handles to null.
-      mytiff::lock();
+      
       goto_if_fail(
         _tiff_writer = Open_Tiff_Writer(filename,FALSE/*32 bit*/,mytiff::islsm(filename)),
         FailedOpen);
-      mytiff::unlock();
+      
 
       Frame_With_Interleaved_Planes fmt(1024,1024,3,id_u16);
       if(_in==NULL)
@@ -347,7 +353,7 @@ FailedImageGet:
       return 0; //success
 FailedOpen:
       warning("Could not open %s for TIFF writing.\r\n",filename);
-      mytiff::unlock();
+      
       return 1; //failure
     }
 #pragma warning(pop)

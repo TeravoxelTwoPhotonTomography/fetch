@@ -11,7 +11,7 @@
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
 
-#include "stdafx.h"
+
 #include "ResonantWrap.h"
 #include "../util/util-wrap.h"
 

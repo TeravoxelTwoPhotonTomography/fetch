@@ -1,4 +1,4 @@
-#include "stdafx.h"
+
 #include "util-nidaqmx.h"
 
 #define UTIL_NIDAQ_ERROR_BUFFER_SIZE 2048

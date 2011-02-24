@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+
 #include "FrameInvert.h"
 
 namespace fetch {

@@ -5,7 +5,7 @@
  *      Author: Nathan Clack <clackn@janelia.hhmi.org>
  */
 
-#include "stdafx.h"
+
 #include "WorkTask.h"
 #include "../frame.h"
 

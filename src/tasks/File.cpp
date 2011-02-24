@@ -10,7 +10,7 @@
  * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
-#include "stdafx.h"
+
 #include "devices/DiskStream.h"
 #include "frame.h"
 #include "File.h"
@@ -20,8 +20,12 @@
 #else
 #define disk_stream_debug(...)
 #endif
+namespace mylib {
 #include "MY_TIFF/tiff.image.h"
+}
 #include "util/util-mylib.h"
+
+using namespace mylib;
 
 namespace fetch {
 namespace task {
@@ -248,7 +252,7 @@ namespace file {
 
     // compute max image size
     { 
-      mytiff::lock();
+      
       while(!End_Of_Tiff(dc->_tiff_reader))
       {
         goto_if_fail(ifd=Read_Tiff_IFD(tif),FailedIFDRead);
@@ -260,7 +264,7 @@ namespace file {
         maxchan = max(maxchan,tim->number_channels);
       }
       Rewind_Tiff_Reader(tif);
-      mytiff::unlock();
+      
     }
 
     // Resize Queue if necessary
@@ -273,7 +277,7 @@ namespace file {
     size_t pitches[4];
     while (nbytes && !dc->_agent->is_stopping() && !End_Of_Tiff(tif))
     {
-      mytiff::lock();
+      
       goto_if_fail(ifd=Read_Tiff_IFD(tif),FailedIFDRead);
       goto_if_fail(tim=Get_Tiff_Image(ifd),FailedImageGet);
       Frame_With_Interleaved_Planes fmt(tim->width,tim->height,tim->number_channels,mytiff::pixel_type(tim));
@@ -286,7 +290,7 @@ namespace file {
       Load_Tiff_Image_Planes(tim,(void**)planes); // Copy from disk into buffer
       Free_Tiff_Image(tim);
       Free_Tiff_IFD(ifd);
-      mytiff::unlock();
+      
       goto_if_fail(
         CHAN_SUCCESS(Chan_Next(q,(void**)&buf,nbytes)),
         FailedPush);
@@ -303,13 +307,13 @@ FailedPush:
 FailedImageGet:    
     warning("Failed to interpret IFD (0x%p) from TIFF while streaming.\r\n\tGot: %s\r\n\t In: %s\r\n",ifd,Tiff_Error_String(),Tiff_Error_Source());
     Free_Tiff_IFD(ifd);
-    mytiff::unlock();    
+        
     if(planes) free(planes);    
     eflag=2;
     goto Finalize;
 FailedIFDRead:    
     warning("Failed to read IFD from TIFF while streaming.\r\n\tGot: %s\r\n\t In: %s\r\n",Tiff_Error_String(),Tiff_Error_Source());
-    mytiff::unlock();
+    
     if(planes) free(planes);   
     eflag=3;
     goto Finalize;
@@ -333,7 +337,7 @@ FailedIFDRead:
     { 
       goto_if_fail(buf->id==FRAME_INTERLEAVED_PLANES,FailureBufferHasWrongFormat);
       nbytes = buf->size_bytes();
-      mytiff::lock();
+      
       {
         goto_if_fail(tim=Create_Tiff_Image(buf->width,buf->height),FailedCreateTIFFImage);
 
@@ -353,7 +357,7 @@ FailedIFDRead:
         goto_if_fail(ifd=Make_IFD_For_Image(tim,LZW_COMPRESS,buf->width,buf->height),FailedMakeIFD);
         goto_if_fail(Write_Tiff_IFD(tif,ifd)==0,FailedWriteIFD);
       }
-      mytiff::unlock();
+      
     }
     eflag=0; //success
 Finalize:
@@ -366,26 +370,26 @@ FailureBufferHasWrongFormat:
     goto Finalize;
 FailedCreateTIFFImage:
     warning("Failed to create TIFF image while streaming.\r\n\tGot: %s\r\n\t In: %s\r\n",Tiff_Error_String(),Tiff_Error_Source());
-    mytiff::unlock();
+    
     eflag=2;
     goto Finalize;
 FailedAddChannel:
     warning("Adding a channel to a tiff image (0x%p) failed.\r\n\tGot: %s\r\n\t In: %s\r\n",tim,Tiff_Error_String(),Tiff_Error_Source());
     Free_Tiff_Image(tim);
-    mytiff::unlock();
+    
     eflag=3;
     goto Finalize;
 FailedMakeIFD:
     warning("Failed to make Tiff IFD for tiff image (0x%p).\r\n\tGot: %s\r\n\t In: %s\r\n",tim,Tiff_Error_String(),Tiff_Error_Source());
     Free_Tiff_Image(tim);
-    mytiff::unlock();
+    
     eflag=4;
     goto Finalize;
 FailedWriteIFD:
     warning("Write Tiff IFD failed. Reader: 0x%p IFD: 0x%p.\r\n\tGot: %s\r\n\t In: %s\r\n",tim,ifd,Tiff_Error_String(),Tiff_Error_Source());
     Free_Tiff_IFD(ifd);
     Free_Tiff_Image(tim);
-    mytiff::unlock();
+    
     eflag=5;
     goto Finalize;
   }

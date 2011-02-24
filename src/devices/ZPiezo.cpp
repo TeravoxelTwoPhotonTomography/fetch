@@ -10,7 +10,7 @@
  * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
-#include "StdAfx.h"
+
 #include "ZPiezo.h"
 
 namespace fetch

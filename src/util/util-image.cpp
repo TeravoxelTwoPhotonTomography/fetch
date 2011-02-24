@@ -1,4 +1,4 @@
-#include "stdafx.h"
+
 #include "util-image.h"
 
 extern "C"

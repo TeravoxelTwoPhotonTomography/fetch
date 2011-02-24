@@ -1,42 +1,25 @@
-#include "stdafx.h"
 #include <string.h>
 #include "util-mylib.h"
 #include "types.h"
 #include "frame.h"
-
-struct CS
-{
-  CRITICAL_SECTION _cs;
-  CS()  {InitializeCriticalSectionAndSpinCount( &_cs, 0x80000400 );}
-  ~CS() {DeleteCriticalSection(&_cs);}
-
-  inline void lock()    {EnterCriticalSection(&_cs);}
-  inline void unlock()  {LeaveCriticalSection(&_cs);}
-};
+#include <assert.h>
 
 namespace mylib 
 {
-  CS _g_cs;
-  //void lock()   {_g_cs.lock();}
-  //void unlock() {_g_cs.unlock();}
-  
-  void lock()   {} // shouldn't need these now that Gene's library is thread-safe
-  void unlock() {}
-
-  static Array_Type frameTypeToArrayType[] = {
-    UINT8,//id_u8 = 0,
-    UINT16,//id_u16,
-    UINT32,//id_u32,
-    UINT64,//id_u64,
-    INT8,//id_i8,
-    INT16,//id_i16,
-    INT32,//id_i32,
-    INT64,//id_i64,
-    FLOAT32,//id_f32,
-    FLOAT64//id_f64,
+  static Value_Type frameTypeToArrayType[] = {
+    UINT8_TYPE,    //id_u8 = 0,
+    UINT16_TYPE,   //id_u16,   
+    UINT32_TYPE,   //id_u32,   
+    UINT64_TYPE,   //id_u64,   
+    INT8_TYPE,     //id_i8,    
+    INT16_TYPE,    //id_i16,   
+    INT32_TYPE,    //id_i32,   
+    INT64_TYPE,    //id_i64,   
+    FLOAT32_TYPE,  //id_f32,   
+    FLOAT64_TYPE   //id_f64,   
   };
 
-  Array_Type fetchTypeToArrayType(Basic_Type_ID id)
+  Value_Type fetchTypeToArrayType(Basic_Type_ID id)
   {
     assert(id != id_unspecified);
     assert(id<MAX_TYPE_ID);
@@ -44,16 +27,16 @@ namespace mylib
   }
 
   static size_t frameTypeToArrayScale[] = {
-    8,//id_u8 = 0,
+    8, //id_u8 = 0,
     16,//id_u16,
     32,//id_u32,
     64,//id_u64,
-    8,//id_i8,
+    8, //id_i8,
     16,//id_i16,
     32,//id_i32,
     64,//id_i64,
     32,//id_f32,
-    64//id_f64,
+    64 //id_f64,
   };
 
   size_t fetchTypeToArrayScale(Basic_Type_ID id)
@@ -111,10 +94,7 @@ namespace mylib
 } //end namespace mylib
 
 namespace mytiff {
-  CS _g_cs;
-  void lock()   {_g_cs.lock();}
-  void unlock() {_g_cs.unlock();}
-
+  using namespace mylib;
   Basic_Type_ID pixel_type( Tiff_Image *tim )
   {
     Tiff_Channel *ch0 = tim->channels[0];

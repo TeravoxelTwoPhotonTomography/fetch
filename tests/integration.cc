@@ -63,7 +63,7 @@ TEST(Integration,NIScope)
 
 TEST(Integration,Mylib)
 { mylib::Dimn_Type dims[] = {512,512,512}; //Allocate 125 Mvox * 4B/vox = 500 GB
-  mylib::Array *array = mylib::Make_Array(mylib::PLAIN_KIND,mylib::FLOAT32,3,dims);
+  mylib::Array *array = mylib::Make_Array(mylib::PLAIN_KIND,mylib::FLOAT32_TYPE,3,dims);
   EXPECT_FALSE(array==NULL);
   Kill_Array(array);
 }

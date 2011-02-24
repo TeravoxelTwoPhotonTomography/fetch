@@ -1,9 +1,10 @@
 #pragma once
 #pragma warning(disable:4996) // CRT security warning
 
-#include "stdafx.h"
 #include <stdio.h>
 #include <stdlib.h>
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 
 #define HAVE_QT4 // TODO move this to a config.h or something
 

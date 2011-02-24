@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "common.h"
 #include "niScope.h"
 #include "niModInst.h"
 

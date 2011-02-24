@@ -11,7 +11,7 @@
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
  
- #include "stdafx.h"
+ 
  #include "Microscope.h"
  #include <time.h>
  

@@ -5,7 +5,7 @@
  *      Author: clackn
  */
 
-#include "stdafx.h"
+
 #include "DAQChannel.h"
 
 #define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, warning))

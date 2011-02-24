@@ -1,4 +1,5 @@
 #include <NIDAQmx.h>
+#include "common.h"
 
 #define NI6713_MAX_SOURCE_FREQUENCY 20000000 // Hz
 #define NI6713_SLEW_RATE            20.0     // V/us
