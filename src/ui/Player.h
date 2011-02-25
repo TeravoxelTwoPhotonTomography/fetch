@@ -59,19 +59,6 @@ protected:
   int running_;
 };
 
-class ArrayPlayer:public IPlayerThread
-{
-  public:
-    ArrayPlayer(const char* filename, Figure *w=0);
-    virtual ~ArrayPlayer();
-
-  protected:
-    virtual void run();
-
-  protected:
-    mylib::Array *im_;
-};
-
 class AsynqPlayer:public IPlayerThread
 {
 public:

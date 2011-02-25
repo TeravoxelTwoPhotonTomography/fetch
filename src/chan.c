@@ -72,6 +72,7 @@ typedef struct
   Condition          notempty; //predicate: not empty || no writers 
   Condition          changedRefCount; //predicate: refcount != n
   Condition          haveWriter; //predicate: nwriters>0
+  Condition          haveReader; //predicate: nreaders>0
 
   void              *workspace;  // Token buffer used for copy operations.
 } __chan_t;
@@ -93,6 +94,7 @@ __chan_t* chan_alloc(size_t buffer_count, size_t buffer_size_bytes)
     Condition_Initialize(&c->notempty);
     Condition_Initialize(&c->changedRefCount);
     Condition_Initialize(&c->haveWriter);
+    Condition_Initialize(&c->haveReader);
     c->workspace = Fifo_Alloc_Token_Buffer(c->fifo);
     c->ref_count=1;
   }
@@ -166,7 +168,10 @@ Chan* Chan_Open( Chan *self, ChanMode mode)
   goto_if_not(n = incref(c),ErrorIncref);
   n->mode = mode;
   switch(mode)
-  { case CHAN_READ:  ++(n->q->nreaders); break;
+  { case CHAN_READ:
+      ++(n->q->nreaders);
+      Condition_Notify_All(&n->q->haveReader);
+      break;
     case CHAN_WRITE: 
       ++(n->q->nwriters);
       n->q->flush=0;
@@ -240,6 +245,16 @@ void Chan_Wait_For_Writer_Count(Chan* self_,size_t n)
   while(q->nwriters!=n)
     Condition_Wait(&q->haveWriter,&q->lock);
   chan_debug("WaitForWriter - writer count: %d"ENDL,q->nwriters);
+  Mutex_Unlock(&q->lock);
+}
+
+void Chan_Wait_For_Have_Reader(Chan* self_)
+{ chan_t *self = (chan_t*)self_; 
+  __chan_t *q = self->q;
+  Mutex_Lock(&q->lock);
+  while(q->nreaders==0)
+    Condition_Wait(&q->haveReader,&q->lock);
+  chan_debug("WaitForHaveReader - reader count: %d"ENDL,q->nreaders);
   Mutex_Unlock(&q->lock);
 }
 
@@ -486,4 +501,8 @@ inline
 size_t Chan_Buffer_Count( Chan *self )
 { return Fifo_Buffer_Count(FIFO(self));
 } 
+
+inline Chan* Chan_Id( Chan *self )
+{ return ((chan_t*)self)->q;
+}
 

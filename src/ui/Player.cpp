@@ -45,50 +45,6 @@ void IPlayerThread::setFigure( Figure *w )
 }
 
 /************************************************************************/
-/* ArrayPlayer                                                          */
-/************************************************************************/
-ArrayPlayer::ArrayPlayer(const char* filename, Figure *w/*=0*/)
-  :IPlayerThread(w)
-{
-  assert(im_=Read_Image(const_cast<char*>(filename),0));
-  if(w_==NULL)
-  {
-    if(im_->ndims>2)
-      w_ = imshow(Get_Array_Plane(im_,0));
-    else
-      w_ = imshow(im_);
-    setFigure(w);
-  }
-
-  Print_Inuse_List(stderr,1);
-}
-
-ArrayPlayer::~ArrayPlayer()
-{
-  Free_Array(im_);
-  Print_Inuse_List(stderr,1);
-}
-
-void ArrayPlayer::run()
-{ 
-  size_t count =0 ;
-  int frame = 0;
-  int d;
-  running_ = 1;
-  if(im_->ndims>2)
-    d = im_->dims[2];
-  else
-    return; // nothing to do
-  while(running())
-  {
-    emit imageReady(Get_Array_Plane(im_,frame));
-    frame = ++frame%d; //loop
-    ++count;
-    //qDebug() << count << "\tFrame: " << frame << "\tArray Usage:"<<Array_Usage();
-  }
-}
-
-/************************************************************************/
 /* AsynqPlayer                                                          */
 /************************************************************************/
 

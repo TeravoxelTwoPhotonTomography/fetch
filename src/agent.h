@@ -425,7 +425,6 @@ namespace fetch {
     { q = Chan_Alloc(2, sizeof(T) );
       Chan_Set_Expand_On_Full(q,1);
     }
-
     writer=Chan_Open(q,CHAN_WRITE);
     if(!CHAN_SUCCESS( Chan_Next_Copy(writer, &v, sizeof(T)) ))
     { 
@@ -433,7 +432,11 @@ namespace fetch {
       return 0;
     }
     Chan_Close(writer);
-    return QueueUserWorkItem(&TSelf::_set_config_nowait__helper, (void*)q, NULL /*default flags*/);
+
+    BOOL sts;
+    sts = QueueUserWorkItem(&TSelf::_set_config_nowait__helper, (void*)q, NULL /*default flags*/);    
+
+    return sts;
   }
 
   template<class Tcfg>
@@ -449,7 +452,7 @@ namespace fetch {
     //memset(&v,0,sizeof(v));
 
     reader = Chan_Open(q,CHAN_READ);
-    if(!CHAN_SUCCESS( Chan_Next_Copy_Try(reader,&v,sizeof(T)) ))
+    if(!CHAN_SUCCESS( Chan_Next_Copy(reader,&v,sizeof(T)) ))
     { 
       warning(
         "In set_config_nowait helper procedure:\r\n"

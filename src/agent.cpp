@@ -224,7 +224,7 @@ Error:
       Chan *reader, *q = (Chan*)(lparam);
       T args = {0, 0, 0, 0};
       reader = Chan_Open(q,CHAN_READ);
-      if(CHAN_FAILURE( Chan_Next_Copy_Try(reader, &args, sizeof(T)) ))
+      if(CHAN_FAILURE( Chan_Next_Copy(reader, &args, sizeof(T)) ))
       {
         warning("In Agent::arm_nonblocking work procedure:"ENDL
                 "\tCould not pop arguments from queue."ENDL);
@@ -258,7 +258,10 @@ Error:
             return 0;
         }
         Chan_Close(writer);
-        return QueueUserWorkItem(&_agent_arm_thread_proc, (void*)q, NULL /*default flags*/);
+
+        BOOL sts;
+        sts = QueueUserWorkItem(&_agent_arm_thread_proc, (void*)q, NULL /*default flags*/);        
+        return sts;
     }
 
     unsigned int Agent::disarm(DWORD timeout_ms)
@@ -287,7 +290,7 @@ Error:
         Chan *reader, *q = (Chan*)(lparam);
         struct T args = {0, 0};
         reader = Chan_Open(q,CHAN_READ);
-        if(CHAN_FAILURE( Chan_Next_Copy_Try(reader, &args, sizeof(T)) )){
+        if(CHAN_FAILURE( Chan_Next_Copy(reader, &args, sizeof(T)) )){
             warning("In Agent::disarm_nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
             return 0;
         }
@@ -316,7 +319,10 @@ Error:
             return 0;
         }
         Chan_Close(writer);
-        return QueueUserWorkItem(&_agent_disarm_thread_proc, (void*)q, NULL /*default flags*/);
+
+        BOOL sts;
+        sts = QueueUserWorkItem(&_agent_disarm_thread_proc, (void*)q, NULL /*default flags*/);        
+        return sts;
     }
 
     // Transitions from armed to running state
@@ -349,7 +355,7 @@ Error:
             SetThreadPriority( this->thread,
             THREAD_PRIORITY_TIME_CRITICAL ));
 #endif
-          DBG("Run: %s\r\n",name());
+          DBG("Agent Run: Created thread for %s\r\n",name());
         }
       } else //(then not runnable)
       { 
@@ -357,7 +363,11 @@ Error:
           "[%s] Attempted to run an unarmed or already running Agent.\r\n"
           "\tAborting the run attempt.\r\n",name());
       }
-      DBG("Agent Run: [thread %04d] 0x%p (sts %d) >>> %s\r\n", GetThreadId(_thread), this, sts, name());
+      DBG("Agent Run: [thread %04d] 0x%p (sts %d) >>> %s\r\n"
+          "           in 0x%p  out 0x%p\r\n", 
+          GetThreadId(_thread), this, sts, name(),
+            (_owner->_in )?Chan_Id(_owner->_in->contents[0]):NULL,
+            (_owner->_out)?Chan_Id(_owner->_out->contents[0]):NULL);
       this->unlock();
       return sts;
     }
@@ -371,7 +381,7 @@ Error:
         Chan *reader,*q = (Chan*)(lparam);
         struct T args = {0};
         reader=Chan_Open(q,CHAN_READ);        
-        if(CHAN_FAILURE( Chan_Next_Copy_Try(reader, &args, sizeof(T)) )){
+        if(CHAN_FAILURE( Chan_Next_Copy(reader, &args, sizeof(T)) )){
             warning("In Agent::run_nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
             return 0;
         }
@@ -400,7 +410,10 @@ Error:
             return 0;
         }
         Chan_Close(writer);
-        return QueueUserWorkItem(&_agent_run_thread_proc, (void*)q, NULL /*default flags*/);
+        
+        BOOL sts;
+        sts = QueueUserWorkItem(&_agent_run_thread_proc, (void*)q, NULL /*default flags*/);
+        return sts;
     }
 
     // Transitions from running to armed state.
@@ -451,7 +464,7 @@ Error:
         Chan *reader,*q = (Chan*)(lparam);
         struct T args = {0, 0};
         reader=Chan_Open(q,CHAN_READ);
-        if(CHAN_FAILURE( Chan_Next_Copy_Try(reader, &args, sizeof(T)) )){
+        if(CHAN_FAILURE( Chan_Next_Copy(reader, &args, sizeof(T)) )){
             warning("In Agent_Stop_Nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
             return 0;
         }
@@ -480,7 +493,10 @@ Error:
             return 0;
         }
         Chan_Close(writer);
-        return QueueUserWorkItem(&_agent_stop_thread_proc, (void*)q, NULL /*default flags*/);
+        
+        BOOL sts;
+        sts = QueueUserWorkItem(&_agent_stop_thread_proc, (void*)q, NULL /*default flags*/);
+        return sts;
     }
 
     DWORD WINAPI _agent_detach_thread_proc(LPVOID lparam)

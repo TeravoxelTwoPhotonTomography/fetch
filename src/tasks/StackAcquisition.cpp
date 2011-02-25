@@ -33,10 +33,19 @@
 #define CHKERR( expr )  {if(expr) {error("Expression indicated failure:\r\n\t%s\r\n",#expr);}} 0 //( (expr), #expr, error  ))
 #define CHKJMP( expr )  goto_if((expr),Error)
 
-#if 1
+#if 0
 #define SCANNER_DEBUG_FAIL_WHEN_FULL
 #else
-#define SCANNER_DEBUG_SPIN_WHEN_FULL
+#define SCANNER_DEBUG_WAIT_WHEN_FULL
+#endif
+
+
+#ifdef SCANNER_DEBUG_FAIL_WHEN_FULL
+#define SCANNER_PUSH(...) Chan_Next_Try(__VA_ARGS__)
+#elif defined(SCANNER_DEBUG_WAIT_WHEN_FULL)
+#define SCANNER_PUSH(...) Chan_Next(__VA_ARGS__)
+#else
+#error("An overflow behavior for the scanner should be specified");
 #endif
 
 namespace fetch
@@ -69,11 +78,11 @@ namespace fetch
         //d->next_filename();
         d->file_series.ensurePathExists();
         filename = d->next_filename();
-        Guarded_Assert( d->disk.close()==0 );
         IDevice::connect(&d->disk,0,cur,0);
+        Guarded_Assert( d->disk.close()==0 );
         //Guarded_Assert( d->disk.open(filename,"w")==0);
 
-        d->__scan_agent.arm_nowait(&grabstack,&d->scanner,INFINITE);       // why is this arm_nowait?
+        d->__scan_agent.arm(&grabstack,&d->scanner);                      // why was this arm_nowait?
 
         return 1; //success
       }
@@ -105,6 +114,7 @@ namespace fetch
         //Guarded_Assert(dc->__io_agent.is_running());
 
         filename = dc->filename(); 
+        
         eflag |= dc->disk.open(filename,"w");
         eflag |= dc->runPipeline();
         eflag |= dc->__scan_agent.run() != 1;
@@ -306,10 +316,51 @@ Error:
         unsigned int fetch::task::scanner::ScanStack<TPixel>::run_simulated( device::Scanner3D *d )
         {
           Chan *qdata = Chan_Open(d->_out->contents[0],CHAN_WRITE);
-          Sleep(100);
+          Frame *frm   = NULL;
+          Frame_With_Interleaved_Planes ref(512,512,3,TypeID<TPixel>());
+          size_t nbytes;        
+          int status = 1; // status == 0 implies success, error otherwise
+                  
+          nbytes = ref.size_bytes();        
+          Chan_Resize(qdata, nbytes);
+          frm = (Frame*)Chan_Token_Buffer_Alloc(qdata);
+          ref.format(frm);
+
+          debug("Simulated Stack!\r\n");
+          HERE;
+          for(int d=0;d<100;++d)
+          { size_t pitch[4];
+            size_t n[3];
+            frm->compute_pitches(pitch);
+            frm->get_shape(n);
+
+            //Fill frame w random colors.
+            { TPixel *c,*e;
+              const f32 low = TypeMin<TPixel>(),
+                       high = TypeMax<TPixel>(),
+                        ptp = high - low,
+                        rmx = RAND_MAX;
+              c=e=(TPixel*)frm->data;
+              e+=pitch[0]/pitch[3];
+              for(;c<e;++c)
+                *c = (TPixel) ((ptp*rand()/(float)RAND_MAX) + low);
+            }
+
+            if(CHAN_FAILURE( SCANNER_PUSH(qdata,(void**)&frm,nbytes) ))
+            { warning("Scanner output frame queue overflowed.\r\n\tAborting acquisition task.\r\n");
+              goto Error;
+            }
+            ref.format(frm);
+            DBG("Task: ScanStack<%s>: pushing frame\r\n",TypeStr<TPixel>());
+          }
+          HERE;
+Finalize:
           Chan_Close(qdata);
-          warning("Implement me!\r\n");
-          return 1;
+          free( frm );
+          return status; // status == 0 implies success, error otherwise
+Error:
+          warning("Error occurred during ScanStack<%s> task.\r\n",TypeStr<TPixel>());
+          goto Finalize;
         }
 
         template<class TPixel>
