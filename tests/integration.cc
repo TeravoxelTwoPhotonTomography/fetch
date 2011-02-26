@@ -29,7 +29,13 @@ However, currently some tests do require hardware.  These are:
 #include <AlazarError.h>
 #include <AlazarApi.h>
 #include <AlazarCmd.h>
+
+#if HAVE_C843
+
 #include <C843_GCS_DLL.h>
+
+#endif
+
 namespace mylib {
 #include "array.h"
 }
@@ -114,7 +120,11 @@ TEST(Integration,Alazar)
 
 TEST(Integration,C843StageController)
 { int id;
+#if HAVE_C843
   EXPECT_GE(-1, id=C843_Connect(1));
   if(id>-1)
     C843_CloseConnection(id);
+#else
+  FAIL() << "C843 Library not found";
+#endif
 }

@@ -319,6 +319,11 @@ FailedIFDRead:
     goto Finalize;
   }
 
+  //#undef  goto_if_fail
+  //#define goto_if_fail( cond, lbl )       { if(!(cond)) {breakme();goto lbl;} }
+  //void breakme() 
+  //{ HERE;
+  //}
   unsigned int TiffStreamWriteTask::config( device::TiffStream *dc )
   {
     return 1;
@@ -337,6 +342,8 @@ FailedIFDRead:
     { 
       goto_if_fail(buf->id==FRAME_INTERLEAVED_PLANES,FailureBufferHasWrongFormat);
       nbytes = buf->size_bytes();
+
+      //buf->dump("TiffStreamWriteTask-src.%s",TypeStrFromID(buf->rtti));          
       
       {
         goto_if_fail(tim=Create_Tiff_Image(buf->width,buf->height),FailedCreateTIFFImage);
@@ -353,8 +360,8 @@ FailedIFDRead:
         pp = pitches[1];
         u8 *data = (u8*) buf->data;
         for(int i=0;i<buf->nchan;++i)
-          goto_if_fail(Add_Tiff_Image_Channel(tim,CHAN_BLACK,scale,type,data+i*pp),FailedAddChannel);
-        goto_if_fail(ifd=Make_IFD_For_Image(tim,LZW_COMPRESS,buf->width,buf->height),FailedMakeIFD);
+          goto_if(Add_Tiff_Image_Channel(tim,CHAN_BLACK,scale,type,data+i*pp),FailedAddChannel);
+        goto_if_fail(ifd=Make_IFD_For_Image(tim,DONT_COMPRESS,buf->width,buf->height),FailedMakeIFD);
         goto_if_fail(Write_Tiff_IFD(tif,ifd)==0,FailedWriteIFD);
       }
       
@@ -365,28 +372,28 @@ Finalize:
     Chan_Token_Buffer_Free(buf);
     return eflag;
 FailureBufferHasWrongFormat:
-    warning("Received a buffer from the input queue with an unexpected format. (wanted FRAME_INTERLEAVED_PLANES)\r\n\tGot: %d\r\n",buf->id);
+    error("Received a buffer from the input queue with an unexpected format. (wanted FRAME_INTERLEAVED_PLANES)\r\n\tGot: %d\r\n",buf->id);
     eflag=1;
     goto Finalize;
 FailedCreateTIFFImage:
-    warning("Failed to create TIFF image while streaming.\r\n\tGot: %s\r\n\t In: %s\r\n",Tiff_Error_String(),Tiff_Error_Source());
+    error("Failed to create TIFF image while streaming.\r\n\tGot: %s\r\n\t In: %s\r\n",Tiff_Error_String(),Tiff_Error_Source());
     
     eflag=2;
     goto Finalize;
 FailedAddChannel:
-    warning("Adding a channel to a tiff image (0x%p) failed.\r\n\tGot: %s\r\n\t In: %s\r\n",tim,Tiff_Error_String(),Tiff_Error_Source());
+    error("Adding a channel to a tiff image (0x%p) failed.\r\n\tGot: %s\r\n\t In: %s\r\n",tim,Tiff_Error_String(),Tiff_Error_Source());
     Free_Tiff_Image(tim);
     
     eflag=3;
     goto Finalize;
 FailedMakeIFD:
-    warning("Failed to make Tiff IFD for tiff image (0x%p).\r\n\tGot: %s\r\n\t In: %s\r\n",tim,Tiff_Error_String(),Tiff_Error_Source());
+    error("Failed to make Tiff IFD for tiff image (0x%p).\r\n\tGot: %s\r\n\t In: %s\r\n",tim,Tiff_Error_String(),Tiff_Error_Source());
     Free_Tiff_Image(tim);
     
     eflag=4;
     goto Finalize;
 FailedWriteIFD:
-    warning("Write Tiff IFD failed. Reader: 0x%p IFD: 0x%p.\r\n\tGot: %s\r\n\t In: %s\r\n",tim,ifd,Tiff_Error_String(),Tiff_Error_Source());
+    error("Write Tiff IFD failed. Reader: 0x%p IFD: 0x%p.\r\n\tGot: %s\r\n\t In: %s\r\n",tim,ifd,Tiff_Error_String(),Tiff_Error_Source());
     Free_Tiff_IFD(ifd);
     Free_Tiff_Image(tim);
     

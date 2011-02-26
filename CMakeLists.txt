@@ -223,6 +223,7 @@ set(FETCH_SRCS
   ${FETCH_UTIL_SRCS}
   ${FETCH_CORE_HDRS}
   ${FETCH_CORE_SRCS}
+  "${PROJECT_SOURCE_DIR}/config.h.in"
   )
 add_executable(fetch
   src/apps/fetch.cpp
