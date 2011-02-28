@@ -39,6 +39,8 @@ include_directories(${PROTOBUF_INCLUDE_DIRS})
 
 file(GLOB PROTO_FILES ${PROTO_DIR}/*.proto)
 PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${PROTO_DIR} ${PROTO_FILES})
+PROTOBUF_GENERATE_PYTHON(PROTO_PYTHON ${PROTO_DIR} ${PROTO_FILES})
+
 #foreach(F ${PROTO_SRCS})
 #  message(${F})
 #endforeach()
@@ -47,6 +49,9 @@ source_group("Source Files\\Protobuf Generated"
 )
 source_group("Header Files\\Protobuf Generated"
   FILES ${PROTO_HDRS}
+)
+source_group("Python Files\\Protobuf Generated"
+  FILES ${PROTO_PYTHON}
 )
 source_group("Protobuf Files"
   REGULAR_EXPRESSION \\.proto$

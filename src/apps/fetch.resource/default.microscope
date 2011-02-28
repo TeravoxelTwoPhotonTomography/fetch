@@ -145,7 +145,7 @@ file_series {
   seriesno: 0
   pathsep: "\\"
 }
-file_prefix: "default"
+file_prefix: "derp"
 stack_extension: ".tif"
 config_extension: ".microscope"
 

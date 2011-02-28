@@ -203,7 +203,7 @@ void RequestStorageLog2( void** array,           // Pointer to array
   void           vector_##type##_request ( vector_##type *self, size_t idx );\
   void           vector_##type##_request_pow2 ( vector_##type *self, size_t idx );\
   void           vector_##type##_free    ( vector_##type *self );\
-  void           vector_##type##_dump    ( vector_##type *self, char* filename );  
+  void           vector_##type##_dump    ( vector_##type *self, char* stack_filename );  
 
 #define VECTOR_EMPTY { NULL, 0, 0, 0 }
 
@@ -255,12 +255,12 @@ void vector_##type##_free_contents( vector_##type *self ) \
   }                                              \
 } \
   \
-void vector_##type##_dump( vector_##type *self, char* filename ) \
+void vector_##type##_dump( vector_##type *self, char* stack_filename ) \
 { FILE *fp;                                                      \
-  Guarded_Assert(fp = fopen(filename,"wb"));                     \
+  Guarded_Assert(fp = fopen(stack_filename,"wb"));                     \
   fwrite(self->contents,sizeof(type),self->nelem,fp);            \
   fclose(fp);                                                    \
-  warning("Wrote %s\r\n",filename);                              \
+  warning("Wrote %s\r\n",stack_filename);                              \
 }
 
 TYPE_VECTOR_DECLARE(char);

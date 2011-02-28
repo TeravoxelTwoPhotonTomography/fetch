@@ -105,8 +105,7 @@
       eflag |= __scan_agent.attach(); //scanner.attach(); 
 
       std::string stackname = _config->file_prefix()+_config->stack_extension();
-      file_series.ensurePathExists();
-      //eflag |= disk.open(file_series.getFullPath(stackname),"w");    
+      file_series.ensurePathExists();   
 
       return eflag;  
     }
@@ -141,21 +140,14 @@
       return sts;
     }
     
-    const std::string Microscope::next_filename()
+    const std::string Microscope::stack_filename()
     {     
-      transaction_lock();
-      file_series.inc();
-      std::string stackname = _config->file_prefix()+_config->stack_extension();
-      transaction_unlock();
-      return file_series.getFullPath(stackname);
-    }
+      return file_series.getFullPath(_config->file_prefix(),_config->stack_extension());
+    }  
     
-    const std::string Microscope::filename()
+    const std::string Microscope::config_filename()
     {     
-      transaction_lock();
-      std::string stackname = _config->file_prefix()+_config->stack_extension();
-      transaction_unlock();
-      return file_series.getFullPath(stackname);
+      return file_series.getFullPath(_config->file_prefix(),_config->config_extension());
     }
 
     void Microscope::_set_config( Config IN *cfg )
@@ -223,16 +215,21 @@
       return *this;
     }
 
-    const std::string FileSeries::getFullPath( const std::string& shortname )
+    const std::string FileSeries::getFullPath(const std::string& prefix, const std::string& ext)
     {
       char strSeriesNo[32];
       renderSeriesNo(strSeriesNo,sizeof(strSeriesNo));
       std::string seriespath = _desc->root() + _desc->pathsep() + _desc->date();
+
+      std::string part2 = prefix;
+      if(!part2.empty())
+        part2 = "-" + prefix;
+
       return seriespath
         + _desc->pathsep()
         + strSeriesNo
         + _desc->pathsep()
-        + shortname; 
+        + strSeriesNo + part2 + ext; 
     }
 
     void FileSeries::updateDate( void )

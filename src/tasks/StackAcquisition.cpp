@@ -10,6 +10,9 @@
  * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
+#include <iostream>
+#include <fstream>
+
 #include "common.h"
 #include "StackAcquisition.h"
 #include "Video.h"
@@ -75,9 +78,9 @@ namespace fetch
         IDevice *cur;
         cur = d->configPipeline();
 
-        //d->next_filename();
         d->file_series.ensurePathExists();
-        filename = d->next_filename();
+        d->file_series.inc();
+        filename = d->stack_filename();
         IDevice::connect(&d->disk,0,cur,0);
         Guarded_Assert( d->disk.close()==0 );
         //Guarded_Assert( d->disk.open(filename,"w")==0);
@@ -113,7 +116,7 @@ namespace fetch
         Guarded_Assert(dc->__scan_agent.is_runnable());
         //Guarded_Assert(dc->__io_agent.is_running());
 
-        filename = dc->filename(); 
+        filename = dc->stack_filename(); 
         
         eflag |= dc->disk.open(filename,"w");
         eflag |= dc->runPipeline();
@@ -142,7 +145,11 @@ namespace fetch
           }
           
           // Increment file
-          eflag |= dc->disk.close();         
+          eflag |= dc->disk.close();
+          std::string cfgname =  dc->config_filename();
+          { std::ofstream cfgout(cfgname,std::ios::out|std::ios::binary|std::ios::trunc);
+            dc->get_config().SerializePartialToOstream(&cfgout);
+          }
           dc->file_series.inc();
           dc->file_series.ensurePathExists();
           //dc->connect(&dc->disk,0,dc->pipelineEnd(),0);

@@ -47,7 +47,7 @@ namespace fetch
       FileSeries(cfg::FileSeries *desc) :_desc(desc), _lastpath("lastpath") {Guarded_Assert(_desc!=NULL);}
 
       FileSeries& inc(void);
-      const std::string getFullPath(const std::string& shortname);
+      const std::string getFullPath(const std::string& prefix, const std::string& ext);
       void ensurePathExists();
 
     private:
@@ -86,8 +86,8 @@ namespace fetch
 
       inline IDevice* pipelineEnd() {return &wrap;}
     public:
-      const std::string next_filename(); // increment the file series counter
-      const std::string      filename(); // get the current file
+      const std::string stack_filename();  // get the current file
+      const std::string config_filename(); // get the current file
 
     public:
       device::Scanner3D              scanner;
