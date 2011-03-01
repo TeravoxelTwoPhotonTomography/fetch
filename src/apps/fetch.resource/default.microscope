@@ -30,16 +30,8 @@ scanner3d {
         chan_names: "0"
         nchannels: 1
         line_trigger_src: 1
-        channel {
-          name: "0"
-          range: 0.2
-          enabled: true
-        }
-        channel {
-          name: "1"
-          range: 2.0
-          enabled: true
-        }
+        channel { name: "0" range: 0.2 enabled: true }
+        channel { name: "1" range: 2.0 enabled: true }
       }
       alazar {
         system_id: 1
@@ -81,7 +73,7 @@ scanner3d {
     linear_scan_mirror {
       kind: Simulated # NIDAQ
       nidaq {
-        v_lim_max: 10
+        v_lim_max:  10
         v_lim_min: -10
         vpp: 10
         ao_channel: "/Dev1/ao0"
@@ -94,14 +86,14 @@ scanner3d {
   zpiezo {
     kind: Simulated #NIDAQ
     nidaq {
-      um2v: 0.025
-      um_max: 5
-      um_min: 0
-      um_step: 0.005
-      v_lim_max: 12
+      um2v:       0.025
+      um_max:     5
+      um_min:     0
+      um_step:    0.005
+      v_lim_max:  12
       v_lim_min: -3
-      v_offset: 0
-      channel: "/Dev1/ao1"
+      v_offset:   0
+      channel:   "/Dev1/ao1"
     }
     simulated {
     }
@@ -112,39 +104,26 @@ stage {
 	kind: Simulated
 	c843 {
 	  id: 1
-		axis {
-			id: 1
-			stage: "M-511.DD"
-		}
-		axis {
-			id: 2
-			stage: "M-511.DD"
-		}
-		axis {
-			id: 3
-			stage: "M-501.DG"
-		}		
+		axis {id: 1   stage: "M-511.DD"}
+		axis {id: 2   stage: "M-511.DD"}
+		axis {id: 3   stage: "M-501.DG"}
 	}
   simulated {
-    val: 1337
+    axis { min_mm: 0.0  max_mm: 100.0}
+    axis { min_mm: 0.0  max_mm: 100.0}
+    axis { min_mm: 0.0  max_mm: 12.5 }
   }    
 }
-resonant_wrap {
-  turn_px: 0
-}
-horizontal_downsample {
-  ntimes: 1
-}
-frame_average {
-  ntimes: 1
-}
+resonant_wrap         { turn_px: 0 }
+horizontal_downsample { ntimes : 1 }
+frame_average         { ntimes : 1 }
 file_series {
-  root: "C:\\temp"
-  date: "unknown"
-  seriesno: 0
-  pathsep: "\\"
+  root:     "C:\\temp"
+  date:     "unknown"
+  seriesno:  0
+  pathsep:  "\\"
 }
-file_prefix: "derp"
-stack_extension: ".tif"
+file_prefix:      "derp"
+stack_extension:  ".tif"
 config_extension: ".microscope"
 

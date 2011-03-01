@@ -22,7 +22,7 @@ int main(int argc,char* argv[])
     FileInputStream in(fid);
     msg.ParseFromZeroCopyStream(&in);
   }
-  set_unset_fields(&msg);
+  //set_unset_fields(&msg);
   
   { string out;
     TextFormat::PrintToString(msg,&out);

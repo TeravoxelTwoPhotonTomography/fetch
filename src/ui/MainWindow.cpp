@@ -30,6 +30,11 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   _lsm_vert_range_controller= new LSMVerticalRangeController(dc->LSM(),"&Y Range (Vpp)");
   _pockels_controller       = new PockelsController(dc->pockels(),"&Pockels (mV)");
 
+  _zpiezo_max_control       = new ZPiezoMaxController(dc->zpiezo(), "Z Ma&x (um)");
+  _zpiezo_min_control       = new ZPiezoMinController(dc->zpiezo(), "Z Mi&n (um)");
+  _zpiezo_step_control      = new ZPiezoStepController(dc->zpiezo(),"Z &Step (um)");
+  
+
   createActions();
   createStateMachines();
   createMenus();

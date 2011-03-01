@@ -58,9 +58,9 @@ namespace fetch
 
       virtual IDAQChannel* physicalChannel() {return &daq;}
 
-      virtual double getAmplitudeVolts() {return _config->vpp();}
-      virtual void   setAmplitudeVolts(double vpp) {Config c = get_config(); c.set_vpp(vpp); set_config(c);}
-      virtual void   setAmplitudeVoltsNoWait(double vpp) {Config c = get_config(); c.set_vpp(vpp); Guarded_Assert_WinErr(set_config_nowait(c));}
+      virtual double getAmplitudeVolts()                                   {return _config->vpp();}
+      virtual void   setAmplitudeVolts(double vpp)                         {Config c = get_config(); c.set_vpp(vpp); set_config(c);}
+      virtual void   setAmplitudeVoltsNoWait(double vpp)                   {Config c = get_config(); c.set_vpp(vpp); Guarded_Assert_WinErr(set_config_nowait(c));}
 
     };
 

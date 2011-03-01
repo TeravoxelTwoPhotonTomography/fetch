@@ -30,6 +30,7 @@
 #include <string>
 #include "tasks\microscope-interaction.h"
 #include "tasks\StackAcquisition.h"
+#include "Stage.h"
 
 #define MICROSCOPE_MAX_WORKERS     10
 #define MICROSCOPE_DEFAULT_TIMEOUT INFINITE
@@ -90,24 +91,26 @@ namespace fetch
       const std::string config_filename(); // get the current file
 
     public:
-      device::Scanner3D              scanner;
+      device::Scanner3D                 scanner;
+      device::Stage                     stage_;
 
-      worker::FrameAverageAgent 	   frame_averager;
+      worker::FrameAverageAgent 	      frame_averager;
       worker::HorizontalDownsampleAgent pixel_averager;
-      worker::FrameCastAgent_i16     cast_to_i16;
-      worker::FrameInvertAgent       inverter;
-      worker::ResonantWrapAgent      wrap;
+      worker::FrameCastAgent_i16        cast_to_i16;
+      worker::FrameInvertAgent          inverter;
+      worker::ResonantWrapAgent         wrap;
 
-      worker::TerminalAgent		       trash;                
-      device::TiffStream             disk;
+      worker::TerminalAgent		          trash;                
+      device::TiffStream                disk;
                                                        
       task::microscope::Interaction      interaction_task;
       task::microscope::StackAcquisition stack_task;      
 
-      inline Chan *getVideoChannel()  {return wrap._out->contents[0];}
-      inline LinearScanMirror  *LSM() {return &scanner._scanner2d._LSM;}
-      inline Pockels       *pockels() {return &scanner._scanner2d._pockels;}
-    
+      inline Chan*  getVideoChannel() {return wrap._out->contents[0];}
+      inline LinearScanMirror*  LSM() {return &scanner._scanner2d._LSM;}
+      inline Pockels*       pockels() {return &scanner._scanner2d._pockels;}
+      inline ZPiezo*         zpiezo() {return &scanner._zpiezo;}
+      inline Stage*           stage() {return &stage_;}
 
     public:
       FileSeries file_series;

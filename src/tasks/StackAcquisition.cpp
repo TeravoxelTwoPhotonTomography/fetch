@@ -118,7 +118,11 @@ namespace fetch
 
         filename = dc->stack_filename(); 
         
+        dc->file_series.ensurePathExists();
         eflag |= dc->disk.open(filename,"w");
+        if(eflag)
+          return eflag;
+
         eflag |= dc->runPipeline();
         eflag |= dc->__scan_agent.run() != 1;
 
@@ -151,7 +155,7 @@ namespace fetch
             dc->get_config().SerializePartialToOstream(&cfgout);
           }
           dc->file_series.inc();
-          dc->file_series.ensurePathExists();
+          
           //dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
           
         }

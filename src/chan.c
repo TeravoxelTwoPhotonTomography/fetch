@@ -8,7 +8,7 @@
 #define SUCCESS (0) 
 #define FAILURE (1)
 
-//#define DEBUG_CHAN
+#define DEBUG_CHAN
 
 //////////////////////////////////////////////////////////////////////
 //  Logging    ///////////////////////////////////////////////////////
@@ -441,19 +441,16 @@ unsigned int Chan_Next_Timed( Chan *self_, void **pbuf, size_t sz, unsigned time
 //
 unsigned int Chan_Peek( Chan *self_, void **pbuf, size_t sz )
 { chan_t *self = (chan_t*)self_; 
-  Chan_Assert(self->mode==CHAN_READ);
   return chan_peek(self,pbuf,sz,(unsigned)-1);
 }
 
 unsigned int Chan_Peek_Try( Chan *self_, void **pbuf, size_t sz )
 { chan_t *self = (chan_t*)self_; 
-  Chan_Assert(self->mode==CHAN_READ);
   return chan_peek(self,pbuf,sz,0);
 }
 
 unsigned int Chan_Peek_Timed ( Chan *self_, void **pbuf, size_t sz, unsigned timeout_ms )
-{ chan_t *self = (chan_t*)self_; 
-  Chan_Assert(self->mode==CHAN_READ);
+{ chan_t *self = (chan_t*)self_;   
   return chan_peek(self,pbuf,sz,timeout_ms);
 }
 

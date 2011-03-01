@@ -26,11 +26,14 @@
 #include "ui/MainWindow.h"
 #include <stdio.h>
 #include <google/protobuf/text_format.h>
+#include <google/protobuf/io/tokenizer.h>
+#include <string>
 /*
  * Global state
  */
 
-fetch::device::Microscope *gp_microscope;
+fetch::device::Microscope*           gp_microscope;
+fetch::cfg::device::Microscope       g_config;
 fetch::task::microscope::Interaction g_microscope_default_task;
 
 /*
@@ -47,6 +50,13 @@ unsigned int KillMicroscopeCallback(void)
   if(gp_microscope) { delete gp_microscope; gp_microscope=NULL;}
   return 0;
 }
+
+class MyErrorCollector:public google::protobuf::io::ErrorCollector
+{ public:
+ 
+  virtual void AddError(int line, int col, const std::string & message)    {warning("Protobuf: Error   - at line %d(%d):"ENDL"\t%s"ENDL,line,col,message.c_str());}
+  virtual void AddWarning(int line, int col, const std::string & message)  {warning("Protobuf: Warning - at line %d(%d):"ENDL"\t%s"ENDL,line,col,message.c_str());}
+};
 
 void Init(void)
 {
@@ -66,9 +76,12 @@ void Init(void)
   Guarded_Assert(cfgfile.open(QIODevice::ReadOnly));
   Guarded_Assert(cfgfile.isReadable());
   //cfgfile.setTextModeEnabled(true);
-  fetch::cfg::device::Microscope config;
-  Guarded_Assert(google::protobuf::TextFormat::ParseFromString(cfgfile.readAll().constData(),&config));
-  gp_microscope = new fetch::device::Microscope(config);
+  
+  google::protobuf::TextFormat::Parser parser;
+  MyErrorCollector e;
+  parser.RecordErrorsTo(&e);
+  Guarded_Assert(parser.ParseFromString(cfgfile.readAll().constData(),&g_config));
+  gp_microscope = new fetch::device::Microscope(&g_config);
 
 
   // Connect video display

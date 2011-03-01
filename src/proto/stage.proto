@@ -16,7 +16,11 @@ message C843StageController
 
 message SimulatedStage
 {
-  optional uint32 val = 1 [default=0];
+  message Axis
+  { optional float min_mm = 1 [default=  0.0];
+    optional float max_mm = 2 [default=100.0];
+  }
+	repeated Axis   axis = 2;
 }
 
 message Stage

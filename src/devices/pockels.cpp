@@ -13,7 +13,7 @@
 
 
 #include "Pockels.h"
-#include "../task.h"
+#include "task.h"
 
 #define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, warning))
 #define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, error  ))
