@@ -104,7 +104,6 @@ scanner3d {
       channel: "/Dev1/ao1"
     }
     simulated {
-      val: 0
     }
   }
   zref_um: 0

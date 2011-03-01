@@ -64,6 +64,8 @@ public:
 // Getters and Setters 
 ////////////////////////////////////////////////////////////////////////// 
 
+// Video
+
 void GetSetResonantTurn::Set_(device::Microscope *dc, f64 &v)
 { device::Microscope::Config c = dc->get_config();
   c.mutable_resonant_wrap()->set_turn_px(v);
@@ -108,6 +110,38 @@ u32 GetSetPockels::Get_(device::Pockels *dc)
 }           
 QValidator* GetSetPockels::createValidator_(QObject* parent)
 { return new QIntValidator(0,2000,parent);
+}
+
+// Stack
+
+void GetSetZPiezoMin::Set_(device::ZPiezo *dc, f64 &v)
+{ dc->setMin(v);
+}
+f64 GetSetZPiezoMin::Get_(device::ZPiezo *dc)
+{ return dc->getMin();
+}
+QValidator* GetSetZPiezoMin::createValidator_(QObject* parent)
+{ return new QDoubleValidator (0.0, 400.0, 1, parent);
+}
+
+void GetSetZPiezoMax::Set_(device::ZPiezo *dc, f64 &v)
+{ dc->setMax(v);
+}
+f64 GetSetZPiezoMax::Get_(device::ZPiezo *dc)
+{ return dc->getMax();
+}
+QValidator* GetSetZPiezoMax::createValidator_(QObject* parent)
+{ return new QDoubleValidator (0.0, 400.0, 1, parent);
+}
+
+void GetSetZPiezoStep::Set_(device::ZPiezo *dc, f64 &v)
+{ dc->setStep(v);
+}
+f64 GetSetZPiezoStep::Get_(device::ZPiezo *dc)
+{ return dc->getStep();
+}
+QValidator* GetSetZPiezoStep::createValidator_(QObject* parent)
+{ return new QDoubleValidator (0.0, 400.0, 3, parent);
 }
 
 }} //end fetch::ui

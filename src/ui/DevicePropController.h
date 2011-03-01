@@ -97,6 +97,8 @@ namespace ui {
     QValidator* createValidator_(QObject* parent);\
   }
 
+  // Video
+
 	DECL_GETSET_CLASS(GetSetResonantTurn,device::Microscope,f64);
 	DECL_GETSET_CLASS(GetSetLines,device::Microscope,i32);
 	DECL_GETSET_CLASS(GetSetLSMVerticalRange,device::LinearScanMirror,f64);
@@ -106,6 +108,16 @@ namespace ui {
 	typedef DevicePropController<device::Microscope,i32,GetSetLines>                  LinesController;
 	typedef DevicePropController<device::LinearScanMirror,f64,GetSetLSMVerticalRange> LSMVerticalRangeController;
 	typedef DevicePropController<device::Pockels,u32,GetSetPockels>                   PockelsController;
+
+  // Stack
+
+  DECL_GETSET_CLASS(GetSetZPiezoMin ,device::ZPiezo,f64);
+  DECL_GETSET_CLASS(GetSetZPiezoMax ,device::ZPiezo,f64);
+  DECL_GETSET_CLASS(GetSetZPiezoStep,device::ZPiezo,f64);
+
+  typedef DevicePropController<device::ZPiezo,f64,GetSetZPiezoMin>              ZPiezoMinController;
+  typedef DevicePropController<device::ZPiezo,f64,GetSetZPiezoMax>              ZPiezoMaxController;
+  typedef DevicePropController<device::ZPiezo,f64,GetSetZPiezoStep>             ZPiezoStepController;
 
 }} //end fetch::ui
 

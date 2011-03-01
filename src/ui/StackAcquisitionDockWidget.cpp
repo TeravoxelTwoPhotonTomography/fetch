@@ -15,10 +15,9 @@ namespace ui {
     formwidget->setLayout(form);
     setWidget(formwidget);
 
-    parent->_resonant_turn_controller->createLineEditAndAddToLayout(form);
-    parent->_vlines_controller->createLineEditAndAddToLayout(form);
-    parent->_lsm_vert_range_controller->createLineEditAndAddToLayout(form);
-    parent->_pockels_controller->createLineEditAndAddToLayout(form);
+    parent->_zpiezo_max_control->createLineEditAndAddToLayout(form);
+    parent->_zpiezo_min_control->createLineEditAndAddToLayout(form);
+    parent->_zpiezo_step_control->createLineEditAndAddToLayout(form);
 
     AgentControllerButtonPanel *btns = new AgentControllerButtonPanel(&parent->_scope_state_controller,&dc->stack_task);
     form->addRow(btns);

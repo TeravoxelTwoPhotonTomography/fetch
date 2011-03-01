@@ -327,6 +327,7 @@ Error:
           Frame_With_Interleaved_Planes ref(512,512,3,TypeID<TPixel>());
           size_t nbytes;        
           int status = 1; // status == 0 implies success, error otherwise
+          f64 z_um,ummax,ummin,umstep;
                   
           nbytes = ref.size_bytes();        
           Chan_Resize(qdata, nbytes);
@@ -335,7 +336,9 @@ Error:
 
           debug("Simulated Stack!\r\n");
           HERE;
-          for(int d=0;d<100;++d)
+          d->_zpiezo.getScanRange(&ummin,&ummax,&umstep);
+          for(z_um=ummin+umstep;z_um<ummax && !d->_agent->is_stopping();z_um+=umstep)
+          //for(int d=0;d<100;++d)
           { size_t pitch[4];
             size_t n[3];
             frm->compute_pitches(pitch);

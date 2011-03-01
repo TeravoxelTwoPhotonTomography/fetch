@@ -1,5 +1,6 @@
 #pragma once
 #include "object.h"
+#include "stage.pb.h"
 
 namespace fetch {
 namespace device {

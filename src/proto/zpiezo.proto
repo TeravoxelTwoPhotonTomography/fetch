@@ -13,7 +13,9 @@ message NIDAQZPiezo
 
 message SimulatedZPiezo
 {
-  optional double val = 1 [default=0.0];
+  optional double um_max    = 2 [default=100.0];        // um   - end of travel for a scan
+  optional double um_min    = 3 [default=0.0];          // um   - beg of travel for a scan
+  optional double um_step   = 4 [default=1.00];         // um   - step to take during a vertical scan
 }
 
 message ZPiezo

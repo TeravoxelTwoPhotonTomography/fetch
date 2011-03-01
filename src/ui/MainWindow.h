@@ -57,6 +57,10 @@ public: // semi-private
   LSMVerticalRangeController* _lsm_vert_range_controller;
   PockelsController*          _pockels_controller;
 
+  ZPiezoMaxController*        _zpiezo_max_control;
+  ZPiezoMinController*        _zpiezo_min_control;
+  ZPiezoStepController*       _zpiezo_step_control;
+
 };
 
 //namespace ends

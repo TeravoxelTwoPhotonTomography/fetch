@@ -29,7 +29,14 @@ namespace fetch
 
       //getters
       virtual void getScanRange(f64 *min_um,f64 *max_um, f64 *step_um)=0;
+      virtual f64  getMin() = 0;
+      virtual f64  getMax() = 0;
+      virtual f64  getStep() = 0;
 
+      //setters      
+      virtual void setMin(f64 v) = 0;
+      virtual void setMax(f64 v) = 0;
+      virtual void setStep(f64 v) = 0;
     };
 
     template<class T>
@@ -57,6 +64,13 @@ namespace fetch
 
       void getScanRange(f64 *min_um,f64 *max_um, f64 *step_um);
 
+      virtual f64  getMin()       {return get_config().um_min();}
+      virtual f64  getMax()       {return get_config().um_max();}
+      virtual f64  getStep()      {return get_config().um_step();}
+      virtual void setMin(f64 v)  {Config c = get_config(); c.set_um_min(v);  set_config_nowait(c);}
+      virtual void setMax(f64 v)  {Config c = get_config(); c.set_um_max(v);  set_config_nowait(c);}
+      virtual void setStep(f64 v) {Config c = get_config(); c.set_um_step(v); set_config_nowait(c);}
+
     };
       
     class SimulatedZPiezo:public ZPiezoBase<cfg::device::SimulatedZPiezo>
@@ -74,7 +88,14 @@ namespace fetch
 
       virtual IDAQChannel* physicalChannel() {return &_chan;}
 
-      void getScanRange(f64 *min_um,f64 *max_um, f64 *step_um) {*min_um=0.0;*max_um=100.0;*step_um=1.0;}
+      void getScanRange(f64 *min_um,f64 *max_um, f64 *step_um);
+
+      virtual f64  getMin()       {return get_config().um_min();}
+      virtual f64  getMax()       {return get_config().um_max();}
+      virtual f64  getStep()      {return get_config().um_step();}
+      virtual void setMin(f64 v)  {Config c = get_config(); c.set_um_min(v);  set_config_nowait(c);}
+      virtual void setMax(f64 v)  {Config c = get_config(); c.set_um_max(v);  set_config_nowait(c);}
+      virtual void setStep(f64 v) {Config c = get_config(); c.set_um_step(v); set_config_nowait(c);}
     };
 
     class ZPiezo:public ZPiezoBase<cfg::device::ZPiezo>
@@ -101,6 +122,13 @@ namespace fetch
       virtual IDAQChannel* physicalChannel() {return _izpiezo->physicalChannel();}
       
       void getScanRange(f64 *min_um,f64 *max_um, f64 *step_um) {_izpiezo->getScanRange(min_um,max_um,step_um);}
+
+      virtual f64  getMin()       {return _izpiezo->getMin();}
+      virtual f64  getMax()       {return _izpiezo->getMax();}
+      virtual f64  getStep()      {return _izpiezo->getStep();}
+      virtual void setMin(f64 v)  { _izpiezo->setMin(v); }
+      virtual void setMax(f64 v)  { _izpiezo->setMax(v); }
+      virtual void setStep(f64 v) { _izpiezo->setStep(v);}
     };
 
   }

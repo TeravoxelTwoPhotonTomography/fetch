@@ -113,6 +113,14 @@ namespace fetch
       memset(data,0,sizeof(float64)*n);
     }
 
+    void SimulatedZPiezo::getScanRange( f64 *min_um,f64 *max_um, f64 *step_um )
+    {
+      Config c = get_config();
+      *min_um = c.um_min();
+      *max_um = c.um_max();
+      *step_um = c.um_step();
+    }
+
     //
     // ZPiezo
     //
