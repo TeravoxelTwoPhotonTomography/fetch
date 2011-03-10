@@ -88,7 +88,7 @@ namespace mylib
     dest->type  = fetchTypeToArrayType(src->rtti);
     dest->scale = fetchTypeToArrayScale(src->rtti);
     src->get_shape(dims);
-    reverse<mylib::Dimn_Type>(dest->ndims,dims);
+    reverse<size_t>(dest->ndims,dims);
     dest->size = dims[0]*dims[1]*dims[2];
   }
 } //end namespace mylib

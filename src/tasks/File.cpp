@@ -245,8 +245,8 @@ namespace file {
     Tiff_Image *tim;
     Tiff_Reader *tif = dc->_tiff_reader;
     Frame_With_Interleaved_Planes *buf = NULL;
-    size_t maxsize = 0,
-           maxchan = 0;
+    size_t maxsize = 0;
+    int    maxchan = 0;
     u8 **planes = NULL;
     int eflag=0;
 

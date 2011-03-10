@@ -12,6 +12,8 @@ namespace mylib {
 #include <util/util-gl.h>
 #include <assert.h>
 
+#define HERE printf("[ImItem] At %s(%d)\n",__FILE__,__LINE__)
+
 namespace fetch {
 namespace ui {
 
@@ -41,7 +43,7 @@ QRectF ImItem::boundingRect() const
 void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget /* = 0 */)
 { 
   if(_loaded)
-  {
+  {  
     painter->beginNativePainting();
 		checkGLError();
 
@@ -71,6 +73,9 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     checkGLError();
 		glCallList(_hQuadDisplayList);
     _shader.release();
+
+    glBindTexture(GL_TEXTURE_3D, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 		
     // paint a little square to indicate the paint
     glEnable(GL_SCISSOR_TEST);
@@ -134,6 +139,7 @@ void ImItem::_loadTex(mylib::Array *im)
 							 GL_LUMINANCE,
                gltype,
 							 im->data);  
+  glDisable(GL_TEXTURE_3D);
 	checkGLError();
   if(original!=im) // typeMapMylibToGLType() had to make a copy.  Free it now.
     Free_Array(im);
@@ -225,6 +231,7 @@ void ImItem::_setupShader()
 							 cmap.width(), cmap.height(), 0, 
 							 GL_BGRA, GL_UNSIGNED_BYTE,
 							 cmap.constBits());
+  glDisable(GL_TEXTURE_2D);
 	checkGLError();
 }
 
