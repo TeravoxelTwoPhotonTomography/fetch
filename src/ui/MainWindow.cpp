@@ -138,6 +138,7 @@ void fetch::ui::MainWindow::closeEvent( QCloseEvent *event )
 {
   _player->stop();
   _poller.stop();
+  QMainWindow::closeEvent(event);  
 }
 
 #define SAFE_DELETE(expr) if(expr) delete (expr)

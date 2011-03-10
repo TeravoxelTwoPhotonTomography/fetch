@@ -15,6 +15,8 @@ class ZoomableView:public QGraphicsView
 public:
 	ZoomableView(QGraphicsScene *scene, QWidget *parent=0);
 	
+  inline double metersToPixels()                                           {return _scalebar.scale();}
+  inline void   setMetersToPixels(double unit2px)                          {_scalebar.setScale(unit2px);}
 	virtual void	wheelEvent(QWheelEvent *event);
 signals:
 	void zoomChanged(double zoom);
@@ -32,18 +34,19 @@ class Figure:public QWidget
   Q_OBJECT
 public:
 	Figure(QWidget *parent=0);
+  Figure(double unit2px, QWidget *parent=0);
+  virtual ~Figure();
 	
 public slots:
-	inline void push(mylib::Array *im)   {_item->push(im);}
-	inline void imshow(mylib::Array *im) {_item->push(im); _item->flip(); _scene.setSceneRect(_scene.itemsBoundingRect());}
+	inline void push(mylib::Array *im)                                       {_item->push(im);}
+	inline void imshow(mylib::Array *im)                                     {_item->push(im); _item->flip(); _scene.setSceneRect(_scene.itemsBoundingRect());}
 signals:
 	void lastFigureClosed();
 protected:
   void readSettings();
   void writeSettings();
-  void closeEvent(QCloseEvent *event);
 private:
-	QGraphicsView*     _view;
+	ZoomableView*      _view;
 	QGraphicsScene     _scene;
 	ImItem*            _item;
 };

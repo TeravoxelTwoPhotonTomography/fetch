@@ -1,5 +1,6 @@
 #include <util/util-gl.h>
 #include <QtGui>
+#include <QtDebug>
 #include <assert.h>
 #include "Figure.h"
 #include <math.h>
@@ -48,11 +49,15 @@ ZoomableView::drawForeground(QPainter* painter, const QRectF& rect)
 	_scalebar.paint(painter, rect);
 }
 
+/************************************************************************/
+/* FIGURE                                                               */
+/************************************************************************/
+
 Figure::Figure(QWidget *parent/*=0*/)
 :QWidget(parent)
 {	
-  QGLWidget *viewport;
-  _view = new ZoomableView(&_scene);  
+  _view = new ZoomableView(&_scene); 
+  QGLWidget *viewport; 
 	//_view = new QGraphicsView(&_scene);  
   _view->setViewport(viewport = new QGLWidget);   
 	viewport->makeCurrent();
@@ -80,27 +85,35 @@ Figure::Figure(QWidget *parent/*=0*/)
 
 void
 Figure::readSettings()
-{ QSettings settings;
-  settings.beginGroup("figure");
-  //resize(settings.value("size",size()).toSize());
-  move(  settings.value("pos" ,pos()).toPoint());
+{
+  QSettings settings;
+  QStringList keys = settings.allKeys();
+#if 0  
+  HERE;
+  qDebug() << settings.organizationName();
+  qDebug() << settings.applicationName();
+  qDebug() << (settings.isWritable()?"Writable":"!!! Settings are not writable !!!");
+  foreach(QString k,keys)
+    qDebug() << "\t" << k;
+#endif 
+  settings.beginGroup("voxel");
+  double um = settings.value("width_um",0.2).toDouble();
+  _view->setMetersToPixels(1e6/um);
   settings.endGroup();
 }
 
 void
 Figure::writeSettings()
 { QSettings settings;
-  settings.beginGroup("figure");
-  //settings.setValue("size",size());
-  settings.setValue("pos" ,pos());
+  settings.beginGroup("voxel");
+  settings.setValue("width_um",1e6/_view->metersToPixels());  
   settings.endGroup();
+  settings.sync();
 }
 
-void
-Figure::closeEvent(QCloseEvent *event)
-{ //always accept
+Figure::~Figure()
+{
   writeSettings();
-  event->accept();
 }
 
 struct OpenImageWidgetSet : QSet<Figure*>

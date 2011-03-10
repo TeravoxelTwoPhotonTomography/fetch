@@ -23,7 +23,7 @@ public:
 	void push(mylib::Array *plane);
   void flip(int isupdate=1);
 
-	inline const QRectF& bbox() {return _bbox;}
+	inline const QRectF& bbox_px() {return _bbox_px;}
 signals:
   void sizeChanged(const QRectF& bbox);
 protected:
@@ -34,7 +34,7 @@ protected:
 
 	float _fill;
 	
-  QRectF _bbox;
+  QRectF _bbox_px;
   QGraphicsSimpleTextItem _text;
   GLuint _hQuadDisplayList;
 	GLuint _hTexture;
@@ -44,6 +44,8 @@ protected:
   GLuint _hShaderPlane;
   GLuint _hShaderCmap;
   GLuint _hTexCmap;
+
+  QSize _pixel_size_meters; // *** HERE
 
   int _loaded;
 };

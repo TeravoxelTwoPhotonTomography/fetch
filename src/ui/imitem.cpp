@@ -25,7 +25,7 @@ ImItem::ImItem()
   _loaded(0)
 { 	
   _text.setBrush(Qt::yellow);
-  _bbox = _text.boundingRect();
+  _bbox_px = _text.boundingRect();
   _common_setup();
 }
 
@@ -36,7 +36,7 @@ ImItem::~ImItem()
 
 QRectF ImItem::boundingRect() const
 {
-  return _bbox;
+  return _bbox_px;
 }
 
 
@@ -135,7 +135,7 @@ void ImItem::_loadTex(mylib::Array *im)
   GLuint gltype = typeMapMylibToGLType(&im);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_LUMINANCE,
-							 _bbox.width(), _bbox.height(), _nchan, 0,
+							 _bbox_px.width(), _bbox_px.height(), _nchan, 0,
 							 GL_LUMINANCE,
                gltype,
 							 im->data);  
@@ -150,10 +150,10 @@ void ImItem::updateDisplayLists()
 { 
 	float t,b,l,r;
 	checkGLError();
-	b = _bbox.bottom();
-	t = _bbox.top();
-	l = _bbox.left();
-	r = _bbox.right();
+	b = _bbox_px.bottom();
+	t = _bbox_px.top();
+	l = _bbox_px.left();
+	r = _bbox_px.right();
 	
 	glNewList(_hQuadDisplayList, GL_COMPILE);
 	glBegin(GL_QUADS);
@@ -192,7 +192,7 @@ void ImItem::push(mylib::Array *plane)
 	_fill = 10.0/_nchan;
 	_fill = (_fill>1.0)?1.0:_fill;
 	
-	_bbox = QRectF(-w/2.0,-h/2.0,w,h);
+	_bbox_px = QRectF(-w/2.0,-h/2.0,w,h);
 	_loadTex(plane);
 	updateDisplayLists();
 	checkGLError();

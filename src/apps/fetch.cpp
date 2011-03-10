@@ -90,6 +90,9 @@ void Init(void)
 
 int main(int argc, char *argv[])
 { QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
+  QCoreApplication::setOrganizationName("Howard Hughes Medical Institute");
+  QCoreApplication::setOrganizationDomain("janelia.hhmi.org");
+  QCoreApplication::setApplicationName("Fetch");
 
   QApplication app(argc,argv);
   Init();
