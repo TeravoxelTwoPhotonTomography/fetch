@@ -16,7 +16,7 @@ public:
   ImItem();
   virtual ~ImItem();
 	
-  QRectF boundingRect  () const;
+  QRectF boundingRect  () const;                                           // in meters
   void   paint         (QPainter                       *painter,
                         const QStyleOptionGraphicsItem *option,
                         QWidget                        *widget = 0);
@@ -25,7 +25,7 @@ public:
 
 	inline const QRectF& bbox_px() {return _bbox_px;}
 signals:
-  void sizeChanged(const QRectF& bbox);
+  void sizeChanged(const QRectF& bbox);                                    // [?] is this ever used?  What units does bbox have here?
 protected:
   void updateDisplayLists();
   void _common_setup();
@@ -45,7 +45,7 @@ protected:
   GLuint _hShaderCmap;
   GLuint _hTexCmap;
 
-  QSize _pixel_size_meters; // *** HERE
+  QSizeF _pixel_size_meters;
 
   int _loaded;
 };

@@ -12,6 +12,7 @@ namespace mylib {
 #include <util/util-gl.h>
 #include <assert.h>
 
+#undef HERE
 #define HERE printf("[ImItem] At %s(%d)\n",__FILE__,__LINE__)
 
 namespace fetch {
@@ -22,6 +23,7 @@ ImItem::ImItem()
   _text("Nothing to see here :/"),
   _hQuadDisplayList(0),
 	_hTexture(0),
+  _pixel_size_meters(0.1,0.2),
   _loaded(0)
 { 	
   _text.setBrush(Qt::yellow);
@@ -35,8 +37,15 @@ ImItem::~ImItem()
 }
 
 QRectF ImItem::boundingRect() const
-{
-  return _bbox_px;
+{	float t,b,l,r;
+  float ph,pw;
+  ph = _pixel_size_meters.height();
+  pw = _pixel_size_meters.width();
+	b = ph * _bbox_px.bottom();
+	t = ph * _bbox_px.top();
+	l = pw * _bbox_px.left();
+	r = pw * _bbox_px.right();
+  return QRectF(QPointF(t,l),QPointF(b,r));
 }
 
 
@@ -104,10 +113,10 @@ GLuint typeMapMylibToGLType(mylib::Array **pa)
     GL_UNSIGNED_SHORT            ,   //  UINT16  = 1,
     GL_UNSIGNED_INT              ,   //  UINT32  = 2,
     -1                           ,   //  UINT64  = 3,
-    // Signed integer types no supported
-    -1, //GL_BYTE                      ,   //  INT8    = 4,
-    -1, //GL_SHORT                     ,   //  INT16   = 5,
-    -1, //GL_INT                       ,   //  INT32   = 6,
+    // Signed integer types not supported
+    -1, //GL_BYTE                ,   //  INT8    = 4,
+    -1, //GL_SHORT               ,   //  INT16   = 5,
+    -1, //GL_INT                 ,   //  INT32   = 6,
     -1                           ,   //  INT64   = 7,
     GL_FLOAT                     ,   //  FLOAT32 = 8,
     -1                               //  FLOAT64 = 9 
@@ -119,7 +128,7 @@ GLuint typeMapMylibToGLType(mylib::Array **pa)
     
     *pa = mylib::Convert_Image(a,mylib::PLAIN_KIND,mylib::FLOAT32_TYPE,32);
     
-    //Free_Array(a); // release the old reference //[ngx] don't do this...owner is still responsible for his array.
+    //Free_Array(a); //[ngc] don't do this...owner is still responsible for his array.
     ret = GL_FLOAT;
   }
   return ret;
@@ -149,11 +158,14 @@ void ImItem::_loadTex(mylib::Array *im)
 void ImItem::updateDisplayLists()
 { 
 	float t,b,l,r;
+  float ph,pw;
 	checkGLError();
-	b = _bbox_px.bottom();
-	t = _bbox_px.top();
-	l = _bbox_px.left();
-	r = _bbox_px.right();
+  ph = _pixel_size_meters.height();
+  pw = _pixel_size_meters.width();
+	b = ph * _bbox_px.bottom();
+	t = ph * _bbox_px.top();
+	l = pw * _bbox_px.left();
+	r = pw * _bbox_px.right();
 	
 	glNewList(_hQuadDisplayList, GL_COMPILE);
 	glBegin(GL_QUADS);
@@ -221,16 +233,21 @@ void ImItem::_setupShader()
 	QImage cmap;
   glActiveTexture(GL_TEXTURE1);
 	glEnable(GL_TEXTURE_2D);
-	assert(cmap.load(":/cmap/2","JPG"));
-  //qDebug()<<cmap.format();
-	glGenTextures(1, &_hTexCmap);
-	glBindTexture(GL_TEXTURE_2D, _hTexCmap);
-	glTexImage2D(GL_TEXTURE_2D, 
-							 0, 
-							 GL_RGBA, 
-							 cmap.width(), cmap.height(), 0, 
-							 GL_BGRA, GL_UNSIGNED_BYTE,
-							 cmap.constBits());
+  {
+	  assert(cmap.load(":/cmap/2","JPG"));
+    //qDebug()<<cmap.format();
+	  glGenTextures(1, &_hTexCmap);
+	  glBindTexture(GL_TEXTURE_2D, _hTexCmap);
+    {
+	    glTexImage2D(GL_TEXTURE_2D, 
+							     0, 
+							     GL_RGBA, 
+							     cmap.width(), cmap.height(), 0, 
+							     GL_BGRA, GL_UNSIGNED_BYTE,
+							     cmap.constBits());
+    }
+    glBindTexture(GL_TEXTURE_2D,0);
+  }
   glDisable(GL_TEXTURE_2D);
 	checkGLError();
 }

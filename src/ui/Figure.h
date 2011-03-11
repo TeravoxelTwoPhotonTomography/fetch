@@ -39,7 +39,7 @@ public:
 	
 public slots:
 	inline void push(mylib::Array *im)                                       {_item->push(im);}
-	inline void imshow(mylib::Array *im)                                     {_item->push(im); _item->flip(); _scene.setSceneRect(_scene.itemsBoundingRect());}
+	inline void imshow(mylib::Array *im)                                     {_item->push(im); _item->flip();}
 signals:
 	void lastFigureClosed();
 protected:
