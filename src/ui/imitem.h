@@ -24,6 +24,9 @@ public:
   void flip(int isupdate=1);
 
 	inline const QRectF& bbox_px() {return _bbox_px;}
+
+         void   setPixelSizeMicrons(double width, double height);
+  inline QSizeF pixelSizeMeters()                                         {return _pixel_size_meters;}
 signals:
   void sizeChanged(const QRectF& bbox);                                    // [?] is this ever used?  What units does bbox have here?
 protected:

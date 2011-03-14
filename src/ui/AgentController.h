@@ -57,6 +57,8 @@ namespace ui {
   public:
     AgentControllerButtonPanel(AgentController *ac, Task *task=NULL);
 
+    inline AgentController* controller() {return ac_;}
+
   public:
     QState 
       *taskDetached,

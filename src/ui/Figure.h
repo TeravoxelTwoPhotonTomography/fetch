@@ -15,9 +15,11 @@ class ZoomableView:public QGraphicsView
 public:
 	ZoomableView(QGraphicsScene *scene, QWidget *parent=0);
 	
-  inline double metersToPixels()                                           {return _scalebar.scale();}
-  inline void   setMetersToPixels(double unit2px)                          {_scalebar.setScale(unit2px);}
+  //inline double metersToPixels()                                           {return _scalebar.unit2px();}
+  //inline void   setMetersToPixels(double unit2px)                          {_scalebar.setUnit(unit2px);}
 	virtual void	wheelEvent(QWheelEvent *event);
+
+  inline void notifyZoomChanged()                                            {emit zoomChanged(transform().m11());}
 signals:
 	void zoomChanged(double zoom);
 	
@@ -38,17 +40,29 @@ public:
   virtual ~Figure();
 	
 public slots:
-	inline void push(mylib::Array *im)                                       {_item->push(im);}
-	inline void imshow(mylib::Array *im)                                     {_item->push(im); _item->flip();}
+	inline void push(mylib::Array *im)                                       {_item->push(im); emit pushed(); maybeFit();}
+	inline void imshow(mylib::Array *im)                                     {_item->push(im); _item->flip(); maybeFit(); }
+  inline void fit(void)                                                    {_view->fitInView(_item->boundingRect(),Qt::KeepAspectRatio);_view->notifyZoomChanged();}
+  inline void fitNext(void)                                                {_isFitOnNext=true;}
+
+  inline void setPixelSizeMicrons(double w, double h)                      {_item->setPixelSizeMicrons(w,h);}
+
 signals:
 	void lastFigureClosed();
+  void pushed();
+
 protected:
   void readSettings();
   void writeSettings();
+
+private:
+  inline void maybeFit()                                                   {if(_isFitOnNext) {fit(); _isFitOnNext=false;}}
 private:
 	ZoomableView*      _view;
 	QGraphicsScene     _scene;
 	ImItem*            _item;
+
+  bool _isFitOnNext;
 };
 
 

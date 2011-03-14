@@ -131,6 +131,10 @@ void fetch::ui::MainWindow::createViews()
   _display = new Figure;
   _player  = new AsynqPlayer(_dc->getVideoChannel(),_display);
   setCentralWidget(_display);
+  connect(_videoAcquisitionDockWidget,SIGNAL(onRun()),
+          _display,                   SLOT(fitNext()));
+  connect(_stackAcquisitionDockWidget,SIGNAL(onRun()),
+          _display,                   SLOT(fitNext()));
   _player->start();
 }
 

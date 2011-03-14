@@ -19,9 +19,13 @@ using namespace mylib;
 namespace fetch{
 namespace ui{
 
+/************************************************************************/
+/* ZOOMABLE VIEW                                                        */
+/************************************************************************/
+
 ZoomableView::ZoomableView(QGraphicsScene *scene, QWidget *parent)
 	: QGraphicsView(scene,parent) 
-  , _scalebar(1.0/(200e-9))
+  , _scalebar()
 {	QObject::connect(this     ,SIGNAL(zoomChanged(double)),
 									&_scalebar,SLOT(setZoom(double)));
   setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing);
@@ -33,7 +37,7 @@ void	ZoomableView::wheelEvent(QWheelEvent *event)
 	d = event->delta()/MOUSEWHEEL_SCALE;
 	s = powf(MOUSEWHEEL_POW,-d);
 	scale(s,s);
-	emit zoomChanged(s);
+  notifyZoomChanged();	
 }
 
 void
@@ -97,8 +101,9 @@ Figure::readSettings()
     qDebug() << "\t" << k;
 #endif 
   settings.beginGroup("voxel");
-  double um = settings.value("width_um",0.2).toDouble();
-  _view->setMetersToPixels(1e6/um);
+  double w = settings.value("width_um",0.1).toDouble(),
+         h = settings.value("height_um",0.1).toDouble();
+  setPixelSizeMicrons(w,h);
   settings.endGroup();
 }
 
@@ -106,7 +111,9 @@ void
 Figure::writeSettings()
 { QSettings settings;
   settings.beginGroup("voxel");
-  settings.setValue("width_um",1e6/_view->metersToPixels());  
+  QSizeF px = _item->pixelSizeMeters();
+  settings.setValue("width_um",px.width()*1e6);
+  settings.setValue("height_um",px.height()*1e6);
   settings.endGroup();
   settings.sync();
 }

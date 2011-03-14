@@ -21,7 +21,9 @@ namespace ui {
     parent->_pockels_controller->createLineEditAndAddToLayout(form);
 
     AgentControllerButtonPanel *btns = new AgentControllerButtonPanel(&parent->_scope_state_controller,&dc->interaction_task);
-    form->addRow(btns);
+    form->addRow(btns);      
+
+    connect(btns->controller(),SIGNAL(onRun()),this,SIGNAL(onRun()));
   }
 
 

@@ -55,14 +55,14 @@ static inline double suggestWidth(double scale,double aspect,double hpx)
   return pow(10.0,floor(0.5+(log10(aspect*hpx/scale))));
 }
 
-ScaleBar::ScaleBar(double unit2px, double aspect, QObject *parent)
+ScaleBar::ScaleBar(double aspect, double zoom, QObject *parent)
   : QObject(parent)
   , text_("Not set")
   , text_pos_()
   , rect_()
   , aspect_(aspect)
   , width_units_(0.0)
-  , unit2px_(unit2px)
+  , scale_(zoom)
 { 
 	
 	//text_.setDefaultTextColor(QColor(255,255,255,255));
@@ -71,7 +71,7 @@ ScaleBar::ScaleBar(double unit2px, double aspect, QObject *parent)
 	text_.prepare(QTransform(),font_);
   //rect_.setPen(QColor(0,0,0,255));
   //rect_.setBrush(QColor(255,255,255,255));
-  setScale(unit2px);
+  setZoom(zoom);  
 }
 
 QRectF
@@ -112,36 +112,34 @@ ScaleBar::paint(QPainter *painter, const QRectF& rect)
 }
 
 void
-ScaleBar::setScale(double unit2px)
+ScaleBar::setZoom(double scale)
 { int hpx;
 	QFontMetrics fm(font_);
 	hpx = fm.height()/2;
 	
 	double disp;
-  double w = suggestWidth(unit2px,aspect_,hpx);
+  double w = suggestWidth(scale,aspect_,hpx);
   int itxt = findTextUnit(w,&disp);
 	
 #if 0
-  qDebug() << " *** SCALE ---";
-	qDebug() << " *** SCALE --- unit2px: " << unit2px;
-	qDebug() << " *** SCALE ---       w: " << w;
-	qDebug() << " *** SCALE ---    itxt: " << itxt;
+  qDebug() << " *** SCALE ---";	
+  qDebug() << " *** SCALE ---     zoom: " << scale;  
+	qDebug() << " *** SCALE ---        w: " << w;
+	qDebug() << " *** SCALE ---     itxt: " << itxt;
 	qDebug() << " *** SCALE ---";
 #endif
 	
   if(itxt<0) return; // none found, so don't change
   
-  unit2px_ = unit2px;
+  //unit2px_ = unit2px;
+  scale_   = scale;
   width_units_ = w;
   text_.setText(QString("%1 %2").arg((int)disp).arg(UnitTable[itxt].lbl_));
-  rect_.setRect(0,0,width_units_*unit2px_,hpx);
+  rect_.setRect(0,0,width_units_*scale_,hpx);
 	QRectF r(text_pos_,text_.size());
 	r.moveCenter(rect_.center());
 	r.moveLeft(rect_.right());
 	text_pos_ = r.topLeft();
-}
 
-void
-ScaleBar::setZoom(double zoom)
-{ setScale(unit2px_*zoom);
+  return;
 }

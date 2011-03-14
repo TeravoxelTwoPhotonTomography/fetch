@@ -21,6 +21,8 @@ namespace ui {
 
     AgentControllerButtonPanel *btns = new AgentControllerButtonPanel(&parent->_scope_state_controller,&dc->stack_task);
     form->addRow(btns);
+
+    connect(btns->controller(),SIGNAL(onRun()),this,SIGNAL(onRun()));
   }
 
 

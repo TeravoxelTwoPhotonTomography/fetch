@@ -23,7 +23,7 @@ ImItem::ImItem()
   _text("Nothing to see here :/"),
   _hQuadDisplayList(0),
 	_hTexture(0),
-  _pixel_size_meters(0.1,0.2),
+  _pixel_size_meters(100e-9,200e-9),
   _loaded(0)
 { 	
   _text.setBrush(Qt::yellow);
@@ -48,13 +48,12 @@ QRectF ImItem::boundingRect() const
   return QRectF(QPointF(t,l),QPointF(b,r));
 }
 
-
 void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget /* = 0 */)
 { 
   if(_loaded)
   {  
     painter->beginNativePainting();
-		checkGLError();
+		checkGLError();                                                                              
 
     glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D, _hTexture);
@@ -208,6 +207,12 @@ void ImItem::push(mylib::Array *plane)
 	_loadTex(plane);
 	updateDisplayLists();
 	checkGLError();
+}
+
+void ImItem::setPixelSizeMicrons(double w_um, double h_um)
+{ _pixel_size_meters.setHeight(h_um*1e-6);
+  _pixel_size_meters.setWidth(w_um*1e-6);
+  updateDisplayLists();
 }
 
 #include <QtDebug>

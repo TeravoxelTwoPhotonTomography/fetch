@@ -16,7 +16,9 @@ namespace fetch{
       typedef device::Microscope::Config Config;
 
       VideoAcquisitionDockWidget(device::Microscope *dc, MainWindow* parent);
-
+        
+    signals:
+      void onRun();
 
     private:      
       void createForm();

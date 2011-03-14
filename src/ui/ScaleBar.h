@@ -10,17 +10,20 @@ class ScaleBar: public QObject
   Q_OBJECT
 
 public:
-  ScaleBar(double         unit2px, 
-           double         aspect    = 5.0*GOLDENRATIO, 
+  ScaleBar(double         aspect    = 5.0*GOLDENRATIO, 
+           double         zoom      = 1.0,
            QObject*       parent    = 0);
 
   QRectF boundingRect() const;
   void   paint       (QPainter* painter,const QRectF& rect);
 
-  inline double scale() {return unit2px_;}
+  //inline double unit2px() {return scale_;}
+
+protected:
+  bool setUnitAndScale(double unit2px, double scale); //returns true if change was accepted
 	
 public slots:
-  void setScale(double unit2px);
+  //void setUnit(double unit2px);
 	void setZoom(double zoom);
   
 signals:
@@ -34,5 +37,6 @@ private:
   QRectF            rect_;          // The "bar" part of the scale bar.
   double            aspect_;
   double            width_units_;   // The width of the scale bar in "units."
-  double            unit2px_;       // The conversion form "unit" to pixels.
+  
+  double            scale_;         // The view's scale - The conversion from "unit" to pixels.
 };

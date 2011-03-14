@@ -17,6 +17,8 @@ namespace fetch{
 
       StackAcquisitionDockWidget(device::Microscope *dc, MainWindow* parent);
 
+    signals:
+      void onRun();
 
     private:      
       void createForm();
