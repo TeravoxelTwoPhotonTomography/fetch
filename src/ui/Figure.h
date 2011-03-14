@@ -5,6 +5,7 @@ namespace mylib {
 }
 #include "imitem.h"
 #include "ScaleBar.h"
+#include "StageView.h"
 
 namespace fetch {
 namespace ui {
@@ -61,6 +62,7 @@ private:
 	ZoomableView*      _view;
 	QGraphicsScene     _scene;
 	ImItem*            _item;
+  StageView*         _stage;
 
   bool _isFitOnNext;
 };

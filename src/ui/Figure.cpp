@@ -75,9 +75,13 @@ Figure::Figure(QWidget *parent/*=0*/)
 
   _scene.setBackgroundBrush(Qt::black);
 
+  _stage = new StageView;
+  _scene.addItem(_stage);
+  _stage->setZValue(-1); // ensure it gets drawn behind the usual items
+
 	_item = new ImItem;
 	_scene.addItem(_item);
-  checkGLError();
+  checkGLError(); 
 
 	QGridLayout *layout = new QGridLayout;
 	layout->setContentsMargins(0,0,0,0);
