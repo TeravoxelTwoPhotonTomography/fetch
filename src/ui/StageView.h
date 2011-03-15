@@ -17,6 +17,9 @@ public:
                         const QStyleOptionGraphicsItem *option,
                         QWidget                        *widget = 0);
 
+  virtual void mousePressEvent( QGraphicsSceneMouseEvent *event );
+
+
 private:
   QRectF  bbox_meters_;
   QPointF pos_meters_;

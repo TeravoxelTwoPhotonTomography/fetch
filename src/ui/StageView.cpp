@@ -44,4 +44,14 @@ StageView::paint(QPainter *p, const QStyleOptionGraphicsItem *o, QWidget *widget
 
 }
 
+void StageView::mousePressEvent( QGraphicsSceneMouseEvent *event )
+{
+  if(event->modifiers()==Qt::ControlModifier)
+  {
+    control_->moveTo(cvt<PlanarStageController::Unit,PIXEL_SCALE>(event->scenePos()));
+    event->accept();
+  }
+  event->ignore();
+}
+
 }} //end namespace fetch::ui

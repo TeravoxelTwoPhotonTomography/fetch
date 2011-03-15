@@ -78,6 +78,8 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
   _stage = new StageView(stageController);
   _scene.addItem(_stage);
   _stage->setZValue(-1); // ensure it gets drawn behind the usual items
+  connect(stageController,SIGNAL(moved(QPointF)),
+          this,SLOT(updatePos(QPointF)));
 
 	_item = new ImItem;
 	_scene.addItem(_item);
