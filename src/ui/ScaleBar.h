@@ -16,14 +16,8 @@ public:
 
   QRectF boundingRect() const;
   void   paint       (QPainter* painter,const QRectF& rect);
-
-  //inline double unit2px() {return scale_;}
-
-protected:
-  bool setUnitAndScale(double unit2px, double scale); //returns true if change was accepted
 	
-public slots:
-  //void setUnit(double unit2px);
+public slots:  
 	void setZoom(double zoom);
   
 signals:

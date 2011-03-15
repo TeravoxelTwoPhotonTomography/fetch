@@ -6,6 +6,7 @@
 #include "Figure.h"
 #include "Player.h"
 #include "StackAcquisitionDockWidget.h"
+#include "StageController.h"
 
 fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   :_dc(dc)
@@ -19,6 +20,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,_display(0)
   ,_player(0)
   ,_scope_state_controller(&dc->__self_agent)
+  ,_stageController(NULL)
   ,_resonant_turn_controller(NULL)
   ,_vlines_controller(NULL)
   ,_lsm_vert_range_controller(NULL)
@@ -33,6 +35,8 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   _zpiezo_max_control       = new ZPiezoMaxController(dc->zpiezo(), "Z Ma&x (um)");
   _zpiezo_min_control       = new ZPiezoMinController(dc->zpiezo(), "Z Mi&n (um)");
   _zpiezo_step_control      = new ZPiezoStepController(dc->zpiezo(),"Z &Step (um)");
+
+  _stageController          = new PlanarStageController(dc->stage());
   
 
   createActions();
@@ -43,6 +47,23 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   
   connect(&_poller,SIGNAL(timeout()),&_scope_state_controller,SLOT(poll()));
   _poller.start(50 /*ms*/);  
+}    
+
+#define SAFE_DELETE(expr) if(expr) delete (expr)
+
+fetch::ui::MainWindow::~MainWindow()
+{
+  SAFE_DELETE(_player);
+
+  SAFE_DELETE(_resonant_turn_controller);
+  SAFE_DELETE(_vlines_controller);
+  SAFE_DELETE(_lsm_vert_range_controller);
+  SAFE_DELETE(_pockels_controller);
+
+  SAFE_DELETE(_zpiezo_max_control);
+  SAFE_DELETE(_zpiezo_min_control);
+  SAFE_DELETE(_zpiezo_step_control);
+  
 }
 
 void fetch::ui::MainWindow::createActions()
@@ -128,7 +149,7 @@ void fetch::ui::MainWindow::createDockWidgets()
 
 void fetch::ui::MainWindow::createViews()
 {
-  _display = new Figure;
+  _display = new Figure(_stageController);
   _player  = new AsynqPlayer(_dc->getVideoChannel(),_display);
   setCentralWidget(_display);
   connect(_videoAcquisitionDockWidget,SIGNAL(onRun()),
@@ -143,17 +164,4 @@ void fetch::ui::MainWindow::closeEvent( QCloseEvent *event )
   _player->stop();
   _poller.stop();
   QMainWindow::closeEvent(event);  
-}
-
-#define SAFE_DELETE(expr) if(expr) delete (expr)
-
-fetch::ui::MainWindow::~MainWindow()
-{
-  SAFE_DELETE(_player);
-
-  SAFE_DELETE(_resonant_turn_controller);
-  SAFE_DELETE(_vlines_controller);
-  SAFE_DELETE(_lsm_vert_range_controller);
-  SAFE_DELETE(_pockels_controller);
-  
 }

@@ -155,7 +155,7 @@ namespace device {
       break;
     case cfg::device::Stage_StageType_Simulated:
       if(!_simulated)
-        _simulated = new SimulatedStage(_agent);
+        _simulated = new SimulatedStage(_agent,_config->mutable_simulated());
       _idevice = _simulated;
       _istage  = _simulated;
       break;

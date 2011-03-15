@@ -57,7 +57,7 @@ ZoomableView::drawForeground(QPainter* painter, const QRectF& rect)
 /* FIGURE                                                               */
 /************************************************************************/
 
-Figure::Figure(QWidget *parent/*=0*/)
+Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
 :QWidget(parent)
 {	
   _view = new ZoomableView(&_scene); 
@@ -73,9 +73,9 @@ Figure::Figure(QWidget *parent/*=0*/)
   _view->setDragMode(QGraphicsView::ScrollHandDrag); //RubberBandDrag would be nice for zooming...but need a change of mode
   _view->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
 
-  _scene.setBackgroundBrush(Qt::black);
+  _scene.setBackgroundBrush(Qt::darkRed);
 
-  _stage = new StageView;
+  _stage = new StageView(stageController);
   _scene.addItem(_stage);
   _stage->setZValue(-1); // ensure it gets drawn behind the usual items
 
@@ -127,6 +127,7 @@ Figure::~Figure()
   writeSettings();
 }
 
+#if 0
 struct OpenImageWidgetSet : QSet<Figure*>
 {
   virtual ~OpenImageWidgetSet() 
@@ -163,5 +164,6 @@ void imclose(Figure *w/*=0*/)
   w->close();
   delete w;
 }
+#endif
 
 }} //end namespace fetch::ui

@@ -188,6 +188,7 @@ qt4_wrap_cpp(MOC_SRCS
   src/ui/VideoAcquisitionDockWidget.h
   src/ui/StackAcquisitionDockWidget.h
   src/ui/AgentController.h
+  src/ui/StageController.h
   src/ui/DevicePropController.h
 )
 qt4_add_resources(RCC_SRCS

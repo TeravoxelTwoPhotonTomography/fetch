@@ -1,5 +1,9 @@
 #include "ScaleBar.h"
+#include "units.h"
 #include <QString>
+
+using namespace fetch::units;
+
 
 #define HERE printf("[ScaleBar] At %s(%d)\n",__FILE__,__LINE__)
 
@@ -118,7 +122,7 @@ ScaleBar::setZoom(double scale)
 	hpx = fm.height()/2;
 	
 	double disp;
-  double w = suggestWidth(scale,aspect_,hpx);
+  double w = suggestWidth(cvt<PIXEL_SCALE,M>(scale),aspect_,hpx);
   int itxt = findTextUnit(w,&disp);
 	
 #if 0
@@ -133,7 +137,7 @@ ScaleBar::setZoom(double scale)
   
   //unit2px_ = unit2px;
   scale_   = scale;
-  width_units_ = w;
+  width_units_ = cvt<PIXEL_SCALE,M>(w);
   text_.setText(QString("%1 %2").arg((int)disp).arg(UnitTable[itxt].lbl_));
   rect_.setRect(0,0,width_units_*scale_,hpx);
 	QRectF r(text_pos_,text_.size());

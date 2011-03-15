@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QtGui>
+#include <ui/StageController.h>
 
 namespace fetch {
 namespace ui {
@@ -8,7 +9,7 @@ namespace ui {
 class StageView: public QGraphicsItem
 {
 public:
-  StageView(QGraphicsItem *parent=0);
+  StageView(PlanarStageController *stageControl,QGraphicsItem *parent=0);
   virtual ~StageView();
 	
   QRectF boundingRect  () const;                                           // in meters
@@ -22,6 +23,8 @@ private:
 
   QPen    pen_;
   QBrush  brush_;
+
+  PlanarStageController *control_;
 };
 
 

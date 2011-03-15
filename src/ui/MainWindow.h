@@ -1,6 +1,7 @@
 #pragma once
 #include <QtGui>
 #include "ui/AgentController.h"
+#include "ui/StageController.h"
 #include "DevicePropController.h"
 
 namespace fetch {
@@ -49,7 +50,9 @@ public: // semi-private
   IPlayerThread *_player;
   
   QTimer _poller;
-  AgentController _scope_state_controller;  
+  AgentController _scope_state_controller;
+  
+  PlanarStageController*      _stageController;  
   
   // Property controllers
   ResonantTurnController*     _resonant_turn_controller;

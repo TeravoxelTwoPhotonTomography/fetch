@@ -36,7 +36,7 @@ class Figure:public QWidget
 {
   Q_OBJECT
 public:
-	Figure(QWidget *parent=0);
+	Figure(PlanarStageController *stageController, QWidget *parent=0);
   Figure(double unit2px, QWidget *parent=0);
   virtual ~Figure();
 	
@@ -68,7 +68,7 @@ private:
 };
 
 
-Figure* imshow (mylib::Array *im);
-void    imclose(Figure *w=0);
+//Figure* imshow (mylib::Array *im);
+//void    imclose(Figure *w=0);
 
 }} //end namespace fetch::ui

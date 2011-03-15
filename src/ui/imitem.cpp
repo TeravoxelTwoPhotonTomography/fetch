@@ -1,7 +1,9 @@
 #ifdef _WIN32
 #include <GL/glew.h>
 #endif
+
 #include <QtGui>
+#include "ui/uiunits.h"
 #include "ImItem.h"
 #include <util/util-mylib.h>
 namespace mylib {
@@ -17,6 +19,10 @@ namespace mylib {
 
 namespace fetch {
 namespace ui {
+
+
+using namespace units;
+
 
 ImItem::ImItem()
 : _fill(1.0),
@@ -45,7 +51,7 @@ QRectF ImItem::boundingRect() const
 	t = ph * _bbox_px.top();
 	l = pw * _bbox_px.left();
 	r = pw * _bbox_px.right();
-  return QRectF(QPointF(t,l),QPointF(b,r));
+  return cvt<PIXEL_SCALE,M>(QRectF(QPointF(t,l),QPointF(b,r)));
 }
 
 void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget /* = 0 */)
@@ -161,10 +167,10 @@ void ImItem::updateDisplayLists()
 	checkGLError();
   ph = _pixel_size_meters.height();
   pw = _pixel_size_meters.width();
-	b = ph * _bbox_px.bottom();
-	t = ph * _bbox_px.top();
-	l = pw * _bbox_px.left();
-	r = pw * _bbox_px.right();
+	b = cvt<PIXEL_SCALE,M>(ph * _bbox_px.bottom());
+	t = cvt<PIXEL_SCALE,M>(ph * _bbox_px.top());
+	l = cvt<PIXEL_SCALE,M>(pw * _bbox_px.left());
+	r = cvt<PIXEL_SCALE,M>(pw * _bbox_px.right());
 	
 	glNewList(_hQuadDisplayList, GL_COMPILE);
 	glBegin(GL_QUADS);
