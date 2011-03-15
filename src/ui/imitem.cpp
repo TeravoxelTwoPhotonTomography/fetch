@@ -43,15 +43,25 @@ ImItem::~ImItem()
 }
 
 QRectF ImItem::boundingRect() const
-{	float t,b,l,r;
-  float ph,pw;
-  ph = _pixel_size_meters.height();
-  pw = _pixel_size_meters.width();
-	b = ph * _bbox_px.bottom();
-	t = ph * _bbox_px.top();
-	l = pw * _bbox_px.left();
-	r = pw * _bbox_px.right();
-  return cvt<PIXEL_SCALE,M>(QRectF(QPointF(t,l),QPointF(b,r)));
+{	QRectF bbox;
+  if(_loaded)
+  { 
+    float t,b,l,r;
+    float ph,pw;
+    ph = _pixel_size_meters.height();
+    pw = _pixel_size_meters.width();
+	  b = ph * _bbox_px.bottom();
+	  t = ph * _bbox_px.top();
+	  l = pw * _bbox_px.left();
+	  r = pw * _bbox_px.right();
+    bbox = cvt<PIXEL_SCALE,M>( QRectF(QPointF(t,l),QPointF(b,r)) );
+    bbox.moveCenter(pos());
+  } else
+  { 
+    bbox = _text.boundingRect();
+    bbox.moveTopLeft(pos());
+  }       
+  return bbox;  
 }
 
 void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget /* = 0 */)
@@ -209,16 +219,26 @@ void ImItem::push(mylib::Array *plane)
 	_fill = 10.0/_nchan;
 	_fill = (_fill>1.0)?1.0:_fill;
 	
-	_bbox_px = QRectF(-w/2.0,-h/2.0,w,h);
+  { QRectF b = QRectF(-w/2.0,-h/2.0,w,h);  
+    if(b!=_bbox_px)
+      prepareGeometryChange();
+  	_bbox_px = b;
+  }
 	_loadTex(plane);
 	updateDisplayLists();
 	checkGLError();
 }
 
 void ImItem::setPixelSizeMicrons(double w_um, double h_um)
-{ _pixel_size_meters.setHeight(h_um*1e-6);
-  _pixel_size_meters.setWidth(w_um*1e-6);
-  updateDisplayLists();
+{ QSizeF t;
+  t.setHeight(h_um*1e-6);
+  t.setWidth(w_um*1e-6);
+  if(t!=_pixel_size_meters)
+  {
+    prepareGeometryChange();
+    _pixel_size_meters = t;
+    updateDisplayLists();
+  }
 }
 
 #include <QtDebug>

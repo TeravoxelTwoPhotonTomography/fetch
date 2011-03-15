@@ -89,6 +89,7 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
 	setLayout(layout);
 
   readSettings();
+  updatePos();
 }
 
 void

@@ -45,6 +45,7 @@ public slots:
 	inline void imshow(mylib::Array *im)                                     {_item->push(im); _item->flip(); maybeFit(); }
   inline void fit(void)                                                    {_view->fitInView(_item->boundingRect(),Qt::KeepAspectRatio);_view->notifyZoomChanged();}
   inline void fitNext(void)                                                {_isFitOnNext=true;}
+  inline void updatePos(void)                                              {_item->setPos(units::cvt<units::PIXEL_SCALE,PlanarStageController::Unit>(_stage->pos()));}
 
   inline void setPixelSizeMicrons(double w, double h)                      {_item->setPixelSizeMicrons(w,h);}
 
