@@ -55,7 +55,7 @@ QRectF ImItem::boundingRect() const
 	  l = pw * _bbox_px.left();
 	  r = pw * _bbox_px.right();
     bbox = cvt<PIXEL_SCALE,M>( QRectF(QPointF(t,l),QPointF(b,r)) );
-    //bbox.moveCenter(pos());
+    bbox.moveCenter(QPointF(0.0,0.0));
   } else
   { 
     bbox = _text.boundingRect();
