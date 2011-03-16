@@ -16,4 +16,5 @@ message Microscope
   optional string                      file_prefix           = 8 [default="default"];
   optional string                      stack_extension       = 9 [default=".tif"];
   optional string                      config_extension      =10 [default=".microscope"];
+  optional string                      metadata_extension    =11 [default=".acquisition"];
 }

@@ -156,13 +156,14 @@ void ImItem::_loadTex(mylib::Array *im)
   glActiveTexture(GL_TEXTURE0);
   glEnable(GL_TEXTURE_3D);
 	glBindTexture(GL_TEXTURE_3D, _hTexture);
-  GLuint gltype = typeMapMylibToGLType(&im);
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_LUMINANCE,
-							 _bbox_px.width(), _bbox_px.height(), _nchan, 0,
-							 GL_LUMINANCE,
-               gltype,
-							 im->data);  
+    GLuint gltype = typeMapMylibToGLType(&im);
+    //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	  glTexImage3D(GL_TEXTURE_3D, 0, GL_LUMINANCE,
+							   _bbox_px.width(), _bbox_px.height(), _nchan, 0,
+							   GL_LUMINANCE,
+                 gltype,
+							   im->data);  
+  glBindTexture(GL_TEXTURE_3D, 0);
   glDisable(GL_TEXTURE_3D);
 	checkGLError();
   if(original!=im) // typeMapMylibToGLType() had to make a copy.  Free it now.

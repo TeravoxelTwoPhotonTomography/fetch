@@ -1,0 +1,8 @@
+package fetch.cfg.data;
+
+message Acquisition
+{ 
+  optional float x_mm = 1;
+  optional float y_mm = 2;
+  optional float z_mm = 3;
+}

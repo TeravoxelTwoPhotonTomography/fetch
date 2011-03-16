@@ -82,26 +82,29 @@ namespace fetch
       virtual void _set_config(Config IN *cfg);
       virtual void _set_config(const Config& cfg);
 
-      IDevice* configPipeline();  // returns the end of the pipeline
+      IDevice* configPipeline();                                           // returns the end of the pipeline
       unsigned int runPipeline();
 
       inline IDevice* pipelineEnd() {return &wrap;}
-    public:
-      const std::string stack_filename();  // get the current file
-      const std::string config_filename(); // get the current file
 
     public:
-      device::Scanner3D                 scanner;
-      device::Stage                     stage_;
+      const std::string stack_filename();                                  // get the current file
+      const std::string config_filename();                                 // get the current file
+      const std::string metadata_filename();       
+                   void write_stack_metadata();     
 
-      worker::FrameAverageAgent 	      frame_averager;
-      worker::HorizontalDownsampleAgent pixel_averager;
-      worker::FrameCastAgent_i16        cast_to_i16;
-      worker::FrameInvertAgent          inverter;
-      worker::ResonantWrapAgent         wrap;
+    public:
+      device::Scanner3D                  scanner;
+      device::Stage                      stage_;
 
-      worker::TerminalAgent		          trash;                
-      device::TiffStream                disk;
+      worker::FrameAverageAgent 	       frame_averager;
+      worker::HorizontalDownsampleAgent  pixel_averager;
+      worker::FrameCastAgent_i16         cast_to_i16;
+      worker::FrameInvertAgent           inverter;
+      worker::ResonantWrapAgent          wrap;
+
+      worker::TerminalAgent		           trash;                
+      device::TiffStream                 disk;
                                                        
       task::microscope::Interaction      interaction_task;
       task::microscope::StackAcquisition stack_task;      

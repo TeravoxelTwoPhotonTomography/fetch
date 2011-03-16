@@ -46,7 +46,9 @@ ZoomableView::drawForeground(QPainter* painter, const QRectF& rect)
 	QRectF sc = _scalebar.boundingRect();
 	sc.moveBottomRight(vp.bottomRight());
 	
+  
 	painter->resetTransform();
+  
 	// translate, but allow for a one px border 
 	// between text and the edge of the viewport
 	painter->translate(sc.topLeft()-QPointF(2,2));
@@ -70,14 +72,14 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
 	assert(viewport->context()->isValid());
   assert(viewport->isValid());
   
-  _view->setDragMode(QGraphicsView::ScrollHandDrag); //RubberBandDrag would be nice for zooming...but need a change of mode
+  _view->setDragMode(QGraphicsView::ScrollHandDrag);                       //RubberBandDrag would be nice for zooming...but need a change of mode
   _view->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
 
   _scene.setBackgroundBrush(Qt::darkRed);
 
   _stage = new StageView(stageController);
   _scene.addItem(_stage);
-  _stage->setZValue(-1); // ensure it gets drawn behind the usual items
+  _stage->setZValue(-1);                                                   // ensure it gets drawn behind the usual items
   connect(stageController,SIGNAL(moved(QPointF)),
           this,SLOT(updatePos(QPointF)));
 

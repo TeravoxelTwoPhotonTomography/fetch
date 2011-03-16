@@ -10,8 +10,7 @@
  * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
-#include <iostream>
-#include <fstream>
+
 
 #include "common.h"
 #include "StackAcquisition.h"
@@ -148,12 +147,9 @@ namespace fetch
               eflag |= 1; //failure              
           }
           
-          // Increment file
+          // Output metadata and Increment file
           eflag |= dc->disk.close();
-          std::string cfgname =  dc->config_filename();
-          { std::ofstream cfgout(cfgname,std::ios::out|std::ios::binary|std::ios::trunc);
-            dc->get_config().SerializePartialToOstream(&cfgout);
-          }
+          dc->write_stack_metadata();
           dc->file_series.inc();
           
           //dc->connect(&dc->disk,0,dc->pipelineEnd(),0);

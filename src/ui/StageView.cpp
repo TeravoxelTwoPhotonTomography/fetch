@@ -32,15 +32,15 @@ StageView::paint(QPainter *p, const QStyleOptionGraphicsItem *o, QWidget *widget
   p->setPen(pen_);
   p->setBrush(brush_);
   p->drawRect(cvt<PIXEL_SCALE,M>(bbox_meters_));
-  qDebug()<<"10 cm to " << cvt<MM,CM>(10.0) << " mm";
-  qDebug()<<"StageView - paint - " << *o;  
-  qDebug()<<"StageView - paint - lod()  - " << o->levelOfDetailFromTransform(p->worldTransform());
-  qDebug()<<"StageView - paint - exrect - " << o->exposedRect;
-  qDebug()<<"StageView - paint -   rect - " << o->rect;
-  if(widget)
-    qDebug()<<"StageView - paint - " << widget->geometry();
-  else
-    qDebug()<<"StageView - paint - NONE";
+  //qDebug()<<"10 cm to " << cvt<MM,CM>(10.0) << " mm";
+  //qDebug()<<"StageView - paint - " << *o;  
+  //qDebug()<<"StageView - paint - lod()  - " << o->levelOfDetailFromTransform(p->worldTransform());
+  //qDebug()<<"StageView - paint - exrect - " << o->exposedRect;
+  //qDebug()<<"StageView - paint -   rect - " << o->rect;
+  //if(widget)
+  //  qDebug()<<"StageView - paint - " << widget->geometry();
+  //else
+  //  qDebug()<<"StageView - paint - NONE";
 
 }
 

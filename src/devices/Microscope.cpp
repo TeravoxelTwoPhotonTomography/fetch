@@ -12,8 +12,13 @@
  */
  
  
- #include "Microscope.h"
- #include <time.h>
+#include "Microscope.h"
+#include <time.h>
+
+#include <iostream>
+#include <fstream>
+#include "stack.pb.h"
+#include "google\protobuf\text_format.h"
  
  namespace fetch
 { namespace device {
@@ -152,6 +157,37 @@
     const std::string Microscope::config_filename()
     {     
       return file_series.getFullPath(_config->file_prefix(),_config->config_extension());
+    }        
+
+    const std::string Microscope::metadata_filename()
+    {
+      return file_series.getFullPath(_config->file_prefix(),_config->metadata_extension());
+    }
+
+    void Microscope::write_stack_metadata()
+    {      
+      //{ std::ofstream fout(config_filename(),std::ios::out|std::ios::trunc|std::ios::binary);
+      //  get_config().SerializePartialToOstream(&fout);
+      //}      
+      { std::ofstream fout(config_filename(),std::ios::out|std::ios::trunc);
+        std::string s;
+        Config c = get_config();
+        google::protobuf::TextFormat::PrintToString(c,&s);
+        fout << s;
+        //get_config().SerializePartialToOstream(&fout);
+      }
+      { float x,y,z;
+        std::ofstream fout(metadata_filename(),std::ios::out|std::ios::trunc);
+        fetch::cfg::data::Acquisition data;
+        stage_.getPos(&x,&y,&z);
+        data.set_x_mm(x);
+        data.set_y_mm(y);
+        data.set_z_mm(z);        
+        std::string s;
+        google::protobuf::TextFormat::PrintToString(data,&s);
+        fout << s;        
+        //get_config().SerializePartialToOstream(&fout);
+      }
     }
 
     void Microscope::_set_config( Config IN *cfg )
