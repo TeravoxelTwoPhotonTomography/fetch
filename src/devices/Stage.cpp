@@ -12,6 +12,7 @@
 */
 
 
+#include <list>
 #include "stage.h"
 #include "task.h"
 

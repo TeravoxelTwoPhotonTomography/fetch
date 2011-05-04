@@ -2,6 +2,7 @@
 #include "object.h"
 #include "stage.pb.h" 
 #include "agent.h"
+#include <list>
 
 namespace fetch {
 namespace device {
@@ -67,12 +68,22 @@ namespace device {
       virtual void setPosNoWait      ( float  x, float  y, float  z)       {setPos(x,y,z);}
   };
 
+  struct TilePos
+  { float x,y,z;
+  };
+
   class Stage:public StageBase<cfg::device::Stage>
   {
+  public:
+    typedef std::list<TilePos> TilePosList;
+
+  private:
     C843Stage      *_c843;
     SimulatedStage *_simulated;
     IDevice        *_idevice;
     IStage         *_istage;
+    TilePosList     _tiling;
+    
     public:
       Stage(Agent *agent);
       Stage(Agent *agent, Config *cfg);
@@ -84,13 +95,17 @@ namespace device {
       void _set_config( Config IN *cfg );
       void _set_config( const Config &cfg );
 
-      virtual void getTravel         ( StageTravel* out)                  {_istage->getTravel(out);}
-      virtual void getVelocity       ( float *vx, float *vy, float *vz)   {_istage->getVelocity(vx,vy,vz);}
-      virtual int  setVelocity       ( float vx, float vy, float vz)      {return _istage->setVelocity(vx,vy,vz);}
-      virtual void setVelocityNoWait ( float vx, float vy, float vz)      {_istage->setVelocityNoWait(vx,vy,vz);}
-      virtual void getPos            ( float *x, float *y, float *z)      {_istage->getPos(x,y,z);}
-      virtual int  setPos            ( float  x, float  y, float  z)      {return _istage->setPos(x,y,z);}
-      virtual void setPosNoWait      ( float  x, float  y, float  z)      {_istage->setPosNoWait(x,y,z);}
+      virtual void getTravel         ( StageTravel* out)                    {_istage->getTravel(out);}
+      virtual void getVelocity       ( float *vx, float *vy, float *vz)     {_istage->getVelocity(vx,vy,vz);}
+      virtual int  setVelocity       ( float vx, float vy, float vz)        {return _istage->setVelocity(vx,vy,vz);}
+      virtual void setVelocityNoWait ( float vx, float vy, float vz)        {_istage->setVelocityNoWait(vx,vy,vz);}
+      virtual void getPos            ( float *x, float *y, float *z)        {_istage->getPos(x,y,z);}
+      virtual int  setPos            ( float  x, float  y, float  z)        {return _istage->setPos(x,y,z);}
+      virtual int  setPos            ( const TilePos &r)                    {return setPos(r.x,r.y,r.z);}
+      virtual int  setPos            ( const TilePosList::iterator &cursor) {return setPos(*cursor);}
+      virtual void setPosNoWait      ( float  x, float  y, float  z)        {_istage->setPosNoWait(x,y,z);}
+
+      inline  TilePosList& tiling()                                         {return _tiling;}
   };
   // end namespace fetch::Device
 }}

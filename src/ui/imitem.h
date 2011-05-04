@@ -26,6 +26,10 @@ public:
 	inline const QRectF& bbox_px() {return _bbox_px;}
 
          void   setPixelSizeMicrons(double width, double height);
+         void   setRotation(double radians);
+         void   setPixelGeometry(double width_um, double height_um, double radians);
+
+  inline double rotationRadians()                                         {return _rotation_radians;} 
   inline QSizeF pixelSizeMeters()                                         {return _pixel_size_meters;}
 signals:
   void sizeChanged(const QRectF& bbox);                                    // [?] is this ever used?  What units does bbox have here?
@@ -49,6 +53,7 @@ protected:
   GLuint _hTexCmap;
 
   QSizeF _pixel_size_meters;
+  double _rotation_radians;
 
   int _loaded;
 };

@@ -110,9 +110,10 @@ Figure::readSettings()
     qDebug() << "\t" << k;
 #endif 
   settings.beginGroup("voxel");
-  double w = settings.value("width_um",0.1).toDouble(),
-         h = settings.value("height_um",0.1).toDouble();
-  setPixelSizeMicrons(w,h);
+  double w  = settings.value("width_um",0.1).toDouble(),
+         h  = settings.value("height_um",0.1).toDouble(),
+         th = settings.value("rotation_rad",0.0).toDouble();
+  _item->setPixelGeometry(w,h,th);
   settings.endGroup();
 }
 
@@ -121,8 +122,10 @@ Figure::writeSettings()
 { QSettings settings;
   settings.beginGroup("voxel");
   QSizeF px = _item->pixelSizeMeters();
+  double th = _item->rotationRadians();
   settings.setValue("width_um",px.width()*1e6);
   settings.setValue("height_um",px.height()*1e6);
+  settings.setValue("rotation_rad",th);
   settings.endGroup();
   settings.sync();
 }

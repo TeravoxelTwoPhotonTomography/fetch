@@ -94,7 +94,8 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
 		_shader.setUniformValue("fill",(GLfloat)_fill);
 		_shader.setUniformValue("gain",(GLfloat)1.0  );
 		_shader.setUniformValue("bias",(GLfloat)0.0  );
-    checkGLError();
+    checkGLError();    
+    glRotatef(_rotation_radians*180.0/M_PI,0.0,0.0,1.0);
 		glCallList(_hQuadDisplayList);
     _shader.release();
 
@@ -173,7 +174,7 @@ void ImItem::_loadTex(mylib::Array *im)
 
 void ImItem::updateDisplayLists()
 { 
-	float t,b,l,r;
+	float t,b,l,r;//,cx,cy;
   float ph,pw;
 	checkGLError();
   ph = _pixel_size_meters.height();
@@ -182,13 +183,15 @@ void ImItem::updateDisplayLists()
 	t = cvt<PIXEL_SCALE,M>(ph * _bbox_px.top());
 	l = cvt<PIXEL_SCALE,M>(pw * _bbox_px.left());
 	r = cvt<PIXEL_SCALE,M>(pw * _bbox_px.right());
+  //cx = cvt<PIXEL_SCALE,M>(pw * _bbox_px.center().x());
+  //cy = cvt<PIXEL_SCALE,M>(pw * _bbox_px.center().y());
 	
 	glNewList(_hQuadDisplayList, GL_COMPILE);
 	glBegin(GL_QUADS);
 	glTexCoord2f(1.0, 0.0); glVertex2f(r, b);
 	glTexCoord2f(1.0, 1.0); glVertex2f(r, t);				
 	glTexCoord2f(0.0, 1.0); glVertex2f(l, t);				
-	glTexCoord2f(0.0, 0.0); glVertex2f(l, b);				
+	glTexCoord2f(0.0, 0.0); glVertex2f(l, b);		
 	glEnd();
 	glEndList();
 	
@@ -240,6 +243,31 @@ void ImItem::setPixelSizeMicrons(double w_um, double h_um)
     _pixel_size_meters = t;
     updateDisplayLists();
   }
+}
+
+#define DBL_EQ(a,b) (abs((b)-(a))<1e-6)
+
+void ImItem::setRotation( double radians )
+{ if(!DBL_EQ(radians,_rotation_radians))
+  {
+    prepareGeometryChange();
+    _rotation_radians = radians;
+    updateDisplayLists();
+  }
+}
+        
+void ImItem::setPixelGeometry( double w_um, double h_um, double radians )
+{ QSizeF t;
+  t.setHeight(h_um*1e-6);
+  t.setWidth(w_um*1e-6);
+  if(  (t!=_pixel_size_meters) ||  !DBL_EQ(radians,_rotation_radians)  )
+  {
+    prepareGeometryChange();
+    _pixel_size_meters = t;
+    _rotation_radians = radians;
+    updateDisplayLists();
+  }
+
 }
 
 #include <QtDebug>

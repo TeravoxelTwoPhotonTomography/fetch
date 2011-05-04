@@ -49,6 +49,7 @@ public slots:
   inline void updatePos(QPointF r)                                         {_item->setPos(units::cvt<units::PIXEL_SCALE,PlanarStageController::Unit>(r));}
 
   inline void setPixelSizeMicrons(double w, double h)                      {_item->setPixelSizeMicrons(w,h);}
+  inline void setPixelGeometry(double w, double h, double angle)           {_item->setPixelGeometry(w,h,angle);}
 
 signals:
 	void lastFigureClosed();
