@@ -83,6 +83,23 @@ namespace fetch {
     mins = labox.rowwise().minCoeff();
 
     latticeToStage_.translate(-mins);
+    Vector<mylib::Dimn_Type,3> c((max-min).cast<mylib::Dimn_Type>());
+    return mylib::Coord3(c(0)+1,c(1)+1,c(2)+1); //shape of the lattice
+  }
+
+  //  initMask_  ///////////////////////////////////////////////////////
+  //
+
+  void StageTiling::initMask_(mylib::Coordinate *shape)
+  { mask_ = mylib::Make_Array_With_Shape(
+      mylib::PLAIN_KIND,
+      mylib::UINT8_TYPE,
+      shape);
+
+    memset(mask_,0,sizeof(uint8_t)*mask_->size); //unset
+
+    //TODO: set stage addressable lattice points
 
   }
+
 } // end namespace fetch

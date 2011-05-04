@@ -40,8 +40,9 @@ namespace fetch {
 
     enum Flags
     { 
-      Active  = 1,
-      Success = 2,
+      Addressable = 1,
+      Active      = 2,
+      Success     = 3,
     };
 
   public:
