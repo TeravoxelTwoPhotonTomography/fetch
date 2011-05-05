@@ -13,9 +13,10 @@ namespace fetch {
     :
       mask_(NULL),
       latticeToStage_()
-  {
+  { StageTravel t = travel;
     computeLatticeToStageTransform_(fov,alignment);
     initMask_(computeLatticeExtents_(travel));
+    markAddressable_(&t);
   }
 
   //  Destructors  /////////////////////////////////////////////////////
@@ -100,6 +101,44 @@ namespace fetch {
 
     //TODO: set stage addressable lattice points
 
+  }
+
+
+	struct FloodFillArgs
+	{ StageTiling *self;
+	  StageTravel *travel;
+	};
+	  
+  static mylib::boolean isInBox(Indx_Type p, void *argt)
+  { 
+  	FloodFillArgs *args      = (FloodFillArgs)argt;
+  	StageTiling   *self    = args->self;
+  	StageTravel *travel      = args->travel;
+  	mylib::Coordinate *coord = mylib::Idx2CoordA(args->self->mask_,p);
+  	Vector3f c               = Map<Vector3f>(coord->data),
+             r               = arg->self->latticeToStage_ * r;
+    return ( (travel.x.min<r(0)) && (r(0)>travel.x.max) ) &&
+           ( (travel.y.min<r(1)) && (r(1)>travel.y.max) ) &&
+           ( (travel.z.min<r(2)) && (r(2)>travel.z.max) );
+  }
+
+  static void totalDoNothing(Size_Type, void *)
+  { }
+
+  static void actionMarkAddressable(Indx_Type p, void *arga)
+  { 
+  	FloodFillArgs *args         = (FloodFillArgs)arga;
+  	args->self->mask_->data[p]| = StageTiling::Addressable;
+  }
+
+  void StageTiling::markAddressable_(StageTiling *travel)
+  { 
+    FloodFillArgs args(this,travel);
+    Indx_Type p = Find_Leftmost_Seed(mask_,1,0/*conn*/,0/*seed*/,&args,isInBox);
+    Flood_Object(mask_,1,0,p,
+        &args,isInBox,
+        NULL,totalDoNothing,
+        &args,actionMarkAddressable);
   }
 
 } // end namespace fetch
