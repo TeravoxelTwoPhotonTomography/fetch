@@ -78,11 +78,11 @@ namespace device {
     typedef std::list<TilePos> TilePosList;
 
   private:
-    C843Stage      *_c843;
-    SimulatedStage *_simulated;
-    IDevice        *_idevice;
-    IStage         *_istage;
-    TilePosList     _tiling;
+    C843Stage          *_c843;
+    SimulatedStage     *_simulated;
+    IDevice            *_idevice;
+    IStage             *_istage;
+    StageTiling        *_tiling;
     
     public:
       Stage(Agent *agent);
@@ -90,8 +90,8 @@ namespace device {
 
       void setKind(Config::StageType kind);
 
-      virtual unsigned int on_attach() {return _idevice->on_attach();}
-      virtual unsigned int on_detach() {return _idevice->on_detach();}
+      virtual unsigned int on_attach() {return _idevice->on_attach(); _createTiling();}
+      virtual unsigned int on_detach() {return _idevice->on_detach(); if(_tiling) delete _tiling; _tiling=NULL;}
       void _set_config( Config IN *cfg );
       void _set_config( const Config &cfg );
 
@@ -104,8 +104,10 @@ namespace device {
       virtual int  setPos            ( const TilePos &r)                    {return setPos(r.x,r.y,r.z);}
       virtual int  setPos            ( const TilePosList::iterator &cursor) {return setPos(*cursor);}
       virtual void setPosNoWait      ( float  x, float  y, float  z)        {_istage->setPosNoWait(x,y,z);}
-
-      inline  TilePosList& tiling()                                         {return _tiling;}
+  
+      inline  StageTiling& tiling()                                         {return _tiling;}
+  protected:
+      void    _createTiling();       //only call when disarmed
   };
   // end namespace fetch::Device
 }}

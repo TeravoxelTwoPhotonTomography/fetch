@@ -130,6 +130,7 @@ namespace device {
     ,_simulated(NULL)
     ,_idevice(NULL)
     ,_istage(NULL)
+    ,_tiling(NULL)
   {
       setKind(_config->kind());
   }
@@ -169,7 +170,7 @@ namespace device {
   {
     setKind(cfg->kind());
     Guarded_Assert(_c843||_simulated); // at least one device was instanced
-    if(_c843)     _c843->_set_config(cfg->mutable_c843());
+    if(_c843)      _c843->_set_config(cfg->mutable_c843());
     if(_simulated) _simulated->_set_config(cfg->mutable_simulated());
     _config = cfg;
   }
@@ -190,6 +191,13 @@ namespace device {
       default:
         error("Unrecognized kind() for SimulatedStage.  Got: %u\r\n",(unsigned)kind);
       }
+  }
+
+  // Only use when attached but disarmed.
+  void Stage::_createTiling()
+  { if(_tiling) delete _tiling;
+    FieldOfViewGeometry fov(_config->fov());
+    _tiling = new StageTiling(getTravel(), fov, _config->tilemode());
   }
 
 }} // end anmespace fetch::device

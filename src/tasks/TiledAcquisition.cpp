@@ -56,7 +56,7 @@ namespace fetch
 
         d->__scan_agent.arm(&grabstack,&d->scanner);                      // why was this arm_nowait?
 
-        _cursor = d->stage()->tiling().begin();
+        d->stage()->tiling()->resetCursor();
 
         return 1; //success
       }
@@ -83,6 +83,7 @@ namespace fetch
       { 
         std::string filename;
         unsigned int eflag = 0; // success
+        Vector3f tilepos;
         
         Guarded_Assert(dc->__scan_agent.is_runnable());
         //Guarded_Assert(dc->__io_agent.is_running());
@@ -97,16 +98,15 @@ namespace fetch
         eflag |= dc->runPipeline();
         eflag |= dc->__scan_agent.run() != 1;
 
-
-        //Chan_Wait_For_Writer_Count(dc->__scan_agent._owner->_out->contents[0],1);
-        for(;eflag==0 && _cursor!=dc->stage()->tiling().end();_cursor++)
+        StageTiling& tiling = dc->stage->tiling();
+        while(tiling.nextInPlanePosition(tilepos))
         { HANDLE hs[] = {dc->__scan_agent._thread,          
                          dc->__self_agent._notify_stop};
           DWORD res;
           int   t;
 
           // Move stage
-          dc->stage()->setPos(_cursor);
+          dc->stage()->setPos(tilepos);
 
           // wait for scan to complete (or cancel)
           res = WaitForMultipleObjects(2,hs,FALSE,INFINITE);
@@ -127,6 +127,7 @@ namespace fetch
           dc->write_stack_metadata();
           dc->file_series.inc();
           
+          tiling.markDone(eflag==0);
           //dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
           
         }

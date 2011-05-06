@@ -12,6 +12,10 @@ namespace fetch {
                            const Mode                 alignment)
     :
       mask_(NULL),
+      leftmostAddressable_(0),
+      cursor_(0),
+      current_plane_offest_(0),
+      sz_plane_nelem_(0),
       latticeToStage_()
   { StageTravel t = travel;
     computeLatticeToStageTransform_(fov,alignment);
@@ -98,11 +102,11 @@ namespace fetch {
       shape);
 
     memset(mask_,0,sizeof(uint8_t)*mask_->size); //unset
-
-    //TODO: set stage addressable lattice points
-
+    sz_plane_nelem_ = mask_->dims[0] * mask_->dims[1];
   }
 
+  //  markAddressable_  ////////////////////////////////////////////////
+  //
 
 	struct FloodFillArgs
 	{ StageTiling *self;
@@ -122,9 +126,6 @@ namespace fetch {
            ( (travel.z.min<r(2)) && (r(2)>travel.z.max) );
   }
 
-  static void totalDoNothing(Size_Type, void *)
-  { }
-
   static void actionMarkAddressable(Indx_Type p, void *arga)
   { 
   	FloodFillArgs *args         = (FloodFillArgs)arga;
@@ -134,11 +135,84 @@ namespace fetch {
   void StageTiling::markAddressable_(StageTiling *travel)
   { 
     FloodFillArgs args(this,travel);
-    Indx_Type p = Find_Leftmost_Seed(mask_,1,0/*conn*/,0/*seed*/,&args,isInBox);
-    Flood_Object(mask_,1,0,p,
-        &args,isInBox,
-        NULL,totalDoNothing,
-        &args,actionMarkAddressable);
+    mylib::Coordinate *mid = Coord3( 
+      (travel.x.max-travel.x.min)/2.0,
+      (travel.y.max-travel.y.min)/2.0, 
+      (travel.z.max-travel.z.min)/2.0);
+
+    leftmostAddressable_ = Find_Leftmost_Seed(
+      mask_,
+      1,                              /* share */
+      0,                              /* conn  */
+      Coord2IdxA(mask_mid),           /* seed  */
+      &args,isInBox);
+    Flood_Object(mask_,
+      1,                              /* share */
+      0,                              /* conn  */
+      leftmostAddressable_,           /* seed  */
+      &args,isInBox,
+      NULL,NULL,
+      &args,actionMarkAddressable);
+  }
+
+  //  resetCursor  /////////////////////////////////////////////////////
+  //
+  void StageTiling::resetCursor()
+  { cursor_ = leftmostAddressable_;
+
+    Coordinate *c = Coord2IdxA(mask_,cursor_);
+    current_plane_offest_ = ADIMN(c)[2] * sz_plane_nelem_;
+    Free_Array(c);
+  }
+
+  //  nextInPlanePosition  /////////////////////////////////////////////
+  //                           
+  #define ON_PLANE(e)    ((e) < (current_plane_offest_ + sz_plane_nelem_))
+  #define ON_LATTICE(e)  ((e) < (mask_->size))
+  bool StageTiling::nextInPlanePosition(Vector3f &pos)
+  { uint8_t* mask = AUINT8(mask_);
+    uint8_t attr = Addressable | Active;
+
+    while( mask[cursor_] & attr != attr
+        && ON_PLANE(cursor_) )
+        ++cursor_;
+
+    if(ON_PLANE(cursor_))
+    { Coordinate *c = Idx2Coord(mask_,cursor_);
+      pos = latticeToStage_ * Map<Vector3f>(ADIMN(c));
+      return true;
+    } else
+    { return false;
+    }
+  }
+
+  //  nextPosition  ////////////////////////////////////////////////////
+  //
+  bool StageTiling::nextPosition(Vector3f &pos)
+  { uint8_t* mask = AUINT8(mask_);
+    uint8_t attrmask = Addressable | Active | Done,
+            attr     = Addressable & Active;
+
+    while( mask[cursor_] & attrmask != attr
+        && ON_LATTICE(cursor_) )
+        ++cursor_;
+
+    if(ON_LATTICE(cursor_))
+    { Coordinate *c = Idx2Coord(mask_,cursor_);
+      pos = latticeToStage_ * Map<Vector3f>(ADIMN(c));
+      return true;
+    } else
+    { return false;
+    }
+  }
+
+  //  markDone  ////////////////////////////////////////////////////////
+  //
+  void StageTiling::markDone(bool success)
+  { uint8_t *m = AUINT8(mask) + cursor_;
+    *m |= Done;
+    if(success)
+      *m |= Success;
   }
 
 } // end namespace fetch
