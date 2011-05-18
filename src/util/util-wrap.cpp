@@ -12,6 +12,7 @@
  */
  
 #include "common.h" 
+#include "util-wrap.h"
  
 namespace resonant_correction
 {
@@ -23,7 +24,7 @@ namespace resonant_correction
       int t = lroundf(turn);
       if (turn >= w)
         return 0;
-      t = min(t, w - t);
+      t = internal::min(t, w - t);
       *oh = 2 * h;
       *ow = t;
       return 1;

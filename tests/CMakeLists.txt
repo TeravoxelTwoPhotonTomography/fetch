@@ -26,6 +26,11 @@ set(PROTO_DIR "${PROJECT_SOURCE_DIR}/src/proto")
 include("${PROTO_DIR}/GenProto.cmake")
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
+#Eigen
+find_package(Eigen3 3.0)
+include_directories(${EIGEN3_INCLUDE_DIR})
+add_definitions(-DNOMINMAX) #prevent windows from defineing min and max
+
 #nidaq
 find_package(NIDAQmx REQUIRED)
 include_directories(${NIDAQMX_INCLUDE_DIR})

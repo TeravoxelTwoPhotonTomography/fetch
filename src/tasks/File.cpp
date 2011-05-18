@@ -59,6 +59,15 @@ namespace file {
   //
   // Implementation
   //
+  // 
+  namespace internal
+  {
+    template<typename T>
+    inline T min(const T& a, const T& b) {return (a<b)?a:b;}
+    template<typename T>
+    inline T max(const T& a, const T& b) {return (a<b)?b:a;}
+  }
+
   
   unsigned int
   ReadRaw::config(device::HFILEDiskStreamBase *dc)
@@ -144,7 +153,7 @@ namespace file {
       TicTocTimer t = tic();
       while (w32file::setpos(dc->_hfile, sz, FILE_CURRENT)>=0) // jump to next message
       { sz = Message::from_file(dc->_hfile, NULL, 0);          // get size of this message        
-        maxsize = max( maxsize, sz );                            // update the max size
+        maxsize = internal::max( maxsize, sz );                          // update the max size
       } 
       w32file::setpos(dc->_hfile,0,FILE_BEGIN);                // rewind
       debug("Max buffer size of %lld found in %f seconds\r\n",maxsize,toc(&t));  
@@ -260,8 +269,8 @@ namespace file {
         Frame_With_Interleaved_Planes fmt(tim->width,tim->height,tim->number_channels,mytiff::pixel_type(tim));
         Free_Tiff_Image(tim);
         Free_Tiff_IFD(ifd);
-        maxsize = max(maxsize,fmt.size_bytes());
-        maxchan = max(maxchan,tim->number_channels);
+        maxsize = internal::max(maxsize,fmt.size_bytes());
+        maxchan = internal::max(maxchan,tim->number_channels);
       }
       Rewind_Tiff_Reader(tif);
       

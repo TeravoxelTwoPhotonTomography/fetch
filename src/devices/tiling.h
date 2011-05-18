@@ -1,15 +1,17 @@
 #pragma once
-
+#include "stage.pb.h"
 namespace mylib {
 #include <array.h>
-}
-    
+}    
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-namespace fetch {
+using namespace Eigen;
 
-  typedef Matrix<size_t,1,3> Vector3z
+namespace fetch {
+  namespace device { struct StageTravel; }
+
+  typedef Matrix<size_t,1,3> Vector3z;
 
   //////////////////////////////////////////////////////////////////////
   //  FieldOfViewGeometry  /////////////////////////////////////////////
@@ -20,13 +22,11 @@ namespace fetch {
     float    rotation_radians_;
 
     FieldOfViewGeometry(float x, float y, float z, float radians) :
-          field_size_um_(x,y,z), rotation_radians(radians_) {}
+          field_size_um_(x,y,z), rotation_radians_(radians) {}
     FieldOfViewGeometry(const cfg::device::FieldOfViewGeometry &cfg) {update(cfg);}
 
     void update(const cfg::device::FieldOfViewGeometry &cfg)
-         { field_size_um_ << cfg.x_size_um()
-                          << cfg.y_size_um()
-                          << cfg.z_size_um();
+         { field_size_um_ << cfg.x_size_um(),cfg.y_size_um(),cfg.z_size_um();
            rotation_radians_ = cfg.rotation_radians();
          }
       
@@ -46,36 +46,38 @@ namespace fetch {
     mylib::Indx_Type           sz_plane_nelem_;
     TTransform                 latticeToStage_;
 
-    enum Mode
-    { PixelAligned = 0,
-      StageAligned
-    };
+  public:
+    typedef fetch::cfg::device::Stage_TilingMode Mode;    
 
     enum Flags
     { 
       Addressable = 1,
       Active      = 2,
       Done        = 4,
-      Success     = 8,
+      Success     = 8
     };
 
-  public:
-             StageTiling(const StageTravel         &travel,
-                         const FieldOfViewGeometry &fov,
+             StageTiling(const device::StageTravel& travel,
+                         const FieldOfViewGeometry& fov,
                          const Mode                 alignment);
     virtual ~StageTiling();
 
     void     resetCursor();
-    bool     nextInPlanePosition(Vector3f &pos);
-    bool     nextPosition(Vector3f &pos);
+    bool     nextInPlanePosition(Vector3f& pos);
+    bool     nextPosition(Vector3f& pos);
     void     markDone(bool success);
+    
+    inline mylib::Array* mask() {return mask_;}
+    inline const TTransform& latticeToStageTransform() {return latticeToStage_; }
 
   protected:
     void computeLatticeToStageTransform_
-                        (const FieldOfViewGeometry &fov,
+                        (const FieldOfViewGeometry& fov,
                          const Mode                 alignment);
-    mylib::Coordinate* computeLatticeExtents_(const StageTravel  &travel);
-    void initMask_(Coordinate *shape);
+    mylib::Coordinate* computeLatticeExtents_(const device::StageTravel& travel);
+    void initMask_(mylib::Coordinate *shape);
+
+    void markAddressable_(device::StageTravel *travel);
 
   };
 

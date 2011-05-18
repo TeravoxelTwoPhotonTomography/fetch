@@ -197,7 +197,9 @@ namespace device {
   void Stage::_createTiling()
   { if(_tiling) delete _tiling;
     FieldOfViewGeometry fov(_config->fov());
-    _tiling = new StageTiling(getTravel(), fov, _config->tilemode());
+    device::StageTravel travel;
+    getTravel(&travel);
+    _tiling = new StageTiling(travel, fov, _config->tilemode());
   }
 
 }} // end anmespace fetch::device

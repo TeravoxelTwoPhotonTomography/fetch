@@ -2,7 +2,11 @@
 #include "object.h"
 #include "stage.pb.h" 
 #include "agent.h"
+#include "tiling.h"
 #include <list>
+
+#include <Eigen/Core>
+using namespace Eigen;
 
 namespace fetch {
 namespace device {
@@ -101,11 +105,12 @@ namespace device {
       virtual void setVelocityNoWait ( float vx, float vy, float vz)        {_istage->setVelocityNoWait(vx,vy,vz);}
       virtual void getPos            ( float *x, float *y, float *z)        {_istage->getPos(x,y,z);}
       virtual int  setPos            ( float  x, float  y, float  z)        {return _istage->setPos(x,y,z);}
+      virtual int  setPos            ( const Vector3f &r)                   {return setPos(r[0],r[1],r[2]);}
       virtual int  setPos            ( const TilePos &r)                    {return setPos(r.x,r.y,r.z);}
       virtual int  setPos            ( const TilePosList::iterator &cursor) {return setPos(*cursor);}
       virtual void setPosNoWait      ( float  x, float  y, float  z)        {_istage->setPosNoWait(x,y,z);}
   
-      inline  StageTiling& tiling()                                         {return _tiling;}
+      inline  StageTiling& tiling()                                         {return *_tiling;}
   protected:
       void    _createTiling();       //only call when disarmed
   };

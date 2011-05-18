@@ -1,16 +1,16 @@
 #include <util/util-gl.h>
 #include <QtGui>
 #include <QtDebug>
-#include <assert.h>
-#include "Figure.h"
+#include <assert.h> 
 #include <math.h>
+#include "Figure.h"
 
 #define MOUSEWHEEL_SCALE (float)120.0
 #define MOUSEWHEEL_POW   2.0
 
 
 
-#define HERE printf("[xxxx] At %s(%d)\n",__FILE__,__LINE__)
+#define _HERE_ printf("[xxxx] At %s(%d)\n",__FILE__,__LINE__)
 namespace mylib {
 #include <array.h>
 }
@@ -102,7 +102,7 @@ Figure::readSettings()
   QSettings settings;
   QStringList keys = settings.allKeys();
 #if 0  
-  HERE;
+  _HERE_;
   qDebug() << settings.organizationName();
   qDebug() << settings.applicationName();
   qDebug() << (settings.isWritable()?"Writable":"!!! Settings are not writable !!!");
@@ -148,11 +148,11 @@ struct OpenImageWidgetSet : QSet<Figure*>
 static OpenImageWidgetSet g_open;
 
 Figure* imshow(mylib::Array *im)
-{ HERE; Print_Inuse_List(stderr,1);
+{ _HERE_; Print_Inuse_List(stderr,1);
 	Figure *w = new Figure;
   g_open.insert(w);
   checkGLError();
-  HERE; Print_Inuse_List(stderr,1);
+  _HERE_; Print_Inuse_List(stderr,1);
 	w->imshow(im);
 	checkGLError();
   w->show();

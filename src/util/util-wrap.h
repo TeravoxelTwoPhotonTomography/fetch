@@ -21,6 +21,7 @@
 #pragma warning(push)
 #pragma warning(disable:4244)
 
+
 namespace resonant_correction
 {
   namespace wrap
@@ -124,6 +125,14 @@ namespace resonant_correction
         }
       }
 
+    namespace internal
+    {
+      template<typename T>
+      inline T min(const T& a, const T& b) {return (a<b)?a:b;}
+      template<typename T>
+      inline T max(const T& a, const T& b) {return (a<b)?b:a;}
+    }
+
     template<typename T>
       bool
       transform(T *out, T *im, int iw, int ih, float turn)
@@ -134,9 +143,9 @@ namespace resonant_correction
         if (turn >= iw)
           return 0;
 
-        w = min(w, iw - w);
+        w = internal::min<T>(w, iw - w);
         outw = 2 * w;
-        t = max(0, s - w);
+        t = internal::max<T>(0, s - w);
 
         if (delta >= 0.5)
         {
