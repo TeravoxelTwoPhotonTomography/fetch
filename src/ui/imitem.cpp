@@ -99,9 +99,11 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
 		glCallList(_hQuadDisplayList);
     _shader.release();
 
-    glBindTexture(GL_TEXTURE_3D, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-		
+    glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_3D,0);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D,0);
+
     // paint a little square to indicate the paint
     glEnable(GL_SCISSOR_TEST);
     glScissor(0, 16, 16, 16);

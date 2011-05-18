@@ -39,12 +39,12 @@ namespace fetch {
   {
     typedef Transform<float,3,Affine> TTransform;
 
-    mylib::Array              *mask_;
-    mylib::Indx_Type           leftmostAddressable_;
-    mylib::Indx_Type           cursor_;
-    mylib::Indx_Type           current_plane_offest_;
-    mylib::Indx_Type           sz_plane_nelem_;
-    TTransform                 latticeToStage_;
+    mylib::Array              *mask_;                                      // tile attribute database
+    mylib::Indx_Type           leftmostAddressable_;                       // marks the first tile
+    mylib::Indx_Type           cursor_;                                    // marks the current tile
+    mylib::Indx_Type           current_plane_offest_;                      // marks the current plane
+    mylib::Indx_Type           sz_plane_nelem_;                            // the size of a plane in the tile database
+    TTransform                 latticeToStage_;                            // Transforms lattice coordinates to the tiles anchor point on the stage
 
   public:
     typedef fetch::cfg::device::Stage_TilingMode Mode;    
@@ -67,7 +67,7 @@ namespace fetch {
     bool     nextPosition(Vector3f& pos);
     void     markDone(bool success);
     
-    inline mylib::Array* mask() {return mask_;}
+    inline mylib::Array*     mask() {return mask_;}
     inline const TTransform& latticeToStageTransform() {return latticeToStage_; }
 
   protected:
@@ -82,4 +82,3 @@ namespace fetch {
   };
 
 } //end namespace fetch
-

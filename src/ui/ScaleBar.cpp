@@ -1,3 +1,6 @@
+#ifdef _WIN32
+#include <GL/glew.h>
+#endif
 #include "ScaleBar.h"
 #include "units.h"
 #include <QString>
@@ -95,6 +98,10 @@ ScaleBar::paint(QPainter *painter, const QRectF& rect)
 	painter->setBrush(QColor(Qt::white));
   painter->setFont(font_);
 	painter->drawStaticText(text_pos_, text_);
+
+  //draw static text will leave a texture bound. unbind it
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D,0);
 
 #if 0
 	painter->setRenderHint(QPainter::Antialiasing, true);

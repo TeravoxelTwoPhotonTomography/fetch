@@ -1,7 +1,7 @@
 #include <util/util-gl.h>
 #include <QtGui>
 #include <QtDebug>
-#include <assert.h> 
+#include <assert.h>
 #include <math.h>
 #include "Figure.h"
 
@@ -45,9 +45,20 @@ ZoomableView::drawForeground(QPainter* painter, const QRectF& rect)
 { QRectF vp(viewport()->geometry());
 	QRectF sc = _scalebar.boundingRect();
 	sc.moveBottomRight(vp.bottomRight());
-	
-  
-	painter->resetTransform();
+	painter->resetTransform();                                               //painter starts with the scene transform
+
+  {  
+    QPointF p  = QPointF(   mapFromGlobal(QCursor::pos())),
+            ps = mapToScene(mapFromGlobal(QCursor::pos()));
+    QStaticText txt(QString("(%1,%2)").arg(ps.x()).arg(ps.y()));
+    txt.prepare();
+    painter->setPen(Qt::white);
+    painter->setBrush(Qt::white);
+    painter->drawStaticText(p,txt);
+    QRectF r(0.0f,0.0f,10.0f,10.0f);
+    r.moveCenter(p);
+    painter->drawEllipse(r);
+  }
   
 	// translate, but allow for a one px border 
 	// between text and the edge of the viewport
@@ -72,7 +83,7 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
 	assert(viewport->context()->isValid());
   assert(viewport->isValid());
   
-  _view->setDragMode(QGraphicsView::ScrollHandDrag);                       //RubberBandDrag would be nice for zooming...but need a change of mode
+  _view->setDragMode(QGraphicsView::ScrollHandDrag); //RubberBandDrag would be nice for zooming...but need a change of mode
   _view->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
 
   _scene.setBackgroundBrush(Qt::darkRed);
@@ -87,6 +98,14 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
 	_scene.addItem(_item);
   checkGLError(); 
 
+  _tv = new TilesView;
+  _scene.addItem(_tv);
+  connect(&_scene,SIGNAL(   addSelectedArea(const QPainterPath&)),
+              _tv,SLOT(     addSelection(const QPainterPath&)));
+  connect(&_scene,SIGNAL(removeSelectedArea(const QPainterPath&)),
+              _tv,SLOT(  removeSelection(const QPainterPath&)));
+  checkGLError();
+
 	QGridLayout *layout = new QGridLayout;
 	layout->setContentsMargins(0,0,0,0);
 	layout->addWidget(_view, 0, 0);
@@ -94,6 +113,86 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
 
   readSettings();
   updatePos();
+  createActions();
+  createMenus();
+}
+
+void Figure::createActions()
+{ QAction *c;      
+
+  c = new QAction(tr("&Clear Drag Mode"),this);
+  c->setShortcut(QKeySequence(tr("c","DragMode|Clear")));
+  c->setStatusTip(tr("Change drag mode to none."));
+  connect(c,SIGNAL(triggered()),this,SLOT(setDragModeToNoDrag()));
+  addAction(c);
+  _noDragModeAct = c;
+
+  c = new QAction(tr("&Pan"),this);
+  c->setShortcut(QKeySequence(tr("h","DragMode|Pan")));
+  c->setStatusTip(tr("Change drag mode to pan."));
+  connect(c,SIGNAL(triggered()),this,SLOT(setDragModeToPan()));
+  addAction(c);
+  _scrollDragModeAct = c;
+
+  c = new QAction(tr("&Select"),this);
+  c->setShortcut(QKeySequence(tr("m","DragMode|Select")));
+  c->setStatusTip(tr("Change drag mode to select."));
+  connect(c,SIGNAL(triggered()),this,SLOT(setDragModeToSelect()));
+  addAction(c);
+  _rubberBandModeAct = c;
+  
+  //c = new QAction(tr("Add Tiles"),this);
+  //QList<QKeySequence> shortcuts;
+  //shortcuts.push_back( QKeySequence(tr("+","TileMode|Add|+")) );
+  //shortcuts.push_back( QKeySequence(tr("=","TileMode|Add|=")) );
+  //c->setShortcuts(shortcuts);
+  //c->setStatusTip(tr("Add selected tiles."));
+  //connect(c,SIGNAL(triggered()),this,SLOT(setAddTilesMode()));
+  //addAction(c);
+  //_addTilesModeAct = c;
+  //
+  //c = new QAction(tr("Remove Tiles"),this);
+  //c->setShortcut(QKeySequence(tr("-","TileMode|Remove")));
+  //c->setStatusTip(tr("Remove selected tiles."));
+  //connect(c,SIGNAL(triggered()),this,SLOT(setDelTilesMode()));
+  //addAction(c);
+  //_delTilesModeAct = c;
+}
+
+void Figure::setDragModeToNoDrag()
+{
+  _view->setDragMode(QGraphicsView::NoDrag);
+  _scene.setMode(StageScene::DrawRect);
+}
+
+void Figure::setDragModeToSelect() 
+{ 
+  _view->setDragMode(QGraphicsView::NoDrag);
+  _scene.setMode(StageScene::DrawRect);
+}
+ 
+void Figure::setDragModeToPan()    
+{ 
+  _view->setDragMode(QGraphicsView::ScrollHandDrag);
+  _scene.setMode(StageScene::DoNothing);
+} 
+
+//void Figure::setAddTilesMode()
+//{ QPalette p = palette();
+//  p.setColor(QPalette::Highlight,QColor(55,255,0));
+//  setPalette(p);
+//  //_view->setDragMode(QGraphicsView::NoDrag);
+//}
+//
+//void Figure::setDelTilesMode()
+//{ QPalette p = palette();
+//  p.setColor(QPalette::Highlight,QColor(255,55,0));
+//  setPalette(p);
+//  //_view->setDragMode(QGraphicsView::NoDrag);
+//}
+
+void Figure::createMenus()
+{  
 }
 
 void

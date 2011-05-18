@@ -3,8 +3,10 @@
 namespace mylib {
 #include <array.h>
 }
+#include "StageScene.h"
 #include "imitem.h"
 #include "ScaleBar.h"
+#include "tiles.h"
 #include "StageView.h"
 
 namespace fetch {
@@ -50,6 +52,11 @@ public slots:
 
   inline void setPixelSizeMicrons(double w, double h)                      {_item->setPixelSizeMicrons(w,h);}
   inline void setPixelGeometry(double w, double h, double angle)           {_item->setPixelGeometry(w,h,angle);}
+         void setDragModeToNoDrag();
+         void setDragModeToSelect();
+         void setDragModeToPan();
+         //void setAddTilesMode();
+         //void setDelTilesMode();
 
 signals:
 	void lastFigureClosed();
@@ -61,13 +68,23 @@ protected:
 
 private:
   inline void maybeFit()                                                   {if(_isFitOnNext) {fit(); _isFitOnNext=false;}}
+         void createActions();
+         void createMenus();
 private:
 	ZoomableView*      _view;
-	QGraphicsScene     _scene;
+	StageScene         _scene;
 	ImItem*            _item;
   StageView*         _stage;
+  TilesView*         _tv;
 
-  bool _isFitOnNext;
+  bool               _isFitOnNext;
+
+  QMenu             *_toolMenu;
+  QAction           *_noDragModeAct;
+  QAction           *_scrollDragModeAct;
+  //QAction           *_addTilesModeAct;
+  //QAction           *_delTilesModeAct;
+  QAction           *_rubberBandModeAct;
 };
 
 
