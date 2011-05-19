@@ -11,8 +11,15 @@ using namespace Eigen;
 namespace fetch {
 namespace device {
 
+
+
   struct StageAxisTravel  { float min,max; };
   struct StageTravel      { StageAxisTravel x,y,z; };
+
+
+  //////////////////////////////////////////////////////////////////////
+  //  Stage  ///////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
 
   class IStage
   {
@@ -76,17 +83,21 @@ namespace device {
   { float x,y,z;
   };
 
+  struct StageListener;
   class Stage:public StageBase<cfg::device::Stage>
   {
   public:
     typedef std::list<TilePos> TilePosList;
 
   private:
+    typedef std::set<StageListener*>  TListeners;
+
     C843Stage          *_c843;
     SimulatedStage     *_simulated;
     IDevice            *_idevice;
     IStage             *_istage;
     StageTiling        *_tiling;
+    TListeners          _listeners;
     
     public:
       Stage(Agent *agent);
@@ -110,10 +121,48 @@ namespace device {
       virtual int  setPos            ( const TilePosList::iterator &cursor) {return setPos(*cursor);}
       virtual void setPosNoWait      ( float  x, float  y, float  z)        {_istage->setPosNoWait(x,y,z);}
   
+              void addListener(StageListener *listener);
+              void delListener(StageListener *listener);
       inline  StageTiling& tiling()                                         {return *_tiling;}
   protected:
       void    _createTiling();       //only call when disarmed
+      void    _notifyTilingChanged();
   };
+
+  //////////////////////////////////////////////////////////////////////
+  //  StageListener ////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  //
+  // Allows other objects to respond to stage events
+  // o  Defines a set of callbacks that will be called for certain events.
+  // o  By default, callbacks do nothing so derived listeners only need
+  //    to overload the callbacks they want to listen to.
+  //
+  // When implementing remember that these are usually called from 
+  // a thread running the acquisition process.
+  // 
+  // o  don't block!
+  // 
+  // NOTES:
+  // maybe I should use an APC to launch the callback from another thread 
+  // so that the acquisition loop is guaranteed not to block
+  // 
+  // Not worrying about this right now since stage motion doesn't occur
+  // during super time sensitive parts of the loop.  Still though...
+  // 
+  // Actually, Qt supports both non-blocking and blocking queued connections
+  // (I'm primarily worried about signal/slot communication with the GUI
+  // frontend here).  Using the QueuedConncection, which is non-blocking,
+  // means the callback shouldn't be blocked.  I can leave the blocking
+  // responsibility up to the callback.
+
+  struct StageListener
+  {
+    virtual void tiling_changed(StageTiling *tiling) {}                      // a new tiling was created.
+    virtual void tile_done(size_t index, const Vector3f& pos,uint8_t sts) {} // the specified tile was marked as done                                                      
+    virtual void tile_next(size_t index, const Vector3f& pos) {}             // the next tile was requested (stage not necessarily moved yet)
+  };
+
   // end namespace fetch::Device
 }}
 

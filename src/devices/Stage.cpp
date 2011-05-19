@@ -200,6 +200,24 @@ namespace device {
     device::StageTravel travel;
     getTravel(&travel);
     _tiling = new StageTiling(travel, fov, _config->tilemode());
+    _notifyTilingChanged();
+  }
+
+  void Stage::addListener( StageListener *listener )
+  { _listeners.insert(listener);
+    if(_tiling) _tiling->addListener(listener);
+  }
+
+  void Stage::delListener( StageListener *listener )
+  { _listeners.erase(listener);
+    if(_tiling) _tiling->delListener(listener);
+  }
+
+  void Stage::_notifyTilingChanged()
+  { TListeners::iterator i;
+    for(i=_listeners.begin();i!=_listeners.end();++i)
+      (*i)->tiling_changed(_tiling);
+  
   }
 
 }} // end anmespace fetch::device

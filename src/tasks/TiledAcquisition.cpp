@@ -98,7 +98,7 @@ namespace fetch
         eflag |= dc->runPipeline();
         eflag |= dc->__scan_agent.run() != 1;
 
-        StageTiling& tiling = dc->stage()->tiling();
+        device::StageTiling& tiling = dc->stage()->tiling();
         while(tiling.nextInPlanePosition(tilepos))
         { HANDLE hs[] = {dc->__scan_agent._thread,          
                          dc->__self_agent._notify_stop};

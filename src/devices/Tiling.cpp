@@ -10,7 +10,7 @@ namespace mylib
 }
 
 namespace fetch {
-
+namespace device {
   //////////////////////////////////////////////////////////////////////
   //  StageTiling  /////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
@@ -25,14 +25,15 @@ namespace fetch {
       cursor_(0),
       current_plane_offest_(0),
       sz_plane_nelem_(0),
-      latticeToStage_()
+      latticeToStage_(),
+      fov_(fov)
   { device::StageTravel t = travel;
     computeLatticeToStageTransform_(fov,alignment);
     initMask_(computeLatticeExtents_(travel));
     markAddressable_(&t);
   }
 
-  //  Destructors  /////////////////////////////////////////////////////
+  //  Destructor  /////////////////////////////////////////////////////
   StageTiling::~StageTiling()
   { if(mask_)           Free_Array(mask_);
   }
@@ -193,10 +194,8 @@ namespace fetch {
         ++cursor_;
 
     if(ON_PLANE(cursor_))
-    { mylib::Coordinate *c = mylib::Idx2CoordA(mask_,cursor_);
-      Map<Vector3z> r((size_t*)ADIMN(c));
-      pos = latticeToStage_ * r.transpose().cast<float>();
-      Free_Array(c);
+    { pos = computeCursorPos();
+      notifyNext(cursor_,pos);
       return true;
     } else
     { return false;
@@ -215,10 +214,8 @@ namespace fetch {
         ++cursor_;
 
     if(ON_LATTICE(cursor_))
-    { mylib::Coordinate *c = mylib::Idx2CoordA(mask_,cursor_);     
-      Map<Vector3z> r((size_t*)ADIMN(c));
-      pos = latticeToStage_ * r.transpose().cast<float>();
-      Free_Array(c);
+    { pos = computeCursorPos();
+      notifyNext(cursor_,pos);
       return true;
     } else
     { return false;
@@ -232,6 +229,30 @@ namespace fetch {
     *m |= Done;
     if(success)
       *m |= Success;
+    notifyDone(cursor_,computeCursorPos(),*m);
   }
 
-} // end namespace fetch
+  void StageTiling::notifyDone(size_t index, const Vector3f& pos, uint8_t sts)
+  { 
+    TListeners::iterator i;
+    for(i=listeners_.begin();i!=listeners_.end();++i)
+      (*i)->tile_done(index,pos,sts);
+  }
+
+  void StageTiling::notifyNext(size_t index, const Vector3f& pos)
+  {
+    TListeners::iterator i;
+    for(i=listeners_.begin();i!=listeners_.end();++i)
+      (*i)->tile_next(index,pos);
+  }
+
+  const Vector3f StageTiling::computeCursorPos()
+  {          
+    mylib::Coordinate *c = mylib::Idx2CoordA(mask_,cursor_);     
+    Map<Vector3z> r((size_t*)ADIMN(c));
+    Vector3f pos = latticeToStage_ * r.transpose().cast<float>();
+    Free_Array(c);	
+    return pos;
+  }
+
+}} // end namespace fetch::device
