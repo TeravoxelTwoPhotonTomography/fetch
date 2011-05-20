@@ -8,6 +8,7 @@ namespace mylib
 #include <array.h>
 }
 
+#include "StageController.h"
 
 #define GOLDENRATIO 1.61803399
 
@@ -16,7 +17,7 @@ class TilesView : public QGraphicsObject
   Q_OBJECT
 
 public:
-  TilesView(QGraphicsItem* parent = 0);
+  TilesView(TilingController *tc, QGraphicsItem* parent = 0);
 
 
   ~TilesView();
@@ -35,18 +36,24 @@ protected:
   virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);
 
 private:
+  TilingController *tiling_controller;
   QGLBuffer vbo_,ibo_,cbo_;                    //vertex, index, and color  buffer objects for big lattice
   //QGLBUffer cursorColorVBO_,cursorIndexVBO_; //colors and indeces for highlighting tiles near the cursor
   //bool      cursorActive_;                   //
   //int       cursorIndexLength_;
   int       icursor_;
   QRectF    bbox_;
+  bool      is_active_;
 
   QImage    *latticeImage_;
 
   void draw_grid_();
   void draw_cursor_();
-  void init_cursor_(const QPointF& pos); 
+  void init_cursor_(const QPointF& pos);
+  void initIBO();
+  void updateIBO();
+  void initVBO();
+  void updateVBO();
   void initCBO();
   void updateCBO();
 };

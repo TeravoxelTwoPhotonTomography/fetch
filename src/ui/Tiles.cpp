@@ -36,95 +36,29 @@ const float         W = 80.0,
    *       
    */
 
-TilesView::TilesView(QGraphicsItem *parent)
+TilesView::TilesView(TilingController *tc, QGraphicsItem *parent)
   : 
     QGraphicsObject(parent),
+    tiling_controller(tc),
     vbo_(QGLBuffer::VertexBuffer),
     ibo_(QGLBuffer::IndexBuffer), 
     cbo_(QGLBuffer::VertexBuffer),
     icursor_(-1),
     bbox_(0,0,10,10),
-    latticeImage_(NULL)
+    latticeImage_(NULL),
+    is_active_(false)
 { 
   setAcceptHoverEvents(true);
  // setFlags(ItemIsSelectable);
+  
+  initVBO();
+  updateVBO();
 
-  ///// Init vertex buffer - the tile geometry
-  DBG( vbo_.create() );
-  DBG( vbo_.bind() );
-  vbo_.setUsagePattern(QGLBuffer::StaticDraw);  
-  float verts[] = {      //V3F - use this as a template
-    -59.f,   -39.f,    0.0f,             
-     39.f,   -59.f,    0.0f,             
-     59.f,    39.f,    0.0f,             
-    -39.f,    59.f,    0.0f,             
-  }; 
-  float dr[] = {W,H,0.0};  
+  initCBO();
+  updateCBO();  
 
-	bbox_.setTopLeft(QPointF(verts[0],verts[1]));
-	bbox_.setWidth (W*(GRID_COLS+1));
-	bbox_.setHeight(H*(GRID_ROWS+1));  
-
-  vbo_.allocate(sizeof(float)*12*GRID_COLS*GRID_ROWS);                     // 4 verts per rect, 3 floats per vert = 12 floats per rect
-  float *vdata = (float*)vbo_.map(QGLBuffer::WriteOnly);
-  { const int vert_stride = 3,
-              latt_stride = GRID_COLS*GRID_ROWS*vert_stride;
-    for(int ivert=0;ivert<4;++ivert)
-    { float *dest = vdata+ivert*latt_stride,
-            *src  = verts+ivert*vert_stride;
-      for(int ix=0; ix<GRID_COLS;++ix)
-      for(int iy=0; iy<GRID_ROWS;++iy)      
-      { int irect = ix+iy*GRID_COLS;
-        float *r = dest + irect*vert_stride;        
-        memcpy(r,src,vert_stride*sizeof(float));
-        r[0]+=dr[0]*ix;
-        r[1]+=dr[1]*iy;
-      }
-    }
-
-  }
-  DBG( vbo_.unmap() );
-  vbo_.release();
-  checkGLError();
-
-  ///// Init color buffer
-  { 
-    latticeImage_ = new QImage(GRID_COLS,4*GRID_ROWS,QImage::Format_ARGB32_Premultiplied);    
-    QPainter painter(latticeImage_);  
-    // QT->OpenGL switches red and blue.  This is a -60 degress rotation in the hue colorwheel.
-    painter.fillRect(QRectF(latticeImage_->rect()),QBrush(QColor::fromHsvF(0.7,1.0,1.0,0.3)));
-    QRectF stage_addressable_rect(GRID_COLS/4.0,GRID_ROWS/4.0,GRID_COLS/2.0,GRID_COLS/2.0);
-    QColor stage_addressable_color(QColor::fromHsvF(0.3,1.0,1.0,0.5));
-    painter.fillRect(stage_addressable_rect,QBrush(stage_addressable_color));
-    for(int i=0;i<3;++i)
-    { stage_addressable_rect.translate(0.0,GRID_ROWS);
-      painter.fillRect(stage_addressable_rect,QBrush(stage_addressable_color));
-    }
-
-    initCBO();
-    updateCBO();
-
-  }
-
-  ///// Init index buffer
-  {
-    GLuint vert_stride = GRID_COLS*GRID_ROWS;
-    DBG( ibo_.create() );
-    DBG( ibo_.bind() );
-    ibo_.setUsagePattern(QGLBuffer::StaticDraw);
-    ibo_.allocate(sizeof(GLuint)*4*GRID_ROWS*GRID_COLS);                   // number of verts
-    GLuint *idata = (GLuint*)ibo_.map(QGLBuffer::WriteOnly);
-	
-    for(GLuint irect=0;irect<GRID_ROWS*GRID_COLS;++irect)
-    { GLuint *row = idata + 4*irect;
-      for(GLuint ivert=0;ivert<4;++ivert)
-        row[ivert] = irect + ivert*vert_stride;
-    }
-    DBG( ibo_.unmap() );
-    ibo_.release();
-  }
-  checkGLError();
-
+  initIBO();
+  updateIBO();
 }
 
 #define myround(e) floor(0.5+(e))
@@ -261,8 +195,87 @@ void TilesView::removeSelection( const QPainterPath& path )
    update();
 }
 
+void TilesView::initIBO()
+{
+  DBG( ibo_.create() );
+  DBG( ibo_.bind() );
+  ibo_.setUsagePattern(QGLBuffer::StaticDraw);
+  ibo_.allocate(sizeof(GLuint)*4*GRID_ROWS*GRID_COLS);                   // number of verts
+  ibo_.release();
+  checkGLError();
+}
+
+void TilesView::updateIBO()
+{ 
+  GLuint vert_stride = GRID_COLS*GRID_ROWS;
+  DBG( ibo_.bind() );  
+  GLuint *idata = (GLuint*)ibo_.map(QGLBuffer::WriteOnly);
+  for(GLuint irect=0;irect<GRID_ROWS*GRID_COLS;++irect)
+  { GLuint *row = idata + 4*irect;
+  for(GLuint ivert=0;ivert<4;++ivert)
+    row[ivert] = irect + ivert*vert_stride;
+  }
+  DBG( ibo_.unmap() );
+  ibo_.release();
+  checkGLError();
+}
+
+void TilesView::initVBO()
+{
+  DBG( vbo_.create() );
+  DBG( vbo_.bind() );
+  vbo_.setUsagePattern(QGLBuffer::StaticDraw);
+  vbo_.allocate(sizeof(float)*12*GRID_COLS*GRID_ROWS);                     // 4 verts per rect, 3 floats per vert = 12 floats per rect
+  vbo_.release();
+  checkGLError();
+}
+
+void TilesView::updateVBO()
+{
+  
+  float verts[] = {      //V3F - use this as a template
+    -59.f,   -39.f,    0.0f,             
+    39.f,   -59.f,    0.0f,             
+    59.f,    39.f,    0.0f,             
+    -39.f,    59.f,    0.0f,             
+  }; 
+  float dr[] = {W,H,0.0};  
+
+  bbox_.setTopLeft(QPointF(verts[0],verts[1]));
+  bbox_.setWidth (W*(GRID_COLS+1));
+  bbox_.setHeight(H*(GRID_ROWS+1));  
+
+  DBG( vbo_.bind() );
+  float *vdata = (float*)vbo_.map(QGLBuffer::WriteOnly);
+  { 
+    const int 
+      vert_stride = 3,
+      latt_stride = GRID_COLS*GRID_ROWS*vert_stride;
+    for(int ivert=0;ivert<4;++ivert)
+    { 
+      float *dest = vdata+ivert*latt_stride,
+        *src  = verts+ivert*vert_stride;
+      for(int ix=0; ix<GRID_COLS;++ix)
+        for(int iy=0; iy<GRID_ROWS;++iy)      
+        { 
+          int irect = ix+iy*GRID_COLS;
+          float *r = dest + irect*vert_stride;        
+          memcpy(r,src,vert_stride*sizeof(float));
+          r[0]+=dr[0]*ix;
+          r[1]+=dr[1]*iy;
+        }
+    }
+  }
+  DBG( vbo_.unmap() );
+  vbo_.release();
+  checkGLError();
+
+}
+
 void TilesView::initCBO()
 {
+  latticeImage_ = new QImage(GRID_COLS,4*GRID_ROWS,QImage::Format_ARGB32_Premultiplied);
+
   DBG( cbo_.create() );
   cbo_.setUsagePattern(QGLBuffer::StaticDraw);  
   DBG( cbo_.bind() );
@@ -272,7 +285,21 @@ void TilesView::initCBO()
 }
 void TilesView::updateCBO()
 {
-  
+  /// Do the initial draw to a local buffer
+
+  QPainter painter(latticeImage_);  
+  // QT->OpenGL switches red and blue.  This is a -60 degress rotation in the hue colorwheel.
+  painter.fillRect(QRectF(latticeImage_->rect()),QBrush(QColor::fromHsvF(0.7,1.0,1.0,0.3)));
+  QRectF stage_addressable_rect(GRID_COLS/4.0,GRID_ROWS/4.0,GRID_COLS/2.0,GRID_COLS/2.0);
+  QColor stage_addressable_color(QColor::fromHsvF(0.3,1.0,1.0,0.5));
+  painter.fillRect(stage_addressable_rect,QBrush(stage_addressable_color));
+  for(int i=0;i<3;++i)
+  {
+    stage_addressable_rect.translate(0.0,GRID_ROWS);
+    painter.fillRect(stage_addressable_rect,QBrush(stage_addressable_color));
+  }
+
+  /// copy the local buffer to the vertex color buffer object
   DBG( cbo_.bind() );
   GLubyte *cdata = (GLubyte*)cbo_.map(QGLBuffer::WriteOnly);
   memcpy(cdata,latticeImage_->constBits(),latticeImage_->byteCount());

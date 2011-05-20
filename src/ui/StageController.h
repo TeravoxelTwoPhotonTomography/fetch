@@ -87,6 +87,7 @@ namespace ui {
 
       device::Stage   *stage_;
       AgentController  agent_controller_;
+      TilingController tiling_controller_; //[ ] TODO init in constructor
 
   };
 
