@@ -10,7 +10,6 @@ namespace mylib
 
 #include "ui/StageController.h"
 
-
 #define GOLDENRATIO 1.61803399
 
 namespace fetch {
@@ -36,7 +35,7 @@ public slots:
   void addSelection(const QPainterPath& path);
   void removeSelection(const QPainterPath& path);
 
-  void update();
+  void update_tiling();
   void show(bool tf);
 
 protected:
@@ -44,19 +43,25 @@ protected:
   virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event); 
 
 private:
-  TilingController tc_;
+
+  TilingController *tc_;
   QGLBuffer vbo_,ibo_,cbo_;                    //vertex, index, and color  buffer objects for big lattice
   //QGLBUffer cursorColorVBO_,cursorIndexVBO_; //colors and indeces for highlighting tiles near the cursor
   //bool      cursorActive_;                   //
   //int       cursorIndexLength_;
   int       icursor_;
   QRectF    bbox_;
+  bool      is_active_;
 
   QImage    *latticeImage_;
 
   void draw_grid_();
   void draw_cursor_();
-  void init_cursor_(const QPointF& pos); 
+  void init_cursor_(const QPointF& pos);
+  void initIBO();
+  void updateIBO();
+  void initVBO();
+  void updateVBO();
   void initCBO();
   void updateCBO();
 };
