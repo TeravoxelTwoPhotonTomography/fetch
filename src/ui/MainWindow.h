@@ -10,6 +10,7 @@ namespace ui {
 
 class VideoAcquisitionDockWidget;
 class StackAcquisitionDockWidget;
+class MicroscopeStateDockWidget;
 class Figure;
 class IPlayerThread;
 
@@ -46,11 +47,12 @@ public: // semi-private
 
   VideoAcquisitionDockWidget *_videoAcquisitionDockWidget;
   StackAcquisitionDockWidget *_stackAcquisitionDockWidget;
+  MicroscopeStateDockWidget  *_microscopesStateDockWidget;
   Figure *_display;
   IPlayerThread *_player;
   
   QTimer _poller;
-  AgentController _scope_state_controller;
+  AgentController             _scope_state_controller;
   
   PlanarStageController*      _stageController;  
   

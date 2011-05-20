@@ -11,6 +11,8 @@ namespace ui {
     public:
       AgentController(Agent *agent);
 
+      QTimer *createPollingTimer();                                        // owned by the AgentController
+
     signals:
       void onAttach();
       void onDetach();

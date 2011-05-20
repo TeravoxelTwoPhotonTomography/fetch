@@ -5,7 +5,10 @@
 
 #include <util/util-gl.h>
 #include "tiles.h"
+#include "StageController.h"
 
+
+#undef HERE
 #define HERE "[TILES] At " << __FILE__ << "("<<__LINE__<<")\n"
 #define DBG(e) if(!(e)) qDebug() << HERE << "(!)\tCheck failed for Expression "#e << "\n" 
 #define SHOW(e) qDebug() << HERE << "\t"#e << " is " << e <<"\n" 
@@ -36,9 +39,15 @@ const float         W = 80.0,
    *       
    */
 
-TilesView::TilesView(QGraphicsItem *parent)
+
+namespace fetch {
+namespace ui {
+
+
+TilesView::TilesView(TilingController *tc, QGraphicsItem *parent)
   : 
     QGraphicsObject(parent),
+    tc_(tc),
     vbo_(QGLBuffer::VertexBuffer),
     ibo_(QGLBuffer::IndexBuffer), 
     cbo_(QGLBuffer::VertexBuffer),
@@ -48,6 +57,15 @@ TilesView::TilesView(QGraphicsItem *parent)
 { 
   setAcceptHoverEvents(true);
  // setFlags(ItemIsSelectable);
+
+  connect(
+    tc,SIGNAL(changed()),
+    this,SLOT(update())
+    );
+  connect(
+    tc,SIGNAL(show(bool)),
+    this,SLOT(show(bool))
+    )
 
   ///// Init vertex buffer - the tile geometry
   DBG( vbo_.create() );
@@ -280,3 +298,5 @@ void TilesView::updateCBO()
   cbo_.release();
   checkGLError();
 }
+
+}} // end namepsace fetch::ui 

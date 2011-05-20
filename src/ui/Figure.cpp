@@ -98,7 +98,7 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
 	_scene.addItem(_item);
   checkGLError(); 
 
-  _tv = new TilesView;
+  _tv = new TilesView(stageController->tiling());
   _scene.addItem(_tv);
   connect(&_scene,SIGNAL(   addSelectedArea(const QPainterPath&)),
               _tv,SLOT(     addSelection(const QPainterPath&)));

@@ -6,6 +6,7 @@
 #include "Figure.h"
 #include "Player.h"
 #include "StackAcquisitionDockWidget.h"
+#include "MicroscopeStateDockWidget.h"
 #include "StageController.h"
 
 fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
@@ -17,6 +18,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,fullscreenStateOff(0)
   ,fullscreenStateOn(0)
   ,_videoAcquisitionDockWidget(0)
+  ,_microscopesStateDockWidget(0)
   ,_display(0)
   ,_player(0)
   ,_scope_state_controller(&dc->__self_agent)
@@ -145,6 +147,10 @@ void fetch::ui::MainWindow::createDockWidgets()
   _stackAcquisitionDockWidget = new StackAcquisitionDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_stackAcquisitionDockWidget);
   viewMenu->addAction(_stackAcquisitionDockWidget->toggleViewAction());
+
+  _microscopesStateDockWidget = new MicroscopeStateDockWidget(_dc,this);
+  addDockWidget(Qt::LeftDockWidgetArea,_microscopesStateDockWidget);
+  viewMenu->addAction(_microscopesStateDockWidget->toggleViewAction());
 }
 
 void fetch::ui::MainWindow::createViews()

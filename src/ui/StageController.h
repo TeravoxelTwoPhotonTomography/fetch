@@ -6,7 +6,7 @@
 #include <Eigen/Core>
 #include "devices/stage.h"
 #include "devices/tiling.h"
-#include "AgentController.h"
+#include "ui/AgentController.h"
 
 using namespace Eigen;
 
@@ -22,9 +22,9 @@ namespace ui {
     void tile_next( size_t index, const Vector3f& pos )                    {emit sig_tile_next(index);}
 
   signals:
-    void sig_tile_done( size_t index, uint8_t sts );
+    void sig_tile_done( unsigned index, unsigned char sts );
     void sig_tiling_changed( device::StageTiling *tiling );
-    void sig_tile_next( size_t index );
+    void sig_tile_next( unsigned index );
   };
 
   class TilingController:public QObject
@@ -37,22 +37,24 @@ namespace ui {
 
     TilingController(device::StageTiling *tiling, QObject* parent=0);
 
-    void fovGeometry      (TRectVerts *out);
-    void latticeTransform (TTransform *out);
-    void latticeShape     (unsigned *width, unsigned *height);
+    inline bool is_valid()                                                 {return tiling_!=NULL;}
 
-    void markActive(const QPainterPath& path);
+    bool fovGeometry      (TRectVerts *out);                               // returns false if tiling is invalid
+    bool latticeTransform (TTransform *out);                               // returns false if tiling is invalid
+    bool latticeShape     (unsigned *width, unsigned *height);             // returns false if tiling is invalid
+
+    bool markActive(const QPainterPath& path);                             // returns false if tiling is invalid
 
   public slots:
-    void updateTiling(device::StageTiling *tiling)                         {tiling_=tiling; emit changed();}
+    void update(device::StageTiling *tiling)                               {tiling_=tiling; emit changed(); emit show(tiling_!=NULL);}
     void stageAttached()                                                   {emit show(true);}
     void stageDetached()                                                   {emit show(false);}
 
   signals:
     void show(bool tf);
     void changed();
-    void tileDone(size_t itile);
-    void nextTileRequest(size_t itile);                                    // really should be nextTileRequested
+    void tileDone(unsigned itile,unsigned char attr);
+    void nextTileRequest(unsigned itile);                                    // really should be nextTileRequested
     // other ideas: imaging started, move start, move end
 
   private:
@@ -67,11 +69,13 @@ namespace ui {
 
       static const units::Length Unit = units::MM;
 
-      PlanarStageController(device::Stage *stage, QObject *parent=0) : QObject(parent), stage_(stage), agent_controller_(stage->_agent) {}
+      PlanarStageController(device::Stage *stage, QObject *parent=0);// : QObject(parent), stage_(stage), agent_controller_(stage->_agent) {}
 
       QRectF  travel()                                                     { device::StageTravel t; stage_->getTravel(&t); return QRectF(QPointF(t.x.min,t.y.min),QPointF(t.x.max,t.y.max)); }
       QPointF velocity()                                                   { float vx,vy,vz; stage_->getVelocity(&vx,&vy,&vz); return QPointF(vx,vy); }
       QPointF pos()                                                        { float  x, y, z; stage_->getPos(&x,&y,&z); return QPointF(x,y); } 
+
+      TilingController* tiling()                                           {return &tiling_controller_;}
 
     signals:
 
@@ -83,11 +87,14 @@ namespace ui {
       void moveTo(QPointF r)                                               { float  x, y, z; stage_->getPos(&x,&y,&z); stage_->setPos(r.x(),r.y(),z);       emit moved(r);}
       void moveRel(QPointF dr)                                             { float  x, y, z; stage_->getPos(&x,&y,&z); stage_->setPos(x+dr.x(),y+dr.y(),z); emit moved( QPointF(x+dr.x(),y+dr.y()));} 
 
+      void updateTiling()                                                  { tiling_controller_.update(&stage_->tiling());}
+      void invalidateTiling()                                              { tiling_controller_.update(NULL);}
+
     private:
 
       device::Stage   *stage_;
       AgentController  agent_controller_;
-
+      TilingController tiling_controller_;
   };
 
 

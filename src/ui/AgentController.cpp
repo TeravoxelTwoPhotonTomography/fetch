@@ -104,6 +104,13 @@ void AgentController::stop()
   Guarded_Assert_WinErr(agent_->stop_nowait(INFINITE));
 }
 
+QTimer * AgentController::createPollingTimer()
+{
+  QTimer *poller = new QTimer(this);
+  connect(poller,SIGNAL(timeout()),this,SLOT(poll()));
+  return poller;
+}
+
 /**
   class AgentControllerButtonPanel : public QWidget
   {
@@ -180,7 +187,7 @@ AgentControllerButtonPanel::AgentControllerButtonPanel(AgentController *ac, Task
       c = taskAttached;
       c->assignProperty(btnDetach,"enabled",true);
       c->assignProperty(btnAttach,"enabled",false);
-      c->assignProperty(btnArm,   "enabled",true);
+      c->assignProperty(btnArm,   "enabled",armTarget_!=NULL);
       c->assignProperty(btnDisarm,"enabled",false);
       c->assignProperty(btnRun,   "enabled",false);
       c->assignProperty(btnStop,  "enabled",false);
@@ -232,7 +239,8 @@ void AgentControllerButtonPanel::onArmFilter( Task* t )
 
 void AgentControllerButtonPanel::armTargetTask()
 {
-  emit ac_->arm(armTarget_);
+  if(armTarget_)
+    emit ac_->arm(armTarget_);
 }
 
 
