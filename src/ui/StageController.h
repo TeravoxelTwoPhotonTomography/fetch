@@ -41,9 +41,15 @@ namespace ui {
 
     bool fovGeometry      (TRectVerts *out);                               // returns false if tiling is invalid
     bool latticeTransform (TTransform *out);                               // returns false if tiling is invalid
+    bool latticeTransform (QTransform *out);                               // returns false if tiling is invalid - QtVersion
     bool latticeShape     (unsigned *width, unsigned *height);             // returns false if tiling is invalid
+    bool latticeShape     (QRectF *out);                                   // returns false if tiling is invalid
+    bool stageAlignedBBox (QRectF *out);                                   // returns false if tiling is invalid
 
     bool markActive(const QPainterPath& path);                             // returns false if tiling is invalid
+    bool markInactive(const QPainterPath& path);                             // returns false if tiling is invalid
+
+    bool mapToIndex(const Vector3f & stage_coord, unsigned *index);        // returns false if tiling is invalid or if stage_coord is oob
 
   public slots:
     void update(device::StageTiling *tiling)                               {tiling_=tiling; emit changed(); emit show(tiling_!=NULL);}
@@ -61,6 +67,7 @@ namespace ui {
     device::StageTiling *tiling_;
     TilingControllerListener listener_;
 
+    bool mark( const QPainterPath& path, unsigned char attr, QPainter::CompositionMode mode );
   };
 
   class PlanarStageController:public QObject

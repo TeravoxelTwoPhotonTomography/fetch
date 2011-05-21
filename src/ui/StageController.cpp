@@ -3,6 +3,9 @@
 #include <QtGui>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <functional>
+
+using namespace std;
 using namespace Eigen;
 
 //////////////////////////////////////////////////////////////////////////
@@ -59,6 +62,24 @@ bool fetch::ui::TilingController::latticeTransform( TTransform *out )
   return false;
 }
 
+bool fetch::ui::TilingController::latticeTransform( QTransform *out )
+{ 
+  if(tiling_)
+  {     
+    TTransform latticeToStage;
+    latticeTransform(&latticeToStage);    
+    Matrix2f m  = latticeToStage.linear().topLeftCorner<2,2>();
+    Vector2f dr = latticeToStage.translation().head<2>();
+    QTransform t(
+      m(0,0), m(0,1), 0.0,
+      m(1,0), m(1,1), 0.0,
+      dr(0) ,  dr(1), 1.0);
+    *out=t;
+    return true;
+  }
+  return false;
+}
+
 bool fetch::ui::TilingController::latticeShape( unsigned *width, unsigned *height )
 { 
   if(tiling_)
@@ -71,8 +92,29 @@ bool fetch::ui::TilingController::latticeShape( unsigned *width, unsigned *heigh
   return false; 
 }
 
+bool fetch::ui::TilingController::latticeShape(QRectF *out)
+{ 
+  unsigned w,h;
+  if(latticeShape(&w,&h))
+  {      
+    out->setTopLeft(QPointF(0.0f,0.0f));
+    out->setSize(QSizeF(w,h));
+    return true;
+  }
+  return false; 
+}
+
+bool fetch::ui::TilingController::stageAlignedBBox(QRectF *out)
+{ QTransform l2s;
+  if(!latticeShape(out))
+    return false;
+  latticeTransform(&l2s);
+  *out = l2s.mapRect(*out);  
+  return true;
+}
+
 typedef mylib::uint8 uint8;
-bool fetch::ui::TilingController::markActive( const QPainterPath& path )
+bool fetch::ui::TilingController::mark( const QPainterPath& path, uint8 attr, QPainter::CompositionMode mode )
 {    
   if(tiling_)
   {           
@@ -83,30 +125,59 @@ bool fetch::ui::TilingController::markActive( const QPainterPath& path )
       plane = *lattice;
     mylib::Get_Array_Plane(&plane,tiling_->plane());  
     QImage im(AUINT8(&plane),w,h,w/*stride*/,QImage::Format_Indexed8);
-    QPainter painter(&im);
+    QPainter painter(&im);    
 
     // 2. Path is in scene coords.  transform to lattice coords
     //    Getting the transform is a bit of a pain bc we have to go from 
     //    Eigen to Qt :(
-    TTransform latticeToStage,stageToLattice;
-    latticeTransform(&latticeToStage);
-    stageToLattice = latticeToStage.inverse();
-    Matrix2f m  = stageToLattice.linear().topLeftCorner<2,2>();
-    Vector2f dr = stageToLattice.translation().head<2>();
-    QTransform t(
-      m(0,0), m(0,1), 0.0,
-      m(1,0), m(1,1), 0.0,
-      dr(0) ,  dr(1), 1.0);
+    QTransform l2s, s2l;
+    latticeTransform(&l2s);
+    s2l = l2s.inverted();        
 
     // 3. Fill in the path
     im.setColorCount(256);
     for(int i=0;i<256;++i) 
-      im.setColor(i,qRgb(i,i,i));
-    uint8 attr = (uint8)device::StageTiling::Active;
-    painter.setTransform(t);
-    painter.setCompositionMode(QPainter::RasterOp_SourceAndDestination);
+      im.setColor(i,qRgb(i,i,i));    
+    painter.setTransform(s2l);
+    painter.setCompositionMode(mode);
     painter.fillPath(path,QBrush(qRgb(attr,attr,attr)));
     return true;
+  }
+  return false;
+}
+
+bool fetch::ui::TilingController::markActive( const QPainterPath& path )
+{   
+  return mark(
+    path,
+    (uint8)device::StageTiling::Active,
+    QPainter::RasterOp_SourceOrDestination);
+}     
+
+bool fetch::ui::TilingController::markInactive( const QPainterPath& path )
+{   
+  return mark(
+    path,
+    (uint8)device::StageTiling::Active,
+    QPainter::RasterOp_NotSourceAndDestination);
+}
+
+// returns false if tiling is invalid or if stage_coord is oob
+float roundf(float x) {return floor(0.5f+x);}
+bool fetch::ui::TilingController::mapToIndex(const Vector3f & stage_coord, unsigned *index)
+{
+  TTransform t;  
+  if(latticeTransform(&t))
+  { unsigned w,h;
+    Vector3f lr = t.inverse()*stage_coord;
+    lr.unaryExpr(ptr_fun(roundf));
+    latticeShape(&w,&h);
+    QRectF bounds(0,0,w,h);
+    if( bounds.contains(QPointF(lr(0),lr(1))) )
+    {
+      *index = lr(1)*w+lr(0);
+      return true;
+    }
   }
   return false;
 }

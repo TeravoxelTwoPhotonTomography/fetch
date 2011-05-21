@@ -43,6 +43,7 @@ protected:
   virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event); 
 
 private:
+  typedef TilingController::TTransform TTransform;
 
   TilingController *tc_;
   QGLBuffer vbo_,ibo_,cbo_;                    //vertex, index, and color  buffer objects for big lattice
@@ -57,6 +58,7 @@ private:
 
   void draw_grid_();
   void draw_cursor_();
+  void paint_lattice_(const QPainterPath& path, const QColor& pc, const QColor &bc);
   void init_cursor_(const QPointF& pos);
   void initIBO();
   void updateIBO();

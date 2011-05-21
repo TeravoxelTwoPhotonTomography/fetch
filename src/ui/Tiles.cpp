@@ -13,10 +13,10 @@
 #define DBG(e) if(!(e)) qDebug() << HERE << "(!)\tCheck failed for Expression "#e << "\n" 
 #define SHOW(e) qDebug() << HERE << "\t"#e << " is " << e <<"\n" 
 
-const int   GRID_ROWS = 500,
-            GRID_COLS = 700;
-const float         W = 80.0,
-                    H = 80.0;
+//const int   GRID_ROWS = 500,
+//            GRID_COLS = 700;
+//const float         W = 80.0,
+//                    H = 80.0;
 
   /*  Buffer object format:
    *       --------------
@@ -79,16 +79,18 @@ TilesView::TilesView(TilingController *tc, QGraphicsItem *parent)
 
 #define myround(e) floor(0.5+(e))
 void TilesView::init_cursor_(const QPointF& pos)
-{ QPoint r(myround(pos.x()/W),myround(pos.y()/H));
-  const QRect bounds(0,0,GRID_COLS,GRID_ROWS);
-  if(bounds.contains(r))
-    icursor_ = r.y()*GRID_COLS+r.x();
-   
+{ 
+  unsigned i;
+  Vector3f r(pos.x(),pos.y(),0.0);
+  if(tc_->mapToIndex(r,&i))
+    icursor_ = i;   
+  else 
+    icursor_ = -1;
 }
 
 QRectF TilesView::boundingRect() const
 {
-  return bbox_;
+  return bbox_;  // updated by update_tiling()
 }
 
 void TilesView::draw_grid_()
@@ -106,7 +108,7 @@ void TilesView::draw_grid_()
   cbo_.release();
   
   DBG( ibo_.bind() );
-  GLsizei rect_stride = 4,
+  GLsizei rect_stride = 4, // verts per rect
           nrect = ibo_.size()/sizeof(GLuint)/rect_stride;  
   glDrawElements(GL_QUADS,nrect*rect_stride,GL_UNSIGNED_INT,NULL);
   ibo_.release();         
@@ -117,14 +119,14 @@ void TilesView::draw_grid_()
 
 void TilesView::draw_cursor_()
 {
-  const size_t rect_stride_bytes = sizeof(GLuint)*4; 
+  const size_t rect_stride_bytes = sizeof(GLuint)*4; //4 verts per rect
   if(icursor_>=0)
   {
     DBG( vbo_.bind() );
     DBG( ibo_.bind() );
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(3,GL_FLOAT,3*sizeof(float),NULL);
-    glColor4f(1.0f,1.0f,1.0f,0.3f);
+    glColor4f(1.0f,1.0f,1.0f,0.3f);    // hover-cursor color
     glDrawElements(GL_QUADS,4,GL_UNSIGNED_INT,(void*)(icursor_*rect_stride_bytes));
     glDisableClientState(GL_VERTEX_ARRAY);
     ibo_.release();
@@ -178,76 +180,136 @@ TilesView::~TilesView()
   if(latticeImage_) delete latticeImage_;
 }
 
-void TilesView::addSelection( const QPainterPath& path )
-{  QColor c(255,255,0,255);
-   QPainter painter(latticeImage_);       
-   painter.scale(1.0/W,1.0/H);                                             // - path is in scene coords...need to transform to lattice coords
-   painter.setPen(c);                                                      // - lattice to scene is a scaling by (W,H)
-   painter.setBrush(c);                                                    // - tiles are anchored in the center.   
-   for(int ivert=0;ivert<4;++ivert)
+void TilesView::paint_lattice_(const QPainterPath& path, const QColor& pc, const QColor &bc)
+{ 
+  QPainter painter(latticeImage_);
+  QTransform l2s,s2l;
+  
+  if(!tc_->latticeTransform(&l2s))
+    return;
+  s2l = l2s.inverted();
+  painter.setTransform(s2l);                                               // - path is in scene coords...need to transform to lattice coords
+  painter.setPen(pc);                                                      // - lattice to scene is a scaling by (W,H)
+  painter.setBrush(bc);                                                    // - tiles are anchored in the center.   
+
+  unsigned w,h;
+  tc_->latticeShape(&w,&h);
+  QPointF offset(0.0f,h);
+  offset = l2s.map(offset);
+  for(int ivert=0;ivert<4;++ivert)
    {     
      painter.drawPath(path);
-     painter.translate(0.0,GRID_ROWS*H);
-   }   
+     painter.translate(offset);                                            // translation has to be in stage coords
+   }                                                                       
    updateCBO();
    update();
+}
+
+void TilesView::addSelection( const QPainterPath& path )
+{  QColor c(255,255,0,255);
+   tc_->markActive(path);
+   paint_lattice_(path,c,c);
 }
 
 void TilesView::removeSelection( const QPainterPath& path )
 {
    QColor c(0,255,255,255);
-   QPainter painter(latticeImage_);
-
-   painter.scale(1.0/W,1.0/H);                                             // - path is in scene coords...need to transform to lattice coords
-   painter.setPen(c);                                                      // - lattice to scene is a scaling by (W,H)
-   painter.setBrush(c);                                                    // - tiles are anchored in the center.   
-     
-   for(int ivert=0;ivert<4;++ivert)                                        // - need to draw for all four vertexes
-   {     
-     painter.drawPath(path);
-     painter.translate(0.0,GRID_ROWS*H);                                   // must translate before the scaling
-   }   
-   updateCBO();
-   update();
+   tc_->markInactive(path);
+   paint_lattice_(path,c,c);   
 }
 
 void TilesView::initIBO()
 {
-  DBG( ibo_.create() );
-  DBG( ibo_.bind() );
-  ibo_.setUsagePattern(QGLBuffer::StaticDraw);
-  ibo_.allocate(sizeof(GLuint)*4*GRID_ROWS*GRID_COLS);                   // number of verts
-  ibo_.release();
-  checkGLError();
+  unsigned w,h;
+  if(!ibo_.isCreated())
+  {
+    DBG(ibo_.create());
+    ibo_.setUsagePattern(QGLBuffer::StaticDraw);
+  }
+  if(tc_->latticeShape(&w,&h))
+  {    
+    DBG( ibo_.bind() );    
+    ibo_.allocate(sizeof(GLuint)*4*w*h);                   // number of verts
+    ibo_.release();
+    checkGLError();
+  }
 }
 
 void TilesView::updateIBO()
 { 
-  GLuint vert_stride = GRID_COLS*GRID_ROWS;
-  DBG( ibo_.bind() );  
-  GLuint *idata = (GLuint*)ibo_.map(QGLBuffer::WriteOnly);
-  for(GLuint irect=0;irect<GRID_ROWS*GRID_COLS;++irect)
-  { GLuint *row = idata + 4*irect;
-  for(GLuint ivert=0;ivert<4;++ivert)
-    row[ivert] = irect + ivert*vert_stride;
+  unsigned w,h;
+  if(!ibo_.isCreated())
+    initIBO();
+  if(tc_->latticeShape(&w,&h))
+  {       
+    GLuint vert_stride = w*h;
+    DBG( ibo_.bind() );  
+    GLuint *idata = (GLuint*)ibo_.map(QGLBuffer::WriteOnly);
+    for(GLuint irect=0;irect<w*h;++irect)
+    { 
+      GLuint *row = idata + 4*irect;
+      for(GLuint ivert=0;ivert<4;++ivert)
+        row[ivert] = irect + ivert*vert_stride;
+    }
+    DBG( ibo_.unmap() );
+    ibo_.release();
+    checkGLError();
   }
-  DBG( ibo_.unmap() );
-  ibo_.release();
-  checkGLError();
 }
 
 void TilesView::initVBO()
 {
-  DBG( vbo_.create() );
-  DBG( vbo_.bind() );
-  vbo_.setUsagePattern(QGLBuffer::StaticDraw);
-  vbo_.allocate(sizeof(float)*12*GRID_COLS*GRID_ROWS);                     // 4 verts per rect, 3 floats per vert = 12 floats per rect
-  vbo_.release();
-  checkGLError();
+  unsigned w,h;
+  if(!vbo_.isCreated())
+  {
+    DBG(vbo_.create());
+    vbo_.setUsagePattern(QGLBuffer::StaticDraw);
+  }
+  if(tc_->latticeShape(&w,&h))
+  {    
+    DBG( vbo_.bind() );    
+    vbo_.allocate(sizeof(GLuint)*12*w*h);                   // 4 verts per rect, 3 floats per vert = 12 floats per rect
+    vbo_.release();
+    checkGLError();
+  }
 }
 
 void TilesView::updateVBO()
 {
+  if(!vbo_.isCreated())
+    initVBO();
+
+  TilingController::TRectVerts verts; 
+  if(tc_->fovGeometry(&verts))
+  {
+    DBG( vbo_.bind() );
+    float *vdata = (float*)vbo_.map(QGLBuffer::WriteOnly);
+    { 
+      unsigned w,h;
+      const int 
+        vert_stride = 1, // default for Eigen is col-major, so order is x0,y0,z0,z1,y1,z1,...
+        latt_stride = w*h*vert_stride;
+      for(int ivert=0;ivert<4;++ivert)
+      { 
+        float 
+          *dest = vdata       +ivert*latt_stride,
+          *src  = verts.data()+ivert*vert_stride;
+        for(int ix=0; ix<w;++ix)
+          for(int iy=0; iy<h;++iy)      
+          { 
+            Vertex3f ir(ix,iy,0.0f);
+            int irect = ix+iy*GRID_COLS;
+            float *r = dest + irect*vert_stride;        
+            memcpy(r,src,vert_stride*sizeof(float));
+            r[0]+=dr[0]*ix;
+            r[1]+=dr[1]*iy;
+          }
+      }
+    }
+    DBG( vbo_.unmap() );
+    vbo_.release();
+    checkGLError();
+  }
   
   float verts[] = {      //V3F - use this as a template
     -59.f,   -39.f,    0.0f,             
@@ -257,34 +319,7 @@ void TilesView::updateVBO()
   }; 
   float dr[] = {W,H,0.0};  
 
-  bbox_.setTopLeft(QPointF(verts[0],verts[1]));
-  bbox_.setWidth (W*(GRID_COLS+1));
-  bbox_.setHeight(H*(GRID_ROWS+1));  
 
-  DBG( vbo_.bind() );
-  float *vdata = (float*)vbo_.map(QGLBuffer::WriteOnly);
-  { 
-    const int 
-      vert_stride = 3,
-      latt_stride = GRID_COLS*GRID_ROWS*vert_stride;
-    for(int ivert=0;ivert<4;++ivert)
-    { 
-      float *dest = vdata+ivert*latt_stride,
-        *src  = verts+ivert*vert_stride;
-      for(int ix=0; ix<GRID_COLS;++ix)
-        for(int iy=0; iy<GRID_ROWS;++iy)      
-        { 
-          int irect = ix+iy*GRID_COLS;
-          float *r = dest + irect*vert_stride;        
-          memcpy(r,src,vert_stride*sizeof(float));
-          r[0]+=dr[0]*ix;
-          r[1]+=dr[1]*iy;
-        }
-    }
-  }
-  DBG( vbo_.unmap() );
-  vbo_.release();
-  checkGLError();
 
 }
 
@@ -325,7 +360,11 @@ void TilesView::updateCBO()
 }
 
 void TilesView::update_tiling()
-{
+{  
+  if(!tc_->stageAlignedBBox(&bbox_))    
+  {
+    
+  }
 
 }
 
