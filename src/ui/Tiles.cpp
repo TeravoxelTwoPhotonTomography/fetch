@@ -331,7 +331,7 @@ void TilesView::update_tiling()
 
 void TilesView::show( bool tf )
 {
-
+   setVisible(tf); 
 }
 
 }} // end namepsace fetch::ui 
