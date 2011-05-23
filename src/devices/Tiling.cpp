@@ -58,8 +58,9 @@ namespace device {
         // Rotate the lattice
         latticeToStage_
           .rotate( AngleAxis<float>(fov.rotation_radians_,Vector3f::UnitZ()) )
-          .scale(sc);
-        break;
+          .scale(sc);          
+        //SHOW(latticeToStage_.matrix());
+        return;
     case Mode::Stage_TilingMode_StageAligned:
         // Shear the lattice
         float th = fov.rotation_radians_;
@@ -69,7 +70,7 @@ namespace device {
                        0,  cos(th), 0,
                        0,        0, 1).finished();
         latticeToStage_.scale(sc);
-        break;
+        return;
     }
   }
   
@@ -97,16 +98,16 @@ namespace device {
     SHOW(sabox);
 
     Matrix<float,3,8> labox; // vertices of the cube, lattice aligned
-    labox = latticeToStage_.inverse() * sabox.transpose();
+    labox.noalias() = latticeToStage_.inverse() * sabox.transpose();
     SHOW(labox);
 
     Vector3f maxs,mins;
-    maxs = labox.rowwise().maxCoeff();
-    mins = labox.rowwise().minCoeff();
+    maxs.noalias() = labox.rowwise().maxCoeff();
+    mins.noalias() = labox.rowwise().minCoeff();
     SHOW(mins);
     SHOW(maxs);
 
-    latticeToStage_.translate(-mins);
+    latticeToStage_.translate(mins);
     Vector3z c((maxs-mins).cast<size_t>());
     SHOW(c);
 
@@ -161,9 +162,9 @@ namespace device {
 #pragma warning(push)
 #pragma warning(disable:4244) // conversion from 'double' to 'mylib::Dimn_Type' might lose data
     mylib::Coordinate *mid = mylib::Coord3( 
-      (travel->x.max-travel->x.min)/2.0,
+      (travel->z.max-travel->z.min)/2.0,
       (travel->y.max-travel->y.min)/2.0, 
-      (travel->z.max-travel->z.min)/2.0);
+      (travel->x.max-travel->x.min)/2.0);
 #pragma warning(push)
 
     leftmostAddressable_ = mylib::Find_Leftmost_Seed(

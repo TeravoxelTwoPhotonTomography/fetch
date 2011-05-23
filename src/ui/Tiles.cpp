@@ -319,9 +319,9 @@ void TilesView::updateVBO()
     Matrix3Xf lcoord(3,w*h),scoord(3,w*h);
     {
       float *d = lcoord.data();    
-      for(float ix=0;ix<w;++ix)
+      for(float iy=0;iy<h;++iy)      
       { 
-        for(float iy=0;iy<h;++iy)
+        for(float ix=0;ix<w;++ix)
         {
           *d++ = ix;
           *d++ = iy;
@@ -337,6 +337,7 @@ void TilesView::updateVBO()
     TTransform l2s;    
     tc_->latticeTransform(&l2s);
     scoord.noalias() = l2s * lcoord;  // FIXME: SLOW faster but still slower than it ought to be [~1-2s, debug]    
+    //std::cout << "---" << std::endl << l2s.matrix()              << std::endl << "---" << std::endl;
     //std::cout << "---" << std::endl << scoord.block<3,10>(0,0  ) << std::endl << "---" << std::endl;
     //std::cout << "---" << std::endl << scoord.block<3,10>(0,w-1) << std::endl << "---" << std::endl;
 

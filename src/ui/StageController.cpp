@@ -50,9 +50,9 @@ bool fetch::ui::TilingController::fovGeometry( TRectVerts *out )
     device::FieldOfViewGeometry fov(tiling_->fov());
     TRectVerts rect;
     rect << 
-      -1.0f, 1.0f, 1.0f, -1.0f, // x - hopefully, counter clockwise
-      -1.0f,-1.0f, 1.0f,  1.0f, // y
-      0.0f, 0.0f, 0.0f,  0.0f; // z
+      -0.5f, 0.5f, 0.5f, -0.5f, // x - hopefully, counter clockwise
+      -0.5f,-0.5f, 0.5f,  0.5f, // y
+       0.0f, 0.0f, 0.0f,  0.0f; // z
     TTransform t = TTransform::Identity();
     //std::cout << "---" << std::endl << t.matrix() << std::endl << "---" << std::endl;
     t.rotate(AngleAxisf(fov.rotation_radians_,Vector3f::UnitZ()));
@@ -81,12 +81,12 @@ bool fetch::ui::TilingController::latticeTransform( QTransform *out )
   {     
     TTransform latticeToStage;
     latticeTransform(&latticeToStage);    
-    Matrix2f m  = latticeToStage.linear().topLeftCorner<2,2>();
-    Vector2f dr = latticeToStage.translation().head<2>();
-    QTransform t(
-      m(0,0), m(0,1), 0.0,
-      m(1,0), m(1,1), 0.0,
-      dr(0) ,  dr(1), 1.0);
+    Matrix4f m  = latticeToStage.matrix();
+    SHOW2(m);
+    QTransform t( // Transposed relative to Eigen
+      m(0,0), m(1,0), 0.0,
+      m(0,1), m(1,1), 0.0,
+      m(0,3), m(1,3), 1.0);      
     *out=t;
     return true;
   }
@@ -121,9 +121,10 @@ bool fetch::ui::TilingController::stageAlignedBBox(QRectF *out)
 { QTransform l2s;
   if(!latticeShape(out))
     return false;
+  //SHOW(*out);
   latticeTransform(&l2s);    
-  *out = l2s.mapRect(*out);
   //SHOW(l2s);
+  *out = l2s.mapRect(*out);  
   //SHOW(*out);
   return true;
 }
@@ -195,7 +196,7 @@ bool fetch::ui::TilingController::mapToIndex(const Vector3f & stage_coord, unsig
     QRectF bounds(0,0,w,h);
     if( bounds.contains(QPointF(lr(0),lr(1))) )
     {
-      *index = lr(0)*w+lr(1);
+      *index = lr(1)*w+lr(0);
       return true;
     }
   }

@@ -112,7 +112,14 @@ stage {
     axis { min_mm: 0.0  max_mm: 100.0}
     axis { min_mm: 0.0  max_mm: 100.0}
     axis { min_mm: 0.0  max_mm: 12.5 }
-  }    
+  }
+  fov {
+    x_size_um: 150.0
+    y_size_um: 100.0
+    z_size_um: 400.0
+    rotation_radians: 0.785398163
+  }
+  tilemode: StageAligned #StageAligned #PixelAligned
 }
 resonant_wrap         { turn_px: 0 }
 horizontal_downsample { ntimes : 1 }
