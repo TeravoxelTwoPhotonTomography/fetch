@@ -105,8 +105,8 @@ namespace device {
 
       void setKind(Config::StageType kind);
 
-      virtual unsigned int on_attach() {return _idevice->on_attach(); _createTiling();}
-      virtual unsigned int on_detach() {return _idevice->on_detach(); if(_tiling) delete _tiling; _tiling=NULL;}
+      virtual unsigned int on_attach() {unsigned int eflag = _idevice->on_attach(); if(eflag==0) _createTiling(); return eflag;}
+      virtual unsigned int on_detach() {unsigned int eflag = _idevice->on_detach(); if((eflag==0)&&_tiling) {delete _tiling; _tiling=NULL;} return eflag;}
       void _set_config( Config IN *cfg );
       void _set_config( const Config &cfg );
 
@@ -123,7 +123,7 @@ namespace device {
   
               void addListener(StageListener *listener);
               void delListener(StageListener *listener);
-      inline  StageTiling& tiling()                                         {return *_tiling;}
+      inline  StageTiling* tiling()                                         {return _tiling;}
   protected:
       void    _createTiling();       //only call when disarmed
       void    _notifyTilingChanged();

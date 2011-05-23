@@ -96,16 +96,16 @@ QRectF TilesView::boundingRect() const
 void TilesView::draw_grid_()
 { 
   glEnableClientState(GL_VERTEX_ARRAY);
-  glEnableClientState(GL_COLOR_ARRAY);
-  //glColor4f(1.0,0.0,0.5,0.5);
+  //glEnableClientState(GL_COLOR_ARRAY);
+  glColor4f(1.0,0.0,0.5,0.5);
 
   DBG( vbo_.bind() );
   glVertexPointer(3,GL_FLOAT,3*sizeof(float),(void*)0);
   vbo_.release();  
-
+/*
   DBG( cbo_.bind() );
   glColorPointer(4,GL_UNSIGNED_BYTE,4*sizeof(GLubyte),(void*)0);
-  cbo_.release();
+  cbo_.release();*/
   
   DBG( ibo_.bind() );
   GLsizei rect_stride = 4, // verts per rect
@@ -274,6 +274,7 @@ void TilesView::initVBO()
   }
 }
 
+#include <Eigen\Core>
 void TilesView::updateVBO()
 {
   if(!vbo_.isCreated())
@@ -286,77 +287,76 @@ void TilesView::updateVBO()
     float *vdata = (float*)vbo_.map(QGLBuffer::WriteOnly);
     { 
       unsigned w,h;
+      tc_->latticeShape(&w,&h);
+      TTransform l2s;
       const int 
-        vert_stride = 1, // default for Eigen is col-major, so order is x0,y0,z0,z1,y1,z1,...
+        vert_stride = 3,
         latt_stride = w*h*vert_stride;
+      Vector3f r(0.0f,0.0f,0.0f),v;
+      tc_->latticeTransform(&l2s);
+      
       for(int ivert=0;ivert<4;++ivert)
       { 
-        float 
-          *dest = vdata       +ivert*latt_stride,
-          *src  = verts.data()+ivert*vert_stride;
-        for(int ix=0; ix<w;++ix)
-          for(int iy=0; iy<h;++iy)      
+        float *dest = vdata+ivert*latt_stride;
+        for(unsigned ix=0; ix<w;++ix)
+        { r(0)=ix;
+          for(unsigned iy=0; iy<h;++iy)      
           { 
-            Vertex3f ir(ix,iy,0.0f);
-            int irect = ix+iy*GRID_COLS;
-            float *r = dest + irect*vert_stride;        
-            memcpy(r,src,vert_stride*sizeof(float));
-            r[0]+=dr[0]*ix;
-            r[1]+=dr[1]*iy;
+            r(1)= iy;
+            v = l2s*r + verts.col(ivert);
+
+            int irect = ix+iy*w;
+            float *d = dest + irect*vert_stride;
+            memcpy(d,v.data(),vert_stride*sizeof(float));
           }
+        }
       }
     }
     DBG( vbo_.unmap() );
     vbo_.release();
     checkGLError();
   }
-  
-  float verts[] = {      //V3F - use this as a template
-    -59.f,   -39.f,    0.0f,             
-    39.f,   -59.f,    0.0f,             
-    59.f,    39.f,    0.0f,             
-    -39.f,    59.f,    0.0f,             
-  }; 
-  float dr[] = {W,H,0.0};  
-
-
-
 }
 
 void TilesView::initCBO()
-{
-  latticeImage_ = new QImage(GRID_COLS,4*GRID_ROWS,QImage::Format_ARGB32_Premultiplied);
+{ unsigned w,h;
+  if(!cbo_.isCreated())
+    DBG( cbo_.create() );  
 
-  DBG( cbo_.create() );
-  cbo_.setUsagePattern(QGLBuffer::StaticDraw);  
-  DBG( cbo_.bind() );
-  cbo_.allocate(sizeof(GLubyte)*16*GRID_COLS*GRID_ROWS);                   // 4 verts per rect, 4 ubytes per vert = 16 ubytes per rect
-  cbo_.release();  
-  checkGLError();
+  if(tc_->latticeShape(&w,&h))
+  { 
+    latticeImage_ = new QImage(w,4*h,QImage::Format_ARGB32_Premultiplied);
+  
+    cbo_.setUsagePattern(QGLBuffer::StaticDraw);  
+    DBG( cbo_.bind() );
+    cbo_.allocate(sizeof(GLubyte)*16*w*h);                   // 4 verts per rect, 4 ubytes per vert = 16 ubytes per rect
+    cbo_.release();  
+    checkGLError();
+  }
 }
 void TilesView::updateCBO()
 {
   /// Do the initial draw to a local buffer
 
-  QPainter painter(latticeImage_);  
-  // QT->OpenGL switches red and blue.  This is a -60 degress rotation in the hue colorwheel.
-  painter.fillRect(QRectF(latticeImage_->rect()),QBrush(QColor::fromHsvF(0.7,1.0,1.0,0.3)));
-  QRectF stage_addressable_rect(GRID_COLS/4.0,GRID_ROWS/4.0,GRID_COLS/2.0,GRID_COLS/2.0);
-  QColor stage_addressable_color(QColor::fromHsvF(0.3,1.0,1.0,0.5));
-  painter.fillRect(stage_addressable_rect,QBrush(stage_addressable_color));
-  for(int i=0;i<3;++i)
-  {
-    stage_addressable_rect.translate(0.0,GRID_ROWS);
-    painter.fillRect(stage_addressable_rect,QBrush(stage_addressable_color));
-  }
+  //QPainter painter(latticeImage_);  
+  //// QT->OpenGL switches red and blue.  This is a -60 degress rotation in the hue colorwheel.
+  //painter.fillRect(QRectF(latticeImage_->rect()),QBrush(QColor::fromHsvF(0.7,1.0,1.0,0.3)));
+  //QRectF stage_addressable_rect(GRID_COLS/4.0,GRID_ROWS/4.0,GRID_COLS/2.0,GRID_COLS/2.0);
+  //QColor stage_addressable_color(QColor::fromHsvF(0.3,1.0,1.0,0.5));
+  //painter.fillRect(stage_addressable_rect,QBrush(stage_addressable_color));
+  //for(int i=0;i<3;++i)
+  //{
+  //  stage_addressable_rect.translate(0.0,GRID_ROWS);
+  //  painter.fillRect(stage_addressable_rect,QBrush(stage_addressable_color));
+  //}
 
-  /// copy the local buffer to the vertex color buffer object
-  DBG( cbo_.bind() );
-  GLubyte *cdata = (GLubyte*)cbo_.map(QGLBuffer::WriteOnly);
-  memcpy(cdata,latticeImage_->constBits(),latticeImage_->byteCount());
-  DBG( cbo_.unmap() );
-  cbo_.release();
-  checkGLError();
+  ///// copy the local buffer to the vertex color buffer object
+  //DBG( cbo_.bind() );
+  //GLubyte *cdata = (GLubyte*)cbo_.map(QGLBuffer::WriteOnly);
+  //memcpy(cdata,latticeImage_->constBits(),latticeImage_->byteCount());
+  //DBG( cbo_.unmap() );
+  //cbo_.release();
+  //checkGLError();
 }
 
 void TilesView::update_tiling()

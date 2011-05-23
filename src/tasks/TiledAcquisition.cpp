@@ -56,7 +56,7 @@ namespace fetch
 
         d->__scan_agent.arm(&grabstack,&d->scanner);                      // why was this arm_nowait?
 
-        d->stage()->tiling().resetCursor();
+        d->stage()->tiling()->resetCursor();
 
         return 1; //success
       }
@@ -98,8 +98,8 @@ namespace fetch
         eflag |= dc->runPipeline();
         eflag |= dc->__scan_agent.run() != 1;
 
-        device::StageTiling& tiling = dc->stage()->tiling();
-        while(tiling.nextInPlanePosition(tilepos))
+        device::StageTiling* tiling = dc->stage()->tiling();
+        while(tiling->nextInPlanePosition(tilepos))
         { HANDLE hs[] = {dc->__scan_agent._thread,          
                          dc->__self_agent._notify_stop};
           DWORD res;
@@ -127,7 +127,7 @@ namespace fetch
           dc->write_stack_metadata();
           dc->file_series.inc();
           
-          tiling.markDone(eflag==0);
+          tiling->markDone(eflag==0);
           //dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
           
         }

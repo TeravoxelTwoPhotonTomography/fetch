@@ -35,7 +35,7 @@ namespace ui {
     typedef Matrix<float,3,4>         TRectVerts;
     typedef Transform<float,3,Affine> TTransform;
 
-    TilingController(device::StageTiling *tiling, QObject* parent=0);
+    TilingController(device::StageTiling *tiling=NULL, QObject* parent=0);
 
     inline bool is_valid()                                                 {return tiling_!=NULL;}
 
@@ -94,7 +94,7 @@ namespace ui {
       void moveTo(QPointF r)                                               { float  x, y, z; stage_->getPos(&x,&y,&z); stage_->setPos(r.x(),r.y(),z);       emit moved(r);}
       void moveRel(QPointF dr)                                             { float  x, y, z; stage_->getPos(&x,&y,&z); stage_->setPos(x+dr.x(),y+dr.y(),z); emit moved( QPointF(x+dr.x(),y+dr.y()));} 
 
-      void updateTiling()                                                  { tiling_controller_.update(&stage_->tiling());}
+      void updateTiling()                                                  { tiling_controller_.update(stage_->tiling());}
       void invalidateTiling()                                              { tiling_controller_.update(NULL);}
 
     private:

@@ -9,6 +9,9 @@ namespace mylib
 #include <flood.fill.h>
 }
 
+#include <iostream>
+#define SHOW(e) std::cout << "---" << std::endl << #e << " is " << std::endl << (e) << std::endl << "~~~"  << std::endl;
+
 namespace fetch {
 namespace device {
   //////////////////////////////////////////////////////////////////////
@@ -80,7 +83,7 @@ namespace device {
   mylib::Coordinate* StageTiling::computeLatticeExtents_(const device::StageTravel& travel)
   {
     Matrix<float,8,3> sabox; // vertices of the cube, stage aligned
-    sabox <<
+    sabox << // travel is in mm
          travel.x.min,   travel.y.min,   travel.z.min,
          travel.x.min,   travel.y.max,   travel.z.min,
          travel.x.max,   travel.y.max,   travel.z.min,
@@ -90,17 +93,24 @@ namespace device {
          travel.x.min,   travel.y.max,   travel.z.max,
          travel.x.max,   travel.y.max,   travel.z.max,
          travel.x.max,   travel.y.min,   travel.z.max;
+    sabox *= 1000.0; //mm to um
+    SHOW(sabox);    
 
     Matrix<float,3,8> labox; // vertices of the cube, lattice aligned
     labox = latticeToStage_.inverse() * sabox.transpose();
+    SHOW(labox);
 
     Vector3f maxs,mins;
     maxs = labox.rowwise().maxCoeff();
     mins = labox.rowwise().minCoeff();
+    SHOW(mins);
+    SHOW(maxs);
 
     latticeToStage_.translate(-mins);
     Vector3z c((maxs-mins).cast<size_t>());
-    return mylib::Coord3(c(0)+1,c(1)+1,c(2)+1); //shape of the lattice
+    SHOW(c);
+
+    return mylib::Coord3(c(2)+1,c(1)+1,c(0)+1); //shape of the lattice
   }
 
   //  initMask_  ///////////////////////////////////////////////////////

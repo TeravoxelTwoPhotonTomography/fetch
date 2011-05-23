@@ -110,8 +110,11 @@
       // of distinguishing.  Perhaps just rename IDevice's attach()/detach() to __attach()/__detach()
       // or onAttach/onDetach...something to remind me it's a callback.
       //
+      // also on_attach/on_detach only gets called for the owner, so the events have to be forwarded
+      // to devices that share the agent.  This seems awkward :C
 
       eflag |= __scan_agent.attach(); //scanner.attach(); 
+      eflag |= stage_.on_attach();
 
       std::string stackname = _config->file_prefix()+_config->stack_extension();
       file_series.ensurePathExists();   
@@ -131,6 +134,8 @@
       eflag |= wrap._agent->detach();
       eflag |= trash._agent->detach();
       eflag |= disk._agent->detach();
+
+      eflag |= stage_.on_detach();
       return eflag;  
     }
     

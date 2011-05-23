@@ -97,7 +97,8 @@ namespace device {
     void notifyNext(size_t i, const Vector3f& pos);  
 
     const Vector3f computeCursorPos();
-
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   };
   
 }} //end namespace fetch

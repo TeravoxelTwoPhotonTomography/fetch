@@ -141,6 +141,7 @@ namespace device {
     ,_simulated(NULL)
     ,_idevice(NULL)
     ,_istage(NULL)
+    ,_tiling(NULL)
   {
     setKind(_config->kind());
   } 
@@ -195,7 +196,7 @@ namespace device {
 
   // Only use when attached but disarmed.
   void Stage::_createTiling()
-  { if(_tiling) delete _tiling;
+  { if(_tiling) {delete _tiling; _tiling=NULL;}
     FieldOfViewGeometry fov(_config->fov());
     device::StageTravel travel;
     getTravel(&travel);
