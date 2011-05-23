@@ -117,7 +117,9 @@ stage {
     x_size_um: 150.0
     y_size_um: 100.0
     z_size_um: 400.0
-    rotation_radians: 0.785398163
+    x_overlap_um: 20.0
+    y_overlap_um: 5.0
+    rotation_radians: 0.1 #0.785398163
   }
   tilemode: StageAligned #StageAligned #PixelAligned
 }

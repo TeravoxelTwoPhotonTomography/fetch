@@ -51,7 +51,7 @@ namespace device {
                           (const FieldOfViewGeometry &fov,
                            const Mode                 alignment)
   { latticeToStage_ = TTransform::Identity();
-    Vector3f sc = fov.field_size_um_;
+    Vector3f sc = fov.field_size_um_ - fov.overlap_um_;
     switch(alignment)
     { 
     case Mode::Stage_TilingMode_PixelAligned:

@@ -27,8 +27,11 @@ message FieldOfViewGeometry
 { 
   optional float x_size_um        = 1 [ default = 100.0];
   optional float y_size_um        = 2 [ default = 100.0];
-  optional float z_size_um        = 3 [ default = 100.0];
-  optional float rotation_radians = 4 [ default = 0.0  ];
+  optional float z_size_um        = 3 [ default = 100.0];  
+  optional float x_overlap_um     = 4 [ default = 10.0 ];
+  optional float y_overlap_um     = 5 [ default = 10.0 ];
+  optional float z_overlap_um     = 6 [ default = 10.0 ];
+  optional float rotation_radians = 7 [ default = 0.0  ];
 }
 
 message Stage
