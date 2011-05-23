@@ -316,7 +316,7 @@ void TilesView::updateVBO()
     //std::cout << "---" << std::endl << vmat.block<3,10>(0,0) << std::endl << "---" << std::endl;
 
     /// make lattice coords
-    Matrix3Xf lcoord(3,w*h);
+    Matrix3Xf lcoord(3,w*h),scoord(3,w*h);
     {
       float *d = lcoord.data();    
       for(float ix=0;ix<w;++ix)
@@ -336,21 +336,19 @@ void TilesView::updateVBO()
     /// transform lattice coords 
     TTransform l2s;    
     tc_->latticeTransform(&l2s);
-    lcoord = l2s * lcoord;       // FIXME: faster but still slower than it ought to be [~1-2s, debug]    
-    //std::cout << "---" << std::endl << lcoord.block<3,10>(0,0  ) << std::endl << "---" << std::endl;
-    //std::cout << "---" << std::endl << lcoord.block<3,10>(0,w-1) << std::endl << "---" << std::endl;
+    scoord.noalias() = l2s * lcoord;  // FIXME: SLOW faster but still slower than it ought to be [~1-2s, debug]    
+    //std::cout << "---" << std::endl << scoord.block<3,10>(0,0  ) << std::endl << "---" << std::endl;
+    //std::cout << "---" << std::endl << scoord.block<3,10>(0,w-1) << std::endl << "---" << std::endl;
 
     /// translate verts
     {
       const int N = w*h;
-      for(int ivert=0;ivert<4;++ivert)
-        vmat.block(0,ivert*N,3,N) += lcoord;
+      for(int ivert=0;ivert<4;++ivert) // FIXME: SLOW 
+        vmat.block(0,ivert*N,3,N).noalias() += scoord;
       //std::cout << "---" << std::endl << vmat.block<3,10>(0,0)   << std::endl << "---" << std::endl;
       //std::cout << "---" << std::endl << vmat.block<3,10>(0,N-1) << std::endl << "---" << std::endl;
-
     }
     
-
     DBG( vbo_.unmap() );
     vbo_.release();
     checkGLError();

@@ -15,6 +15,10 @@ using namespace Eigen;
 #define DBG(e) if(!(e)) qDebug() << HERE << "(!)\tCheck failed for Expression "#e << "\n" 
 #define SHOW(e) qDebug() << HERE << "\t"#e << " is " << e <<"\n" 
 
+#define HERE2 "[STAGECONTROLLER] At " << __FILE__ << "("<<__LINE__<<")\n"
+#define DBG2(e) if(!(e)) std::cout << HERE << "(!)\tCheck failed for Expression "#e << std::endl
+#define SHOW2(e) std::cout << HERE << "\t"#e << " is " << std::endl << e << std::endl << "---" << std::endl
+
 //////////////////////////////////////////////////////////////////////////
 //  TilingController  ///// //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -179,14 +183,19 @@ bool fetch::ui::TilingController::mapToIndex(const Vector3f & stage_coord, unsig
 {
   TTransform t;  
   if(latticeTransform(&t))
-  { unsigned w,h;
+  { 
+    unsigned w,h;
+    //SHOW2(t.matrix());
+    //SHOW2(t.inverse().matrix());
     Vector3f lr = t.inverse()*stage_coord;
-    lr.unaryExpr(ptr_fun(roundf));
+    //SHOW2(lr);
+    lr = lr.unaryExpr(ptr_fun(roundf));
+    //SHOW2(lr);
     latticeShape(&w,&h);
     QRectF bounds(0,0,w,h);
     if( bounds.contains(QPointF(lr(0),lr(1))) )
     {
-      *index = lr(1)*w+lr(0);
+      *index = lr(0)*w+lr(1);
       return true;
     }
   }
