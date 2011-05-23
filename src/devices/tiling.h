@@ -88,8 +88,8 @@ namespace device {
     void computeLatticeToStageTransform_
                         (const FieldOfViewGeometry& fov,
                          const Mode                 alignment);
-    mylib::Coordinate* computeLatticeExtents_(const device::StageTravel& travel);
-    void initMask_(mylib::Coordinate *shape);
+    mylib::Coordinate* computeLatticeExtents_(const device::StageTravel& travel); // returned pointer needs to be freed (w Free_Array).
+    void initMask_(mylib::Coordinate *shape);                                     // Free's shape
 
     void markAddressable_(device::StageTravel *travel);
     

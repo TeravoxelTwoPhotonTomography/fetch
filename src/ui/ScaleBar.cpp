@@ -100,7 +100,7 @@ ScaleBar::paint(QPainter *painter, const QRectF& rect)
 	painter->drawStaticText(text_pos_, text_);
 
   //draw static text will leave a texture bound. unbind it
-  glActiveTexture(GL_TEXTURE1);
+  //glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D,0);
 
 #if 0

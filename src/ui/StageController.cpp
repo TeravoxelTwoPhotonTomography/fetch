@@ -5,8 +5,15 @@
 #include <Eigen/Geometry>
 #include <functional>
 
+#include <iostream>
+
 using namespace std;
 using namespace Eigen;
+
+#undef HERE
+#define HERE "[STAGECONTROLLER] At " << __FILE__ << "("<<__LINE__<<")\n"
+#define DBG(e) if(!(e)) qDebug() << HERE << "(!)\tCheck failed for Expression "#e << "\n" 
+#define SHOW(e) qDebug() << HERE << "\t"#e << " is " << e <<"\n" 
 
 //////////////////////////////////////////////////////////////////////////
 //  TilingController  ///// //////////////////////////////////////////////
@@ -42,10 +49,12 @@ bool fetch::ui::TilingController::fovGeometry( TRectVerts *out )
       -1.0f, 1.0f, 1.0f, -1.0f, // x - hopefully, counter clockwise
       -1.0f,-1.0f, 1.0f,  1.0f, // y
       0.0f, 0.0f, 0.0f,  0.0f; // z
-    TTransform t;
-    t
-      .rotate(AngleAxisf(fov.rotation_radians_,Vector3f::UnitZ()))
-      .scale(fov.field_size_um_);
+    TTransform t = TTransform::Identity();
+    //std::cout << "---" << std::endl << t.matrix() << std::endl << "---" << std::endl;
+    t.rotate(AngleAxisf(fov.rotation_radians_,Vector3f::UnitZ()));
+    //std::cout << "---" << std::endl << t.matrix() << std::endl << "---" << std::endl;    
+    t.scale(fov.field_size_um_);
+    //std::cout << "---" << std::endl << t.matrix() << std::endl << "---" << std::endl;    
     *out = t*rect;
     return true;
   }
@@ -108,8 +117,10 @@ bool fetch::ui::TilingController::stageAlignedBBox(QRectF *out)
 { QTransform l2s;
   if(!latticeShape(out))
     return false;
-  latticeTransform(&l2s);
-  *out = l2s.mapRect(*out);  
+  latticeTransform(&l2s);    
+  *out = l2s.mapRect(*out);
+  //SHOW(l2s);
+  //SHOW(*out);
   return true;
 }
 

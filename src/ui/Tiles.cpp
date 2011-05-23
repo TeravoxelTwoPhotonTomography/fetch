@@ -1,6 +1,8 @@
+
 #ifdef _WIN32
 #include <GL/glew.h>
 #endif
+#include <iostream>
 #include <QtGui>
 
 #include <util/util-gl.h>
@@ -113,14 +115,15 @@ void TilesView::draw_grid_()
   glDrawElements(GL_QUADS,nrect*rect_stride,GL_UNSIGNED_INT,NULL);
   ibo_.release();         
      
-  glDisableClientState(GL_COLOR_ARRAY);
+  //glDisableClientState(GL_COLOR_ARRAY);
   glDisableClientState(GL_VERTEX_ARRAY);
+  checkGLError();
 }
 
 void TilesView::draw_cursor_()
 {
   const size_t rect_stride_bytes = sizeof(GLuint)*4; //4 verts per rect
-  if(icursor_>=0)
+  if(icursor_>=0 && tc_->is_valid())
   {
     DBG( vbo_.bind() );
     DBG( ibo_.bind() );
@@ -131,6 +134,7 @@ void TilesView::draw_cursor_()
     glDisableClientState(GL_VERTEX_ARRAY);
     ibo_.release();
     vbo_.release();
+    checkGLError();
   }
 }
 
@@ -152,7 +156,7 @@ void TilesView::paint(QPainter                       *painter,
 	draw_grid_();
   glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 
-  draw_cursor_();
+  draw_cursor_();  
 
   // paint a little square to indicate the paint
   glEnable(GL_SCISSOR_TEST);
@@ -268,12 +272,12 @@ void TilesView::initVBO()
   if(tc_->latticeShape(&w,&h))
   {    
     DBG( vbo_.bind() );    
-    vbo_.allocate(sizeof(GLuint)*12*w*h);                   // 4 verts per rect, 3 floats per vert = 12 floats per rect
+    vbo_.allocate(sizeof(float)*12*w*h);                   // 4 verts per rect, 3 floats per vert = 12 floats per rect
     vbo_.release();
     checkGLError();
   }
 }
-
+          
 #include <Eigen\Core>
 void TilesView::updateVBO()
 {
@@ -282,36 +286,71 @@ void TilesView::updateVBO()
 
   TilingController::TRectVerts verts; 
   if(tc_->fovGeometry(&verts))
-  {
+  { 
+    unsigned w,h;
+    tc_->latticeShape(&w,&h);
     DBG( vbo_.bind() );
     float *vdata = (float*)vbo_.map(QGLBuffer::WriteOnly);
-    { 
-      unsigned w,h;
-      tc_->latticeShape(&w,&h);
-      TTransform l2s;
-      const int 
-        vert_stride = 3,
-        latt_stride = w*h*vert_stride;
-      Vector3f r(0.0f,0.0f,0.0f),v;
-      tc_->latticeTransform(&l2s);
-      
-      for(int ivert=0;ivert<4;++ivert)
-      { 
-        float *dest = vdata+ivert*latt_stride;
-        for(unsigned ix=0; ix<w;++ix)
-        { r(0)=ix;
-          for(unsigned iy=0; iy<h;++iy)      
-          { 
-            r(1)= iy;
-            v = l2s*r + verts.col(ivert);
-
-            int irect = ix+iy*w;
-            float *d = dest + irect*vert_stride;
-            memcpy(d,v.data(),vert_stride*sizeof(float));
-          }
+    
+    /// Load in verts
+    {
+      float *d = vdata;
+      for(int ivert = 0;ivert<4;++ivert)
+      {        
+        const float 
+          x = verts(0,ivert),
+          y = verts(1,ivert),
+          z = verts(2,ivert);
+        for(int i=0;i<w*h;++i)
+        {
+          *d++ = x;
+          *d++ = y;
+          *d++ = z;
         }
       }
+
     }
+    
+    Map<Matrix3Xf,Unaligned> vmat(vdata,3,w*h*4);
+    //std::cout << "---" << std::endl << verts                 << std::endl << "---" << std::endl;
+    //std::cout << "---" << std::endl << vmat.block<3,10>(0,0) << std::endl << "---" << std::endl;
+
+    /// make lattice coords
+    Matrix3Xf lcoord(3,w*h);
+    {
+      float *d = lcoord.data();    
+      for(float ix=0;ix<w;++ix)
+      { 
+        for(float iy=0;iy<h;++iy)
+        {
+          *d++ = ix;
+          *d++ = iy;
+          *d++ = 0.0;
+        }
+      }
+
+    }
+    //std::cout << "---" << std::endl << lcoord.block<3,10>(0,0  ) << std::endl << "---" << std::endl;
+    //std::cout << "---" << std::endl << lcoord.block<3,10>(0,w-1) << std::endl << "---" << std::endl;
+
+    /// transform lattice coords 
+    TTransform l2s;    
+    tc_->latticeTransform(&l2s);
+    lcoord = l2s * lcoord;       // FIXME: faster but still slower than it ought to be [~1-2s, debug]    
+    //std::cout << "---" << std::endl << lcoord.block<3,10>(0,0  ) << std::endl << "---" << std::endl;
+    //std::cout << "---" << std::endl << lcoord.block<3,10>(0,w-1) << std::endl << "---" << std::endl;
+
+    /// translate verts
+    {
+      const int N = w*h;
+      for(int ivert=0;ivert<4;++ivert)
+        vmat.block(0,ivert*N,3,N) += lcoord;
+      //std::cout << "---" << std::endl << vmat.block<3,10>(0,0)   << std::endl << "---" << std::endl;
+      //std::cout << "---" << std::endl << vmat.block<3,10>(0,N-1) << std::endl << "---" << std::endl;
+
+    }
+    
+
     DBG( vbo_.unmap() );
     vbo_.release();
     checkGLError();
@@ -361,11 +400,14 @@ void TilesView::updateCBO()
 
 void TilesView::update_tiling()
 {  
-  if(!tc_->stageAlignedBBox(&bbox_))    
-  {
-    
-  }
-
+  if(!tc_->stageAlignedBBox(&bbox_))
+    return;
+  prepareGeometryChange();
+  initVBO();
+  initIBO();
+  updateVBO();
+  updateIBO();
+  
 }
 
 void TilesView::show( bool tf )

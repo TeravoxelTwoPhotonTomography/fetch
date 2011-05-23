@@ -78,6 +78,7 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     glTexParameterf( GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP );
     glTexParameterf( GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP );
     glTexParameterf( GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP );
+    checkGLError();
     
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D,_hTexCmap);
@@ -85,6 +86,7 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    checkGLError();
 		
 		glActiveTexture(GL_TEXTURE0); // Omitting this line will give a stack underflow
 		_shader.bind();
@@ -98,11 +100,14 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     glRotatef(_rotation_radians*180.0/M_PI,0.0,0.0,1.0);
 		glCallList(_hQuadDisplayList);
     _shader.release();
+    checkGLError();
 
     glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_3D,0);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D,0);
+    glActiveTexture(GL_TEXTURE0);
+    checkGLError();
 
     // paint a little square to indicate the paint
     glEnable(GL_SCISSOR_TEST);
@@ -157,7 +162,7 @@ void ImItem::_loadTex(mylib::Array *im)
   mylib::Array *original = im;
 	checkGLError();
   glActiveTexture(GL_TEXTURE0);
-  glEnable(GL_TEXTURE_3D);
+  //glEnable(GL_TEXTURE_3D);
 	glBindTexture(GL_TEXTURE_3D, _hTexture);
     GLuint gltype = typeMapMylibToGLType(&im);
     //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -167,7 +172,7 @@ void ImItem::_loadTex(mylib::Array *im)
                  gltype,
 							   im->data);  
   glBindTexture(GL_TEXTURE_3D, 0);
-  glDisable(GL_TEXTURE_3D);
+  //glDisable(GL_TEXTURE_3D);
 	checkGLError();
   if(original!=im) // typeMapMylibToGLType() had to make a copy.  Free it now.
     Free_Array(im);
@@ -294,7 +299,7 @@ void ImItem::_setupShader()
 	// Colormap
 	QImage cmap;
   glActiveTexture(GL_TEXTURE1);
-	glEnable(GL_TEXTURE_2D);
+	//glEnable(GL_TEXTURE_2D);
   {
 	  assert(cmap.load(":/cmap/2","JPG"));
     //qDebug()<<cmap.format();
@@ -310,7 +315,8 @@ void ImItem::_setupShader()
     }
     glBindTexture(GL_TEXTURE_2D,0);
   }
-  glDisable(GL_TEXTURE_2D);
+  //glDisable(GL_TEXTURE_2D);
+  glActiveTexture(GL_TEXTURE0);
 	checkGLError();
 }
 

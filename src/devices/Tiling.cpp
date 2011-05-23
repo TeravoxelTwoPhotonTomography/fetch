@@ -94,7 +94,7 @@ namespace device {
          travel.x.max,   travel.y.max,   travel.z.max,
          travel.x.max,   travel.y.min,   travel.z.max;
     sabox *= 1000.0; //mm to um
-    SHOW(sabox);    
+    SHOW(sabox);
 
     Matrix<float,3,8> labox; // vertices of the cube, lattice aligned
     labox = latticeToStage_.inverse() * sabox.transpose();
@@ -110,7 +110,8 @@ namespace device {
     Vector3z c((maxs-mins).cast<size_t>());
     SHOW(c);
 
-    return mylib::Coord3(c(2)+1,c(1)+1,c(0)+1); //shape of the lattice
+    mylib::Coordinate* out = mylib::Coord3(c(2)+1,c(1)+1,c(0)+1); //shape of the lattice
+    return out;
   }
 
   //  initMask_  ///////////////////////////////////////////////////////
@@ -120,9 +121,9 @@ namespace device {
   { mask_ = mylib::Make_Array_With_Shape(
       mylib::PLAIN_KIND,
       mylib::UINT8_TYPE,
-      shape);
+      shape); // shape gets free'd here
 
-    memset(mask_,0,sizeof(uint8_t)*mask_->size); //unset
+    memset(mask_->data,0,sizeof(uint8_t)*mask_->size); //unset
     sz_plane_nelem_ = mask_->dims[0] * mask_->dims[1];
   }
 
