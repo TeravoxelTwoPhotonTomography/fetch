@@ -10,6 +10,7 @@ namespace mylib
 }
 
 #include <iostream>
+#include <functional>
 #define SHOW(e) std::cout << "---" << std::endl << #e << " is " << std::endl << (e) << std::endl << "~~~"  << std::endl;
 
 namespace fetch {
@@ -81,6 +82,7 @@ namespace device {
   //    rectangle described by the stage extents, and then finding extreema.
   //  The latticeToStage_ transfrom is adjusted so the minimal extrema is the
   //    origin.  That is, [min extremal] = T(0,0,0).
+
   mylib::Coordinate* StageTiling::computeLatticeExtents_(const device::StageTravel& travel)
   {
     Matrix<float,8,3> sabox; // vertices of the cube, stage aligned
@@ -108,7 +110,7 @@ namespace device {
     SHOW(maxs);
 
     latticeToStage_.translate(mins);
-    Vector3z c((maxs-mins).cast<size_t>());
+    Vector3z c((maxs-mins).unaryExpr(std::ptr_fun<float,float>(ceil)).cast<size_t>());
     SHOW(c);
 
     mylib::Coordinate* out = mylib::Coord3(c(2)+1,c(1)+1,c(0)+1); //shape of the lattice
