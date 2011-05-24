@@ -96,18 +96,18 @@ QRectF TilesView::boundingRect() const
 }
 
 void TilesView::draw_grid_()
-{ 
+{
   glEnableClientState(GL_VERTEX_ARRAY);
-  //glEnableClientState(GL_COLOR_ARRAY);
-  glColor4f(1.0,0.0,0.5,0.5);
+  glEnableClientState(GL_COLOR_ARRAY);
+  //glColor4f(1.0,0.0,0.5,0.5);
 
   DBG( vbo_.bind() );
   glVertexPointer(3,GL_FLOAT,3*sizeof(float),(void*)0);
   vbo_.release();  
-/*
+
   DBG( cbo_.bind() );
   glColorPointer(4,GL_UNSIGNED_BYTE,4*sizeof(GLubyte),(void*)0);
-  cbo_.release();*/
+  cbo_.release();
   
   DBG( ibo_.bind() );
   GLsizei rect_stride = 4, // verts per rect
@@ -115,7 +115,7 @@ void TilesView::draw_grid_()
   glDrawElements(GL_QUADS,nrect*rect_stride,GL_UNSIGNED_INT,NULL);
   ibo_.release();         
      
-  //glDisableClientState(GL_COLOR_ARRAY);
+  glDisableClientState(GL_COLOR_ARRAY);
   glDisableClientState(GL_VERTEX_ARRAY);
   checkGLError();
 }
@@ -186,27 +186,28 @@ TilesView::~TilesView()
 
 void TilesView::paint_lattice_(const QPainterPath& path, const QColor& pc, const QColor &bc)
 { 
-  QPainter painter(latticeImage_);
-  QTransform l2s,s2l;
   
+  QTransform l2s,s2l;  
   if(!tc_->latticeTransform(&l2s))
     return;
   s2l = l2s.inverted();
-  painter.setTransform(s2l);                                               // - path is in scene coords...need to transform to lattice coords
-  painter.setPen(pc);                                                      // - lattice to scene is a scaling by (W,H)
-  painter.setBrush(bc);                                                    // - tiles are anchored in the center.   
+  { 
+    QPainter painter(latticeImage_);
+    QPainterPath p = s2l.map(path); //path in lattice space
+    painter.setPen(pc);      
+    painter.setBrush(bc);  
 
-  unsigned w,h;
-  tc_->latticeShape(&w,&h);
-  QPointF offset(0.0f,h);
-  offset = l2s.map(offset);
-  for(int ivert=0;ivert<4;++ivert)
-   {     
-     painter.drawPath(path);
-     painter.translate(offset);                                            // translation has to be in stage coords
-   }                                                                       
-   updateCBO();
-   update();
+    unsigned w,h;
+    tc_->latticeShape(&w,&h);
+    QPointF offset(0.0f,h);    
+    for(int ivert=0;ivert<4;++ivert)
+    { 
+      painter.drawPath(p);
+      painter.translate(offset);
+    }
+  }
+  updateCBO();
+  update();
 }
 
 void TilesView::addSelection( const QPainterPath& path )
@@ -312,8 +313,6 @@ void TilesView::updateVBO()
     }
     
     Map<Matrix3Xf,Unaligned> vmat(vdata,3,w*h*4);
-    //std::cout << "---" << std::endl << verts                 << std::endl << "---" << std::endl;
-    //std::cout << "---" << std::endl << vmat.block<3,10>(0,0) << std::endl << "---" << std::endl;
 
     /// make lattice coords
     Matrix3Xf lcoord(3,w*h),scoord(3,w*h);
@@ -330,24 +329,17 @@ void TilesView::updateVBO()
       }
 
     }
-    //std::cout << "---" << std::endl << lcoord.block<3,10>(0,0  ) << std::endl << "---" << std::endl;
-    //std::cout << "---" << std::endl << lcoord.block<3,10>(0,w-1) << std::endl << "---" << std::endl;
 
     /// transform lattice coords 
     TTransform l2s;    
     tc_->latticeTransform(&l2s);
-    scoord.noalias() = l2s * lcoord;  // FIXME: SLOW faster but still slower than it ought to be [~1-2s, debug]    
-    //std::cout << "---" << std::endl << l2s.matrix()              << std::endl << "---" << std::endl;
-    //std::cout << "---" << std::endl << scoord.block<3,10>(0,0  ) << std::endl << "---" << std::endl;
-    //std::cout << "---" << std::endl << scoord.block<3,10>(0,w-1) << std::endl << "---" << std::endl;
+    scoord.noalias() = l2s * lcoord;  // FIXME: SLOW faster but still slower than it ought to be [~1-2s per 1e6 rect debug]
 
     /// translate verts
     {
       const int N = w*h;
       for(int ivert=0;ivert<4;++ivert) // FIXME: SLOW 
         vmat.block(0,ivert*N,3,N).noalias() += scoord;
-      //std::cout << "---" << std::endl << vmat.block<3,10>(0,0)   << std::endl << "---" << std::endl;
-      //std::cout << "---" << std::endl << vmat.block<3,10>(0,N-1) << std::endl << "---" << std::endl;
     }
     
     DBG( vbo_.unmap() );
@@ -363,11 +355,17 @@ void TilesView::initCBO()
 
   if(tc_->latticeShape(&w,&h))
   { 
-    latticeImage_ = new QImage(w,4*h,QImage::Format_ARGB32_Premultiplied);
-  
+    latticeImage_ = new QImage(w,4*h,QImage::Format_ARGB32_Premultiplied);  
+    {
+      QPainter painter(latticeImage_);  
+      painter.setCompositionMode(QPainter::CompositionMode_Clear);
+      QRectF r(latticeImage_->rect());       
+      painter.fillRect(r,Qt::SolidPattern);
+    }
+
     cbo_.setUsagePattern(QGLBuffer::StaticDraw);  
     DBG( cbo_.bind() );
-    cbo_.allocate(sizeof(GLubyte)*16*w*h);                   // 4 verts per rect, 4 ubytes per vert = 16 ubytes per rect
+    cbo_.allocate(sizeof(GLubyte)*16*w*h);                   // 4 verts per rect, 4 ubytes per vert = 16 ubytes per rect   
     cbo_.release();  
     checkGLError();
   }
@@ -375,38 +373,51 @@ void TilesView::initCBO()
 void TilesView::updateCBO()
 {
   /// Do the initial draw to a local buffer
+  if(!cbo_.isCreated())
+    initCBO();
 
-  //QPainter painter(latticeImage_);  
-  //// QT->OpenGL switches red and blue.  This is a -60 degress rotation in the hue colorwheel.
-  //painter.fillRect(QRectF(latticeImage_->rect()),QBrush(QColor::fromHsvF(0.7,1.0,1.0,0.3)));
-  //QRectF stage_addressable_rect(GRID_COLS/4.0,GRID_ROWS/4.0,GRID_COLS/2.0,GRID_COLS/2.0);
-  //QColor stage_addressable_color(QColor::fromHsvF(0.3,1.0,1.0,0.5));
-  //painter.fillRect(stage_addressable_rect,QBrush(stage_addressable_color));
-  //for(int i=0;i<3;++i)
-  //{
-  //  stage_addressable_rect.translate(0.0,GRID_ROWS);
-  //  painter.fillRect(stage_addressable_rect,QBrush(stage_addressable_color));
-  //}
+  if(tc_->is_valid())
+  {
+    //QPainter painter(latticeImage_);  
+    // QT->OpenGL switches red and blue.  This is a -60 degress rotation in the hue colorwheel.
 
-  ///// copy the local buffer to the vertex color buffer object
-  //DBG( cbo_.bind() );
-  //GLubyte *cdata = (GLubyte*)cbo_.map(QGLBuffer::WriteOnly);
-  //memcpy(cdata,latticeImage_->constBits(),latticeImage_->byteCount());
-  //DBG( cbo_.unmap() );
-  //cbo_.release();
-  //checkGLError();
+    
+    //painter.setCompositionMode(QPainter::CompositionMode_Source);
+    //painter.fillRect(r,QColor::fromHsvF(0.5,1.0,1.0,0.4));
+
+    /*
+    QRectF stage_addressable_rect(GRID_COLS/4.0,GRID_ROWS/4.0,GRID_COLS/2.0,GRID_COLS/2.0);
+    QColor stage_addressable_color(QColor::fromHsvF(0.3,1.0,1.0,0.5));
+    painter.fillRect(stage_addressable_rect,QBrush(stage_addressable_color));
+    for(int i=0;i<3;++i)
+    {
+    stage_addressable_rect.translate(0.0,GRID_ROWS);
+    painter.fillRect(stage_addressable_rect,QBrush(stage_addressable_color));
+    }
+    */
+
+    /// copy the local buffer to the vertex color buffer object
+    DBG( cbo_.bind() );
+    GLubyte *cdata = (GLubyte*)cbo_.map(QGLBuffer::WriteOnly);
+    memcpy(cdata,latticeImage_->constBits(),latticeImage_->byteCount());
+    DBG( cbo_.unmap() );
+    cbo_.release();
+    checkGLError();
+  }
 }
 
 void TilesView::update_tiling()
 {  
   if(!tc_->stageAlignedBBox(&bbox_))
     return;
-  prepareGeometryChange();
-  initVBO();
+  prepareGeometryChange();  
+  initVBO(); // these must be called in case a realloc is needed:(
   initIBO();
+  initCBO();
+
   updateVBO();
   updateIBO();
-  
+  updateCBO();  
 }
 
 void TilesView::show( bool tf )

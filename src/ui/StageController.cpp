@@ -116,6 +116,22 @@ bool fetch::ui::TilingController::latticeShape(QRectF *out)
   }
   return false; 
 }
+   
+typedef mylib::uint8 uint8;
+bool fetch::ui::TilingController::latticeAttrImage(QImage *out)
+{
+  if(!tiling_)
+    return false;
+  // 1. Get access to the attribute data
+  unsigned w,h;
+  latticeShape(&w,&h);
+  mylib::Array 
+    *lattice = tiling_->mask(),
+     plane   = *lattice;
+  mylib::Get_Array_Plane(&plane,tiling_->plane());  
+  *out = QImage(AUINT8(&plane),w,h,w/*stride*/,QImage::Format_Indexed8);
+  return true;
+}
 
 bool fetch::ui::TilingController::stageAlignedBBox(QRectF *out)
 { QTransform l2s;
@@ -129,28 +145,45 @@ bool fetch::ui::TilingController::stageAlignedBBox(QRectF *out)
   return true;
 }
 
-typedef mylib::uint8 uint8;
 bool fetch::ui::TilingController::mark( const QPainterPath& path, uint8 attr, QPainter::CompositionMode mode )
 {    
   if(tiling_)
-  {           
-    // 1. Get access to the attribute data
-    unsigned w,h;
-    latticeShape(&w,&h);
-    mylib::Array *lattice = tiling_->mask(),
-      plane = *lattice;
-    mylib::Get_Array_Plane(&plane,tiling_->plane());  
-    QImage im(AUINT8(&plane),w,h,w/*stride*/,QImage::Format_Indexed8);
-    QPainter painter(&im);    
+  {      
 
-    // 2. Path is in scene coords.  transform to lattice coords
+    // 1. Path is in scene coords.  transform to lattice coords
     //    Getting the transform is a bit of a pain bc we have to go from 
     //    Eigen to Qt :(
     QTransform l2s, s2l;
     latticeTransform(&l2s);
     s2l = l2s.inverted();        
+                                  
+    // 2. Get access to the attribute data
+    QImage im;
+    latticeAttrImage(&im);
+    QPainter painter(&im);
+
+    //{   // WORKS '~'
+    //QImage test(128,128,QImage::Format_Mono);
+    //QPainter p2(&test);
+    //p2.fillRect(QRect(10,10,20,20),1);
+    //test.save("test.png");
+    //}
+
+    {
+      QImage test(128,128,QImage::Format_RGB16);
+      QPainter p2(&test);      
+      p2.fillRect(QRect(10,10,20,20),255);
+      test.save("test.png");
+    }
+
+    // Some options
+    // 1. Move to 16 or 32 bit attribute flags with an RGB format and paint directly
+    // 2. try to use a mono image...this sucks.
+    //
 
     // 3. Fill in the path
+    // [ CAN'T PAINT ??? ]
+    // May need to do a custom backend  PaintDevice/PaintEngine
     im.setColorCount(256);
     for(int i=0;i<256;++i) 
       im.setColor(i,qRgb(i,i,i));    

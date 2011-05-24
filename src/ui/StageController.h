@@ -44,6 +44,7 @@ namespace ui {
     bool latticeTransform (QTransform *out);                               // returns false if tiling is invalid - QtVersion
     bool latticeShape     (unsigned *width, unsigned *height);             // returns false if tiling is invalid
     bool latticeShape     (QRectF *out);                                   // returns false if tiling is invalid
+    bool latticeAttrImage (QImage *out);                                   // returns false if tiling is invalid
     bool stageAlignedBBox (QRectF *out);                                   // returns false if tiling is invalid
 
     bool markActive(const QPainterPath& path);                             // returns false if tiling is invalid
