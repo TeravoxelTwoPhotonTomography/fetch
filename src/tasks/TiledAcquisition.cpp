@@ -55,9 +55,9 @@ namespace fetch
         Guarded_Assert( d->disk.close()==0 );
         //Guarded_Assert( d->disk.open(filename,"w")==0);
 
-        d->__scan_agent.arm(&grabstack,&d->scanner);                      // why was this arm_nowait?
+        d->__scan_agent.arm(&grabstack,&d->scanner);                       // why was this arm_nowait?     - should prolly move this to run
 
-        d->stage()->tiling()->resetCursor();
+        d->stage()->tiling()->resetCursor();                               // this is here so that run/stop cycles will pick up where they left off
 
         return 1; //success
       }
@@ -89,31 +89,38 @@ namespace fetch
         Guarded_Assert(dc->__scan_agent.is_runnable());
         //Guarded_Assert(dc->__io_agent.is_running());
 
-        filename = dc->stack_filename(); 
-        
-        dc->file_series.ensurePathExists();
-        eflag |= dc->disk.open(filename,"w");
-        if(eflag)
-          return eflag;
-
-        eflag |= dc->runPipeline();
-        eflag |= dc->__scan_agent.run() != 1;
-
         device::StageTiling* tiling = dc->stage()->tiling();
-        while(tiling->nextInPlanePosition(tilepos))
-        { HANDLE hs[] = {dc->__scan_agent._thread,          
-                         dc->__self_agent._notify_stop};
-          DWORD res;
-          int   t;
+        while(!dc->_agent->is_stopping() && tiling->nextInPlanePosition(tilepos))
+        {
+          debug("[Tiling Task] tilepos: %5.1f %5.1 %5.1f"ENDL,tilepos[0],tilepos[1],tilepos[2]);
+          filename = dc->stack_filename(); 
+          dc->file_series.ensurePathExists();
+          eflag |= dc->disk.open(filename,"w");
+          if(eflag)
+          { 
+            warning("Couldn't open file: %s"ENDL, filename.c_str());
+            tiling->markDone(eflag==0);
+            return eflag;
+          }
 
           // Move stage
           dc->stage()->setPos(tilepos);
 
-          // wait for scan to complete (or cancel)
-          res = WaitForMultipleObjects(2,hs,FALSE,INFINITE);
-          t = _handle_wait_for_result(res,"TiledAcquisition::run - Wait for scanner to finish.");
-          switch(t)
-          { case 0:       // in this case, the scanner thread stopped.  Nothing left to do.
+          eflag |= dc->runPipeline();
+          eflag |= dc->__scan_agent.run() != 1;          
+
+          {
+            HANDLE hs[] = {dc->__scan_agent._thread,          
+              dc->__self_agent._notify_stop};
+            DWORD res;
+            int   t;            
+
+            // wait for scan to complete (or cancel)
+            res = WaitForMultipleObjects(2,hs,FALSE,INFINITE);
+            t = _handle_wait_for_result(res,"TiledAcquisition::run - Wait for scanner to finish.");
+            switch(t)
+            { 
+            case 0:       // in this case, the scanner thread stopped.  Nothing left to do.
               eflag |= 0; // success
               //break; 
             case 1:       // in this case, the stop event triggered and must be propagated.
@@ -121,16 +128,17 @@ namespace fetch
               break;
             default:      // in this case, there was a timeout or abandoned wait
               eflag |= 1; //failure              
+            }
+
+            // Output metadata and Increment file
+            eflag |= dc->disk.close();
+            dc->write_stack_metadata();
+            dc->file_series.inc();
+
+            tiling->markDone(eflag==0);
+            //dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
+
           }
-          
-          // Output metadata and Increment file
-          eflag |= dc->disk.close();
-          dc->write_stack_metadata();
-          dc->file_series.inc();
-          
-          tiling->markDone(eflag==0);
-          //dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
-          
         }
         return eflag;
       }

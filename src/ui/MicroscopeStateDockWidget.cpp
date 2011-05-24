@@ -8,13 +8,13 @@ namespace ui {
 
 
   MicroscopeStateDockWidget::MicroscopeStateDockWidget(device::Microscope *dc, MainWindow *parent)
-    :QDockWidget("Microscope state",parent)
+    :QDockWidget("Tiling",parent)
   {
     QWidget *formwidget = new QWidget(this);
     QFormLayout *form = new QFormLayout;
     formwidget->setLayout(form);
     setWidget(formwidget);
-    AgentControllerButtonPanel *btns = new AgentControllerButtonPanel(&parent->_scope_state_controller,NULL);
+    AgentControllerButtonPanel *btns = new AgentControllerButtonPanel(&parent->_scope_state_controller,&dc->tiling_task);
     form->addRow(btns);
   }
 

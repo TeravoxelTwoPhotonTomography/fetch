@@ -250,29 +250,45 @@ namespace device {
 #endif
 
   //  resetCursor  /////////////////////////////////////////////////////
-  //
+  //  
+  
+#define ON_PLANE(e)    ((e) < (current_plane_offest_ + sz_plane_nelem_))
+#define ON_LATTICE(e)  ((e) < (attr_->size))
+
   typedef mylib::Dimn_Type Dimn_Type;
   void StageTiling::resetCursor()
-  { cursor_ = leftmostAddressable_;
+  { cursor_ = 0;
 
-    mylib::Coordinate *c = mylib::Idx2CoordA(attr_,cursor_);
-    current_plane_offest_ = ADIMN(c)[2] * sz_plane_nelem_;
-    mylib::Free_Array(c);
+   uint32_t* mask    = AUINT32(attr_);
+   uint32_t attrmask = Addressable | Active | Done,
+            attr     = Addressable | Active;
+    
+    while( (mask[cursor_] & attrmask) != attr
+        && ON_LATTICE(cursor_) )
+    {++cursor_;}
+
+    if(ON_LATTICE(cursor_) &&  (mask[cursor_] & attrmask) == attr)
+    { mylib::Coordinate *c = mylib::Idx2CoordA(attr_,cursor_);
+      current_plane_offest_ = ADIMN(c)[2] * sz_plane_nelem_;
+      mylib::Free_Array(c);
+      cursor_ -= 1; // so next*Cursor will be the first tile
+    } else
+      cursor_=0;
   }
 
   //  nextInPlanePosition  /////////////////////////////////////////////
   //                           
-  #define ON_PLANE(e)    ((e) < (current_plane_offest_ + sz_plane_nelem_))
-  #define ON_LATTICE(e)  ((e) < (attr_->size))
+
   bool StageTiling::nextInPlanePosition(Vector3f &pos)
   { uint32_t* mask = AUINT32(attr_);
-    uint32_t  attr = Addressable | Active;
+    uint32_t attrmask = Addressable | Active | Done,
+             attr     = Addressable | Active;
 
-    while( (mask[cursor_] & attr) != attr
-        && ON_PLANE(cursor_) )
-        ++cursor_;
+    do{++cursor_;}
+    while( (mask[cursor_] & attrmask) != attr
+        && ON_PLANE(cursor_) );
 
-    if(ON_PLANE(cursor_))
+    if(ON_PLANE(cursor_) &&  (mask[cursor_] & attrmask) == attr)
     { pos = computeCursorPos();
       notifyNext(cursor_,pos);
       return true;
@@ -286,11 +302,11 @@ namespace device {
   bool StageTiling::nextPosition(Vector3f &pos)
   { uint32_t* mask    = AUINT32(attr_);
     uint32_t attrmask = Addressable | Active | Done,
-            attr      = Addressable & Active;
+             attr     = Addressable | Active;
 
+    do {++cursor_;}
     while( (mask[cursor_] & attrmask) != attr
-        && ON_LATTICE(cursor_) )
-        ++cursor_;
+        && ON_LATTICE(cursor_) );
 
     if(ON_LATTICE(cursor_))
     { pos = computeCursorPos();

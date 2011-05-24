@@ -350,6 +350,7 @@ Error:
             this->_owner,       // arguments
             0,                  // run immediately
             NULL ));            // don't worry about the thread id
+          sts = 1;
 #if 0
           Guarded_Assert_WinErr(
             SetThreadPriority( this->thread,

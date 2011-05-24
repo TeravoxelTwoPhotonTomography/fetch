@@ -31,6 +31,7 @@
 #include "tasks\microscope-interaction.h"
 #include "tasks\StackAcquisition.h"
 #include "Stage.h"
+#include "tasks\TiledAcquisition.h"
 
 #define MICROSCOPE_MAX_WORKERS     10
 #define MICROSCOPE_DEFAULT_TIMEOUT INFINITE
@@ -108,6 +109,7 @@ namespace fetch
                                                        
       task::microscope::Interaction      interaction_task;
       task::microscope::StackAcquisition stack_task;      
+      task::microscope::TiledAcquisition tiling_task;
 
       inline Chan*  getVideoChannel() {return wrap._out->contents[0];}
       inline LinearScanMirror*  LSM() {return &scanner._scanner2d._LSM;}
