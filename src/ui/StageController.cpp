@@ -28,8 +28,8 @@ fetch::ui::TilingController::TilingController( device::StageTiling *tiling, QObj
   , tiling_(tiling)
 { 
   connect(
-    &listener_,SIGNAL(sig_tile_done(unsigned,unsigned char)),
-    this,      SIGNAL(tileDone(unsigned,unsigned char)),
+    &listener_,SIGNAL(sig_tile_done(unsigned,unsigned int)),
+    this,      SIGNAL(tileDone(unsigned,unsigned int)),
     Qt::QueuedConnection);
   connect(
     &listener_,SIGNAL(sig_tiling_changed(device::StageTiling*)),
@@ -97,7 +97,7 @@ bool fetch::ui::TilingController::latticeShape( unsigned *width, unsigned *heigh
 { 
   if(tiling_)
   {      
-    mylib::Array *lattice = tiling_->mask();
+    mylib::Array *lattice = tiling_->attributeArray();
     *width  = lattice->dims[0];
     *height = lattice->dims[1]; 
     return true;
@@ -121,15 +121,15 @@ typedef mylib::uint8 uint8;
 bool fetch::ui::TilingController::latticeAttrImage(QImage *out)
 {
   if(!tiling_)
-    return false;
-  // 1. Get access to the attribute data
+    return false;  
   unsigned w,h;
   latticeShape(&w,&h);
   mylib::Array 
-    *lattice = tiling_->mask(),
+    *lattice = tiling_->attributeArray(),
      plane   = *lattice;
   mylib::Get_Array_Plane(&plane,tiling_->plane());  
-  *out = QImage(AUINT8(&plane),w,h,w/*stride*/,QImage::Format_Indexed8);
+  *out = QImage(AUINT8(&plane),w,h,QImage::Format_RGB32); //QImage requires a uchar* for the data
+  //out->save("TilingController_latticeAttrImage.tif");
   return true;
 }
 
@@ -145,7 +145,7 @@ bool fetch::ui::TilingController::stageAlignedBBox(QRectF *out)
   return true;
 }
 
-bool fetch::ui::TilingController::mark( const QPainterPath& path, uint8 attr, QPainter::CompositionMode mode )
+bool fetch::ui::TilingController::mark( const QPainterPath& path, device::StageTiling::Flags attr, QPainter::CompositionMode mode )
 {    
   if(tiling_)
   {      
@@ -155,51 +155,45 @@ bool fetch::ui::TilingController::mark( const QPainterPath& path, uint8 attr, QP
     //    Eigen to Qt :(
     QTransform l2s, s2l;
     latticeTransform(&l2s);
-    s2l = l2s.inverted();        
+    s2l = l2s.inverted();
+    QPainterPath lpath = s2l.map(path);
                                   
     // 2. Get access to the attribute data
     QImage im;
     latticeAttrImage(&im);
     QPainter painter(&im);
 
-    //{   // WORKS '~'
-    //QImage test(128,128,QImage::Format_Mono);
-    //QPainter p2(&test);
-    //p2.fillRect(QRect(10,10,20,20),1);
-    //test.save("test.png");
-    //}
-
-    {
-      QImage test(128,128,QImage::Format_RGB16);
-      QPainter p2(&test);      
-      p2.fillRect(QRect(10,10,20,20),255);
-      test.save("test.png");
-    }
-
-    // Some options
-    // 1. Move to 16 or 32 bit attribute flags with an RGB format and paint directly
-    // 2. try to use a mono image...this sucks.
-    //
-
     // 3. Fill in the path
-    // [ CAN'T PAINT ??? ]
-    // May need to do a custom backend  PaintDevice/PaintEngine
-    im.setColorCount(256);
-    for(int i=0;i<256;++i) 
-      im.setColor(i,qRgb(i,i,i));    
-    painter.setTransform(s2l);
+    //im.save("TilingController_mark__before.tif");
     painter.setCompositionMode(mode);
-    painter.fillPath(path,QBrush(qRgb(attr,attr,attr)));
+    painter.fillPath(lpath,QColor((QRgb)attr)); // (QRgb) cast is a uint32 cast
+    //SHOW(lpath);
+    //im.save("TilingController_mark__after.tif");
     return true;
   }
   return false;
+}
+
+bool fetch::ui::TilingController::mark_all( device::StageTiling::Flags attr, QPainter::CompositionMode mode )
+{
+  if(!is_valid()) return false;
+  // 1. Get access to the attribute data
+  QImage im;
+  latticeAttrImage(&im);
+  QPainter painter(&im);
+  // 2. fill   
+  //im.save("TilingController_mark_all__before.tif");
+  painter.setCompositionMode(mode);
+  painter.fillRect(im.rect(),QColor((QRgb)attr));
+  //im.save("TilingController_mark_all__after.tif");
+  return true;
 }
 
 bool fetch::ui::TilingController::markActive( const QPainterPath& path )
 {   
   return mark(
     path,
-    (uint8)device::StageTiling::Active,
+    device::StageTiling::Active,
     QPainter::RasterOp_SourceOrDestination);
 }     
 
@@ -207,7 +201,7 @@ bool fetch::ui::TilingController::markInactive( const QPainterPath& path )
 {   
   return mark(
     path,
-    (uint8)device::StageTiling::Active,
+    device::StageTiling::Active,
     QPainter::RasterOp_NotSourceAndDestination);
 }
 
@@ -234,6 +228,30 @@ bool fetch::ui::TilingController::mapToIndex(const Vector3f & stage_coord, unsig
     }
   }
   return false;
+}
+
+bool fetch::ui::TilingController::markAddressable()
+{ 
+  if(!is_valid())
+    return false;
+  
+  const device::StageTravel& travel = tiling_->travel();
+  size_t z = tiling_->plane_mm();
+  if( (travel.z.min <= z) && (z <= travel.z.max) )
+  { 
+    QRectF r(
+      QPointF(1000.0f*travel.x.min,1000.0f*travel.y.min),
+      QPointF(1000.0f*travel.x.max,1000.0f*travel.y.max)); // convert mm to um
+    QPainterPath path;
+    path.addRect(r);
+    mark(path,device::StageTiling::Addressable,QPainter::RasterOp_SourceOrDestination);
+  } else 
+  { // Mark the whole thing as unaddressable
+    mark_all(device::StageTiling::Addressable,QPainter::RasterOp_NotSourceAndDestination);
+  }
+
+
+  return true;
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -15,6 +15,7 @@
 #include <list>
 #include "stage.h"
 #include "task.h"
+#include "tiling.h"
 
 #define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, warning))
 #define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, error  ))
@@ -219,6 +220,16 @@ namespace device {
     for(i=_listeners.begin();i!=_listeners.end();++i)
       (*i)->tiling_changed(_tiling);
   
+  }
+
+  unsigned int Stage::on_attach()
+  {
+    unsigned int eflag = _idevice->on_attach(); if(eflag==0) _createTiling(); return eflag;
+  }
+
+  unsigned int Stage::on_detach()
+  {
+    unsigned int eflag = _idevice->on_detach(); if((eflag==0)&&_tiling) {delete _tiling; _tiling=NULL;} return eflag;
   }
 
 }} // end anmespace fetch::device

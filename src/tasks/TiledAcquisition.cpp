@@ -19,6 +19,7 @@
 #include "frame.h"
 #include "devices\digitizer.h"
 #include "devices\Microscope.h"
+#include "devices\tiling.h"
 
 namespace fetch
 {

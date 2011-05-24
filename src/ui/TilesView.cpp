@@ -6,7 +6,7 @@
 #include <QtGui>
 
 #include <util/util-gl.h>
-#include "tiles.h"
+#include "TilesView.h"
 #include "StageController.h"
 
 
@@ -302,7 +302,7 @@ void TilesView::updateVBO()
           x = verts(0,ivert),
           y = verts(1,ivert),
           z = verts(2,ivert);
-        for(int i=0;i<w*h;++i)
+        for(unsigned i=0;i<w*h;++i)
         {
           *d++ = x;
           *d++ = y;

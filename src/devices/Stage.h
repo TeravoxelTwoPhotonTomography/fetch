@@ -2,8 +2,8 @@
 #include "object.h"
 #include "stage.pb.h" 
 #include "agent.h"
-#include "tiling.h"
 #include <list>
+#include <set>
 
 #include <Eigen/Core>
 using namespace Eigen;
@@ -11,7 +11,7 @@ using namespace Eigen;
 namespace fetch {
 namespace device {
 
-
+  class StageTiling;
 
   struct StageAxisTravel  { float min,max; };
   struct StageTravel      { StageAxisTravel x,y,z; };
@@ -105,8 +105,8 @@ namespace device {
 
       void setKind(Config::StageType kind);
 
-      virtual unsigned int on_attach() {unsigned int eflag = _idevice->on_attach(); if(eflag==0) _createTiling(); return eflag;}
-      virtual unsigned int on_detach() {unsigned int eflag = _idevice->on_detach(); if((eflag==0)&&_tiling) {delete _tiling; _tiling=NULL;} return eflag;}
+      virtual unsigned int on_attach();
+      virtual unsigned int on_detach();
       void _set_config( Config IN *cfg );
       void _set_config( const Config &cfg );
 
@@ -159,7 +159,7 @@ namespace device {
   struct StageListener
   {
     virtual void tiling_changed(StageTiling *tiling) {}                      // a new tiling was created.
-    virtual void tile_done(size_t index, const Vector3f& pos,uint8_t sts) {} // the specified tile was marked as done                                                      
+    virtual void tile_done(size_t index, const Vector3f& pos,uint32_t sts) {}// the specified tile was marked as done                                                      
     virtual void tile_next(size_t index, const Vector3f& pos) {}             // the next tile was requested (stage not necessarily moved yet)
   };
 

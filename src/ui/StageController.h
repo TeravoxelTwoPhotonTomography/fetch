@@ -17,12 +17,12 @@ namespace ui {
   {      
     Q_OBJECT
   public:
-    void tile_done( size_t index, const Vector3f& pos,uint8_t sts )        {emit sig_tile_done(index,sts);}
+    void tile_done( size_t index, const Vector3f& pos,uint32_t sts )       {emit sig_tile_done(index,sts);}
     void tiling_changed( device::StageTiling *tiling )                     {emit sig_tiling_changed(tiling);}
     void tile_next( size_t index, const Vector3f& pos )                    {emit sig_tile_next(index);}
 
   signals:
-    void sig_tile_done( unsigned index, unsigned char sts );
+    void sig_tile_done( unsigned index, unsigned int sts );
     void sig_tiling_changed( device::StageTiling *tiling );
     void sig_tile_next( unsigned index );
   };
@@ -47,28 +47,33 @@ namespace ui {
     bool latticeAttrImage (QImage *out);                                   // returns false if tiling is invalid
     bool stageAlignedBBox (QRectF *out);                                   // returns false if tiling is invalid
 
+    bool markAddressable();                                                // returns false if tiling is invalid
     bool markActive(const QPainterPath& path);                             // returns false if tiling is invalid
-    bool markInactive(const QPainterPath& path);                             // returns false if tiling is invalid
+    bool markInactive(const QPainterPath& path);                           // returns false if tiling is invalid
 
     bool mapToIndex(const Vector3f & stage_coord, unsigned *index);        // returns false if tiling is invalid or if stage_coord is oob
 
   public slots:
-    void update(device::StageTiling *tiling)                               {tiling_=tiling; emit changed(); emit show(tiling_!=NULL);}
+    void update(device::StageTiling *tiling)                               {tiling_=tiling; markAddressable(); emit changed(); emit show(tiling_!=NULL);}
     void stageAttached()                                                   {emit show(true);}
     void stageDetached()                                                   {emit show(false);}
 
   signals:
     void show(bool tf);
     void changed();
-    void tileDone(unsigned itile,unsigned char attr);
-    void nextTileRequest(unsigned itile);                                    // really should be nextTileRequested
+    void tileDone(unsigned itile,unsigned int attr);
+    void nextTileRequest(unsigned itile);                                  // really should be nextTileRequested
     // other ideas: imaging started, move start, move end
 
   private:
     device::StageTiling *tiling_;
     TilingControllerListener listener_;
 
-    bool mark( const QPainterPath& path, unsigned char attr, QPainter::CompositionMode mode );
+    bool mark(     const QPainterPath& path,                               // path should be in scene coords (um)
+                   device::StageTiling::Flags attr, 
+                   QPainter::CompositionMode mode );
+    bool mark_all( device::StageTiling::Flags attr,                        // marks the whole plane with the attribute
+                   QPainter::CompositionMode mode );
   };
 
   class PlanarStageController:public QObject

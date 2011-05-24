@@ -6,7 +6,7 @@ namespace mylib {
 #include "StageScene.h"
 #include "imitem.h"
 #include "ScaleBar.h"
-#include "tiles.h"
+#include "TilesView.h"
 #include "StageView.h"
 
 namespace fetch {

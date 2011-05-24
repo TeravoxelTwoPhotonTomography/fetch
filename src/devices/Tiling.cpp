@@ -7,14 +7,29 @@ using namespace Eigen;
 namespace mylib
 {
 #include <flood.fill.h>
+#include <image.h>
 }
 
 #include <iostream>
 #include <functional>
+
+#define DEBUG__WRITE_IMAGES
+#define DEBUG__SHOW
+
+#ifdef DEBUG__SHOW
 #define SHOW(e) std::cout << "---" << std::endl << #e << " is " << std::endl << (e) << std::endl << "~~~"  << std::endl;
+#else
+#define SHOW(e)
+#endif
+
+
 
 namespace fetch {
 namespace device {
+
+  typedef uint8_t  uint8;
+  typedef uint32_t uint32;
+
   //////////////////////////////////////////////////////////////////////
   //  StageTiling  /////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
@@ -24,22 +39,23 @@ namespace device {
                            const FieldOfViewGeometry &fov,        
                            const Mode                 alignment)
     :
-      mask_(NULL),
+      attr_(NULL),
       leftmostAddressable_(0),
       cursor_(0),
       current_plane_offest_(0),
       sz_plane_nelem_(0),
       latticeToStage_(),
-      fov_(fov)
-  { device::StageTravel t = travel;
+      fov_(fov),
+      travel_(travel)
+  { 
     computeLatticeToStageTransform_(fov,alignment);
-    initMask_(computeLatticeExtents_(travel));
-    markAddressable_(&t);
+    initAttr_(computeLatticeExtents_(travel_));
+    //markAddressable_(&travel_);
   }
 
   //  Destructor  /////////////////////////////////////////////////////
   StageTiling::~StageTiling()
-  { if(mask_)           Free_Array(mask_);
+  { if(attr_)           Free_Array(attr_);
   }
 
   //  computeLatticeToStageTransform_  /////////////////////////////////
@@ -97,92 +113,141 @@ namespace device {
          travel.x.max,   travel.y.max,   travel.z.max,
          travel.x.max,   travel.y.min,   travel.z.max;
     sabox *= 1000.0; //mm to um
-    SHOW(sabox);
-
+    
     Matrix<float,3,8> labox; // vertices of the cube, lattice aligned
     labox.noalias() = latticeToStage_.inverse() * sabox.transpose();
-    SHOW(labox);
-
+    
     Vector3f maxs,mins;
     maxs.noalias() = labox.rowwise().maxCoeff();
     mins.noalias() = labox.rowwise().minCoeff();
-    SHOW(mins);
-    SHOW(maxs);
-
+    
     latticeToStage_.translate(mins);
     Vector3z c((maxs-mins).unaryExpr(std::ptr_fun<float,float>(ceil)).cast<size_t>());
+    SHOW(sabox);
+    SHOW(labox);
+    SHOW(mins);
+    SHOW(maxs);
     SHOW(c);
 
     mylib::Coordinate* out = mylib::Coord3(c(2)+1,c(1)+1,c(0)+1); //shape of the lattice
     return out;
   }
 
-  //  initMask_  ///////////////////////////////////////////////////////
+  //  initAttr_  ///////////////////////////////////////////////////////
   //
 
-  void StageTiling::initMask_(mylib::Coordinate *shape)
-  { mask_ = mylib::Make_Array_With_Shape(
+  void StageTiling::initAttr_(mylib::Coordinate *shape)
+  { attr_ = mylib::Make_Array_With_Shape(
       mylib::PLAIN_KIND,
-      mylib::UINT8_TYPE,
+      mylib::UINT32_TYPE,
       shape); // shape gets free'd here
 
-    memset(mask_->data,0,sizeof(uint8_t)*mask_->size); //unset
-    sz_plane_nelem_ = mask_->dims[0] * mask_->dims[1];
+    memset(attr_->data,0,sizeof(uint32_t)*attr_->size); //unset
+    sz_plane_nelem_ = attr_->dims[0] * attr_->dims[1];
   }
 
   //  markAddressable_  ////////////////////////////////////////////////
+  //  
+  // FIXME!!!
+  //  - flood fill is too slow
+  //    Need to find the region, then fill that I guess.
+  //  - transformed stage box to lattice, but inboxtest doesn't do proper
+  //    in polygon test...the answer it gives is for the lattice aligned
+  //    bounding box, which is wrong.
+  //  
+  // SOLUTION FOR NOW
+  // - move the marking into the stage's controller.  Use Qt's painting
+  //   to fill in the addressable components of the plane.
+  //   -  somehow this needs to be sensible for z.
+  //   
+  // - remove use of these functions from the class.
   //
 
+#if 0
 	struct FloodFillArgs
 	{ StageTiling         *self;
-	  device::StageTravel *travel;
+	  device::StageTravel  travel; // in lattice coords
+
+    FloodFillArgs(StageTiling *s, device::StageTravel *t)
+      : self(s)
+    {
+      Matrix<float,3,2,RowMajor> c;
+      c <<                     // in stage coords, mm
+           /*t->x.min, t->y.min, t->z.min,
+           t->x.max, t->y.max, t->y.max;*/
+           t->x.min, t->x.max,
+           t->y.min, t->y.max,
+           t->z.min, t->z.max;
+      SHOW(c);
+      c = self->latticeToStageTransform().inverse() * c * 1000.0f; // convert to um, then convert to lattice coord
+      SHOW(c);      
+      memcpy(&travel,c.data(),6*sizeof(float));
+    }
+
 	};
 	  
+  typedef mylib::Dimn_Type Dimn_Type;
+
   static mylib::boolean isInBox(mylib::Indx_Type p, void *argt)
   { 
   	FloodFillArgs *args         = (FloodFillArgs*)argt;
   	StageTiling   *self         = args->self;
-  	device::StageTravel *travel = args->travel;
-  	mylib::Coordinate *coord    = mylib::Idx2CoordA(args->self->mask(),p);
-    Map<Vector3f> c((float*)(coord->data));
-  	Vector3f r                  = self->latticeToStageTransform() * r;
-    return ( (travel->x.min<r(0)) && (r(0)>travel->x.max) ) &&
-           ( (travel->y.min<r(1)) && (r(1)>travel->y.max) ) &&
-           ( (travel->z.min<r(2)) && (r(2)>travel->z.max) );
+  	device::StageTravel *travel = &args->travel; // in lattice coords
+  	mylib::Coordinate *coord    = mylib::Idx2CoordA(args->self->attributeArray(),p);    
+    Dimn_Type *r = ADIMN(coord);
+    /*SHOW(c);
+    SHOW(self->latticeToStageTransform().matrix());
+    SHOW(r);*/
+    mylib::boolean out = 
+           ( (travel->x.min<r[0]) && (r[0]<travel->x.max) ) &&
+           ( (travel->y.min<r[1]) && (r[1]<travel->y.max) ) &&
+           ( (travel->z.min<r[2]) && (r[2]<travel->z.max) );
+    Free_Array(coord);
+    return out;
   }
 
-  typedef uint8_t uint8;
+
   static void actionMarkAddressable(mylib::Indx_Type p, void *arga)
   { 
-  	FloodFillArgs *args            = (FloodFillArgs*)arga;
-  	AUINT8(args->self->mask())[p] |= StageTiling::Addressable;
+  	FloodFillArgs *args                       = (FloodFillArgs*)arga;
+  	AUINT32(args->self->attributeArray())[p] |= StageTiling::Addressable;
   }
 
   void StageTiling::markAddressable_(device::StageTravel *travel)
   { 
-    FloodFillArgs args = {this,travel};
+    FloodFillArgs args(this,travel);
 #pragma warning(push)
-#pragma warning(disable:4244) // conversion from 'double' to 'mylib::Dimn_Type' might lose data
-    mylib::Coordinate *mid = mylib::Coord3( 
+#pragma warning(disable:4244)                                              // conversion from 'double' to 'mylib::Dimn_Type' might lose data
+    mylib::Coordinate *mid = mylib::Coord3(                                // ASSUMES: stage min is (0,0,0)
       (travel->z.max-travel->z.min)/2.0,
       (travel->y.max-travel->y.min)/2.0, 
       (travel->x.max-travel->x.min)/2.0);
 #pragma warning(push)
 
+#ifdef DEBUG__WRITE_IMAGES
+    mylib::Write_Image("TilingAttr_markAddressable__before.tif",attr_,mylib::DONT_PRESS);
+#endif
+
     leftmostAddressable_ = mylib::Find_Leftmost_Seed(
-      mask_,
+      attr_,
       1,                              /* share */
       0,                              /* conn  */
-      Coord2IdxA(mask_,mid),          /* seed  */
+      Coord2IdxA(attr_,mid),          /* seed  */
       &args,isInBox);
-    Flood_Object(mask_,
+    Flood_Object(attr_,
       1,                              /* share */
       0,                              /* conn  */
       leftmostAddressable_,           /* seed  */
       &args,isInBox,
       NULL,NULL,
       &args,actionMarkAddressable);
+
+#ifdef DEBUG__WRITE_IMAGES
+    mylib::Write_Image("TilingAttr_markAddressable__after.tif",attr_,mylib::DONT_PRESS);
+#endif
   }
+
+#endif
 
   //  resetCursor  /////////////////////////////////////////////////////
   //
@@ -190,7 +255,7 @@ namespace device {
   void StageTiling::resetCursor()
   { cursor_ = leftmostAddressable_;
 
-    mylib::Coordinate *c = mylib::Idx2CoordA(mask_,cursor_);
+    mylib::Coordinate *c = mylib::Idx2CoordA(attr_,cursor_);
     current_plane_offest_ = ADIMN(c)[2] * sz_plane_nelem_;
     mylib::Free_Array(c);
   }
@@ -198,10 +263,10 @@ namespace device {
   //  nextInPlanePosition  /////////////////////////////////////////////
   //                           
   #define ON_PLANE(e)    ((e) < (current_plane_offest_ + sz_plane_nelem_))
-  #define ON_LATTICE(e)  ((e) < (mask_->size))
+  #define ON_LATTICE(e)  ((e) < (attr_->size))
   bool StageTiling::nextInPlanePosition(Vector3f &pos)
-  { uint8_t* mask = AUINT8(mask_);
-    uint8_t attr = Addressable | Active;
+  { uint32_t* mask = AUINT32(attr_);
+    uint32_t  attr = Addressable | Active;
 
     while( (mask[cursor_] & attr) != attr
         && ON_PLANE(cursor_) )
@@ -219,9 +284,9 @@ namespace device {
   //  nextPosition  ////////////////////////////////////////////////////
   //
   bool StageTiling::nextPosition(Vector3f &pos)
-  { uint8_t* mask = AUINT8(mask_);
-    uint8_t attrmask = Addressable | Active | Done,
-            attr     = Addressable & Active;
+  { uint32_t* mask    = AUINT32(attr_);
+    uint32_t attrmask = Addressable | Active | Done,
+            attr      = Addressable & Active;
 
     while( (mask[cursor_] & attrmask) != attr
         && ON_LATTICE(cursor_) )
@@ -239,14 +304,14 @@ namespace device {
   //  markDone  ////////////////////////////////////////////////////////
   //
   void StageTiling::markDone(bool success)
-  { uint8_t *m = AUINT8(mask_) + cursor_;
+  { uint32_t *m = AUINT32(attr_) + cursor_;
     *m |= Done;
-    if(success)
-      *m |= Success;
+    if(!success)
+      *m |= TileError;
     notifyDone(cursor_,computeCursorPos(),*m);
   }
 
-  void StageTiling::notifyDone(size_t index, const Vector3f& pos, uint8_t sts)
+  void StageTiling::notifyDone(size_t index, const Vector3f& pos, uint32_t sts)
   { 
     TListeners::iterator i;
     for(i=listeners_.begin();i!=listeners_.end();++i)
@@ -262,11 +327,18 @@ namespace device {
 
   const Vector3f StageTiling::computeCursorPos()
   {          
-    mylib::Coordinate *c = mylib::Idx2CoordA(mask_,cursor_);     
+    mylib::Coordinate *c = mylib::Idx2CoordA(attr_,cursor_);     
     Map<Vector3z> r((size_t*)ADIMN(c));
     Vector3f pos = latticeToStage_ * r.transpose().cast<float>();
     Free_Array(c);	
     return pos;
+  }
+
+  size_t StageTiling::plane_mm()
+  {
+    Vector3f r(0,0,(float)plane());
+    r = latticeToStageTransform() * r;
+    return r(2);
   }
 
 }} // end namespace fetch::device
