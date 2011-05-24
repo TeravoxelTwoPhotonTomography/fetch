@@ -37,6 +37,7 @@ public slots:
 
   void update_tiling();
   void show(bool tf);
+  void refreshLatticeAttributes(unsigned itile, unsigned int attr);
 
 protected:
   virtual void hoverMoveEvent (QGraphicsSceneHoverEvent *event);
@@ -50,22 +51,29 @@ private:
   //QGLBUffer cursorColorVBO_,cursorIndexVBO_; //colors and indeces for highlighting tiles near the cursor
   //bool      cursorActive_;                   //
   //int       cursorIndexLength_;
-  int       icursor_;
-  QRectF    bbox_;
-  bool      is_active_;
+  int           icursor_;
+  QRectF        bbox_;
+  bool          is_active_;
+  QVector<QRgb> color_table_attr2idx_;          // color table for decoding attribute mask
+  QVector<QRgb> color_table_idx2rgb_;           // color table defining how attributes determine tile color
 
   QImage    *latticeImage_;
 
   void draw_grid_();
   void draw_cursor_();
   void paint_lattice_(const QPainterPath& path, const QColor& pc, const QColor &bc);
+  void paint_lattice_attribute_image_();
   void init_cursor_(const QPointF& pos);
   void initIBO();
   void updateIBO();
   void initVBO();
   void updateVBO();
   void initCBO();
+
+
   void updateCBO();
+
+  void init_color_tables();
 };
 
 }} // end fetch::ui namespace

@@ -54,10 +54,13 @@ TilesView::TilesView(TilingController *tc, QGraphicsItem *parent)
     cbo_(QGLBuffer::VertexBuffer),
     icursor_(-1),
     bbox_(0,0,10,10),
+    color_table_attr2idx_(256),
+    color_table_idx2rgb_(256),
     latticeImage_(NULL),
     is_active_(false)
 { 
   setAcceptHoverEvents(true);
+  init_color_tables();
  // setFlags(ItemIsSelectable);
 
   connect(
@@ -67,6 +70,10 @@ TilesView::TilesView(TilingController *tc, QGraphicsItem *parent)
   connect(
     tc,SIGNAL(show(bool)),
     this,SLOT(show(bool))
+    );
+  connect(
+    tc,SIGNAL(tileDone(unsigned, unsigned int)),
+    this,SLOT(refreshLatticeAttributes(unsigned,unsigned int))
     );
     
   initVBO();
@@ -211,16 +218,22 @@ void TilesView::paint_lattice_(const QPainterPath& path, const QColor& pc, const
 }
 
 void TilesView::addSelection( const QPainterPath& path )
-{  QColor c(255,255,0,255);
-   tc_->markActive(path);
-   paint_lattice_(path,c,c);
+{  
+  tc_->markActive(path);
+  paint_lattice_attribute_image_();
+  updateCBO();
+  update();
+  //paint_lattice_(path,c,c);
 }
 
 void TilesView::removeSelection( const QPainterPath& path )
 {
-   QColor c(0,255,255,255);
-   tc_->markInactive(path);
-   paint_lattice_(path,c,c);   
+  QColor c(0,255,255,255);
+  tc_->markInactive(path);
+  paint_lattice_attribute_image_();
+  updateCBO();
+  update();
+  //paint_lattice_(path,c,c);   
 }
 
 void TilesView::initIBO()
@@ -356,12 +369,7 @@ void TilesView::initCBO()
   if(tc_->latticeShape(&w,&h))
   { 
     latticeImage_ = new QImage(w,4*h,QImage::Format_ARGB32_Premultiplied);  
-    {
-      QPainter painter(latticeImage_);  
-      painter.setCompositionMode(QPainter::CompositionMode_Clear);
-      QRectF r(latticeImage_->rect());       
-      painter.fillRect(r,Qt::SolidPattern);
-    }
+    paint_lattice_attribute_image_();
 
     cbo_.setUsagePattern(QGLBuffer::StaticDraw);  
     DBG( cbo_.bind() );
@@ -423,6 +431,59 @@ void TilesView::update_tiling()
 void TilesView::show( bool tf )
 {
    setVisible(tf); 
+}
+
+void TilesView::init_color_tables()
+{
+  for(int i=0;i<256;++i)
+    color_table_attr2idx_[i] = (QRgb)i;
+  for(int i=0;i<256;++i)
+    color_table_idx2rgb_[i] = (QRgb)0xffff00ff; // purple
+
+  // Blue and Red get switched between OpenGL and Qt
+  color_table_idx2rgb_[0 ] = qRgba(155,155,155,  0);     // 0000 not addressable
+  color_table_idx2rgb_[1 ] = qRgba(127,127,127,127);     // 0001 addressable
+  color_table_idx2rgb_[3 ] = qRgba( 55,255,255,255);     // 0011 active,addressable
+  color_table_idx2rgb_[5 ] = qRgba(255, 55, 55,255);     // 0101 done,addressable
+  color_table_idx2rgb_[7 ] = qRgba(  0,  0,  0,255);     // 0111 done,active,addressable
+  color_table_idx2rgb_[13] = qRgba(127,127,255,255);     // 1101 error,done,addressable
+  color_table_idx2rgb_[15] = qRgba(  0,  0,255,255);     // 1111 error,done,active,addressable
+}
+
+void TilesView::paint_lattice_attribute_image_()
+{  
+  QPainter painter(latticeImage_);  
+  painter.setCompositionMode(QPainter::CompositionMode_Clear);
+  QRectF r(latticeImage_->rect());       
+  painter.fillRect(r,Qt::SolidPattern);
+
+  QImage attr;
+  tc_->latticeAttrImage(&attr);
+  //attr.save("TilesView_initCBO__attr.tif");
+  QImage indexed_attr = attr.convertToFormat(QImage::Format_Indexed8,color_table_attr2idx_);
+  //indexed_attr.save("TilesView_initCBO__indexed_attr__before.tif");
+  indexed_attr.setColorTable(color_table_idx2rgb_);
+  //indexed_attr.save("TilesView_initCBO__indexed_attr__after.tif");
+
+  unsigned w,h;
+  tc_->latticeShape(&w,&h);
+  QPointF offset(0.0f,h);    
+  painter.setCompositionMode(QPainter::CompositionMode_Source);
+  for(int ivert=0;ivert<4;++ivert)
+  {         
+    painter.drawImage(indexed_attr.rect(),indexed_attr);
+    painter.translate(offset);
+  }  
+  //latticeImage_->save("TilesView_initCBO_latticeImage__after.tif");  
+}
+
+void TilesView::refreshLatticeAttributes(unsigned itile, unsigned int attr)
+{
+  if(!tc_->is_valid())
+    return;
+  paint_lattice_attribute_image_();
+  updateCBO();
+  update();
 }
 
 }} // end namepsace fetch::ui 
