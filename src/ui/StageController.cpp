@@ -29,7 +29,7 @@ fetch::ui::TilingController::TilingController( device::StageTiling *tiling, QObj
 { 
   connect(
     &listener_,SIGNAL(sig_tile_done(unsigned,unsigned int)),
-    this,      SIGNAL(tileDone(unsigned,unsigned int)),
+    this,      SIGNAL(tileDone(unsigned,unsigned int)),        // hooked up to the tileview
     Qt::QueuedConnection);
   connect(
     &listener_,SIGNAL(sig_tiling_changed(device::StageTiling*)),
@@ -37,11 +37,9 @@ fetch::ui::TilingController::TilingController( device::StageTiling *tiling, QObj
     Qt::QueuedConnection);
   connect(
     &listener_,SIGNAL(sig_tile_next(unsigned)),
-    this,      SIGNAL(nextTileRequest(unsigned)),
+    this,      SIGNAL(nextTileRequest(unsigned)), // Not connected to anything right now
     Qt::QueuedConnection);
-
 }
-
 
 bool fetch::ui::TilingController::fovGeometry( TRectVerts *out )
 { 
@@ -270,6 +268,14 @@ fetch::ui::PlanarStageController::PlanarStageController( device::Stage *stage, Q
   connect(
     &agent_controller_, SIGNAL(onDetach()),
     this,SLOT(invalidateTiling()) );
+
+  connect(
+    &listener_,SIGNAL(sig_moved()),
+    this,SIGNAL(moved()),
+    Qt::QueuedConnection);
+
+  stage_->addListener(&listener_);
+  stage_->addListener(tiling_controller_.listener());
 
   agent_controller_.createPollingTimer()->start(50 /*msec*/);
 }

@@ -37,6 +37,8 @@ namespace ui {
 
     TilingController(device::StageTiling *tiling=NULL, QObject* parent=0);
 
+    inline TilingControllerListener* listener()                            {return &listener_;}
+
     inline bool is_valid()                                                 {return tiling_!=NULL;}
 
     bool fovGeometry      (TRectVerts *out);                               // returns false if tiling is invalid
@@ -75,9 +77,21 @@ namespace ui {
     bool mark_all( device::StageTiling::Flags attr,                        // marks the whole plane with the attribute
                    QPainter::CompositionMode mode );
   };
+  
+
+  class PlanarStageControllerListener:public QObject, public device::StageListener
+  {
+    Q_OBJECT
+  public:
+    virtual void moved(void) {emit sig_moved();}
+  signals:
+    void sig_moved();
+
+  };
 
   class PlanarStageController:public QObject
-  { Q_OBJECT
+  { 
+    Q_OBJECT    
     public:
 
       static const units::Length Unit = units::MM;
@@ -90,9 +104,9 @@ namespace ui {
 
       TilingController* tiling()                                           {return &tiling_controller_;}
 
-    signals:
-
-      void moved(QPointF pos);
+  signals:
+      void moved();            // eventually updates the imitem's position
+      void moved(QPointF pos); // eventually updates the imitem's position
 
     public slots:
       
@@ -108,6 +122,8 @@ namespace ui {
       device::Stage   *stage_;
       AgentController  agent_controller_;
       TilingController tiling_controller_; 
+
+      PlanarStageControllerListener listener_;
   };
 
 

@@ -443,11 +443,11 @@ void TilesView::init_color_tables()
   // Blue and Red get switched between OpenGL and Qt
   color_table_idx2rgb_[0 ] = qRgba(155,155,155,  0);     // 0000 not addressable
   color_table_idx2rgb_[1 ] = qRgba(127,127,127,127);     // 0001 addressable
-  color_table_idx2rgb_[3 ] = qRgba( 55,255,255,255);     // 0011 active,addressable
-  color_table_idx2rgb_[5 ] = qRgba(255, 55, 55,255);     // 0101 done,addressable
-  color_table_idx2rgb_[7 ] = qRgba(  0,  0,  0,255);     // 0111 done,active,addressable
-  color_table_idx2rgb_[13] = qRgba(127,127,255,255);     // 1101 error,done,addressable
-  color_table_idx2rgb_[15] = qRgba(  0,  0,255,255);     // 1111 error,done,active,addressable
+  color_table_idx2rgb_[3 ] = qRgba( 55,255,255,200);     // 0011 active,addressable
+  color_table_idx2rgb_[5 ] = qRgba(255, 55, 55,200);     // 0101 done,addressable
+  color_table_idx2rgb_[7 ] = qRgba(  0,255,  0,200);     // 0111 done,active,addressable
+  color_table_idx2rgb_[13] = qRgba(127,127,255,200);     // 1101 error,done,addressable
+  color_table_idx2rgb_[15] = qRgba(  0,  0,255,200);     // 1111 error,done,active,addressable
 }
 
 void TilesView::paint_lattice_attribute_image_()

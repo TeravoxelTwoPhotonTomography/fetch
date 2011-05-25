@@ -104,7 +104,7 @@ namespace fetch
           }
 
           // Move stage
-          dc->stage()->setPos(tilepos);
+          dc->stage()->setPos(0.001*tilepos); // convert um to mm
 
           eflag |= dc->runPipeline();
           eflag |= dc->__scan_agent.run() != 1;          

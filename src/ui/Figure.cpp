@@ -72,6 +72,7 @@ ZoomableView::drawForeground(QPainter* painter, const QRectF& rect)
 
 Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
 :QWidget(parent)
+,_sc(stageController)
 {	
   _view = new ZoomableView(&_scene); 
   QGLWidget *viewport; 
@@ -91,6 +92,8 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
   _stage = new StageView(stageController);
   _scene.addItem(_stage);
   _stage->setZValue(-1);                                                   // ensure it gets drawn behind the usual items
+  connect(stageController,SIGNAL(moved()),
+          this,SLOT(updatePos()));
   connect(stageController,SIGNAL(moved(QPointF)),
           this,SLOT(updatePos(QPointF)));
 
@@ -100,11 +103,11 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
 
   _tv = new TilesView(stageController->tiling());
   _scene.addItem(_tv);
+  checkGLError();
   connect(&_scene,SIGNAL(   addSelectedArea(const QPainterPath&)),
               _tv,SLOT(     addSelection(const QPainterPath&)));
   connect(&_scene,SIGNAL(removeSelectedArea(const QPainterPath&)),
               _tv,SLOT(  removeSelection(const QPainterPath&)));
-  checkGLError();
 
 	QGridLayout *layout = new QGridLayout;
 	layout->setContentsMargins(0,0,0,0);

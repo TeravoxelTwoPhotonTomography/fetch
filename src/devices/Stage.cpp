@@ -117,7 +117,7 @@ namespace device {
   }
 
   int SimulatedStage::setPos( float x, float y, float z )
-  { x_=x;y_=y;z_=z;
+  { x_=x;y_=y;z_=z;    
     return 1;
   }
 
@@ -218,8 +218,13 @@ namespace device {
   void Stage::_notifyTilingChanged()
   { TListeners::iterator i;
     for(i=_listeners.begin();i!=_listeners.end();++i)
-      (*i)->tiling_changed(_tiling);
-  
+      (*i)->tiling_changed(_tiling);  
+  }
+
+  void Stage::_notifyMoved()
+  { TListeners::iterator i;
+    for(i=_listeners.begin();i!=_listeners.end();++i)
+      (*i)->moved();
   }
 
   unsigned int Stage::on_attach()

@@ -2,8 +2,16 @@
 #include "units.h"
 #include <QtGui>
 
+#include <Eigen\Core>
+using namespace Eigen;
+
 namespace fetch {
 namespace units {
+
+  template<Length dst, Length src> 
+  inline Vector3f cvt(const Vector3f& r)
+  { return cvt<dst,src>(1.0)*r;
+  }
 
   template<Length dst, Length src> 
   inline QPointF cvt(const QPointF& r)

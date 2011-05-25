@@ -115,7 +115,7 @@ namespace device {
       virtual int  setVelocity       ( float vx, float vy, float vz)        {return _istage->setVelocity(vx,vy,vz);}
       virtual void setVelocityNoWait ( float vx, float vy, float vz)        {_istage->setVelocityNoWait(vx,vy,vz);}
       virtual void getPos            ( float *x, float *y, float *z)        {_istage->getPos(x,y,z);}
-      virtual int  setPos            ( float  x, float  y, float  z)        {return _istage->setPos(x,y,z);}
+      virtual int  setPos            ( float  x, float  y, float  z)        {int out = _istage->setPos(x,y,z); _notifyMoved(); return out;}
       virtual int  setPos            ( const Vector3f &r)                   {return setPos(r[0],r[1],r[2]);}
       virtual int  setPos            ( const TilePos &r)                    {return setPos(r.x,r.y,r.z);}
       virtual int  setPos            ( const TilePosList::iterator &cursor) {return setPos(*cursor);}
@@ -127,6 +127,7 @@ namespace device {
   protected:
       void    _createTiling();       //only call when disarmed
       void    _notifyTilingChanged();
+      void    _notifyMoved();
   };
 
   //////////////////////////////////////////////////////////////////////
@@ -156,11 +157,14 @@ namespace device {
   // means the callback shouldn't be blocked.  I can leave the blocking
   // responsibility up to the callback.
 
-  struct StageListener
+  class StageListener
   {
+  public:
     virtual void tiling_changed(StageTiling *tiling) {}                      // a new tiling was created.
     virtual void tile_done(size_t index, const Vector3f& pos,uint32_t sts) {}// the specified tile was marked as done                                                      
     virtual void tile_next(size_t index, const Vector3f& pos) {}             // the next tile was requested (stage not necessarily moved yet)
+
+    virtual void moved() {}
   };
 
   // end namespace fetch::Device
