@@ -83,7 +83,7 @@ namespace device {
   { float x,y,z;
   };
 
-  struct StageListener;
+  class StageListener;
   class Stage:public StageBase<cfg::device::Stage>
   {
   public:

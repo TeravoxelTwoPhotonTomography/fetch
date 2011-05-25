@@ -264,7 +264,12 @@ Error:
       unsigned int fetch::task::scanner::Video<TPixel>::run_simulated( device::Scanner2D *d )
       { Chan *qdata = Chan_Open(d->_out->contents[0],CHAN_WRITE);
         Frame *frm   = NULL;        
-        Frame_With_Interleaved_Planes ref(512,512,3,TypeID<TPixel>());
+        device::SimulatedDigitizer *dig = d->_digitizer._simulated;
+        Frame_With_Interleaved_Planes ref(
+          dig->get_config().width(),
+          d->get_config().nscans()*2,
+          3,
+          TypeID<TPixel>());
         size_t nbytes;
         int status = 1; // status == 0 implies success, error otherwise
         size_t count = 0;

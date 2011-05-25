@@ -46,6 +46,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   createMenus();
   createDockWidgets();
   createViews();
+  load_settings_();
   
   connect(&_poller,SIGNAL(timeout()),&_scope_state_controller,SLOT(poll()));
   _poller.start(50 /*ms*/);  
@@ -169,5 +170,24 @@ void fetch::ui::MainWindow::closeEvent( QCloseEvent *event )
 {
   _player->stop();
   _poller.stop();
+  save_settings_();
   QMainWindow::closeEvent(event);  
+}
+
+void fetch::ui::MainWindow::load_settings_()
+{
+  QSettings settings;
+  bool ok;
+  ok  = restoreGeometry(settings.value("MainWindow/geometry").toByteArray());
+  ok &= restoreState(settings.value("MainWindow/state").toByteArray(),version__);
+  ok &= restoreDockWidget(_videoAcquisitionDockWidget);
+  ok &= restoreDockWidget(_stackAcquisitionDockWidget);
+  ok &= restoreDockWidget(_microscopesStateDockWidget);
+}
+
+void fetch::ui::MainWindow::save_settings_()
+{
+  QSettings settings;
+  settings.setValue("MainWindow/geometry",saveGeometry());
+  settings.setValue("MainWindow/state",saveState(version__));
 }

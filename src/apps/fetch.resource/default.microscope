@@ -1,7 +1,7 @@
 scanner3d { 
   scanner2d {
     frequency_hz: 7920
-    nscans: 512
+    nscans: 1024
     line_duty_cycle: 0.95
     daq {
       kind: Simulated
@@ -41,6 +41,7 @@ scanner3d {
         decimation: 1
       }
       simulated {
+        width:  1024
         number: 0
         sample_rate: 1000000 
       }

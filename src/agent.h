@@ -151,7 +151,7 @@ namespace fetch {
     // Queue manipulation
     static void connect(IDevice *dst, size_t dst_chan, IDevice *src, size_t src_chan);
 
-    virtual void onUpdate() {}          // Overload this to make state changes that are dependent on the configuration. See e.g.: Scanner2d::onUpdate()
+    virtual void onUpdate() {}   // Overload this to make state changes that are dependent on the configuration. See e.g.: Scanner2d::onUpdate()
 
     Agent* _agent;
 
@@ -503,7 +503,8 @@ FailedToParse:
       int run = _agent->is_running();
       if(run)
         _agent->stop(AGENT_DEFAULT_TIMEOUT);
-      _agent->_owner->onUpdate();
+      onUpdate(); // ??? do I want the owner's onUpdate, or this device's onUpdate?  - right now, the device is the Microscope anyway
+      //onUpdate();
       //dynamic_cast<IUpdateable*>(_agent->_task)->update(this); //commit
       if(run)
         _agent->run();

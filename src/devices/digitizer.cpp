@@ -332,7 +332,7 @@ Error:
         break;
       case cfg::device::Digitizer_DigitizerType_Simulated:    
         if(!_simulated)
-          _simulated = new SimulatedDigitizer(_agent);
+          _simulated = new SimulatedDigitizer(_agent,_config->mutable_simulated());
         _idevice  = _simulated;
         _idigitizer = _simulated;
         break;

@@ -135,6 +135,7 @@ message SimulatedDigitizer
   optional uint32 number      = 1 [default=0];       // placeholder
   optional double sample_rate = 2 [default=1000000];
   optional int32  nchan       = 3 [default=1];       // number of channels
+  optional int32  width       = 4 [default=512];     // pixels per line
 }
 
 /////////////////

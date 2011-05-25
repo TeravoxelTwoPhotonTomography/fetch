@@ -66,6 +66,10 @@ public: // semi-private
   ZPiezoMinController*        _zpiezo_min_control;
   ZPiezoStepController*       _zpiezo_step_control;
 
+private:  
+  void load_settings_();
+  void save_settings_();
+  static const int version__ = 0;
 };
 
 //namespace ends

@@ -91,6 +91,7 @@ namespace fetch
           default:      // in this case, there was a timeout or abandoned wait
             eflag |= 1; //failure              
           }
+          eflag += dc->trash._agent->stop() != 1; // wait till the end of the pipeline stops
 
         }
         //dc->__scan_agent.disarm();

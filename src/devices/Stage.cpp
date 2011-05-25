@@ -229,12 +229,20 @@ namespace device {
 
   unsigned int Stage::on_attach()
   {
-    unsigned int eflag = _idevice->on_attach(); if(eflag==0) _createTiling(); return eflag;
+    unsigned int eflag = _idevice->on_attach();
+    if(eflag==0) _createTiling();
+    return eflag;
   }
 
   unsigned int Stage::on_detach()
   {
-    unsigned int eflag = _idevice->on_detach(); if((eflag==0)&&_tiling) {delete _tiling; _tiling=NULL;} return eflag;
+    unsigned int eflag = _idevice->on_detach();
+    if((eflag==0)&&_tiling) 
+    {
+      delete _tiling; 
+      _tiling=NULL;
+    } 
+    return eflag;
   }
 
 }} // end anmespace fetch::device

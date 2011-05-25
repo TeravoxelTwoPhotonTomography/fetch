@@ -57,7 +57,7 @@ namespace fetch
         { any |= CHAN_SUCCESS(Chan_Next(q[i],buf+i,szs[i]));
           szs[i] = Chan_Buffer_Size_Bytes(q[i]);
         }        
-      } while(any);
+      } while(any); // quits when all inputs fail to pop
       
       // cleanup
       for (i = 0; i < n; i++)
