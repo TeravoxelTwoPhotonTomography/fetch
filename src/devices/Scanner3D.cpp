@@ -80,7 +80,7 @@ namespace fetch
       _zpiezo.setKind(_config->zpiezo().kind());
     }
 
-    void Scanner3D::onConfig()
+    void Scanner3D::onConfigTask()
     {
       float64 nscans       = _config->scanner2d().nscans(),
               scan_freq_Hz = _config->scanner2d().frequency_hz();

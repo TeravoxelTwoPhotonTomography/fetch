@@ -110,7 +110,7 @@ namespace fetch
       _pockels.setKind(_config->pockels().kind());
     }
 
-    void Scanner2D::onConfig()
+    void Scanner2D::onConfigTask()
     {
       float64 nscans       = _config->nscans(),
               scan_freq_Hz = _config->frequency_hz();

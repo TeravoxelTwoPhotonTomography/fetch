@@ -251,6 +251,12 @@
       return (sts!=1); // returns 1 on fail and 0 on success
     }
 
+    void Microscope::onUpdate()
+    {
+      scanner.onUpdate();
+      stage_.onUpdate();
+    }
+
     ///////////////////////////////////////////////////////////////////////
     // FileSeries
     ///////////////////////////////////////////////////////////////////////

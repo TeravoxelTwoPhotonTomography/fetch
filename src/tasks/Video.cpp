@@ -115,7 +115,7 @@ namespace fetch
       unsigned int
       Video<TPixel>::config(device::Scanner2D *d)
       { 
-        d->onConfig();
+        d->onConfigTask();
 
         debug("Scanner2D configured for Video<%s>\r\n",TypeStr<TPixel>());
         return 1; //success

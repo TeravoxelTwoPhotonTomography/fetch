@@ -201,7 +201,7 @@ namespace fetch
         ScanStack<TPixel>::
         config(device::Scanner3D *d)
         {
-          d->onConfig();
+          d->onConfigTask();
           debug("Scanner3D configured for StackAcquisition<%s>\r\n", TypeStr<TPixel> ());
           return 1; //success
         }

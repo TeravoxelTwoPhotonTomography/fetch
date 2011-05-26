@@ -73,7 +73,7 @@ namespace fetch
       virtual void _set_config(Config IN *cfg);
       virtual void _set_config(const Config& cfg);
 
-      virtual void onConfig();
+      virtual void onConfigTask();
       virtual void onUpdate() {generateAO();}
       virtual void generateAO();
               void generateAOConstZ();

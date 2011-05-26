@@ -7,12 +7,12 @@ scanner3d {
       kind: Simulated #NIDAQ #Simulated
       nidaq {
         ao_samples_per_waveform: 16384
-        trigger: "APFI0"
-        clock: "Ctr1InternalOutput"
-        ctr: "/Dev1/ctr1"
-        ctr_alt: "/Dev1/ctr0"
+        trigger:  "APFI0"
+        clock:    "Ctr1InternalOutput"
+        ctr:      "/Dev1/ctr1"
+        ctr_alt:  "/Dev1/ctr0"
         armstart: "RTSI2"
-        name: "Dev1"
+        name:     "Dev1"
       }
       simulated {
         samples_per_record: 16384
@@ -47,7 +47,7 @@ scanner3d {
       }
     }
     pockels { 
-      kind: Simulated #NIDAQ #Simulated
+      kind: NIDAQ #NIDAQ #Simulated
       nidaq {
         v_lim_max: 2
         v_lim_min: 0
@@ -61,7 +61,7 @@ scanner3d {
       }
     }
     shutter {
-      kind: Simulated #NIDAQ #Simulated
+      kind: NIDAQ #NIDAQ #Simulated
       nidaq {
         open: 1
         closed: 0
@@ -85,7 +85,7 @@ scanner3d {
     }
   }
   zpiezo {
-    kind: Simulated  #NIDAQ #Simulated
+    kind: NIDAQ  #NIDAQ #Simulated
     nidaq {
       um2v:       0.025
       um_max:     5

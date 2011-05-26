@@ -86,6 +86,7 @@ namespace fetch
       IDevice* configPipeline();                                           // returns the end of the pipeline
       unsigned int runPipeline();
       unsigned int stopPipeline();
+      virtual void onUpdate();
 
       inline IDevice* pipelineEnd() {return &wrap;}
 

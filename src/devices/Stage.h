@@ -4,6 +4,7 @@
 #include "agent.h"
 #include <list>
 #include <set>
+#include "FieldOfViewGeometry.h"
 
 #include <Eigen/Core>
 using namespace Eigen;
@@ -15,6 +16,8 @@ namespace device {
 
   struct StageAxisTravel  { float min,max; };
   struct StageTravel      { StageAxisTravel x,y,z; };
+
+
 
 
   //////////////////////////////////////////////////////////////////////
@@ -98,6 +101,7 @@ namespace device {
     IStage             *_istage;
     StageTiling        *_tiling;
     TListeners          _listeners;
+    FieldOfViewGeometry _fov;
     
     public:
       Stage(Agent *agent);
@@ -109,6 +113,7 @@ namespace device {
       virtual unsigned int on_detach();
       void _set_config( Config IN *cfg );
       void _set_config( const Config &cfg );
+      void onUpdate();
 
       virtual void getTravel         ( StageTravel* out)                    {_istage->getTravel(out);}
       virtual void getVelocity       ( float *vx, float *vy, float *vz)     {_istage->getVelocity(vx,vy,vz);}

@@ -76,7 +76,7 @@ namespace fetch
     public:
       IScanner() : _ao_workspace(NULL) {}
 
-      virtual void onConfig()   = 0; // called in a 2d scanning task's config function
+      virtual void onConfigTask()   = 0; // called in a 2d scanning task's config function
       virtual void generateAO() = 0;
       virtual void writeAO()    = 0;
 
@@ -103,7 +103,7 @@ namespace fetch
       virtual void _set_config(Config IN *cfg);
       virtual void _set_config(const Config& cfg);
 
-      virtual void onConfig();
+      virtual void onConfigTask();
       virtual void onUpdate() {generateAO();}
       virtual void generateAO();
       virtual void writeAO();

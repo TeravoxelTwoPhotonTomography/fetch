@@ -132,6 +132,7 @@ namespace device {
     ,_idevice(NULL)
     ,_istage(NULL)
     ,_tiling(NULL)
+    ,_fov(_config->fov())
   {
       setKind(_config->kind());
   }
@@ -143,6 +144,7 @@ namespace device {
     ,_idevice(NULL)
     ,_istage(NULL)
     ,_tiling(NULL)
+    ,_fov(cfg->fov())
   {
     setKind(_config->kind());
   } 
@@ -198,10 +200,10 @@ namespace device {
   // Only use when attached but disarmed.
   void Stage::_createTiling()
   { if(_tiling) {delete _tiling; _tiling=NULL;}
-    FieldOfViewGeometry fov(_config->fov());
+    //FieldOfViewGeometry fov(_config->fov());
     device::StageTravel travel;
     getTravel(&travel);
-    _tiling = new StageTiling(travel, fov, _config->tilemode());
+    _tiling = new StageTiling(travel, _fov, _config->tilemode());
     _notifyTilingChanged();
   }
 
@@ -243,6 +245,15 @@ namespace device {
       _tiling=NULL;
     } 
     return eflag;
+  }
+
+  void Stage::onUpdate()
+  {
+
+    // propagate fov changes
+    // - right now, just update the fov geometry
+    //   In the future, might want to recompute/update the tiling   
+    _fov.update(_config->fov());
   }
 
 }} // end anmespace fetch::device
