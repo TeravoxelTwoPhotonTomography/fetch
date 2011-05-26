@@ -144,14 +144,17 @@ void fetch::ui::MainWindow::createDockWidgets()
   _videoAcquisitionDockWidget = new VideoAcquisitionDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_videoAcquisitionDockWidget);
   viewMenu->addAction(_videoAcquisitionDockWidget->toggleViewAction());
+  _videoAcquisitionDockWidget->setObjectName("videoAcquisitionDockWidget");
 
   _stackAcquisitionDockWidget = new StackAcquisitionDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_stackAcquisitionDockWidget);
   viewMenu->addAction(_stackAcquisitionDockWidget->toggleViewAction());
+  _stackAcquisitionDockWidget->setObjectName("_stackAcquisitionDockWidgetv");
 
   _microscopesStateDockWidget = new MicroscopeStateDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_microscopesStateDockWidget);
   viewMenu->addAction(_microscopesStateDockWidget->toggleViewAction());
+  _microscopesStateDockWidget->setObjectName("_microscopesStateDockWidget");
 }
 
 void fetch::ui::MainWindow::createViews()

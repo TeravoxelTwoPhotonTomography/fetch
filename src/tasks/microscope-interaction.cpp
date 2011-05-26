@@ -63,8 +63,8 @@ namespace fetch
         Guarded_Assert(dc->__scan_agent.is_runnable());
         //Guarded_Assert(dc->__io_agent.is_running());
 
-        eflag |= dc->trash._agent->run();
-        eflag |= dc->runPipeline();       
+        eflag |= (dc->trash._agent->run()!=1);
+        eflag |=  dc->runPipeline();       
         eflag |= (dc->__scan_agent.run()!=1);
 
         Chan_Wait_For_Writer_Count(dc->__scan_agent._owner->_out->contents[0],1);
@@ -86,12 +86,13 @@ namespace fetch
             eflag |= 0; // success
             break; 
           case 1:       // in this case, the stop event triggered and must be propagated.
-            eflag |= dc->__scan_agent.stop() != 1;
+            eflag |= (dc->__scan_agent.stop() != 1);
             break;
           default:      // in this case, there was a timeout or abandoned wait
             eflag |= 1; //failure              
           }
-          eflag += dc->trash._agent->stop() != 1; // wait till the end of the pipeline stops
+          eflag |= dc->stopPipeline(); // wait till the end of the pipeline stops
+          eflag |= (dc->trash._agent->stop()!=1);
 
         }
         //dc->__scan_agent.disarm();

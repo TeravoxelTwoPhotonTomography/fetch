@@ -80,7 +80,7 @@ bool fetch::ui::TilingController::latticeTransform( QTransform *out )
     TTransform latticeToStage;
     latticeTransform(&latticeToStage);    
     Matrix4f m  = latticeToStage.matrix();
-    SHOW2(m);
+    //SHOW2(m);
     QTransform t( // Transposed relative to Eigen
       m(0,0), m(1,0), 0.0,
       m(0,1), m(1,1), 0.0,

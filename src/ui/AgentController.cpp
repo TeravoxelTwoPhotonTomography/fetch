@@ -198,7 +198,7 @@ AgentControllerButtonPanel::AgentControllerButtonPanel(AgentController *ac, Task
       c->assignProperty(btnArm,   "enabled",false);
       c->assignProperty(btnDisarm,"enabled",true);
       c->assignProperty(btnRun,   "enabled",true);
-      c->assignProperty(btnStop,  "enabled",false);
+      c->assignProperty(btnStop,  "enabled",true);
 
       c = taskArmedNonTarget;
       c->assignProperty(btnDetach,"enabled",true);

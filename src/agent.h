@@ -284,13 +284,14 @@ namespace fetch {
 
       char *_name;
       
-    protected:
-      friend class Task;
+    protected:   
+
+      void set_available(void);  //indicates agent is ready for arming
       
+  
+    public: // treat these like they're private
       void   lock(void);
       void unlock(void);
-
-      void set_available(void);
 
     public: // Section (Data): treat as protected, friended to children of Task
       
@@ -300,7 +301,7 @@ namespace fetch {
       CRITICAL_SECTION _lock;
       u32              _num_waiting,
                        _is_available,
-                       _is_running;
+                       _is_running;      
                        
     private:
       inline static unsigned _handle_wait_for_result     (DWORD result, const char *msg);
@@ -375,18 +376,18 @@ namespace fetch {
   void IConfigurableDevice<Tcfg>::set_config(Tcfg *cfg)
   {    
     transaction_lock();    
-    _set_config(cfg);
-    update();
+    _set_config(cfg);    
     transaction_unlock();
+    update();
   }
   
   template<class Tcfg>
   void IConfigurableDevice<Tcfg>::set_config( const Config& cfg )
   {
 	  transaction_lock();
-    _set_config(cfg);
-    update();
+    _set_config(cfg);    
     transaction_unlock();
+    update(); // if another thread imposes an update here, it's ok.  Machine will have a consistent view.
   }
 
 #define CONFIG_BUFFER_MAX_BYTES 2048
@@ -448,6 +449,7 @@ namespace fetch {
     struct T v = {0};
     Chan *reader,*q = (Chan*) lparam;
     static int lasttime=0;
+    bool updated = false;
 
     //memset(&v,0,sizeof(v));
 
@@ -466,11 +468,13 @@ namespace fetch {
     { 
       lasttime = v.time;             // Only process requests dated after the last request.      
       goto_if_fail(v.self->_config->ParseFromArray(v.data,v.size),FailedToParse);      
-      v.self->update();
+      updated = true;      
     }
 Finalize:
     Chan_Close(reader);
     v.self->transaction_unlock();
+    if(updated)
+      v.self->update();
     return err;
 FailedToParse:
     pb::unlock();
@@ -497,18 +501,24 @@ FailedToParse:
 
   template<class Tcfg>
   void IConfigurableDevice<Tcfg>::update()
-  {
+  {    
     if(_agent->is_armed())
-    {
-      int run = _agent->is_running();
+    {      
+      int run;
+      _agent->lock(); //will generate a recursive lock :(
+      run = _agent->is_running();
       if(run)
+      { HERE;
         _agent->stop(AGENT_DEFAULT_TIMEOUT);
-      onUpdate(); // ??? do I want the owner's onUpdate, or this device's onUpdate?  - right now, the device is the Microscope anyway
-      //onUpdate();
-      //dynamic_cast<IUpdateable*>(_agent->_task)->update(this); //commit
+      }
+      _agent->_owner->onUpdate(); // ??? do I want the owner's onUpdate, or this device's onUpdate?      
       if(run)
+      { HERE;
         _agent->run();
+      }
+      _agent->unlock();
     }
+    
   }
 
 // end namespaces

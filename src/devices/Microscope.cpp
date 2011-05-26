@@ -239,6 +239,17 @@
       sts &= pixel_averager._agent->run();      
       return (sts!=1); // returns 1 on fail and 0 on success
     }
+    
+    unsigned int Microscope::stopPipeline()
+    { int sts = 1;
+      // These should block till channel's empty 
+      sts &= wrap._agent->stop();
+      sts &= cast_to_i16._agent->stop();
+      sts &= inverter._agent->stop();
+      sts &= frame_averager._agent->stop();
+      sts &= pixel_averager._agent->stop();      
+      return (sts!=1); // returns 1 on fail and 0 on success
+    }
 
     ///////////////////////////////////////////////////////////////////////
     // FileSeries

@@ -431,7 +431,7 @@ Error:
         if( _thread != INVALID_HANDLE_VALUE)
         { t = _thread;
           unlock();          
-          res = SignalObjectAndWait(_notify_stop,t,timeout_ms,FALSE);
+          res = SignalObjectAndWait(_notify_stop,t,timeout_ms,FALSE);  // notifies and waits on thread to signal
             //res = WaitForSingleObject(t, timeout_ms); // wait for running thread to stop
           lock();
           // Handle a timeout on the wait.  
@@ -487,7 +487,7 @@ Error:
         {   q = Chan_Alloc(32, sizeof (T));
             Chan_Set_Expand_On_Full(q,1);
         }
-
+        
         writer=Chan_Open(q,CHAN_WRITE);
         if(CHAN_FAILURE( Chan_Next_Copy(writer, &args, sizeof(T)) )){
             warning("[%s] In Agent::stop_nonblocking:\r\n\tCould not push request arguments to queue.\r\n",name());
@@ -495,6 +495,7 @@ Error:
         }
         Chan_Close(writer);
         
+        DBG("Agent: [ ] Non-blocking stop requested for %s 0x%p\r\n",name(), this);
         BOOL sts;
         sts = QueueUserWorkItem(&_agent_stop_thread_proc, (void*)q, NULL /*default flags*/);
         return sts;
