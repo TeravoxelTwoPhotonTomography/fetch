@@ -482,14 +482,6 @@ FailedToParse:
     err = 1;
     goto Finalize;
   }
-  /*
-  template<class Tcfg>
-  void IConfigurableDevice<Tcfg>::_set_config__locked( Config * cfg )
-  {
-    _set_config(cfg);
-    update();
-  }
-      */
 
   template<class Tcfg>
   void IConfigurableDevice<Tcfg>::transaction_unlock()

@@ -110,7 +110,8 @@ namespace fetch
           eflag |= dc->__scan_agent.run() != 1;          
 
           {
-            HANDLE hs[] = {dc->__scan_agent._thread,          
+            HANDLE hs[] = {
+              dc->__scan_agent._thread,          
               dc->__self_agent._notify_stop};
             DWORD res;
             int   t;            
@@ -129,17 +130,19 @@ namespace fetch
             default:      // in this case, there was a timeout or abandoned wait
               eflag |= 1; //failure              
             }
+          }  // end waiting block
 
-            // Output metadata and Increment file
-            eflag |= dc->disk.close();
-            dc->write_stack_metadata();
-            dc->file_series.inc();
+          // Output metadata and Increment file
+          eflag |= dc->disk.close();
+          dc->write_stack_metadata();
+          dc->file_series.inc();
 
-            tiling->markDone(eflag==0);
-            //dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
-
-          }
-        }
+          tiling->markDone(eflag==0);
+          //dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
+           
+        } // end loop over tiles
+        eflag |= dc->stopPipeline(); // wait till the  pipeline stops
+        
         return eflag;
       }
 

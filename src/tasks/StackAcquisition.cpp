@@ -155,6 +155,7 @@ namespace fetch
           //dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
           
         }
+        eflag |= dc->stopPipeline(); // wait till the  pipeline stops
         return eflag;
       }
 
