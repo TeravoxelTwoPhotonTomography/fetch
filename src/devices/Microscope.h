@@ -28,10 +28,11 @@
 #include "LinearScanMirror.h"
 #include "pockels.h"
 #include <string>
-#include "tasks\microscope-interaction.h"
-#include "tasks\StackAcquisition.h"
+#include "tasks/microscope-interaction.h"
+#include "tasks/StackAcquisition.h"
 #include "Stage.h"
-#include "tasks\TiledAcquisition.h"
+#include "tasks/TiledAcquisition.h"
+#include "devices/FieldOfViewGeometry.h"
 
 #define MICROSCOPE_MAX_WORKERS     10
 #define MICROSCOPE_DEFAULT_TIMEOUT INFINITE
@@ -82,11 +83,11 @@ namespace fetch
 
       virtual void _set_config(Config IN *cfg);
       virtual void _set_config(const Config& cfg);
+      virtual void onUpdate();
 
       IDevice* configPipeline();                                           // returns the end of the pipeline
       unsigned int runPipeline();
       unsigned int stopPipeline();
-      virtual void onUpdate();
 
       inline IDevice* pipelineEnd() {return &wrap;}
 
@@ -99,6 +100,7 @@ namespace fetch
     public:
       device::Scanner3D                  scanner;
       device::Stage                      stage_;
+      device::FieldOfViewGeometry        fov_;
 
       worker::FrameAverageAgent 	       frame_averager;
       worker::HorizontalDownsampleAgent  pixel_averager;
@@ -106,7 +108,7 @@ namespace fetch
       worker::FrameInvertAgent           inverter;
       worker::ResonantWrapAgent          wrap;
 
-      worker::TerminalAgent		           trash;                
+      worker::TerminalAgent		           trash;
       device::TiffStream                 disk;
                                                        
       task::microscope::Interaction      interaction_task;

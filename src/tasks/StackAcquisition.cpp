@@ -325,7 +325,11 @@ Error:
         {
           Chan *qdata = Chan_Open(d->_out->contents[0],CHAN_WRITE);
           Frame *frm   = NULL;
-          Frame_With_Interleaved_Planes ref(512,512,3,TypeID<TPixel>());
+          device::SimulatedDigitizer *dig = d->_scanner2d._digitizer._simulated;
+          Frame_With_Interleaved_Planes ref(
+            dig->get_config().width(),
+            d->_scanner2d.get_config().nscans()*2,
+            3,TypeID<TPixel>());
           size_t nbytes;        
           int status = 1; // status == 0 implies success, error otherwise
           f64 z_um,ummax,ummin,umstep;
