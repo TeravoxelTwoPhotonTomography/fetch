@@ -18,6 +18,7 @@
 #include <iostream>
 #include <fstream>
 #include "stack.pb.h"
+#include "microscope.pb.h"
 #include "google\protobuf\text_format.h"
  
  namespace fetch
@@ -29,7 +30,8 @@
       ,__scan_agent("Scanner",&scanner)
       ,__io_agent("IO",&disk)
       ,scanner(&__scan_agent)    
-      ,stage_(&__self_agent)
+      ,stage_(&__self_agent)  
+      ,fov_(_config->fov())
       ,disk(&__io_agent)
       ,frame_averager("FrameAverager")
       ,pixel_averager("PixelAverager")
@@ -57,6 +59,7 @@
       ,__io_agent("IO",&disk)
       ,scanner(&__scan_agent)       
       ,stage_(&__self_agent)
+      ,fov_(cfg.fov())
       ,disk(&__io_agent)
       ,frame_averager("FrameAverager")
       ,pixel_averager("PixelAverager")
@@ -77,6 +80,7 @@
       ,__io_agent("IO",&disk)
       ,scanner(&__scan_agent,cfg->mutable_scanner3d())       
       ,stage_(&__self_agent,cfg->mutable_stage())
+      ,fov_(cfg->fov())
       ,disk(&__io_agent)
       ,frame_averager(cfg->mutable_frame_average(),"FrameAverager")
       ,pixel_averager(cfg->mutable_horizontal_downsample(),"PixelAverager")
@@ -210,6 +214,13 @@
       _set_config(_config); // Update
     }
 
+    void Microscope::onUpdate()
+    {
+      scanner.onUpdate();
+      fov_.update(_config->fov());
+      //stage_.onUpdate(); // only update the stage fov parameter to recompute the tiling.  probably, want to do that with another, more explicit, mechanism
+    }
+
     IDevice* Microscope::configPipeline()
     {
       //Assemble pipeline here
@@ -226,6 +237,7 @@
     void Microscope::__common_setup()
     {
       __self_agent._owner = this;
+      stage_.setFOV(&fov_);
       Guarded_Assert(_agent->attach()==0);
       Guarded_Assert(_agent->arm(&interaction_task,this,INFINITE));
     }

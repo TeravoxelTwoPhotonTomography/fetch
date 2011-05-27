@@ -82,6 +82,7 @@ namespace fetch
 
       virtual void _set_config(Config IN *cfg);
       virtual void _set_config(const Config& cfg);
+      virtual void onUpdate();
 
       IDevice* configPipeline();                                           // returns the end of the pipeline
       unsigned int runPipeline();
@@ -98,6 +99,7 @@ namespace fetch
     public:
       device::Scanner3D                  scanner;
       device::Stage                      stage_;
+      device::FieldOfViewGeometry        fov_;
 
       worker::FrameAverageAgent 	       frame_averager;
       worker::HorizontalDownsampleAgent  pixel_averager;
@@ -105,7 +107,7 @@ namespace fetch
       worker::FrameInvertAgent           inverter;
       worker::ResonantWrapAgent          wrap;
 
-      worker::TerminalAgent		           trash;                
+      worker::TerminalAgent		           trash;
       device::TiffStream                 disk;
                                                        
       task::microscope::Interaction      interaction_task;

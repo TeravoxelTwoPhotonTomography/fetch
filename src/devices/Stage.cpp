@@ -117,7 +117,7 @@ namespace device {
   }
 
   int SimulatedStage::setPos( float x, float y, float z )
-  { x_=x;y_=y;z_=z;    
+  { x_=x;y_=y;z_=z;
     return 1;
   }
 
@@ -132,6 +132,7 @@ namespace device {
     ,_idevice(NULL)
     ,_istage(NULL)
     ,_tiling(NULL)
+    ,_fov(NULL)
   {
       setKind(_config->kind());
   }
@@ -143,9 +144,10 @@ namespace device {
     ,_idevice(NULL)
     ,_istage(NULL)
     ,_tiling(NULL)
+    ,_fov(NULL)
   {
     setKind(_config->kind());
-  } 
+  }   
 
   void Stage::setKind( Config::StageType kind )
   {
@@ -197,12 +199,15 @@ namespace device {
 
   // Only use when attached but disarmed.
   void Stage::_createTiling()
-  { if(_tiling) {delete _tiling; _tiling=NULL;}
-    FieldOfViewGeometry fov(_config->fov());
+  { if(_tiling) {delete _tiling; _tiling=NULL;}    
     device::StageTravel travel;
     getTravel(&travel);
-    _tiling = new StageTiling(travel, fov, _config->tilemode());
-    _notifyTilingChanged();
+    if(_fov)
+    {
+      FieldOfViewGeometry fov = *_fov;
+      _tiling = new StageTiling(travel, fov, _config->tilemode());
+      _notifyTilingChanged();
+    }
   }
 
   void Stage::addListener( StageListener *listener )

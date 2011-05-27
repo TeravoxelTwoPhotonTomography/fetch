@@ -122,6 +122,7 @@ namespace fetch
             { 
             case 0:       // in this case, the scanner thread stopped.  Nothing left to do.
               eflag |= 0; // success
+              tiling->markDone(eflag==0); // only mark the tile done if the scanner task completed
               //break; 
             case 1:       // in this case, the stop event triggered and must be propagated.
               eflag |= dc->__scan_agent.stop(SCANNER2D_DEFAULT_TIMEOUT) != 1;
@@ -133,10 +134,10 @@ namespace fetch
             // Output metadata and Increment file
             eflag |= dc->disk.close();
             dc->write_stack_metadata();
-            dc->file_series.inc();
+            dc->file_series.inc(); // increment regardless of completion status
 
-            tiling->markDone(eflag==0);
-            //dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
+            eflag |= dc->stopPipeline(); // wait till everything stops
+            tiling->resetCursor();
 
           }
         }

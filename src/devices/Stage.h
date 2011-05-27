@@ -5,6 +5,8 @@
 #include <list>
 #include <set>
 
+#include "FieldOfViewGeometry.h"
+
 #include <Eigen/Core>
 using namespace Eigen;
 
@@ -92,18 +94,20 @@ namespace device {
   private:
     typedef std::set<StageListener*>  TListeners;
 
-    C843Stage          *_c843;
-    SimulatedStage     *_simulated;
-    IDevice            *_idevice;
-    IStage             *_istage;
-    StageTiling        *_tiling;
-    TListeners          _listeners;
+    C843Stage           *_c843;
+    SimulatedStage      *_simulated;
+    IDevice             *_idevice;
+    IStage              *_istage;
+    StageTiling         *_tiling;
+    TListeners           _listeners;
+    FieldOfViewGeometry *_fov;
     
     public:
       Stage(Agent *agent);
       Stage(Agent *agent, Config *cfg);
-
+      
       void setKind(Config::StageType kind);
+      void setFOV(FieldOfViewGeometry *fov)                                 {_fov=fov;}
 
       virtual unsigned int on_attach();
       virtual unsigned int on_detach();
