@@ -21,6 +21,7 @@
 #pragma warning(push)
 #pragma warning(disable:4244)
 
+#include <math.h>
 
 namespace resonant_correction
 {

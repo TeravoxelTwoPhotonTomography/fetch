@@ -124,8 +124,9 @@
 @SIZET_BYTES_CODE@
 
 #cmakedefine HAVE_STDINT
-#ifdef HAVE_STDINT
+// ... test seems unreliable ... just try it anyway
+//#ifdef HAVE_STDINT
 #include <stdint.h>
-#else
-#error "No stdint.  what to do?"
-#endif
+//#else
+//#error "No stdint.  what to do?"
+//#endif

@@ -178,7 +178,7 @@
       //{ std::ofstream fout(config_filename(),std::ios::out|std::ios::trunc|std::ios::binary);
       //  get_config().SerializePartialToOstream(&fout);
       //}      
-      { std::ofstream fout(config_filename(),std::ios::out|std::ios::trunc);
+      { std::ofstream fout(config_filename().c_str(),std::ios::out|std::ios::trunc);
         std::string s;
         Config c = get_config();
         google::protobuf::TextFormat::PrintToString(c,&s);
@@ -186,7 +186,7 @@
         //get_config().SerializePartialToOstream(&fout);
       }
       { float x,y,z;
-        std::ofstream fout(metadata_filename(),std::ios::out|std::ios::trunc);
+        std::ofstream fout(metadata_filename().c_str(),std::ios::out|std::ios::trunc);
         fetch::cfg::data::Acquisition data;
         stage_.getPos(&x,&y,&z);
         data.set_x_mm(x);

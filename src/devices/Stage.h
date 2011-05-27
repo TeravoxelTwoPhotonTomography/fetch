@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 #include "object.h"
 #include "stage.pb.h" 
 #include "agent.h"

@@ -4,7 +4,7 @@ scanner3d {
     nscans: 1024
     line_duty_cycle: 0.95
     daq {
-      kind: Simulated #NIDAQ #Simulated
+      kind: NIDAQ #NIDAQ #Simulated
       nidaq {
         ao_samples_per_waveform: 16384
         trigger:  "APFI0"
@@ -20,7 +20,7 @@ scanner3d {
       }
     }
     digitizer {
-      kind: Simulated #Simulated #NIScope #Alazar
+      kind: NIScope #Simulated #NIScope #Alazar
       niscope {
         name: "Dev3"
         sample_rate: 60000000
@@ -72,7 +72,7 @@ scanner3d {
       }
     }
     linear_scan_mirror {
-      kind: Simulated  #NIDAQ #Simulated
+      kind: NIDAQ  #NIDAQ #Simulated
       nidaq {
         v_lim_max:  10
         v_lim_min: -10
@@ -129,7 +129,7 @@ resonant_wrap         { turn_px: 0 }
 horizontal_downsample { ntimes : 1 }
 frame_average         { ntimes : 1 }
 file_series {
-  root:     "C:\\temp"
+  root:     "E:\\temp"
   date:     "unknown"
   seriesno:  0
   pathsep:  "\\"
