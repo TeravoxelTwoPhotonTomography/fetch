@@ -114,7 +114,7 @@ namespace fetch
     {
       float64 nscans       = _config->nscans(),
               scan_freq_Hz = _config->frequency_hz();
-      IDAQChannel *chans[] = {
+      IDAQPhysicalChannel *chans[] = {
         _LSM.physicalChannel(),
         _pockels.physicalChannel()
       };

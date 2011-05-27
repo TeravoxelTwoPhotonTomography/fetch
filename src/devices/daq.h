@@ -37,7 +37,7 @@ namespace fetch
                            float64 record_frequency_Hz,
                            float64 vmin,
                            float64 vmax,
-                           IDAQChannel **channels,
+                           IDAQPhysicalChannel **channels,
                            int nchannels) = 0;
 
       virtual void writeAO(float64 *data) = 0;
@@ -75,7 +75,7 @@ namespace fetch
 
       void setupCLK(float64 nrecords, float64 record_frequency_Hz);
       void setupAO(float64 nrecords, float64 record_frequency_Hz);
-      void setupAOChannels(float64 nrecords, float64 record_frequency_Hz, float64 vmin, float64 vmax, IDAQChannel **channels, int nchannels);
+      void setupAOChannels(float64 nrecords, float64 record_frequency_Hz, float64 vmin, float64 vmax, IDAQPhysicalChannel **channels, int nchannels);
            
       void writeAO(float64 *data);
 
@@ -142,7 +142,7 @@ namespace fetch
 
      void setupCLK(float64 nrecords, float64 record_frequency_Hz) {_idaq->setupCLK(nrecords,record_frequency_Hz);}
      void setupAO(float64 nrecords, float64 record_frequency_Hz)  {_idaq->setupAO (nrecords,record_frequency_Hz);}
-     void setupAOChannels(float64 nrecords, float64 record_frequency_Hz, float64 vmin, float64 vmax, IDAQChannel **channels, int nchannels) 
+     void setupAOChannels(float64 nrecords, float64 record_frequency_Hz, float64 vmin, float64 vmax, IDAQPhysicalChannel **channels, int nchannels) 
      {_idaq->setupAOChannels(nrecords,record_frequency_Hz,vmin,vmax,channels,nchannels);}
 
      void writeAO(float64 *data) {_idaq->writeAO(data);}

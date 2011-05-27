@@ -19,14 +19,9 @@ namespace fetch
   {
 
     NIDAQChannel::NIDAQChannel(Agent *agent, char *name)
-      :IConfigurableDevice<char*>(agent,&name)
+      :IConfigurableDevice<char*>(agent,(char**)&_daqtaskname)
       ,daqtask(NULL)
     { 
-      /*
-      TODO: _daqtaskname and _config are redundant (I think).
-      XXX:  may not need _daqtaskname anymore
-      */
-
       // Copy name
       size_t n = strlen(name);
       Guarded_Assert(n<sizeof(_daqtaskname));
@@ -58,6 +53,11 @@ namespace fetch
       Guarded_Assert(daqtask==NULL);
       HERE;
       debug("\t%s"ENDL,_daqtaskname);
+      { char buf[2048];
+        memset(buf,0,sizeof(buf));        
+        DAQmxGetSysTasks(buf,sizeof(buf));
+        debug("%s"ENDL,buf);
+      }
       DAQJMP(status=DAQmxCreateTask(_daqtaskname,&daqtask))
       status = 0;
     Error:

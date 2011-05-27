@@ -29,16 +29,16 @@ namespace fetch {
 
     NationalInstrumentsDAQ::NationalInstrumentsDAQ(Agent *agent)
       :DAQBase<Config>(agent)
-      ,_clk(agent,"CLK")
-      ,_ao(agent,"AO")
+      ,_clk(agent,"fetch_CLK")
+      ,_ao(agent,"fetch_AO")
     {
       __common_setup();
     }
 
     NationalInstrumentsDAQ::NationalInstrumentsDAQ(Agent *agent,Config *cfg)
       :DAQBase<Config>(agent,cfg)
-      ,_clk(agent,"CLK")
-      ,_ao(agent,"AO")
+      ,_clk(agent,"fetch_CLK")
+      ,_ao(agent,"fetch_AO")
     {
       __common_setup();
     }
@@ -154,7 +154,8 @@ namespace fetch {
 
       // The "fake" initialization
       DAQERR( DAQmxClearTask(_clk.daqtask) ); // Once a DAQ task is started, it needs to be cleared before restarting
-      DAQERR( DAQmxCreateTask("CLK",&_clk.daqtask));
+
+      DAQERR( DAQmxCreateTask("fetch_CLK",&_clk.daqtask));
       cur_task = _clk.daqtask;
       DAQERR( DAQmxCreateCOPulseChanFreq(cur_task,
               _config->ctr_alt().c_str(),     // "Dev1/ctr0"
@@ -168,7 +169,7 @@ namespace fetch {
 
       // The "real" initialization      
       DAQERR( DAQmxClearTask(_clk.daqtask) ); // Once a DAQ task is started, it needs to be cleared before restarting
-      DAQERR( DAQmxCreateTask("CLK",&_clk.daqtask));      
+      DAQERR( DAQmxCreateTask("fetch_CLK",&_clk.daqtask));      
       cur_task = _clk.daqtask;
       DAQERR( DAQmxCreateCOPulseChanFreq(cur_task,       // task
               _config->ctr().c_str(),     // "Dev1/ctr1"
@@ -193,17 +194,18 @@ namespace fetch {
       float64 freq = computeSampleFrequency(nrecords, record_frequency_Hz);
 
       DAQERR( DAQmxClearTask(_ao.daqtask) );
-      DAQERR( DAQmxCreateTask( "AO", &_ao.daqtask));
-      DAQERR( DAQmxSetWriteRegenMode(_ao.daqtask,DAQmx_Val_DoNotAllowRegen));
+      HERE;
+      debug("\t%s"ENDL,"fetch_AO");
+      DAQERR( DAQmxCreateTask( "fetch_AO", &_ao.daqtask));
       registerDoneEvent();
     }
 
     #define MAX_CHAN_STRING 1024    
-    void NationalInstrumentsDAQ::setupAOChannels( float64 nrecords, float64 record_frequency_Hz, float64 vmin, float64 vmax, IDAQChannel **channels, int nchannels )
+    void NationalInstrumentsDAQ::setupAOChannels( float64 nrecords, float64 record_frequency_Hz, float64 vmin, float64 vmax, IDAQPhyicalChannel **channels, int nchannels )
     {
       char aochan[MAX_CHAN_STRING];
       float64 freq = computeSampleFrequency(nrecords,record_frequency_Hz);
-      // concatenate the channel names
+      // concatenate the physical channel names
       memset(aochan, 0, sizeof(aochan));
       {
         int ichan;
@@ -233,6 +235,7 @@ namespace fetch {
         vmax,                                    //Volts eg:  10.0
         DAQmx_Val_Volts,                         //Units
         NULL));                                  //Custom scale (none)
+      DAQERR( DAQmxSetWriteRegenMode(cur_task,DAQmx_Val_DoNotAllowRegen));
 
       DAQERR( DAQmxCfgAnlgEdgeStartTrig(cur_task,
         _config->trigger().c_str(),        

@@ -28,12 +28,14 @@ namespace device {
 
   NIDAQPockels::NIDAQPockels(Agent *agent)
     :PockelsBase<cfg::device::NIDAQPockels>(agent)
-    ,daq(agent,"Pockels")
+    ,daq(agent,"fetch_Pockels")
+    ,_ao(_config->ao_channel())
   {}    
 
   NIDAQPockels::NIDAQPockels(Agent *agent, Config *cfg )
     :PockelsBase<cfg::device::NIDAQPockels>(agent,cfg)
-    ,daq(agent,"NIDAQPockels")
+    ,daq(agent,"fetch_NIDAQPockels") 
+    ,_ao(cfg->ao_channel())
   {}    
 
   NIDAQPockels::~NIDAQPockels()
@@ -89,12 +91,14 @@ namespace device {
 
   SimulatedPockels::SimulatedPockels( Agent *agent )
     :PockelsBase<cfg::device::SimulatedPockels>(agent)
-    ,_chan(agent,"Pockels")
+    ,_chan(agent,"Pockels") 
+    ,_ao("simulated")
   {}
 
   SimulatedPockels::SimulatedPockels( Agent *agent, Config *cfg )
     :PockelsBase<cfg::device::SimulatedPockels>(agent,cfg)
-    ,_chan(agent,"Pockels")
+    ,_chan(agent,"Pockels")  
+    ,_ao("simulated")
   {}
 
   int SimulatedPockels::isValidOpenVolts( f64 volts )

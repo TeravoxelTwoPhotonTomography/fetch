@@ -29,7 +29,7 @@ namespace fetch
     {
     public:      /* TODO: add methods to change vpp on the fly*/
       virtual void computeSawtooth(float64 *data, int n)=0;
-      virtual IDAQChannel* physicalChannel() = 0;
+      virtual IDAQPhysicalChannel* physicalChannel() = 0;
 
       virtual double getAmplitudeVolts() = 0;
       virtual void   setAmplitudeVolts(double vpp) = 0;
@@ -47,6 +47,7 @@ namespace fetch
     class NIDAQLinearScanMirror : public LSMBase<cfg::device::NIDAQLinearScanMirror>
     {
       NIDAQChannel daq;
+      IDAQPhysicalChannel _pchan;
     public:
       NIDAQLinearScanMirror(Agent *agent);
       NIDAQLinearScanMirror(Agent *agent, Config *cfg);
@@ -54,9 +55,11 @@ namespace fetch
       virtual unsigned int on_attach() {return daq.on_attach();}
       virtual unsigned int on_detach() {return daq.on_detach();}
       
+      virtual void _set_config(Config IN *cfg) {_pchan.set(cfg->ao_channel());}
+      
       virtual void computeSawtooth(float64 *data, int n);
 
-      virtual IDAQChannel* physicalChannel() {return &daq;}
+      virtual IDAQPhysicalChannel* physicalChannel() {return &_pchan;}
 
       virtual double getAmplitudeVolts()                                   {return _config->vpp();}
       virtual void   setAmplitudeVolts(double vpp)                         {Config c = get_config(); c.set_vpp(vpp); set_config(c);}
@@ -67,6 +70,7 @@ namespace fetch
     class SimulatedLinearScanMirror : public LSMBase<cfg::device::SimulatedLinearScanMirror>
     {
       SimulatedDAQChannel _chan;
+      IDAQPhysicalChannel _pchan;
     public:
       SimulatedLinearScanMirror(Agent *agent);
       SimulatedLinearScanMirror(Agent *agent, Config *cfg);
@@ -76,7 +80,7 @@ namespace fetch
 
       virtual void computeSawtooth(float64 *data, int n);
 
-      virtual IDAQChannel* physicalChannel() {return &_chan;}
+      virtual IDAQPhysicalChannel* physicalChannel() {return &_pchan;}
 
       virtual double getAmplitudeVolts() {return _config->val();}
       virtual void   setAmplitudeVolts(double vpp) {Config c = get_config(); c.set_val(vpp); set_config(c);}
@@ -103,7 +107,7 @@ namespace fetch
 
      virtual void computeSawtooth(float64 *data, int n);
 
-     virtual IDAQChannel* physicalChannel() {return _ilsm->physicalChannel();}
+     virtual IDAQPhysicalChannel* physicalChannel() {return _ilsm->physicalChannel();}
 
      virtual double getAmplitudeVolts() {return _ilsm->getAmplitudeVolts();}
      virtual void   setAmplitudeVolts(double vpp) {_ilsm->setAmplitudeVolts(vpp);}

@@ -23,12 +23,14 @@ namespace fetch {
 
     NIDAQLinearScanMirror::NIDAQLinearScanMirror(Agent *agent)
       :LSMBase<Config>(agent)
-      ,daq(agent,"NIDAQLinearScanMirror")
+      ,daq(agent,"fetch_NIDAQLinearScanMirror")
+      ,_pchan(_config->ao_channel())
     {}
 
     NIDAQLinearScanMirror::NIDAQLinearScanMirror(Agent *agent,Config *cfg)
       :LSMBase<Config>(agent,cfg)
-      ,daq(agent,"NIDAQLinearScanMirror")
+      ,daq(agent,"fetch_NIDAQLinearScanMirror")
+      ,_pchan(cfg->ao_channel())
     {}
 
     void NIDAQLinearScanMirror::computeSawtooth( float64 *data, int n )
@@ -47,11 +49,13 @@ namespace fetch {
     SimulatedLinearScanMirror::SimulatedLinearScanMirror( Agent *agent )
       :LSMBase<Config>(agent)
       ,_chan(agent,"LSM")
+      ,_pchan("simulated")
     {}
 
     SimulatedLinearScanMirror::SimulatedLinearScanMirror( Agent *agent, Config *cfg )
       :LSMBase<Config>(agent,cfg)
       ,_chan(agent,"LSM")
+      ,_pchan("simulated")
     {}
 
     void SimulatedLinearScanMirror::computeSawtooth( float64 *data, int n )

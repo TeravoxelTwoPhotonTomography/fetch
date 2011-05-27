@@ -46,12 +46,15 @@ namespace fetch
     class NIDAQShutter:public ShutterBase<cfg::device::NIDAQShutter>      
     {
       NIDAQChannel daq;
+      IDAQPhysicalChannel _do;
     public:
       NIDAQShutter(Agent *agent);
       NIDAQShutter(Agent *agent, Config *cfg);
 
       unsigned int on_attach();
       unsigned int on_detach();
+      
+      virtual void _set_config(Config IN *cfg) {_do.set(cfg->do_channel());}
 
       void Set          (u8 val);
       void Shut         (void);

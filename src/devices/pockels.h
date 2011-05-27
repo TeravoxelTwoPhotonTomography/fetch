@@ -86,7 +86,7 @@ namespace fetch
       
       virtual void computeVerticalBlankWaveform(float64 *data, int n) = 0;
 
-      virtual IDAQChannel* physicalChannel() = 0;
+      virtual IDAQPhysicalChannel* physicalChannel() = 0;
     };
 
     template<class T>
@@ -104,6 +104,7 @@ namespace fetch
     class NIDAQPockels:public PockelsBase<cfg::device::NIDAQPockels>
     {    
       NIDAQChannel daq;
+      IDAQPhysicalChannel _ao;
     public:
       NIDAQPockels(Agent *agent);
       NIDAQPockels(Agent *agent, Config *cfg);
@@ -112,6 +113,8 @@ namespace fetch
 
       virtual unsigned int on_attach() {return daq.on_attach();}
       virtual unsigned int on_detach() {return daq.on_detach();}
+      
+      virtual void _set_config(Config IN *cfg) {_ao.set(cfg->ao_channel());}
 
       virtual int isValidOpenVolts(f64 volts);
       virtual int setOpenVolts(f64 volts);
@@ -120,12 +123,13 @@ namespace fetch
 
       virtual void computeVerticalBlankWaveform(float64 *data, int n);
 
-      virtual IDAQChannel* physicalChannel() {return &daq;}
+      virtual IDAQPhysicalChannel* physicalChannel() {return &_ao;}
     };   
 
 class SimulatedPockels:public PockelsBase<cfg::device::SimulatedPockels>
     {
-      SimulatedDAQChannel _chan;
+      SimulatedDAQChannel _chan;      
+      IDAQPhysicalChannel _ao;
     public:
       SimulatedPockels(Agent *agent);
       SimulatedPockels(Agent *agent, Config *cfg);
@@ -140,7 +144,7 @@ class SimulatedPockels:public PockelsBase<cfg::device::SimulatedPockels>
 
       virtual void computeVerticalBlankWaveform(float64 *data, int n);
 
-      virtual IDAQChannel* physicalChannel() {return &_chan;}
+      virtual IDAQPhysicalChannel* physicalChannel() {return &_ao;}
     };
     
     class Pockels:public PockelsBase<cfg::device::Pockels>
@@ -167,7 +171,7 @@ class SimulatedPockels:public PockelsBase<cfg::device::SimulatedPockels>
       virtual f64 getOpenVolts() {return _ipockels->getOpenVolts();}
 
       virtual void computeVerticalBlankWaveform(float64 *data, int n) {_ipockels->computeVerticalBlankWaveform(data,n);}
-      virtual IDAQChannel* physicalChannel() {return _ipockels->physicalChannel();}
+      virtual IDAQPhysicalChannel* physicalChannel() {return _ipockels->physicalChannel();}
     };
 
   } // end namespace device

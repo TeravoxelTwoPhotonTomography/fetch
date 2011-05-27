@@ -25,7 +25,7 @@ namespace fetch
     public:
       virtual void computeConstWaveform(float64 z_um, float64 *data, int n) = 0;
       virtual void computeRampWaveform(float64 z_um, float64 *data, int n)  = 0;
-      virtual IDAQChannel* physicalChannel() = 0;
+      virtual IDAQPhysicalChannel* physicalChannel() = 0;
 
       //getters
       virtual void getScanRange(f64 *min_um,f64 *max_um, f64 *step_um)=0;
@@ -50,17 +50,21 @@ namespace fetch
     class NIDAQZPiezo:public ZPiezoBase<cfg::device::NIDAQZPiezo>      
     {
       NIDAQChannel daq;
+      IDAQPhysicalChannel _ao;
     public:
       NIDAQZPiezo(Agent *agent);
       NIDAQZPiezo(Agent *agent, Config *cfg);
 
       unsigned int on_attach();
       unsigned int on_detach();
+      
+      virtual void _set_config(Config IN *cfg)      {_ao.set(cfg->channel());}
+      virtual void _set_config(const Config& cfg)   {*_config=cfg; _set_config(_config); }
 
       virtual void computeConstWaveform(float64 z_um, float64 *data, int n);
       virtual void computeRampWaveform(float64 z_um, float64 *data, int n);
       
-      virtual IDAQChannel* physicalChannel() {return &daq;}
+      virtual IDAQPhysicalChannel* physicalChannel() {return &_ao;}
 
       void getScanRange(f64 *min_um,f64 *max_um, f64 *step_um);
 
@@ -75,7 +79,8 @@ namespace fetch
       
     class SimulatedZPiezo:public ZPiezoBase<cfg::device::SimulatedZPiezo>
     {
-      SimulatedDAQChannel _chan;
+      SimulatedDAQChannel _chan;  
+      IDAQPhysicalChannel _ao;
     public:
       SimulatedZPiezo(Agent *agent);
       SimulatedZPiezo(Agent *agent, Config *cfg);
@@ -86,7 +91,7 @@ namespace fetch
       virtual void computeConstWaveform(float64 z_um, float64 *data, int n);
       virtual void computeRampWaveform(float64 z_um, float64 *data, int n);
 
-      virtual IDAQChannel* physicalChannel() {return &_chan;}
+      virtual IDAQPhysicalChannel* physicalChannel() {return &_ao;}
 
       void getScanRange(f64 *min_um,f64 *max_um, f64 *step_um);
 
@@ -119,7 +124,7 @@ namespace fetch
       virtual void computeConstWaveform(float64 z_um, float64 *data, int n) {_izpiezo->computeConstWaveform(z_um,data,n);}
       virtual void computeRampWaveform(float64 z_um, float64 *data, int n)  {_izpiezo->computeRampWaveform(z_um,data,n);}
 
-      virtual IDAQChannel* physicalChannel() {return _izpiezo->physicalChannel();}
+      virtual IDAQPhysicalChannel* physicalChannel() {return _izpiezo->physicalChannel();}
       
       void getScanRange(f64 *min_um,f64 *max_um, f64 *step_um) {_izpiezo->getScanRange(min_um,max_um,step_um);}
 

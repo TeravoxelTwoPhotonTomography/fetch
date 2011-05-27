@@ -36,6 +36,18 @@ namespace fetch
     public:
       virtual char* name() = 0;
     };
+    
+    // by default this just stores a string, but maybe in general
+    // it reperesents a handle...pretty stupid, should just be a string :(
+    class IDAQPhysicalChannel    
+    {
+      std::string _name;
+    public:
+      IDAQPhysicalChannel(const char* name) : _name(name)        {}
+      IDAQPhysicalChannel(const std::string& name) : _name(name) {}
+      virtual char* name()                                       {return const_cast<char*>(_name.c_str());}
+      virtual void set(const std::string& name)                  {_name=name;}
+    };
 
     class NIDAQChannel : public IDAQChannel, public IConfigurableDevice<char*>
     {
@@ -46,7 +58,7 @@ namespace fetch
       unsigned int on_attach();
       unsigned int on_detach();
       
-      virtual char* name() {return _daqtaskname;}
+      virtual char* name() { return _daqtaskname; }
     public:
       TaskHandle daqtask;
       char _daqtaskname[128];      

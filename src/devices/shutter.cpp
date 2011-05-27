@@ -27,13 +27,15 @@ namespace fetch
 
     NIDAQShutter::NIDAQShutter( Agent *agent )
       :ShutterBase<Config>(agent)
-      ,daq(agent,"Shutter")
+      ,daq(agent,"fetch_Shutter")
+      ,_do(_config->do_channel())
     {
     }
 
     NIDAQShutter::NIDAQShutter( Agent *agent, Config *cfg )
       :ShutterBase<Config>(agent,cfg)
-      ,daq(agent,"Shutter")
+      ,daq(agent,"fetch_Shutter")
+      ,_do(cfg->do_channel())
     {
     }
 

@@ -22,13 +22,15 @@ namespace fetch
 
     NIDAQZPiezo::NIDAQZPiezo( Agent *agent )
       :ZPiezoBase<Config>(agent)
-      ,daq(agent,"ZPiezo")
+      ,daq(agent,"fetch_ZPiezo")
+      ,_ao(_config->channel())
     {
     }
 
     NIDAQZPiezo::NIDAQZPiezo( Agent *agent, Config *cfg )
       :ZPiezoBase<Config>(agent,cfg)
-      ,daq(agent,"ZPiezo")
+      ,daq(agent,"fetch_ZPiezo")  
+      ,_ao(cfg->channel())
     {
     }
 
@@ -96,11 +98,13 @@ namespace fetch
     SimulatedZPiezo::SimulatedZPiezo( Agent *agent )
       :ZPiezoBase<Config>(agent)
       ,_chan(agent,"ZPiezo")
+      ,_ao("simulated")
     {}
 
     SimulatedZPiezo::SimulatedZPiezo( Agent *agent, Config *cfg )
       :ZPiezoBase<Config>(agent,cfg)
       ,_chan(agent,"ZPiezo")
+      ,_ao("simulated")
     {}
 
     void SimulatedZPiezo::computeConstWaveform( float64 z_um, float64 *data, int n )
