@@ -107,7 +107,7 @@ namespace fetch
 
       void setupCLK(float64 nrecords, float64 record_frequency_Hz) {}
       void setupAO(float64 nrecords, float64 record_frequency_Hz)  {}
-      void setupAOChannels(float64 nrecords, float64 record_frequency_Hz, float64 vmin, float64 vmax, IDAQChannel **channels, int nchannels) {}
+      void setupAOChannels(float64 nrecords, float64 record_frequency_Hz, float64 vmin, float64 vmax, IDAQPhysicalChannel **channels, int nchannels) {}
 
       void writeAO(float64 *data) {}
 

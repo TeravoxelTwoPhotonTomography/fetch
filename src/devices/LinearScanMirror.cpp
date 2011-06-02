@@ -125,13 +125,13 @@ namespace fetch {
 
     void LinearScanMirror::_set_config( const Config &cfg )
     {
-      cfg::device::LinearScanMirror_LinearScanMirrorType kind = cfg.kind();
+      cfg::device::LinearScanMirror_LinearScanMirrorType kind = cfg.kind();                //[ ] who calls this and where does _config get updated?  what should be the const behavior?
       _config->set_kind(kind);
       setKind(kind);
       switch(kind)
       {    
       case cfg::device::LinearScanMirror_LinearScanMirrorType_NIDAQ:
-        _nidaq->_set_config(cfg.nidaq());
+        _nidaq->_set_config(const_cast<Config&>(cfg).mutable_nidaq());
         break;
       case cfg::device::LinearScanMirror_LinearScanMirrorType_Simulated:    
         _simulated->_set_config(cfg.simulated());

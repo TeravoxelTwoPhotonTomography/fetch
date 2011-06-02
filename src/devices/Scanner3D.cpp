@@ -84,7 +84,7 @@ namespace fetch
     {
       float64 nscans       = _config->scanner2d().nscans(),
               scan_freq_Hz = _config->scanner2d().frequency_hz();
-      IDAQChannel *chans[] = {
+      IDAQPhysicalChannel *chans[] = {
         _scanner2d._LSM.physicalChannel(),
         _scanner2d._pockels.physicalChannel(),
         _zpiezo.physicalChannel()

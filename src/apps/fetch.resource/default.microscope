@@ -1,7 +1,7 @@
 scanner3d { 
   scanner2d {
     frequency_hz: 7920
-    nscans: 1024
+    nscans: 256
     line_duty_cycle: 0.95
     daq {
       kind: NIDAQ #NIDAQ #Simulated

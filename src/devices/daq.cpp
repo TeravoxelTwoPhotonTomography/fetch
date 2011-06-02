@@ -14,6 +14,7 @@
 #include "common.h"
 #include "daq.h"
 #include "visatype.h"
+#include "DAQChannel.h"
 
 #define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, warning))
 #define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, error  ))
@@ -201,7 +202,7 @@ namespace fetch {
     }
 
     #define MAX_CHAN_STRING 1024    
-    void NationalInstrumentsDAQ::setupAOChannels( float64 nrecords, float64 record_frequency_Hz, float64 vmin, float64 vmax, IDAQPhyicalChannel **channels, int nchannels )
+    void NationalInstrumentsDAQ::setupAOChannels( float64 nrecords, float64 record_frequency_Hz, float64 vmin, float64 vmax, IDAQPhysicalChannel **channels, int nchannels )
     {
       char aochan[MAX_CHAN_STRING];
       float64 freq = computeSampleFrequency(nrecords,record_frequency_Hz);

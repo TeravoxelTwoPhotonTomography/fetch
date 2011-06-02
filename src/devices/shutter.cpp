@@ -202,7 +202,7 @@ namespace fetch
       switch(kind)
       {    
       case cfg::device::Shutter_ShutterType_NIDAQ:
-        _nidaq->_set_config(cfg.nidaq());
+        _nidaq->_set_config(const_cast<Config&>(cfg).mutable_nidaq());
         break;
       case cfg::device::Shutter_ShutterType_Simulated:    
         _simulated->_set_config(cfg.simulated());

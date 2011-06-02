@@ -194,7 +194,7 @@ namespace device {
     switch(kind)
     {    
     case cfg::device::Pockels_PockelsType_NIDAQ:
-      _nidaq->_set_config(cfg.nidaq());
+      _nidaq->_set_config(const_cast<Config&>(cfg).mutable_nidaq());
       break;
     case cfg::device::Pockels_PockelsType_Simulated:    
       _simulated->_set_config(cfg.simulated());

@@ -14,7 +14,6 @@
 #include "DAQChannel.h"
 #include "zpiezo.pb.h"
 #include "object.h"
-#include "DAQChannel.h"
 
 namespace fetch 
 { namespace device 
