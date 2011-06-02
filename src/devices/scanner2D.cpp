@@ -14,11 +14,11 @@
 #include "scanner2D.h"
 #include "frame.h"
 
-#define DIGWRN( expr )  (niscope_chk( vi, expr, #expr, warning ))
-#define DIGERR( expr )  (niscope_chk( vi, expr, #expr, error   ))
+#define DIGWRN( expr )  (niscope_chk( vi, expr, #expr, __FILE__, __LINE__, warning ))
+#define DIGERR( expr )  (niscope_chk( vi, expr, #expr __FILE__, __LINE__, error   ))
 #define DIGJMP( expr )  goto_if_fail(VI_SUCCESS == niscope_chk( vi, expr, #expr, warning ), Error)
-#define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, warning))
-#define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, error  ))
+#define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, warning))
+#define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, error  ))
 #define DAQJMP( expr )  goto_if_fail( 0==DAQWRN(expr), Error)
 
 namespace fetch
@@ -64,12 +64,32 @@ namespace fetch
       if(!_out)
       { 
         // Guess for how the output will be sized for allocation.
+        // [aside] this is gross and feels gross
         FrmFmt fmt(
           (u16)_digitizer.record_size(_config->frequency_hz(),_config->line_duty_cycle()),
           (u16)_config->nscans(),
           (u8)_digitizer.nchan(),
           id_u16);
-        _alloc_qs_easy(&_out,1,4,fmt.size_bytes());
+        int n;
+        size_t nout=1;
+        size_t *sizes;
+        _digitizer.aux_info(&n,&sizes);
+        {
+          nout+=1;
+          size_t *nbuf, *nbytes;
+          nbuf   = (size_t*)Guarded_Malloc(sizeof(size_t)*nout,"Scanner2D::on_attach()");
+          nbytes = (size_t*)Guarded_Malloc(sizeof(size_t)*nout,"Scanner2D::on_attach()");
+          for(size_t i=0;i<nout;++i)
+            nbuf[i] = 4;
+          nbytes[0] = fmt.size_bytes();
+          memcpy(nbytes+1,sizes,sizeof(size_t)*n);
+                    
+          _alloc_qs(&_out,nout,nbuf,nbytes);
+          
+          free(sizes);
+          free(nbytes);
+          free(nbuf);
+        }        
       }
 
       return eflag;
@@ -151,3 +171,4 @@ namespace fetch
 
   }
 }
+

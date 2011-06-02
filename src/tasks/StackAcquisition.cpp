@@ -25,11 +25,11 @@
 #define DBG(...)
 #endif
 
-#define DIGWRN( expr )  (niscope_chk( vi, expr, #expr, warning ))
-#define DIGERR( expr )  (niscope_chk( vi, expr, #expr, error   ))
-#define DIGJMP( expr )  goto_if_fail(VI_SUCCESS == niscope_chk( vi, expr, #expr, warning ), Error)
-#define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, warning))
-#define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, error  ))
+#define DIGWRN( expr )  (niscope_chk( vi, expr, #expr, __FILE__, __LINE__, warning ))
+#define DIGERR( expr )  (niscope_chk( vi, expr, #expr, __FILE__, __LINE__, error   ))
+#define DIGJMP( expr )  goto_if_fail(VI_SUCCESS == niscope_chk( vi, expr, #expr, __FILE__, __LINE__, warning ), Error)
+#define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, warning))
+#define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, error  ))
 #define DAQJMP( expr )  goto_if_fail( 0==DAQWRN(expr), Error)
 
 #define CHKERR( expr )  {if(expr) {error("Expression indicated failure:\r\n\t%s\r\n",#expr);}} 0 //( (expr), #expr, error  ))
@@ -278,17 +278,10 @@ namespace fetch
 
             // Push the acquired data down the output pipes
             DBG("Task: StackAcquisition<%s>: pushing wfm\r\n", TypeStr<TPixel> ());
-            Chan_Next(qwfm,(void**)&wfm,nbytes_info);
+            Chan_Next_Try(qwfm,(void**)&wfm,nbytes_info);
             DBG("Task: StackAcquisition<%s>: pushing frame\r\n", TypeStr<TPixel> ());
-#ifdef SCANNER_DEBUG_FAIL_WHEN_FULL                     //"fail fast"
-            if(CHAN_FAILURE( Chan_Next_Try(qdata,(void**)&frm,nbytes) ))
-#elif defined( SCANNER_DEBUG_SPIN_WHEN_FULL )           //"fail proof" - blocks when full
-            if(CHAN_FAILURE( Chan_Next(qdata,(void**)&frm,nbytes) ))
-#else
-            error("Choose a push behavior by compiling with the appropriate define.\r\n");
-#endif
-            {
-              warning("Scanner output frame queue overflowed.\r\n\tAborting stack acquisition task.\r\n");
+            if(CHAN_FAILURE( SCANNER_PUSH(qdata,(void**)&frm,nbytes) ))
+            { warning("(%s:%d) Scanner output frame queue overflowed."ENDL"\tAborting stack acquisition task."ENDL,__FILE__,__LINE__);
               goto Error;
             }
             ref.format(frm);
@@ -317,6 +310,7 @@ Finalize:
           return status;
 Error: 
           warning("Error occurred during ScanStack<%s> task.\r\n",TypeStr<TPixel>());
+          d->_scanner2d._daq.stopCLK();
           goto Finalize;
         }
 

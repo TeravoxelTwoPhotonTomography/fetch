@@ -17,8 +17,8 @@
 #include "Scanner2D.h"
 
 
-#define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, warning))
-#define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, error  ))
+#define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, warning))
+#define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, error  ))
 #define DAQJMP( expr )        goto_if_fail( 0==DAQWRN(expr), Error)
 
 namespace fetch
@@ -52,8 +52,12 @@ namespace fetch
       if(!_out)
       {
         // Reference the video output channel
-        _out=vector_PCHAN_alloc(1);
-        Guarded_Assert(_out->contents[0] = Chan_Open(_scanner2d.getVideoChannel(),CHAN_NONE) );
+        int n = _scanner2d._out->nelem;
+        _out=vector_PCHAN_alloc(n);
+        //Guarded_Assert(_out->contents[0] = Chan_Open(_scanner2d.getVideoChannel(),CHAN_NONE) );
+        for(int i=0;i<n;++i)
+          Guarded_Assert(_out->contents[i] = Chan_Open(_scanner2d._out->contents[i],CHAN_NONE));
+        
       }      
       //
       return eflag;
@@ -99,7 +103,8 @@ namespace fetch
 
     void Scanner3D::writeAO()
     {
-      _scanner2d.writeAO();
+      _scanner2d._daq.writeAO(_ao_workspace->contents);
+//      _scanner2d.writeAO(); // !! don't do this!  It'll write the scanner2d's ao buffer which is the wrong one.
     }
 
     void Scanner3D::generateAO()
@@ -143,6 +148,9 @@ namespace fetch
       _scanner2d._pockels.computeVerticalBlankWaveform(p,N);
       _zpiezo.computeRampWaveform(z_um,z,N);
       transaction_unlock();
+#if 0
+      vector_f64_dump(_ao_workspace,"Scanner3D_generateAORampZ.f64");
+#endif
     }
 
     void Scanner3D::__common_setup()

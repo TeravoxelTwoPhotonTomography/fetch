@@ -2,18 +2,20 @@
 #include "niScope.h"
 #include "niModInst.h"
 
-#define DIGCHK( expr ) (niscope_chk( vi, expr, #expr, error   ))
+#define DIGCHK( expr ) (niscope_chk( vi, expr, #expr, __FILE__, __LINE__, error   ))
 
 ViStatus niscope_chk ( ViSession vi, 
                        ViStatus result, 
                        const char *expression,
+                       const char *file,
+                       const int line,
                        pf_reporter report)
 { ViChar   errorSource[MAX_FUNCTION_NAME_SIZE] = "\0";
   ViChar   errorMessage[MAX_ERROR_DESCRIPTION] = "\0";
 
   if (result != VI_SUCCESS)
   { niScope_errorHandler (vi, result, errorSource, errorMessage);
-    (*report)( "%s\r\n%s\r\n", (expression), errorMessage );
+    (*report)( "(%s:%d) %s\r\n%s\r\n", file, line, (expression), errorMessage );
   }
   return result;
 }

@@ -10,6 +10,8 @@
 ViStatus niscope_chk ( ViSession vi, 
                        ViStatus result, 
                        const char *expression,
+                       const char *file,
+                       const int line,
                        pf_reporter report);
 
 void niscope_log_wfminfo ( pf_reporter      pfOutput, 

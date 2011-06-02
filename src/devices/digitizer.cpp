@@ -26,9 +26,9 @@
 #pragma warning(pop)
 
 // TODO: unify names. eg. change ChangeWarn to DIGWRN
-#define DIGWRN( expr )  (niscope_chk( vi, expr, #expr, warning ))
-#define DIGERR( expr )  (niscope_chk( vi, expr, #expr, error   ))
-#define DIGJMP( expr )  goto_if_fail(VI_SUCCESS == niscope_chk( vi, expr, #expr, warning ), Error)
+#define DIGWRN( expr )  (niscope_chk( this->_vi, expr, #expr, __FILE__, __LINE__, warning ))
+#define DIGERR( expr )  (niscope_chk( this->_vi, expr, #expr, __FILE__, __LINE__, error   ))
+#define DIGJMP( expr )  goto_if_fail(VI_SUCCESS == niscope_chk( this->_vi, expr, #expr, __FILE__, __LINE__, warning ), Error)
 
 #define CheckWarn( expression )  (niscope_chk( this->_vi, expression, #expression, &warning ))
 #define CheckPanic( expression ) (niscope_chk( this->_vi, expression, #expression, &error   ))
@@ -74,17 +74,18 @@ namespace fetch
 
     unsigned int
       NIScopeDigitizer::on_detach(void)
-    { ViStatus status = 1; //error
+      { 
+      ViStatus status = 1; //error
 
-    digitizer_debug("Digitizer: Attempting to disarm. vi: %d\r\n", this->_vi);
-    if(this->_vi)
-      ViErrChk(niScope_close(this->_vi));  // Close the session
-    status = 0;  // success
-    digitizer_debug("Digitizer: Detached.\r\n");
+      digitizer_debug("Digitizer: Attempting to disarm. vi: %d\r\n", this->_vi);    
+      if(this->_vi)
+        DIGJMP(niScope_close(this->_vi));  // Close the session
+      status = 0;  // success
+      digitizer_debug("Digitizer: Detached.\r\n");
 Error:
-    this->_vi = 0;
-    return status;
-    }
+      this->_vi = 0;
+      return status;
+      }
 
     unsigned int
       NIScopeDigitizer::on_attach(void)
@@ -93,11 +94,12 @@ Error:
       digitizer_debug("NIScopeDigitizer: Attach\r\n");      
       if( _vi == NULL )
       { // Open the NI-SCOPE instrument handle
-        status = CheckPanic (
-          niScope_init (const_cast<ViRsrc>(_config->name().c_str()),
-          NISCOPE_VAL_TRUE,    // ID Query
-          NISCOPE_VAL_FALSE,   // Reset?
-          &_vi)                // Session
+        DIGERR(
+          status=niScope_init (
+            const_cast<ViRsrc>(_config->name().c_str()),
+            NISCOPE_VAL_TRUE,    // ID Query
+            NISCOPE_VAL_FALSE,   // Reset?
+            &_vi)                // Session
           );
       }      
       digitizer_debug("\tGot session %3d with status %d\n",_vi,status);
@@ -210,6 +212,14 @@ Error:
 #pragma warning(disable:4244) // type cast
       return duty*_config->sample_rate()/record_frequency_Hz;
 #pragma warning(pop)
+    }
+    
+    bool NIScopeDigitizer::aux_info(int *n, size_t **sizes)
+    { 
+      *n=1;
+      *sizes = (size_t*) Guarded_Malloc(sizeof(size_t),"NIScopeDigitizer::aux_info");
+      (*sizes)[0] = sizeof(niScope_wfmInfo);      
+      return true;
     }
 
     //

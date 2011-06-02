@@ -23,6 +23,7 @@
 #include "workers/FrameCaster.h"
 #include "workers/ResonantWrap.h"
 #include "workers/FrameInvert.h"
+#include "workers/FrameFormat.h"
 
 #include "DiskStream.h"
 #include "LinearScanMirror.h"
@@ -107,6 +108,7 @@ namespace fetch
       worker::FrameCastAgent_i16         cast_to_i16;
       worker::FrameInvertAgent           inverter;
       worker::ResonantWrapAgent          wrap;
+      worker::FrameFormatterAgent        frame_formatter;
 
       worker::TerminalAgent		           trash;
       device::TiffStream                 disk;
@@ -115,7 +117,7 @@ namespace fetch
       task::microscope::StackAcquisition stack_task;      
       task::microscope::TiledAcquisition tiling_task;
 
-      inline Chan*  getVideoChannel() {return wrap._out->contents[0];}
+      inline Chan*  getVideoChannel() {return frame_formatter._out->contents[0];}
       inline LinearScanMirror*  LSM() {return &scanner._scanner2d._LSM;}
       inline Pockels*       pockels() {return &scanner._scanner2d._pockels;}
       inline ZPiezo*         zpiezo() {return &scanner._zpiezo;}

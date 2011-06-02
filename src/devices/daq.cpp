@@ -16,8 +16,8 @@
 #include "visatype.h"
 #include "DAQChannel.h"
 
-#define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, warning))
-#define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, error  ))
+#define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, warning))
+#define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, error  ))
 #define DAQJMP( expr )  goto_if_fail( 0==DAQWRN(expr), Error)
 #define DAQRTN( expr )  return_val_if_fail(0==DAQWRN(expr),1)
 
@@ -108,7 +108,37 @@ namespace fetch {
     void NationalInstrumentsDAQ::writeAO(float64 *data)
     {
       int32 written,
-            N = _config->ao_samples_per_waveform();            
+            N = _config->ao_samples_per_waveform();
+            
+#if 0
+      { 
+        uInt32 nchan;
+        char 
+          buf[1024],
+          name[1024];
+        memset(buf ,0,sizeof(buf ));
+        memset(name,0,sizeof(name));
+        DAQWRN( DAQmxGetTaskName(_ao.daqtask,name,sizeof(name)) );
+        DAQWRN( DAQmxGetTaskNumChans(_ao.daqtask,&nchan) );
+        DAQWRN( DAQmxGetTaskChannels(_ao.daqtask,buf,sizeof(buf)) );
+        HERE;
+        debug("NI-DAQmx Task (%s) has %d channels"ENDL"\t%s"ENDL,
+          name,
+          nchan,
+          buf);
+        
+        while(nchan--)
+        { DAQWRN( DAQmxGetNthTaskChannel(_ao.daqtask, 1+nchan, buf, sizeof(buf)) );
+          DAQWRN( DAQmxGetPhysicalChanName(_ao.daqtask, buf, buf, sizeof(buf)) );
+          debug("\t%d:\t%s"ENDL,nchan,buf);
+        }
+      }       
+      {      
+        FILE *fp = fopen("NationalInstrumentsDAQ_writeAO.f64","wb");
+        fwrite(data,sizeof(f64),3*N,fp);
+        fclose(fp);
+      }   
+#endif    
 
       DAQERR( DAQmxWriteAnalogF64(_ao.daqtask,
         N,
@@ -195,8 +225,6 @@ namespace fetch {
       float64 freq = computeSampleFrequency(nrecords, record_frequency_Hz);
 
       DAQERR( DAQmxClearTask(_ao.daqtask) );
-      HERE;
-      debug("\t%s"ENDL,"fetch_AO");
       DAQERR( DAQmxCreateTask( "fetch_AO", &_ao.daqtask));
       registerDoneEvent();
     }

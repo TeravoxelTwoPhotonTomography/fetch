@@ -87,7 +87,7 @@ scanner3d {
   zpiezo {
     kind: NIDAQ  #NIDAQ #Simulated
     nidaq {
-      um2v:       0.025
+      um2v:       0.025    #V/um: 400um*0.025 = 10.0V
       um_max:     5
       um_min:     0
       um_step:    0.005
@@ -126,7 +126,7 @@ fov {
     rotation_radians: 0.2 #0.785398163
   }
 resonant_wrap         { turn_px: 0 }
-horizontal_downsample { ntimes : 1 }
+horizontal_downsample { ntimes : 4 }
 frame_average         { ntimes : 1 }
 file_series {
   root:     "E:\\temp"

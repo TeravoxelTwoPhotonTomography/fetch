@@ -413,7 +413,7 @@ Frame_With_Interleaved_Planes::
   translate( Message *mdst, Message *msrc )
 { size_t sz = msrc->size_bytes();
   Frame *dst = dynamic_cast<Frame*>( mdst ),
-        *src = dynamic_cast<Frame*>( msrc );
+        *src = dynamic_cast<Frame*>( msrc );  
 
   switch( src->id )
   { case FRAME_INTERLEAVED_PLANES:
@@ -454,6 +454,10 @@ Frame_With_Interleaved_Planes::
     default:
       warning("Failed attempt to translate a message.");
       return 0; // no translation
+  }
+  { // cast
+    Frame_With_Interleaved_Planes ref(dst->width,dst->height,dst->nchan,dst->rtti);
+    ref.format(dst);
   }
   return sz;
 }

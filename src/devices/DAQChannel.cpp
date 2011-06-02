@@ -8,8 +8,8 @@
 
 #include "DAQChannel.h"
 
-#define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, warning))
-#define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, error  ))
+#define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, warning))
+#define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, error  ))
 #define DAQJMP( expr )        goto_if_fail( 0==DAQWRN(expr), Error)
 
 namespace fetch

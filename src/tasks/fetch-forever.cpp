@@ -5,8 +5,12 @@
 #include "frame.h"
 
 
-#define CheckWarn( expression )  (niscope_chk( vi, expression, #expression, &warning ))
-#define CheckPanic( expression ) (niscope_chk( vi, expression, #expression, &error   ))
+#define DIGWRN( expr )  (niscope_chk( vi, expr, #expr, __FILE__, __LINE__, warning ))
+#define DIGERR( expr )  (niscope_chk( vi, expr, #expr, __FILE__, __LINE__, error   ))
+#define DIGJMP( expr )  goto_if_fail(VI_SUCCESS == niscope_chk( vi, expr, #expr, __FILE__, __LINE__, warning ), Error)
+
+#define CheckWarn( expression )  (niscope_chk( vi, expression, #expression, __FILE__, __LINE__, &warning ))
+#define CheckPanic( expression ) (niscope_chk( vi, expression, #expression, __FILE__, __LINE__, &error   ))
 #define ViErrChk( expression )    goto_if( CheckWarn(expression), Error )
 
 #if 0
@@ -142,10 +146,11 @@ namespace fetch
                 last_max_fetch = nfetches;
               }
               accdelay += delay;
-              if( sts != VI_SUCCESS )
-              { niscope_chk(vi,sts, "niScope_Fetch*", warning);
-                goto Error;
-              }
+              DIGJMP(sts);
+              //if( sts != VI_SUCCESS )
+              //{ niscope_chk(vi,sts, "niScope_Fetch*", warning);
+              //  goto Error;
+              //}
               ++nfetches;     
               ttl += wfm->actualSamples;  // add the chunk size to the total samples count     
               Chan_Next(qwfm,(void**)&wfm,nwfm*sizeof(struct niScope_wfmInfo));

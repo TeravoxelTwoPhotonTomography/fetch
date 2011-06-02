@@ -38,6 +38,7 @@
       ,cast_to_i16("i16Cast")
       ,inverter("inverter")
       ,wrap()
+      ,frame_formatter("FrameFormatter")
       ,trash("Trash")
     {      
       set_config(_config);
@@ -65,7 +66,8 @@
       ,pixel_averager("PixelAverager")
       ,cast_to_i16("i16Cast")
       ,inverter("inverter")
-      ,wrap()
+      ,wrap()     
+      ,frame_formatter("FrameFormatter")
       ,trash("Trash")
       ,file_series()
     {
@@ -86,7 +88,8 @@
       ,pixel_averager(cfg->mutable_horizontal_downsample(),"PixelAverager")
       ,cast_to_i16("i16Cast") 
       ,inverter("Inverter")
-      ,wrap(cfg->mutable_resonant_wrap())
+      ,wrap(cfg->mutable_resonant_wrap())   
+      ,frame_formatter("FrameFormatter")
       ,trash("Trash")
       ,file_series(cfg->mutable_file_series())
     {
@@ -136,6 +139,7 @@
       eflag |= inverter._agent->detach();
       eflag |= cast_to_i16._agent->detach();
       eflag |= wrap._agent->detach();
+      eflag |= frame_formatter._agent->detach();
       eflag |= trash._agent->detach();
       eflag |= disk._agent->detach();
 
@@ -151,7 +155,8 @@
       sts &= pixel_averager._agent->disarm();
       sts &= inverter._agent->disarm();
       sts &= cast_to_i16._agent->disarm();
-      sts &= wrap._agent->disarm();
+      sts &= wrap._agent->disarm();  
+      sts &= frame_formatter._agent->disarm();
       sts &= trash._agent->disarm();
       sts &= disk._agent->disarm();
       
@@ -231,6 +236,7 @@
       cur =  inverter.apply(cur);
       cur =  cast_to_i16.apply(cur);
       cur =  wrap.apply(cur);
+      cur =  frame_formatter.apply(cur);
       return cur;
     }
 
@@ -243,18 +249,20 @@
     }
 
     unsigned int Microscope::runPipeline()
-    { int sts = 1;
+    { int sts = 1;                        
+      sts &= frame_formatter._agent->run();
       sts &= wrap._agent->run();
       sts &= cast_to_i16._agent->run();
       sts &= inverter._agent->run();
       sts &= frame_averager._agent->run();
-      sts &= pixel_averager._agent->run();      
+      sts &= pixel_averager._agent->run();
       return (sts!=1); // returns 1 on fail and 0 on success
     }
     
     unsigned int Microscope::stopPipeline()
     { int sts = 1;
       // These should block till channel's empty 
+      sts &= frame_formatter._agent->stop();
       sts &= wrap._agent->stop();
       sts &= cast_to_i16._agent->stop();
       sts &= inverter._agent->stop();

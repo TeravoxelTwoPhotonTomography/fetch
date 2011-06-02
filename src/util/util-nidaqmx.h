@@ -23,4 +23,4 @@
 #define NI6529_MAX_VOLTS_OUT        10       // +/- V
 #define NI6529_OUTPUT_IMPEDANCE     0.1      // ohms
 
-int32 Guarded_DAQmx( int32 error, const char* expression, pf_reporter report );
+int32 Guarded_DAQmx( int32 error, const char* expression, const char* file, const int line, pf_reporter report );

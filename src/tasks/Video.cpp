@@ -39,11 +39,11 @@
 #define DBG(...)
 #endif
 
-#define DIGWRN( expr )  (niscope_chk( vi, expr, #expr, warning ))
-#define DIGERR( expr )  (niscope_chk( vi, expr, #expr, error   ))
-#define DIGJMP( expr )  goto_if_fail(VI_SUCCESS == niscope_chk( vi, expr, #expr, warning ), Error)
-#define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, warning))
-#define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, error  ))
+#define DIGWRN( expr )  (niscope_chk( vi, expr, #expr, __FILE__, __LINE__, warning ))
+#define DIGERR( expr )  (niscope_chk( vi, expr, #expr, __FILE__, __LINE__, error   ))
+#define DIGJMP( expr )  goto_if_fail(VI_SUCCESS == niscope_chk( vi, expr, #expr, __FILE__, __LINE__, warning ), Error)
+#define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, warning))
+#define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, error  ))
 #define DAQJMP( expr )  goto_if( DAQmxFailed(DAQWRN(expr)), Error)
 #define CHKERR( expr )  {if(expr) {error("Expression indicated failure:\r\n\t%s\r\n",#expr);}} 0 //( (expr), #expr, error  ))
 #define CHKJMP( expr )  goto_if((expr),Error)
@@ -224,7 +224,7 @@ namespace fetch
 
            // Push the acquired data down the output pipes
           DBG("Task: Video<%s>: pushing wfm\r\n",TypeStr<TPixel>());
-          Chan_Next( qwfm,(void**) &wfm, nbytes_info );
+          Chan_Next_Try( qwfm,(void**) &wfm, nbytes_info );
           DBG("Task: Video<%s>: pushing frame\r\n",TypeStr<TPixel>());
           if(CHAN_FAILURE( SCANNER_PUSH(qdata,(void**)&frm,nbytes) ))
           { warning("Scanner output frame queue overflowed.\r\n\tAborting acquisition task.\r\n");
@@ -256,6 +256,7 @@ Finalize:
         return status; // status == 0 implies success, error otherwise
 Error:
         warning("Error occurred during Video<%s> task.\r\n",TypeStr<TPixel>());
+        d->_daq.stopCLK();
         goto Finalize;
       }
 

@@ -12,7 +12,7 @@
 
 #include "../util/util-nidaqmx.h"
 
-#define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, error  ))
+#define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, error  ))
 #define DAQJMP( expr )   goto_if_fail( 0==DAQWRN(expr), Error)
 
 namespace fetch
