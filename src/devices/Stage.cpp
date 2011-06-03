@@ -13,12 +13,17 @@
 
 
 #include <list>
+#include <string>
+#include <sstream>
+
 #include "stage.h"
 #include "task.h"
 #include "tiling.h"
 
-#define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, warning))
-#define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, error  ))
+#include "C843_GCS_DLL.H"
+
+#define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, warning))
+#define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, error  ))
 #define DAQJMP( expr )        goto_if_fail( 0==DAQWRN(expr), Error)
 
 namespace fetch  {
@@ -28,18 +33,128 @@ namespace device {
   //
   // C843Stage
   //
+  
+#define C843WRN( expr )  (c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, warning ))
+#define C843ERR( expr )  (c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, error   ))
+#define C843JMP( expr )  goto_if(c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, warning ), Error)
+
+  // returns 0 if no error, otherwise 1
+  bool c843_error_handler(long handle, BOOL ok, const char* expr, const char* file, const int line, pf_reporter report)
+  {
+    char buf[1024];
+    long e;
+    if(handle<0)
+      report(
+        "(%s:%d) C843 Error %d:"ENDL
+        "\t%s"ENDL
+        "\tInvalid device id (Got %d)."ENDL,
+        file,line,e,expr,handle);
+    if(!ok)
+    { e = C843_GetError(handle);
+
+      if(C843_TranslateError(e,buf,sizeof(buf)))
+      {
+        report(
+          "(%s:%d) C843 Error %d:"ENDL
+          "\t%s"ENDL,
+          "\t%s"ENDL,
+          file,line,e,expr,buf);
+      } else
+        error(
+          "(%s:%d) Problem with C843 (error %d) but error message was too long for buffer."ENDL,
+          "\t%s"ENDL
+          __FILE__,__LINE__,e,expr);
+      return true;
+    }
+    return false; //this should be something corresponding to "no error"...guessing zero
+  }
 
 
   C843Stage::C843Stage( Agent *agent )
-   :StageBase<cfg::device::C843StageController>(agent)   
+   :StageBase<cfg::device::C843StageController>(agent)
+   ,handle_(-1)
   {
 
   }
 
   C843Stage::C843Stage( Agent *agent, Config *cfg )
    :StageBase<cfg::device::C843StageController>(agent,cfg)
+   ,handle_(-1)
   {
 
+  }
+#if 0
+  //
+  // EXAMPLE FROM MANUAL
+  //
+
+  char stages[1024];
+  char axes[10];
+  int ID;
+  // connect to the C-843
+  ID = C843_Connect(1);
+  if (ID<0)
+    return FALSE;
+  // nothing is configured
+  if (!C843_qCST(ID, "1234", stages, 1023))
+    return FALSE;
+  // the output should be
+  printf("qCST() returned \"%s\"", stages);
+  if (!C843_qSAI(ID, axes, 9))
+    return FALSE;
+  // the output should be "" - no configured axes
+  printf("qSAI() returned \"%s\"", axes);
+  // we want to connect two M-111.1DG to channels 1 and 2
+  // and a M-112.2DG to channel four
+  sprintf(stages, "M-111.1DG\nM-111.1DG\nM-111.1DG");
+  if (!C843_CST(ID, "124", stages))
+    return FALSE;
+  if (!C843_qSAI(ID, axes, 9))
+    return FALSE;
+  // the output should be "124" - the new configured axes
+  printf("qSAI() returned \"%s\"", axes);
+  if (!C843_qCST(ID, "1234", stages, 1023))
+    return FALSE;
+  // the output should be "1=M-111.1DG\n2=M-111.1DG\n3=NOSTAGE\n4=M-112.2DG\n"
+  printf("qCST() returned \"%s\"", stages);
+  // call INI for all axes
+  // "" as axes string will address all configured axes
+  if (!C843_INI(ID, ""))
+    return FALSE;
+#endif
+  //return 0 on success
+  unsigned int C843Stage::on_attach()
+  {
+    char buf[1024];
+    C843JMP( handle_=C843_Connect(_config->id()) );
+    //C843JMP( C843_qCST(handle_,"1234",buf,sizeof(buf)-1) ); // expect  "1=NOSTAGE\n2=NOSTAGE\n3=NOSTAGE\n4=NOSTAGE\n"
+    //C843JMP( C843_qSAI(handle_,buf,sizeof(buf)-1) ); // expect "" - the configured axes
+    
+    // get the axis id's and names to load
+    std::stringstream ssid;                  //expect "123"
+    std::stringstream ssname;                //expect "M-511.DD\nM-511.DD\nM-511.DD"
+    for(int i=0;i<_config->axis_size();++i)
+    { ssid << _config->axis(i).id();
+      ssid << _config->axis(i).stage()<<"\n";
+    }
+    C843JMP( C843_CST(handle_,ssid.str().c_str(),ssname.str().c_str()) );  //configure selected axes
+    C843JMP( C843_INI(handle_,""));                                        //init all configured axes   
+
+    return 0; // ok
+Error:
+    return 1; // fail
+  }
+
+  // return 0 on success
+  unsigned int C843Stage::on_detach()
+  {
+    return 0; // ok
+Error:
+    return 1; // fail
+  }
+
+  void C843Stage::getTravel(StageTravel* out)
+  {
   }
 
   void C843Stage::getVelocity( float *vx, float *vy, float *vz )

@@ -33,7 +33,7 @@
 
 #define SCANNER_VIDEO_TASK_FETCH_TIMEOUT  10.0  //10.0, //(-1=infinite) (0.0=immediate)
                                                 // Setting this to infinite can sometimes make the application difficult to quit
-#if 1
+#if 0
 #define DBG(...) debug(__VA_ARGS__)
 #else
 #define DBG(...)

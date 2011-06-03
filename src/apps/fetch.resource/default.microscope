@@ -22,7 +22,7 @@ scanner3d {
     digitizer {
       kind: NIScope #Simulated #NIScope #Alazar
       niscope {
-        name: "Dev3"
+        name: "Dev2"
         sample_rate: 60000000
         record_size: 7196
         num_records: 256
@@ -129,7 +129,7 @@ resonant_wrap         { turn_px: 0 }
 horizontal_downsample { ntimes : 4 }
 frame_average         { ntimes : 1 }
 file_series {
-  root:     "E:\\temp"
+  root:     "C:\\temp"
   date:     "unknown"
   seriesno:  0
   pathsep:  "\\"

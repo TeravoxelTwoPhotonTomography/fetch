@@ -33,6 +33,7 @@ namespace device {
       virtual void getTravel         ( StageTravel* out)                = 0;
       virtual void getVelocity       ( float *vx, float *vy, float *vz) = 0;
       virtual int  setVelocity       ( float vx, float vy, float vz)    = 0;
+      inline  int  setVelocity       ( float v )                        { return setVelocity(v,v,v); }
       virtual void setVelocityNoWait ( float vx, float vy, float vz)    = 0;
       virtual void getPos            ( float *x, float *y, float *z)    = 0;
       virtual int  setPos            ( float  x, float  y, float  z)    = 0;
@@ -55,16 +56,18 @@ namespace device {
       C843Stage(Agent *agent);
       C843Stage(Agent *agent, Config *cfg);
 
-      virtual unsigned int on_attach() {/**TODO**/ return 0;}
-      virtual unsigned int on_detach() {/**TODO**/ return 0;}
+      virtual unsigned int on_attach();
+      virtual unsigned int on_detach();
 
-      virtual void getTravel         ( StageTravel* out)                   {/**TODO**/}
+      virtual void getTravel         ( StageTravel* out);
       virtual void getVelocity       ( float *vx, float *vy, float *vz);
       virtual int  setVelocity       ( float vx, float vy, float vz);
       virtual void setVelocityNoWait ( float vx, float vy, float vz)       {Config c = get_config(); /**TODO**/ Guarded_Assert_WinErr(set_config_nowait(c));}
       virtual void getPos            ( float *x, float *y, float *z);
       virtual int  setPos            ( float  x, float  y, float  z);
       virtual void setPosNoWait      ( float  x, float  y, float  z)       {Config c = get_config(); /**TODO**/ Guarded_Assert_WinErr(set_config_nowait(c));}
+    private:
+     int handle_;
   };
 
   class SimulatedStage:public StageBase<cfg::device::SimulatedStage>

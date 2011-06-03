@@ -499,10 +499,8 @@ FailedToParse:
       int run;
       _agent->lock(); //will generate a recursive lock :(
       run = _agent->is_running();
-      if(run)
-      { HERE;
-        _agent->stop(AGENT_DEFAULT_TIMEOUT);
-      }
+      if(run)      
+        _agent->stop(AGENT_DEFAULT_TIMEOUT);      
       _agent->_owner->onUpdate(); // not clear who's onUpdate to use: this or agent's owner? so far thay've been the same
       if(run)
       { HERE;

@@ -221,7 +221,6 @@ namespace fetch {
     void NationalInstrumentsDAQ::setupAO( float64 nrecords, float64 record_frequency_Hz )
     {
       
-
       float64 freq = computeSampleFrequency(nrecords, record_frequency_Hz);
 
       DAQERR( DAQmxClearTask(_ao.daqtask) );

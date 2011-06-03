@@ -7,7 +7,7 @@
 
 
 #include "WorkAgent.h"
-#include "FrameFormat.h"
+#include "FrameFormater.h"
 #include "util\util-image.h"
 
 #if 0

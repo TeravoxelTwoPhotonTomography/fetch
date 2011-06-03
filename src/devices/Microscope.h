@@ -14,7 +14,6 @@
 
 #include "agent.h"
 #include "task.h"
-#include "scanner3D.h"
 #include "microscope.pb.h"
 
 #include "workers/FrameAverage.h"
@@ -23,17 +22,19 @@
 #include "workers/FrameCaster.h"
 #include "workers/ResonantWrap.h"
 #include "workers/FrameInvert.h"
-#include "workers/FrameFormat.h"
+#include "workers/FrameFormater.h"
 
-#include "DiskStream.h"
-#include "LinearScanMirror.h"
-#include "pockels.h"
-#include <string>
+#include "devices/scanner3D.h"
+#include "devices/DiskStream.h"
+#include "devices/LinearScanMirror.h"
+#include "devices/pockels.h"
+#include "devices/Stage.h"
+#include "devices/FieldOfViewGeometry.h"
 #include "tasks/microscope-interaction.h"
 #include "tasks/StackAcquisition.h"
-#include "Stage.h"
-#include "tasks/TiledAcquisition.h"
-#include "devices/FieldOfViewGeometry.h"
+#include "tasks/TiledAcquisition.h"  
+
+#include <string>
 
 #define MICROSCOPE_MAX_WORKERS     10
 #define MICROSCOPE_DEFAULT_TIMEOUT INFINITE
