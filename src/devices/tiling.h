@@ -61,7 +61,7 @@ namespace device {
     inline const TTransform& latticeToStageTransform()                     {return latticeToStage_; }
     inline const FieldOfViewGeometry& fov()                                {return fov_;}
     inline const device::StageTravel& travel()                             {return travel_;}
-    inline size_t plane()                                                  {return current_plane_offest_/sz_plane_nelem_; }
+    inline size_t plane()                                                  {return (size_t)current_plane_offest_/sz_plane_nelem_; }
            size_t plane_mm();
 
     inline void addListener(StageListener *listener)                       {listeners_.insert(listener);}

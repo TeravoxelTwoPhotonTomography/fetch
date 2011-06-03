@@ -22,7 +22,7 @@ scanner3d {
     digitizer {
       kind: NIScope #Simulated #NIScope #Alazar
       niscope {
-        name: "Dev2"
+        name: "Dev3"
         sample_rate: 60000000
         record_size: 7196
         num_records: 256
@@ -102,12 +102,12 @@ scanner3d {
   zref_um: 0
 }
 stage {
-	kind: Simulated
+	kind: C843   #C843 #Simulated
 	c843 {
 	  id: 1
-		axis {id: 1   stage: "M-511.DD"}
-		axis {id: 2   stage: "M-511.DD"}
-		axis {id: 3   stage: "M-501.DG"}
+		axis {id: 1   stage: "M-511.DD_NEW"}
+		axis {id: 2   stage: "M-511.DD_NEW"}
+		axis {id: 3   stage: "M-501.1DG"}
 	}
   simulated {
     axis { min_mm: 0.0  max_mm: 100.0}
@@ -129,7 +129,7 @@ resonant_wrap         { turn_px: 0 }
 horizontal_downsample { ntimes : 4 }
 frame_average         { ntimes : 1 }
 file_series {
-  root:     "C:\\temp"
+  root:     "E:\\temp"
   date:     "unknown"
   seriesno:  0
   pathsep:  "\\"

@@ -68,6 +68,10 @@ namespace device {
       virtual void setPosNoWait      ( float  x, float  y, float  z)       {Config c = get_config(); /**TODO**/ Guarded_Assert_WinErr(set_config_nowait(c));}
     private:
      int handle_;
+     
+     void waitForController_();
+     void waitForMove_();
+     void reference_();
   };
 
   class SimulatedStage:public StageBase<cfg::device::SimulatedStage>

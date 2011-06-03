@@ -45,10 +45,10 @@ namespace device {
     long e;
     if(handle<0)
       report(
-        "(%s:%d) C843 Error %d:"ENDL
+        "(%s:%d) C843 Error:"ENDL
         "\t%s"ENDL
         "\tInvalid device id (Got %d)."ENDL,
-        file,line,e,expr,handle);
+        file,line,expr,handle);
     if(!ok)
     { e = C843_GetError(handle);
 
@@ -56,7 +56,7 @@ namespace device {
       {
         report(
           "(%s:%d) C843 Error %d:"ENDL
-          "\t%s"ENDL,
+          "\t%s"ENDL
           "\t%s"ENDL,
           file,line,e,expr,buf);
       } else
@@ -69,6 +69,8 @@ namespace device {
     return false; //this should be something corresponding to "no error"...guessing zero
   }
 
+#pragma warning(push)
+#pragma warning(disable:4244) // lots of float <-- double conversions
 
   C843Stage::C843Stage( Agent *agent )
    :StageBase<cfg::device::C843StageController>(agent)
@@ -83,62 +85,44 @@ namespace device {
   {
 
   }
-#if 0
-  //
-  // EXAMPLE FROM MANUAL
-  //
 
-  char stages[1024];
-  char axes[10];
-  int ID;
-  // connect to the C-843
-  ID = C843_Connect(1);
-  if (ID<0)
-    return FALSE;
-  // nothing is configured
-  if (!C843_qCST(ID, "1234", stages, 1023))
-    return FALSE;
-  // the output should be
-  printf("qCST() returned \"%s\"", stages);
-  if (!C843_qSAI(ID, axes, 9))
-    return FALSE;
-  // the output should be "" - no configured axes
-  printf("qSAI() returned \"%s\"", axes);
-  // we want to connect two M-111.1DG to channels 1 and 2
-  // and a M-112.2DG to channel four
-  sprintf(stages, "M-111.1DG\nM-111.1DG\nM-111.1DG");
-  if (!C843_CST(ID, "124", stages))
-    return FALSE;
-  if (!C843_qSAI(ID, axes, 9))
-    return FALSE;
-  // the output should be "124" - the new configured axes
-  printf("qSAI() returned \"%s\"", axes);
-  if (!C843_qCST(ID, "1234", stages, 1023))
-    return FALSE;
-  // the output should be "1=M-111.1DG\n2=M-111.1DG\n3=NOSTAGE\n4=M-112.2DG\n"
-  printf("qCST() returned \"%s\"", stages);
-  // call INI for all axes
-  // "" as axes string will address all configured axes
-  if (!C843_INI(ID, ""))
-    return FALSE;
-#endif
   //return 0 on success
   unsigned int C843Stage::on_attach()
-  {
-    char buf[1024];
-    C843JMP( handle_=C843_Connect(_config->id()) );
-    //C843JMP( C843_qCST(handle_,"1234",buf,sizeof(buf)-1) ); // expect  "1=NOSTAGE\n2=NOSTAGE\n3=NOSTAGE\n4=NOSTAGE\n"
-    //C843JMP( C843_qSAI(handle_,buf,sizeof(buf)-1) ); // expect "" - the configured axes
+  { 
+    long ready = 0;   
+    C843JMP( (handle_=C843_Connect(_config->id()))>=0 );
     
     // get the axis id's and names to load
-    std::stringstream ssid;                  //expect "123"
-    std::stringstream ssname;                //expect "M-511.DD\nM-511.DD\nM-511.DD"
+    //{ std::stringstream ssid;                                                //expect "123"
+    //  std::stringstream ssname;                                              //expect "M-511.DD\nM-511.DD\nM-511.DD"
+    //  for(int i=0;i<_config->axis_size();++i)
+    //  { ssid   << _config->axis(i).id();
+    //    ssname << _config->axis(i).stage()<<"\n";
+    //  }
+    //  std::string ids,names;
+    //  const char *cids,*cnames;
+    //  ids = ssid.str();
+    //  names = ssname.str();
+    //  cids = ids.c_str();
+    //  cnames = names.c_str();
+    //  //ssid >> ids;
+    //  //ssname >> names;
+    //  C843JMP( C843_CST(handle_,ids.c_str(),names.c_str()) );  //configure selected axes 
+    //}
     for(int i=0;i<_config->axis_size();++i)
-    { ssid << _config->axis(i).id();
-      ssid << _config->axis(i).stage()<<"\n";
+    { char id[10];
+      const char *name;// = _config->axis(i).id().c_str(),
+      itoa(_config->axis(i).id(),id,10);
+      name = _config->axis(i).stage().c_str();
+      C843JMP( C843_CST(handle_,id,name) );  //configure selected axes       
     }
-    C843JMP( C843_CST(handle_,ssid.str().c_str(),ssname.str().c_str()) );  //configure selected axes
-    C843JMP( C843_INI(handle_,""));                                        //init all configured axes
+    C843JMP( C843_INI(handle_,""));                                        //init all configured axes    
+    waitForController_();
+    
+    reference_();
+    
+    
+    
 
     // TODO: should do some validation.  Make sure stage name is in database and 
     //       make sure initialization happens properly.
@@ -153,11 +137,15 @@ Error:
   // return 0 on success
   unsigned int C843Stage::on_detach()
   {
+    int ecode = 0;
+    C843JMP( C843_STP(handle_) );  // all stop - HLT is more gentle
+Finalize:    
     C843_CloseConnection(handle_); // always succeeds
     handle_=-1;
-    return 0; // ok
+    return ecode;
 Error:
-    return 1; // fail
+    ecode = 1;
+    goto Finalize;
   }
 
   void C843Stage::getTravel(StageTravel* out)
@@ -169,14 +157,15 @@ Error:
        */
     double t[3];
     C843ERR( C843_qTMN(handle_,"123",t) );
+    
     out->x.min = t[0];
     out->y.min = t[1];
-    out->z.min = t[2];
+    out->z.min = t[2];    
 
     C843ERR( C843_qTMX(handle_,"123",t) );
     out->x.max = t[0];
     out->y.max = t[1];
-    out->z.max = t[2];
+    out->z.max = t[2];   
   }
 
   void C843Stage::getVelocity( float *vx, float *vy, float *vz )
@@ -204,14 +193,44 @@ Error:
   int C843Stage::setPos( float x, float y, float z )
   { double t[3] = {x,y,z};
     C843ERR( C843_MOV(handle_,"123",t) );
+    waitForMove_();
     // TODO
-    // o  do I need to block?   - see IsMoving/IsReferencing
     // o  intelligent velocity?
     // o  better error handling in case I hit limits
     // o  what is behavior around limits?
     return 0; // success
   }
 
+  void C843Stage::waitForController_()
+  { 
+    long ready = 0;
+    while(!ready)
+    { C843ERR( C843_IsControllerReady(handle_,&ready) );
+      Sleep(20); // check ~ 50x/sec
+    }
+  }
+  
+  BOOL any(int n, BOOL *bs)
+  { BOOL ret = 0;
+    while(n--) ret |= bs[n];
+    return ret;
+  }
+  
+  void C843Stage::waitForMove_()
+  { 
+    BOOL isMoving[3] = {0,0,0};
+    while(!any(3,isMoving))    
+    { C843ERR( C843_IsMoving(handle_,"123",isMoving) );
+      Sleep(20); // check ~ 50x/sec
+    }
+  }
+  
+  void C843Stage::reference_()
+  {
+    C843ERR( C843_FRF(handle_,"123") );
+    waitForController_();
+  }   
+#pragma warning(pop) 
      
   //
   // Simulated
