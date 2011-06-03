@@ -192,6 +192,11 @@ Error:
 
   int C843Stage::setPos( float x, float y, float z )
   { double t[3] = {x,y,z};
+  
+    { float vx,vy,vz;
+      getVelocity(&vx,&vy,&vz);
+      debug("(%s:%d): C843 Velocity %f %f %f"ENDL,__FILE__,__LINE__,vx,vy,vz);
+    }
     C843ERR( C843_MOV(handle_,"123",t) );
     waitForMove_();
     // TODO
@@ -219,7 +224,7 @@ Error:
   void C843Stage::waitForMove_()
   { 
     BOOL isMoving[3] = {0,0,0};
-    while(!any(3,isMoving))    
+    while(any(3,isMoving))    
     { C843ERR( C843_IsMoving(handle_,"123",isMoving) );
       Sleep(20); // check ~ 50x/sec
     }
@@ -365,6 +370,14 @@ Error:
       default:
         error("Unrecognized kind() for SimulatedStage.  Got: %u\r\n",(unsigned)kind);
       }
+  }
+
+  float myroundf(float x) {return floorf(x+0.5f);}
+  
+  Vector3z Stage::getPosInLattice()
+  { StageTiling::TTransform l2s(_tiling->latticeToStageTransform());
+    Vector3f r(getPos()*1000.0); // convert to um
+    return Vector3z((l2s.inverse() * r).unaryExpr(std::ptr_fun<float,float>(myroundf)).cast<size_t>());    
   }
 
   // Only use when attached but disarmed.

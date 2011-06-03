@@ -23,8 +23,9 @@ using namespace Eigen;
 //  TilingController  ///// //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-fetch::ui::TilingController::TilingController( device::StageTiling *tiling, QObject* parent/*=0*/ )
+fetch::ui::TilingController::TilingController( device::Stage *stage, device::StageTiling *tiling, QObject* parent/*=0*/ )
   : QObject(parent)
+  , stage_(stage)
   , tiling_(tiling)
 { 
   connect(
@@ -116,6 +117,7 @@ bool fetch::ui::TilingController::latticeShape(QRectF *out)
 }
    
 typedef mylib::uint8 uint8;
+typedef Matrix<size_t,1,3> Vector3z;
 bool fetch::ui::TilingController::latticeAttrImage(QImage *out)
 {
   if(!tiling_)
@@ -125,7 +127,8 @@ bool fetch::ui::TilingController::latticeAttrImage(QImage *out)
   mylib::Array 
     *lattice = tiling_->attributeArray(),
      plane   = *lattice;
-  mylib::Get_Array_Plane(&plane,tiling_->plane());  
+  Vector3z ir = stage_->getPosInLattice();
+  mylib::Get_Array_Plane(&plane,ir[2]);  
   *out = QImage(AUINT8(&plane),w,h,QImage::Format_RGB32); //QImage requires a uchar* for the data
   //out->save("TilingController_latticeAttrImage.tif");
   return true;
@@ -259,7 +262,7 @@ fetch::ui::PlanarStageController::PlanarStageController( device::Stage *stage, Q
    : QObject(parent)
    , stage_(stage)
    , agent_controller_(stage->_agent)
-   , tiling_controller_(NULL)
+   , tiling_controller_(stage)
 {
   connect(
     &agent_controller_, SIGNAL(onAttach()),

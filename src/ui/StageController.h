@@ -35,7 +35,7 @@ namespace ui {
     typedef Matrix<float,3,4>         TRectVerts;
     typedef Transform<float,3,Affine> TTransform;
 
-    TilingController(device::StageTiling *tiling=NULL, QObject* parent=0);
+    TilingController(device::Stage *stage, device::StageTiling *tiling=NULL, QObject* parent=0);
 
     inline TilingControllerListener* listener()                            {return &listener_;}
 
@@ -68,6 +68,7 @@ namespace ui {
     // other ideas: imaging started, move start, move end
 
   private:
+    device::Stage       *stage_;
     device::StageTiling *tiling_;
     TilingControllerListener listener_;
 

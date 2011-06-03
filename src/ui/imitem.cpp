@@ -67,7 +67,7 @@ QRectF ImItem::boundingRect() const
 void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget /* = 0 */)
 { 
   if(_loaded)
-  {  
+  { 
     painter->beginNativePainting();
 		checkGLError();                                                                              
 
@@ -118,6 +118,9 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
 
     checkGLError();
     painter->endNativePainting();
+     
+    painter->setPen(Qt::white);    
+    painter->drawRect(_bbox_px);
   } else
   {
     // for some reason I have to draw the rect.  Otherwise the text won't always show.

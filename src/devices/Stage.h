@@ -16,6 +16,7 @@ namespace fetch {
 namespace device {
 
   class StageTiling;
+  typedef Matrix<size_t,1,3> Vector3z;
 
   struct StageAxisTravel  { float min,max; };
   struct StageTravel      { StageAxisTravel x,y,z; };
@@ -26,18 +27,28 @@ namespace device {
   //////////////////////////////////////////////////////////////////////
   //  Stage  ///////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
-
+  struct TilePos
+  { float x,y,z;
+  };
+  
   class IStage
   {
     public:      
       virtual void getTravel         ( StageTravel* out)                = 0;
       virtual void getVelocity       ( float *vx, float *vy, float *vz) = 0;
       virtual int  setVelocity       ( float vx, float vy, float vz)    = 0;
-      inline  int  setVelocity       ( float v )                        { return setVelocity(v,v,v); }
+      inline  int  setVelocity       ( const Vector3f &r)                   {return setVelocity(r[0],r[1],r[2]);}
+      inline  int  setVelocity       ( float v )                            {return setVelocity(v,v,v); }
       virtual void setVelocityNoWait ( float vx, float vy, float vz)    = 0;
+      inline  void setVelocityNoWait ( const Vector3f &r)                   {setVelocityNoWait(r[0],r[1],r[2]);}
+      inline  void setVelocityNoWait ( float v )                            {setVelocityNoWait(v,v,v); }
       virtual void getPos            ( float *x, float *y, float *z)    = 0;
+      inline  Vector3f getPos        ()                                     {float x,y,z; getPos(&x,&y,&z); return Vector3f(x,y,z);}
       virtual int  setPos            ( float  x, float  y, float  z)    = 0;
+      virtual int  setPos            ( const Vector3f &r)                   {return setPos(r[0],r[1],r[2]);}
+      virtual int  setPos            ( const TilePos &r)                    {return setPos(r.x,r.y,r.z);}
       virtual void setPosNoWait      ( float  x, float  y, float  z)    = 0;
+      inline  void setPosNoWait      ( const Vector3f &r)                   {setVelocityNoWait(r[0],r[1],r[2]);}      
 
       //Move Relative
   };
@@ -92,10 +103,6 @@ namespace device {
       virtual void setPosNoWait      ( float  x, float  y, float  z)       {setPos(x,y,z);}
   };
 
-  struct TilePos
-  { float x,y,z;
-  };
-
   class StageListener;
   class Stage:public StageBase<cfg::device::Stage>
   {
@@ -129,12 +136,15 @@ namespace device {
       virtual void getVelocity       ( float *vx, float *vy, float *vz)     {_istage->getVelocity(vx,vy,vz);}
       virtual int  setVelocity       ( float vx, float vy, float vz)        {return _istage->setVelocity(vx,vy,vz);}
       virtual void setVelocityNoWait ( float vx, float vy, float vz)        {_istage->setVelocityNoWait(vx,vy,vz);}
-      virtual void getPos            ( float *x, float *y, float *z)        {_istage->getPos(x,y,z);}
+      virtual void getPos            ( float *x, float *y, float *z)        {_istage->getPos(x,y,z);}      
+      inline  Vector3f getPos        ()                                     {float x,y,z; getPos(&x,&y,&z); return Vector3f(x,y,z);}
       virtual int  setPos            ( float  x, float  y, float  z)        {int out = _istage->setPos(x,y,z); _notifyMoved(); return out;}
       virtual int  setPos            ( const Vector3f &r)                   {return setPos(r[0],r[1],r[2]);}
       virtual int  setPos            ( const TilePos &r)                    {return setPos(r.x,r.y,r.z);}
       virtual int  setPos            ( const TilePosList::iterator &cursor) {return setPos(*cursor);}
       virtual void setPosNoWait      ( float  x, float  y, float  z)        {_istage->setPosNoWait(x,y,z);}
+      
+      Vector3z getPosInLattice();
   
               void addListener(StageListener *listener);
               void delListener(StageListener *listener);

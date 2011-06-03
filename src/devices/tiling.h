@@ -22,9 +22,12 @@ namespace device {
   class StageListener;
   class StageTiling
   {
-    typedef Transform<float,3,Affine> TTransform;
-    typedef std::set<StageListener*>  TListeners;
-
+  public:
+    typedef fetch::cfg::device::Stage_TilingMode Mode; 
+    typedef Transform<float,3,Affine>            TTransform;
+    typedef std::set<StageListener*>             TListeners;  
+  
+  private:
     mylib::Array              *attr_;                                      // tile attribute database
     mylib::Indx_Type           leftmostAddressable_;                       // marks the first tile
     mylib::Indx_Type           cursor_;                                    // marks the current tile
@@ -35,8 +38,7 @@ namespace device {
     FieldOfViewGeometry        fov_;                                       // the geometry used to generate the tiling
     device::StageTravel        travel_;                                    // the travel used to generate the tiling
 
-  public:
-    typedef fetch::cfg::device::Stage_TilingMode Mode;    
+  public: 
 
     enum Flags
     { 
@@ -61,7 +63,7 @@ namespace device {
     inline const TTransform& latticeToStageTransform()                     {return latticeToStage_; }
     inline const FieldOfViewGeometry& fov()                                {return fov_;}
     inline const device::StageTravel& travel()                             {return travel_;}
-    inline size_t plane()                                                  {return (size_t)current_plane_offest_/sz_plane_nelem_; }
+    inline size_t plane()                                                  {return (size_t)(current_plane_offest_/sz_plane_nelem_); }
            size_t plane_mm();
 
     inline void addListener(StageListener *listener)                       {listeners_.insert(listener);}
