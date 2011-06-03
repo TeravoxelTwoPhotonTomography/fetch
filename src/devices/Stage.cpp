@@ -138,7 +138,12 @@ namespace device {
       ssid << _config->axis(i).stage()<<"\n";
     }
     C843JMP( C843_CST(handle_,ssid.str().c_str(),ssname.str().c_str()) );  //configure selected axes
-    C843JMP( C843_INI(handle_,""));                                        //init all configured axes   
+    C843JMP( C843_INI(handle_,""));                                        //init all configured axes
+
+    // TODO: should do some validation.  Make sure stage name is in database and 
+    //       make sure initialization happens properly.
+
+    // TODO: Referencing?
 
     return 0; // ok
 Error:
@@ -148,38 +153,69 @@ Error:
   // return 0 on success
   unsigned int C843Stage::on_detach()
   {
+    C843_CloseConnection(handle_); // always succeeds
+    handle_=-1;
     return 0; // ok
 Error:
     return 1; // fail
   }
 
   void C843Stage::getTravel(StageTravel* out)
-  {
+  { 
+    /* NOTES:
+       o  qTMN and q TMX I think
+       o  There's a section in the manual on travel range adjustment (section 5.4)
+       o  Assume that (xyz) <==> "123"
+       */
+    double t[3];
+    C843ERR( C843_qTMN(handle_,"123",t) );
+    out->x.min = t[0];
+    out->y.min = t[1];
+    out->z.min = t[2];
+
+    C843ERR( C843_qTMX(handle_,"123",t) );
+    out->x.max = t[0];
+    out->y.max = t[1];
+    out->z.max = t[2];
   }
 
   void C843Stage::getVelocity( float *vx, float *vy, float *vz )
-  {
-
+  { double t[3];
+    C843ERR( C843_qVEL(handle_,"123",t) );
+    *vx = t[0];
+    *vy = t[1];
+    *vz = t[2];
   }
 
   int C843Stage::setVelocity( float vx, float vy, float vz )
-  { return 0;
+  { const double t[3] = {vx,vy,vz};
+    C843ERR( C843_VEL(handle_,"123",t) );
+    return 0; // success
   }
 
-  void C843Stage::getPos( float *vx, float *vy, float *vz )
-  {
+  void C843Stage::getPos( float *x, float *y, float *z )
+  { double t[3];
+    C843ERR( C843_qPOS(handle_,"123",t) );
+    *x = t[0];
+    *y = t[1];
+    *z = t[2];
   }
 
-  int C843Stage::setPos( float vx, float vy, float vz )
-  { return 0;
+  int C843Stage::setPos( float x, float y, float z )
+  { double t[3] = {x,y,z};
+    C843ERR( C843_MOV(handle_,"123",t) );
+    // TODO
+    // o  do I need to block?   - see IsMoving/IsReferencing
+    // o  intelligent velocity?
+    // o  better error handling in case I hit limits
+    // o  what is behavior around limits?
+    return 0; // success
   }
 
      
   //
   // Simulated
   //
-
-
 
   SimulatedStage::SimulatedStage( Agent *agent )
     :StageBase<cfg::device::SimulatedStage>(agent)
