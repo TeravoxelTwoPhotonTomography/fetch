@@ -310,6 +310,7 @@ Finalize:
           return status;
 Error: 
           warning("Error occurred during ScanStack<%s> task.\r\n",TypeStr<TPixel>());
+          d->_scanner2d._daq.stopAO();
           d->_scanner2d._daq.stopCLK();
           goto Finalize;
         }

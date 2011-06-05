@@ -1,6 +1,6 @@
+varying out vec2 TexCoord0;
 void main(void)
 { 
-  gl_TexCoord[0] = gl_MultiTexCoord0;
-	gl_TexCoord[1] = gl_MultiTexCoord1;
+  TexCoord0 = gl_MultiTexCoord0.st;
   gl_Position = ftransform();
 }

@@ -256,6 +256,7 @@ Finalize:
         return status; // status == 0 implies success, error otherwise
 Error:
         warning("Error occurred during Video<%s> task.\r\n",TypeStr<TPixel>());
+        d->_daq.stopAO();
         d->_daq.stopCLK();
         goto Finalize;
       }

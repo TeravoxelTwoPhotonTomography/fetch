@@ -159,6 +159,7 @@ namespace fetch{
 	    MessageFormatID id;
 	    size_t          self_size;
 	    void           *data;
+      //Message        *next;
 	
 	    Message(void) : id(FORMAT_INVALID), self_size(sizeof(Message)), data(NULL) {}
 	    Message(MessageFormatID id, size_t self_size) : id(id), self_size(self_size), data(NULL) {}
@@ -178,8 +179,8 @@ namespace fetch{
 	              void   cast(void);  // Update the virtual table according to the type id.  
 	  private:
 	    template<class MT> void __cast(void) { MT eg; memcpy(this,&eg,sizeof(void*));} // overwrites the virtual table pointer with the example's pointer
-	};                                                                 
-	
+	};
+  
 	class FrmFmt : public Message
 	{ public:
 	    u32           width;

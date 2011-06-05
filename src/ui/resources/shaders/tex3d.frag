@@ -4,7 +4,7 @@ uniform float nchan;
 uniform float fill;
 uniform float gain;
 uniform float bias;
-
+uniform bool  show_cmap;
 
 /*
    Takes an image with color channels arrayed as succesive scalar planes and
@@ -16,12 +16,20 @@ uniform float bias;
 void main(void)
 {
   vec3 uvw = gl_TexCoord[0].xyz;
+  if(show_cmap)
+  { gl_FragColor = texture2D(cmap,uvw.st);     //directly output cmap; ignore image
+    return;
+  }
+		
+
   
   if( (nchan-1.0)<1e-2 ) // nchan==1
   { 
 		vec4 v = texture3D(plane,uvw);  //luma
-		vec4 c = texture2D(cmap,vec2(1.0,gain*v.x-bias));  //cmap (sample along diag)
-		//vec4 c = texture2D(cmap,uvw.st);
+    v.x = gain*v.x - bias;                     //adjust instensity
+		//vec4 c = texture2D(cmap,vec2(1.0,v.x));  //cmap (sample along vertical)
+		//vec4 c = texture2D(cmap,uvw.st);         //directly output cmap; ignore image
+    vec4 c = vec4(v.x,v.x,v.x,1.0);          //cmap black and white
 		gl_FragColor = vec4(c.r,c.g,c.b,1.0);
     return;
   } else

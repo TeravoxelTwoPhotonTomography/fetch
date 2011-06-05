@@ -13,9 +13,14 @@ namespace mylib {
 
 #include <util/util-gl.h>
 #include <assert.h>
+#include "config.h"
+
 
 #undef HERE
 #define HERE printf("[ImItem] At %s(%d)\n",__FILE__,__LINE__)
+
+#define CHKERR( expr )     {if(expr) {error("(%s,%d) Expression indicated failure:\r\n\t%s\r\n",__FILE__,__LINE__,#expr);}} 0 //( (expr), #expr, error  ))
+#define CHKJMP( expr,lbl )  goto_if(!(expr),lbl)
 
 namespace fetch {
 namespace ui {
@@ -26,11 +31,17 @@ using namespace units;
 
 ImItem::ImItem()
 : _fill(1.0),
-  _text("Nothing to see here :/"),
+_text("Nothing to see here :/"),
   _hQuadDisplayList(0),
 	_hTexture(0),
-  _pixel_size_meters(100e-9,200e-9),
-  _loaded(0)
+  _pixel_size_meters(100e-9,100e-9),
+  _loaded(0),
+  _show_mode(0),
+  _nchan(3),
+  _cmap_ctrl_count(2),
+  _cmap_ctrl_last_size(0),
+  _cmap_ctrl_s(NULL),
+  _cmap_ctrl_t(NULL)
 { 	
   _text.setBrush(Qt::yellow);
   _bbox_px = _text.boundingRect();
@@ -40,6 +51,9 @@ ImItem::ImItem()
 ImItem::~ImItem()
 {
 	glDeleteTextures(1, &_hTexture);
+  glDeleteTextures(1, &_hTexCmapCtrlS);
+  glDeleteTextures(1, &_hTexCmapCtrlT);  
+  glDeleteTextures(1, &_hTexCmap);
 }
 
 QRectF ImItem::boundingRect() const
@@ -54,7 +68,7 @@ QRectF ImItem::boundingRect() const
 	  t = ph * _bbox_px.top();
 	  l = pw * _bbox_px.left();
 	  r = pw * _bbox_px.right();
-    bbox = cvt<PIXEL_SCALE,M>( QRectF(QPointF(t,l),QPointF(b,r)) );
+    bbox = cvt<PIXEL_SCALE,M>( QRectF(l,t,r-l,b-t) ); // QPointF(t,l),QPointF(b,r)) );
     bbox.moveCenter(QPointF(0.0,0.0));
   } else
   { 
@@ -87,25 +101,44 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     checkGLError();
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D,_hTexCmapCtrlS); 
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D,_hTexCmapCtrlT);   
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		
 		glActiveTexture(GL_TEXTURE0); // Omitting this line will give a stack underflow
 		_shader.bind();
 		_shader.setUniformValue(_hShaderPlane,0);
 		_shader.setUniformValue(_hShaderCmap ,1);
+    _shader.setUniformValue("sctrl",2);
+    _shader.setUniformValue("tctrl",3);
     _shader.setUniformValue("nchan",(GLfloat)_nchan);
 		_shader.setUniformValue("fill",(GLfloat)_fill);
 		_shader.setUniformValue("gain",(GLfloat)1.0  );
-		_shader.setUniformValue("bias",(GLfloat)0.0  );
-    checkGLError();    
+		_shader.setUniformValue("bias",(GLfloat)0.0  );    
+    _shader.setUniformValue("show_mode",(GLint)(_show_mode%4));    
+    checkGLError();
+    glPushMatrix();
     glRotatef(_rotation_radians*180.0/M_PI,0.0,0.0,1.0);
 		glCallList(_hQuadDisplayList);
+    glPopMatrix();
     _shader.release();
     checkGLError();
 
-    glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_3D,0);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D,0);
+    glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_3D,0);
+    glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D,0);
+    glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D,0);
+    glActiveTexture(GL_TEXTURE3); glBindTexture(GL_TEXTURE_2D,0);
     glActiveTexture(GL_TEXTURE0);
     checkGLError();
 
@@ -120,7 +153,7 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     painter->endNativePainting();
      
     painter->setPen(Qt::white);    
-    painter->drawRect(_bbox_px);
+    painter->drawRect(boundingRect());
   } else
   {
     // for some reason I have to draw the rect.  Otherwise the text won't always show.
@@ -225,7 +258,13 @@ void ImItem::push(mylib::Array *plane)
 	w = plane->dims[0];
 	h = plane->dims[1];
   if(plane->ndims>2)
-    _nchan = plane->dims[2];
+  {
+    if(_nchan!=plane->dims[2])
+    {
+      _nchan = plane->dims[2];
+      _updateCmapCtrlPoints();
+    }
+  }
   else
     _nchan = 1;
 	
@@ -296,13 +335,12 @@ void ImItem::_setupShader()
 	SHADERASSERT( _shader.bind() );
 	_hShaderPlane = _shader.uniformLocation("plane");
 	_hShaderCmap  = _shader.uniformLocation("cmap");
-  _shader.setUniformValue("nchan",(GLfloat)1);
+  _shader.setUniformValue("nchan",(GLfloat)_nchan);
   _shader.release();
 
 	// Colormap
 	QImage cmap;
-  glActiveTexture(GL_TEXTURE1);
-	//glEnable(GL_TEXTURE_2D);
+  glActiveTexture(GL_TEXTURE1);	
   {
 	  assert(cmap.load(":/cmap/2","JPG"));
     //qDebug()<<cmap.format();
@@ -318,9 +356,71 @@ void ImItem::_setupShader()
     }
     glBindTexture(GL_TEXTURE_2D,0);
   }
-  //glDisable(GL_TEXTURE_2D);
+
   glActiveTexture(GL_TEXTURE0);
 	checkGLError();
+}
+
+void ImItem::_updateCmapCtrlPoints()
+{
+  assert(_nchan>1); // not sure this is necessary
+  assert(_cmap_ctrl_count>=2);
+
+  // adjust size if necessary
+  { size_t nelem = _cmap_ctrl_count*_nchan;
+    CHKJMP(_cmap_ctrl_s = (float*)realloc(_cmap_ctrl_s,sizeof(float)*nelem),MemoryError); // if NULL, realloc mallocs
+    CHKJMP(_cmap_ctrl_t = (float*)realloc(_cmap_ctrl_t,sizeof(float)*nelem),MemoryError);
+
+    // fill in uninitizalized data (if any)
+    if(nelem>_cmap_ctrl_last_size)
+    { float *s,*t;
+      int ir,ic,i;
+
+      // convention here is that channels are evenly spaced along s and intensity on t
+      for(int i=_cmap_ctrl_last_size;i<nelem;++i)
+      {
+        ir = i/_cmap_ctrl_count;
+        ic = i%_cmap_ctrl_count;
+        _cmap_ctrl_s[i] = ir/(_nchan-1.0f);
+        _cmap_ctrl_t[i] = ic/(_cmap_ctrl_count-1.0f);
+      }
+      _cmap_ctrl_last_size = nelem;
+    }
+  }
+
+  // upload to the gpu  
+  glActiveTexture(GL_TEXTURE2);
+  glBindTexture(GL_TEXTURE_2D,_hTexCmapCtrlS);
+  glTexImage2D(GL_TEXTURE_2D, 
+    0, 
+    GL_LUMINANCE, 
+    _cmap_ctrl_count, _nchan, 0, 
+    GL_LUMINANCE, GL_FLOAT,
+    _cmap_ctrl_s);
+  glBindTexture(GL_TEXTURE_2D,0);  
+	checkGLError();
+                             
+  glActiveTexture(GL_TEXTURE3);
+  glBindTexture(GL_TEXTURE_2D,_hTexCmapCtrlT);
+  glTexImage2D(GL_TEXTURE_2D, 
+    0, 
+    GL_LUMINANCE, 
+    _cmap_ctrl_count, _nchan, 0, 
+    GL_LUMINANCE, GL_FLOAT,
+    _cmap_ctrl_t);
+  glBindTexture(GL_TEXTURE_2D,0);  
+
+  
+  glActiveTexture(GL_TEXTURE0);
+	checkGLError();
+
+  return;
+MemoryError:
+  error("(%s:%d) Memory (re)allocation failed."ENDL,__FILE__,__LINE__);  
+}
+
+void ImItem::mouseDoubleClickEvent (QGraphicsSceneMouseEvent *e)
+{ _show_mode++;
 }
 
 void ImItem::_common_setup()
@@ -330,6 +430,9 @@ void ImItem::_common_setup()
     qDebug("glGenLists failed?  You probably forgot to setup an active opngl context.");
   _setupShader();
   glGenTextures(1, &_hTexture);
+  glGenTextures(1, &_hTexCmapCtrlS);
+  glGenTextures(1, &_hTexCmapCtrlT);
+  _updateCmapCtrlPoints();
 	checkGLError();
 }
 

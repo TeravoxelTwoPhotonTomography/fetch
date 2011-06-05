@@ -22,21 +22,22 @@ scanner3d {
     digitizer {
       kind: NIScope #Simulated #NIScope #Alazar
       niscope {
-        name: "Dev3"
+        name: "Dev2"
         sample_rate: 60000000
         record_size: 7196
         num_records: 256
         reference: 0
-        chan_names: "0"
-        nchannels: 1
+        chan_names: "0,1,2"
+        nchannels: 3								   # this should correspond to the number of data channels acquired.  Used to guess memory requirements.  If it's wrong that's ok.
         line_trigger_src: 1
         channel { name: "0" range: 0.2 enabled: true }
         channel { name: "1" range: 2.0 enabled: true }
+		channel { name: "2" range: 2.0 enabled: true }
       }
       alazar {
         system_id: 1
         sample_rate: SAMPLE_RATE_MAX
-        clock_edge: CLOCK_EDGE_RISING
+        clock_edge:  CLOCK_EDGE_RISING
         ext_clock_level: 0
         decimation: 1
       }
@@ -102,7 +103,7 @@ scanner3d {
   zref_um: 0
 }
 stage {
-	kind: C843   #C843 #Simulated
+	kind: Simulated   #C843 #Simulated
 	c843 {
 	  id: 1
 		axis {id: 1   stage: "M-511.DD_NEW"}
@@ -129,7 +130,7 @@ resonant_wrap         { turn_px: 0 }
 horizontal_downsample { ntimes : 4 }
 frame_average         { ntimes : 1 }
 file_series {
-  root:     "E:\\temp"
+  root:     "C:\\temp"
   date:     "unknown"
   seriesno:  0
   pathsep:  "\\"

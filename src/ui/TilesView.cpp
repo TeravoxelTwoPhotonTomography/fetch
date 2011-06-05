@@ -161,9 +161,8 @@ void TilesView::paint(QPainter                       *painter,
   
   glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 	draw_grid_();
-  glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-
-  draw_cursor_();  
+  draw_cursor_();
+  glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);  
 
   // paint a little square to indicate the paint
   glEnable(GL_SCISSOR_TEST);
