@@ -52,9 +52,10 @@ public slots:
   inline void autoscale0()                                                 {_item->autoscale(0);}
   inline void autoscale1()                                                 {_item->autoscale(1);}
   inline void autoscale2()                                                 {_item->autoscale(2);}
+  inline void fovGeometryChanged(float w_um,float h_um, float radians)     {_item->setFOVGeometry(w_um,h_um,radians);}
 
-  inline void setPixelSizeMicrons(double w, double h)                      {_item->setPixelSizeMicrons(w,h);}
-  inline void setPixelGeometry(double w, double h, double angle)           {_item->setPixelGeometry(w,h,angle);}
+  //inline void setPixelSizeMicrons(double w, double h)                      {_item->setPixelSizeMicrons(w,h);}
+  //inline void setPixelGeometry(double w, double h, double angle)           {_item->setPixelGeometry(w,h,angle);}
          void setDragModeToNoDrag();
          void setDragModeToSelect();
          void setDragModeToPan();

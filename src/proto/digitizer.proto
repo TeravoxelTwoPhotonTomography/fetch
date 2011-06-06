@@ -143,9 +143,9 @@ message Digitizer
 {
   enum DigitizerType
   { 
-    NIScope   = 0;
-    Alazar    = 1;
-    Simulated = 2;
+    Simulated = 0;
+    NIScope   = 1;
+    Alazar    = 2;
   }
   optional DigitizerType  kind =  1 [default = NIScope];
 

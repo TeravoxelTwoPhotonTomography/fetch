@@ -35,7 +35,8 @@ ImItem::ImItem()
 _text("Nothing to see here :/"),
   _hQuadDisplayList(0),
 	_hTexture(0),
-  _pixel_size_meters(100e-9,100e-9),
+  _bbox_um(),
+  //_pixel_size_meters(100e-9,100e-9),
   _loaded(0),
   _autoscale_next(false),
   _selected_channel(0),
@@ -47,7 +48,7 @@ _text("Nothing to see here :/"),
   _cmap_ctrl_t(NULL)
 { 	
   _text.setBrush(Qt::yellow);
-  _bbox_px = _text.boundingRect();
+  //_bbox_px = _text.boundingRect();
   _common_setup();
 }
 
@@ -63,16 +64,7 @@ QRectF ImItem::boundingRect() const
 {	QRectF bbox;
   if(_loaded)
   { 
-    float t,b,l,r;
-    float ph,pw;
-    ph = _pixel_size_meters.height();
-    pw = _pixel_size_meters.width();
-	  b = ph * _bbox_px.bottom();
-	  t = ph * _bbox_px.top();
-	  l = pw * _bbox_px.left();
-	  r = pw * _bbox_px.right();
-    bbox = cvt<PIXEL_SCALE,M>( QRectF(l,t,r-l,b-t) ); // QPointF(t,l),QPointF(b,r)) );
-    bbox.moveCenter(QPointF(0.0,0.0));
+    bbox = cvt<PIXEL_SCALE,UM>( _bbox_um );
   } else
   { 
     bbox = _text.boundingRect();
@@ -131,10 +123,10 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
 		_shader.setUniformValue("bias",(GLfloat)0.0  );    
     _shader.setUniformValue("show_mode",(GLint)(_show_mode%4));    
     checkGLError();
-    glPushMatrix();
-    glRotatef(_rotation_radians*180.0/M_PI,0.0,0.0,1.0);
+    //glPushMatrix();
+    //glRotatef(_rotation_radians*180.0/M_PI,0.0,0.0,1.0);
 		glCallList(_hQuadDisplayList);
-    glPopMatrix();
+    //glPopMatrix();
     _shader.release();
     checkGLError();
 
@@ -206,7 +198,7 @@ void ImItem::_loadTex(mylib::Array *im)
     GLuint gltype = typeMapMylibToGLType(&im);
     //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	  glTexImage3D(GL_TEXTURE_3D, 0, GL_LUMINANCE,
-							   _bbox_px.width(), _bbox_px.height(), _nchan, 0,
+							   im->dims[0], im->dims[1], _nchan, 0,
 							   GL_LUMINANCE,
                  gltype,
 							   im->data);  
@@ -223,14 +215,10 @@ void ImItem::updateDisplayLists()
 	float t,b,l,r;//,cx,cy;
   float ph,pw;
 	checkGLError();
-  ph = _pixel_size_meters.height();
-  pw = _pixel_size_meters.width();
-	b = cvt<PIXEL_SCALE,M>(ph * _bbox_px.bottom());
-	t = cvt<PIXEL_SCALE,M>(ph * _bbox_px.top());
-	l = cvt<PIXEL_SCALE,M>(pw * _bbox_px.left());
-	r = cvt<PIXEL_SCALE,M>(pw * _bbox_px.right());
-  //cx = cvt<PIXEL_SCALE,M>(pw * _bbox_px.center().x());
-  //cy = cvt<PIXEL_SCALE,M>(pw * _bbox_px.center().y());
+  b = cvt<PIXEL_SCALE,UM>(_bbox_um.bottom());
+	t = cvt<PIXEL_SCALE,UM>(_bbox_um.top());
+	l = cvt<PIXEL_SCALE,UM>(_bbox_um.left());
+	r = cvt<PIXEL_SCALE,UM>(_bbox_um.right());
 	
 	glNewList(_hQuadDisplayList, GL_COMPILE);
 	glBegin(GL_QUADS);
@@ -272,7 +260,7 @@ void ImItem::push(mylib::Array *plane)
     _nchan = 1;
 
   if(_autoscale_next)
-  { _autoscale(plane,_selected_channel,0.01);
+  { _autoscale(plane,_selected_channel,0.01f);
     _autoscale_next = false;
   }
 	
@@ -280,52 +268,31 @@ void ImItem::push(mylib::Array *plane)
 	_fill = 10.0/_nchan;
 	_fill = (_fill>1.0)?1.0:_fill;
 	
-  { QRectF b = QRectF(-w/2.0,-h/2.0,w,h);  
-    if(b!=_bbox_px)
-      prepareGeometryChange();
-  	_bbox_px = b;
-  }
 	_loadTex(plane);
-	updateDisplayLists();
 	checkGLError();
-}
-
-void ImItem::setPixelSizeMicrons(double w_um, double h_um)
-{ QSizeF t;
-  t.setHeight(h_um*1e-6);
-  t.setWidth(w_um*1e-6);
-  if(t!=_pixel_size_meters)
-  {
-    prepareGeometryChange();
-    _pixel_size_meters = t;
-    updateDisplayLists();
-  }
 }
 
 #define DBL_EQ(a,b) (abs((b)-(a))<1e-6)
 
 void ImItem::setRotation( double radians )
 { if(!DBL_EQ(radians,_rotation_radians))
-  {
-    prepareGeometryChange();
+  {    
     _rotation_radians = radians;
-    updateDisplayLists();
+    QGraphicsItem::setRotation(radians*180.0/M_PI);
   }
 }
-        
-void ImItem::setPixelGeometry( double w_um, double h_um, double radians )
-{ QSizeF t;
-  t.setHeight(h_um*1e-6);
-  t.setWidth(w_um*1e-6);
-  if(  (t!=_pixel_size_meters) ||  !DBL_EQ(radians,_rotation_radians)  )
-  {
-    prepareGeometryChange();
-    _pixel_size_meters = t;
-    _rotation_radians = radians;
-    updateDisplayLists();
-  }
 
+void ImItem::setFOVGeometry( float w_um, float h_um, float rotation_radians )
+{
+  prepareGeometryChange();
+  setRotation(rotation_radians);
+  
+  _bbox_um.setHeight(h_um);
+  _bbox_um.setWidth(w_um);
+  _bbox_um.moveCenter(QPointF(0.0f,0.0f));
+  updateDisplayLists();
 }
+
 
 #include <QtDebug>
 #define SHADERASSERT(expr) if(!(expr)) qCritical()<<_shader.log()

@@ -264,6 +264,11 @@ Error:
   void SimulatedStage::getTravel( StageTravel* out )
   { 
     Config c = get_config();
+    if(c.axis_size()<3)
+    {
+      memset(out,0,sizeof(StageTravel));
+      return;
+    }
 
     out->x.min = c.axis(0).min_mm();
     out->x.max = c.axis(0).max_mm();
@@ -413,6 +418,13 @@ Error:
   { TListeners::iterator i;
     for(i=_listeners.begin();i!=_listeners.end();++i)
       (*i)->moved();
+  }
+                   
+  void Stage::_notifyFOVGeometryChanged()
+  {
+    TListeners::iterator i;
+    for(i=_listeners.begin();i!=_listeners.end();++i)
+      (*i)->fov_changed(_fov);
   }
 
   unsigned int Stage::on_attach()

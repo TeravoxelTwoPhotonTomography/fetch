@@ -119,8 +119,9 @@ TEST(Integration,Alazar)
 #endif
 
 TEST(Integration,C843StageController)
-{ int id;
+{ 
 #if HAVE_C843
+  int id;
   EXPECT_GE(-1, id=C843_Connect(1));
   if(id>-1)
     C843_CloseConnection(id);

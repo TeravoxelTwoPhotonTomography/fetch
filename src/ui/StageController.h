@@ -20,11 +20,13 @@ namespace ui {
     void tile_done( size_t index, const Vector3f& pos,uint32_t sts )       {emit sig_tile_done(index,sts);}
     void tiling_changed( device::StageTiling *tiling )                     {emit sig_tiling_changed(tiling);}
     void tile_next( size_t index, const Vector3f& pos )                    {emit sig_tile_next(index);}
+    void fov_changed(const device::FieldOfViewGeometry *fov)               {emit sig_fov_changed(fov->field_size_um_[0],fov->field_size_um_[1],fov->rotation_radians_);}
 
   signals:
     void sig_tile_done( unsigned index, unsigned int sts );
     void sig_tiling_changed( device::StageTiling *tiling );
     void sig_tile_next( unsigned index );
+    void sig_fov_changed(float w_um, float h_um, float rotation_radians);
   };
 
   class TilingController:public QObject
@@ -58,13 +60,14 @@ namespace ui {
   public slots:
     void update(device::StageTiling *tiling)                               {tiling_=tiling; markAddressable(); emit changed(); emit show(tiling_!=NULL);}
     void stageAttached()                                                   {emit show(true);}
-    void stageDetached()                                                   {emit show(false);}
+    void stageDetached()                                                   {emit show(false);}    
 
   signals:
     void show(bool tf);
     void changed();
     void tileDone(unsigned itile,unsigned int attr);
     void nextTileRequest(unsigned itile);                                  // really should be nextTileRequested
+    void fovGeometryChanged(float w_um, float h_um, float rotation_radians);
     // other ideas: imaging started, move start, move end
 
   private:

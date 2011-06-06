@@ -20,8 +20,9 @@ message SimulatedDAQ
 message DAQ
 { 
   enum DAQKind
-  { NIDAQ = 0;
-    Simulated = 1;
+  { 
+    Simulated = 0;
+    NIDAQ     = 1;    
   }
   optional DAQKind                kind      = 1 [default=NIDAQ];
   optional NationalInstrumentsDAQ nidaq     = 2;

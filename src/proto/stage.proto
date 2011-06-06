@@ -27,8 +27,8 @@ message Stage
 {
   enum StageType
   {
-    C843      = 0;
-    Simulated = 1;
+    Simulated = 0;
+    C843      = 1;
   }    
   enum TilingMode
   { PixelAligned = 0;

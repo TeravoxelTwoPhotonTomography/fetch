@@ -205,7 +205,7 @@
     }
 
     void Microscope::_set_config( Config IN *cfg )
-    {
+    {      
       scanner._set_config(cfg->mutable_scanner3d());
       pixel_averager._set_config(cfg->mutable_horizontal_downsample());
       frame_averager._set_config(cfg->mutable_frame_average());
@@ -223,6 +223,7 @@
     {
       scanner.onUpdate();
       fov_.update(_config->fov());
+      stage_.setFOV(&fov_);
       //stage_.onUpdate(); // only update the stage fov parameter to recompute the tiling.  probably, want to do that with another, more explicit, mechanism
     }
 
@@ -275,8 +276,12 @@
     // FileSeries
     ///////////////////////////////////////////////////////////////////////
     
+#define VALIDATE if(!_is_valid) {warning("(%s:%d) - Invalid location for file series."ENDL,__FILE__,__LINE__);}
+
+    
     FileSeries& FileSeries::inc( void )
     {
+      VALIDATE;
       int n = _desc->seriesno();   
       
       // reset series number when series path changes
@@ -289,11 +294,13 @@
       { _desc->set_seriesno(n+1);
       }
       return *this;
+
     }
 
     const std::string FileSeries::getFullPath(const std::string& prefix, const std::string& ext)
     {
-      char strSeriesNo[32];
+      VALIDATE;
+      char strSeriesNo[32];      
       renderSeriesNo(strSeriesNo,sizeof(strSeriesNo));
       std::string seriespath = _desc->root() + _desc->pathsep() + _desc->date();
 
@@ -305,7 +312,7 @@
         + _desc->pathsep()
         + strSeriesNo
         + _desc->pathsep()
-        + strSeriesNo + part2 + ext; 
+        + strSeriesNo + part2 + ext;
     }
 
     void FileSeries::updateDate( void )
@@ -343,6 +350,7 @@
 
     void FileSeries::tryCreateDirectory( LPCTSTR path, const char* description, LPCTSTR root )
     {
+      _is_valid = true;
       if(!CreateDirectory(path,NULL/*default security*/))
       {
         switch(GetLastError())
@@ -350,9 +358,11 @@
         case ERROR_ALREADY_EXISTS: /*ignore*/ 
           break;
         case ERROR_PATH_NOT_FOUND:
-          error("FileSeries: Could not find %s:\r\n\t%s\r\n",description,root);
+          error("(%s:%d) FileSeries: Could not find %s:\r\n\t%s\r\n",__FILE__,__LINE__,description,root); // [ ] TODO chage this to a warning
+          _is_valid = false;
           break;
         default:
+          _is_valid = false;
           error("Unexpected error returned after call to CreateDirectory()\r\n");
         }
       }

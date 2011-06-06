@@ -22,8 +22,8 @@ message ZPiezo
 {
   enum ZPiezoType
   {
-    NIDAQ     = 0;
-    Simulated = 1;
+    Simulated = 0;
+    NIDAQ     = 1;
   }
   optional ZPiezoType      kind = 1 [default=NIDAQ];
   optional NIDAQZPiezo     nidaq = 2;

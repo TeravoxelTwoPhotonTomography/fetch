@@ -15,8 +15,8 @@ message Shutter
 {
   enum ShutterType
   {
-    NIDAQ     = 0;
-    Simulated = 1;
+    Simulated = 0;
+    NIDAQ     = 1;
   }
   optional ShutterType  kind  = 1 [default=NIDAQ];
   optional NIDAQShutter nidaq = 2;

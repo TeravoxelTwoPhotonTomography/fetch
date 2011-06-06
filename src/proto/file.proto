@@ -21,7 +21,7 @@ message File
 // created, but the <root> should not be created if not found.
 message FileSeries
 { 
-  optional string root     = 1 [default="data"];
+  optional string root     = 1 [default="C:\\temp"];
   optional string date     = 2 [default="unknown"];
   optional int32  seriesno = 3 [default=0]; 
   optional string pathsep  = 4 [default="\\"];

@@ -18,8 +18,8 @@ message LinearScanMirror
 { 
   enum LinearScanMirrorType
   {
-    NIDAQ = 0;
-    Simulated = 1;
+    Simulated = 0;
+    NIDAQ     = 1;
   }
 
   optional LinearScanMirrorType       kind      = 1 [default=NIDAQ];

@@ -39,6 +39,10 @@ fetch::ui::TilingController::TilingController( device::Stage *stage, device::Sta
   connect(
     &listener_,SIGNAL(sig_tile_next(unsigned)),
     this,      SIGNAL(nextTileRequest(unsigned)), // Not connected to anything right now
+    Qt::QueuedConnection);       
+  connect(
+    &listener_,SIGNAL(sig_fov_changed(float,float,float)),
+    this,      SIGNAL(fovGeometryChanged(float,float,float)),
     Qt::QueuedConnection);
 }
 

@@ -70,8 +70,7 @@ void Init(void)
   Reporting_Setup_Log_To_VSDebugger_Console();
   Reporting_Setup_Log_To_Filename("lastrun.log");
   Reporting_Setup_Log_To_Qt();
-
-  //Microscope devices
+  
   QFile cfgfile(":/config/microscope");
   Guarded_Assert(cfgfile.open(QIODevice::ReadOnly));
   Guarded_Assert(cfgfile.isReadable());
@@ -81,11 +80,13 @@ void Init(void)
   MyErrorCollector e;
   parser.RecordErrorsTo(&e);
   Guarded_Assert(parser.ParseFromString(cfgfile.readAll().constData(),&g_config));
+
   gp_microscope = new fetch::device::Microscope(&g_config);
+}
 
-
-  // Connect video display
-  // TODO
+void LoadDefaultConfig()
+{ 
+  
 }
 
 int main(int argc, char *argv[])
@@ -97,6 +98,7 @@ int main(int argc, char *argv[])
   QApplication app(argc,argv);
   Init();
   fetch::ui::MainWindow mainwindow(gp_microscope);
+  gp_microscope->set_config(g_config); // reload so gui gets notified - have to do this mostly for stage listeners ...
   mainwindow.show();
 
   unsigned int eflag = app.exec();

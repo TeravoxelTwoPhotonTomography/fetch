@@ -125,7 +125,7 @@ namespace device {
       Stage(Agent *agent, Config *cfg);
       
       void setKind(Config::StageType kind);
-      void setFOV(FieldOfViewGeometry *fov)                                 {_fov=fov;}
+      void setFOV(FieldOfViewGeometry *fov)                                 {_fov=fov; _notifyFOVGeometryChanged();}
 
       virtual unsigned int on_attach();
       virtual unsigned int on_detach();
@@ -153,6 +153,7 @@ namespace device {
       void    _createTiling();       //only call when disarmed
       void    _notifyTilingChanged();
       void    _notifyMoved();
+      void    _notifyFOVGeometryChanged();
   };
 
   //////////////////////////////////////////////////////////////////////
@@ -189,6 +190,7 @@ namespace device {
     virtual void tile_done(size_t index, const Vector3f& pos,uint32_t sts) {}// the specified tile was marked as done                                                      
     virtual void tile_next(size_t index, const Vector3f& pos) {}             // the next tile was requested (stage not necessarily moved yet)
 
+    virtual void fov_changed(const FieldOfViewGeometry *fov) {}
     virtual void moved() {}
   };
 

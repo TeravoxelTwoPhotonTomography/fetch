@@ -96,6 +96,8 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
           this,SLOT(updatePos()));
   connect(stageController,SIGNAL(moved(QPointF)),
           this,SLOT(updatePos(QPointF)));
+  connect(stageController->tiling(),SIGNAL(fovGeometryChanged(float,float,float)),
+          this,SLOT(fovGeometryChanged(float,float,float)));
 
 	_item = new ImItem;
 	_scene.addItem(_item);
@@ -227,10 +229,12 @@ Figure::readSettings()
     qDebug() << "\t" << k;
 #endif 
   settings.beginGroup("voxel");
+  /*
   double w  = settings.value("width_um",0.1).toDouble(),
          h  = settings.value("height_um",0.1).toDouble(),
          th = settings.value("rotation_rad",0.0).toDouble();
   _item->setPixelGeometry(w,h,th);
+  */
   settings.endGroup();
 }
 
@@ -238,11 +242,13 @@ void
 Figure::writeSettings()
 { QSettings settings;
   settings.beginGroup("voxel");
+  /*
   QSizeF px = _item->pixelSizeMeters();
   double th = _item->rotationRadians();
   settings.setValue("width_um",px.width()*1e6);
   settings.setValue("height_um",px.height()*1e6);
   settings.setValue("rotation_rad",th);
+  */
   settings.endGroup();
   settings.sync();
 }

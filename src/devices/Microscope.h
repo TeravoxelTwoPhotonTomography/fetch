@@ -48,12 +48,13 @@ namespace fetch
     class FileSeries
     {
     public:
-      FileSeries() :_desc(&__default_desc), _lastpath("lastpath") {}
-      FileSeries(cfg::FileSeries *desc) :_desc(desc), _lastpath("lastpath") {Guarded_Assert(_desc!=NULL);}
+      FileSeries() :_desc(&__default_desc), _lastpath("lastpath"), _is_valid(false) {}
+      FileSeries(cfg::FileSeries *desc) :_desc(desc), _lastpath("lastpath"), _is_valid(false) {Guarded_Assert(_desc!=NULL);}
 
       FileSeries& inc(void);
       const std::string getFullPath(const std::string& prefix, const std::string& ext);
       void ensurePathExists();
+      inline bool is_valid()                                              {return _is_valid;};
 
     private:
       void renderSeriesNo( char * strSeriesNo, int maxbytes );
@@ -61,6 +62,7 @@ namespace fetch
       void updateDate(void);
       std::string _lastpath;
       cfg::FileSeries __default_desc;
+      bool _is_valid;
 
     public:
       cfg::FileSeries *_desc;
