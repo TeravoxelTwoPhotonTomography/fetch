@@ -23,7 +23,7 @@ public:
   virtual ~MainWindow();
 
 protected:
-  void closeEvent(QCloseEvent *event);
+  void closeEvent(QCloseEvent *event);  
 
 public: // semi-private
   void createStateMachines();
@@ -65,6 +65,10 @@ public: // semi-private
   ZPiezoMaxController*        _zpiezo_max_control;
   ZPiezoMinController*        _zpiezo_min_control;
   ZPiezoStepController*       _zpiezo_step_control;
+
+protected slots:
+    void openMicroscopeConfig();
+    void saveMicroscopeConfig();
 
 private:  
   void load_settings_();

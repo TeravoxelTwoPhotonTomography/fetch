@@ -8,6 +8,8 @@
 #include "StackAcquisitionDockWidget.h"
 #include "MicroscopeStateDockWidget.h"
 #include "StageController.h"
+#include <google/protobuf/text_format.h>
+#include <google/protobuf/io/tokenizer.h>
 
 fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   :_dc(dc)
@@ -92,14 +94,16 @@ void fetch::ui::MainWindow::createActions()
   {
     openAct = new QAction(QIcon(":/icons/open"),"&Open",this);
     openAct->setShortcut(QKeySequence::Open);
-    openAct->setStatusTip("Open a data source.");
+    openAct->setStatusTip("Open a configuration file.");
+    connect(openAct,SIGNAL(triggered()),this,SLOT(openMicroscopeConfig()));
     // TODO: connect to something
   }
 
   {
     saveToAct = new QAction(QIcon(":/icons/saveto"),"&Save To",this);
     saveToAct->setShortcut(QKeySequence::Save);
-    saveToAct->setStatusTip("Set the data destination.");
+    saveToAct->setStatusTip("Save the configuration to a file."); 
+    connect(saveToAct,SIGNAL(triggered()),this,SLOT(saveMicroscopeConfig()));
     // TODO:  connect to something
   }
 }
@@ -193,4 +197,88 @@ void fetch::ui::MainWindow::save_settings_()
   QSettings settings;
   settings.setValue("MainWindow/geometry",saveGeometry());
   settings.setValue("MainWindow/state",saveState(version__));
+}
+
+#define CHKJMP(expr,lbl) if(!(expr)) goto lbl;
+class MainWindowProtobufErrorCollector:public google::protobuf::io::ErrorCollector
+{ public:
+ 
+  virtual void AddError(int line, int col, const std::string & message)    {warning("Protobuf: Error   - at line %d(%d):"ENDL"\t%s"ENDL,line,col,message.c_str());}
+  virtual void AddWarning(int line, int col, const std::string & message)  {warning("Protobuf: Warning - at line %d(%d):"ENDL"\t%s"ENDL,line,col,message.c_str());}
+};
+
+void fetch::ui::MainWindow::openMicroscopeConfig()
+{
+  const QString d("MainWindow/LastConfigDirectory");
+  QSettings settings;
+  QString filename = QFileDialog::getOpenFileName(this,
+    tr("Load configuration"),
+    settings.value(d,QDir::currentPath()).toString(),
+    tr("Microscope Config (*.microscope);;Text Files (*.txt);;Any (*.*)"));
+  if(filename.isEmpty())
+    return;
+
+  QFile cfgfile(filename);
+  CHKJMP(cfgfile.open(QIODevice::ReadOnly), ErrorFileAccess);
+  CHKJMP(cfgfile.isReadable()             , ErrorFileAccess);
+
+  // store last good location back to settings
+  { QFileInfo info(filename);
+    settings.setValue(d,info.absoluteFilePath());
+  }
+
+  //load and parse
+  { google::protobuf::TextFormat::Parser parser;
+    MainWindowProtobufErrorCollector e;
+    fetch::cfg::device::Microscope cfg;
+    parser.RecordErrorsTo(&e);
+  
+    CHKJMP(parser.ParseFromString(cfgfile.readAll().constData(),&cfg),ParseError);
+
+    // commit
+    _dc->set_config(cfg);  
+  }
+
+  return;
+ErrorFileAccess:
+  warning("(%d:%s) MainWindow - could not open file for reading."ENDL,__FILE__,__LINE__);
+  return;
+ParseError:
+  warning("(%d:%s) MainWindow - could not parse config file."ENDL,__FILE__,__LINE__);
+  return;
+}
+
+void fetch::ui::MainWindow::saveMicroscopeConfig()
+{
+  const QString d("MainWindow/LastConfigDirectory");
+  QSettings settings;
+  QString filename = QFileDialog::getSaveFileName(this,
+    tr("Save configuration"),
+    settings.value(d,QDir::currentPath()).toString(),
+    tr("Microscope Config (*.microscope);;Text Files (*.txt);;Any (*.*)"));
+  if(filename.isEmpty())
+    return;
+
+
+  {    
+    QFile file(filename);
+    CHKJMP(file.open(QIODevice::WriteOnly|QIODevice::Truncate),ErrorFileAccess);
+    QTextStream fout(&file);
+
+    std::string s;
+    fetch::cfg::device::Microscope c = _dc->get_config();
+    google::protobuf::TextFormat::PrintToString(c,&s);
+    fout << s.c_str();
+  //get_config().SerializePartialToOstream(&fout);
+  }
+
+  // store last good location back to settings
+  { QFileInfo info(filename);
+    settings.setValue(d,info.absoluteFilePath());  
+  }
+
+  return;
+ErrorFileAccess:
+  warning("(%d:%s) MainWindow - could not open file for writing."ENDL,__FILE__,__LINE__);
+  return;
 }
