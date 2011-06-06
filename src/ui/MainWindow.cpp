@@ -237,7 +237,7 @@ void fetch::ui::MainWindow::openMicroscopeConfig()
 
     // commit
     _dc->set_config(cfg);  
-  }
+  }  
 
   return;
 ErrorFileAccess:
@@ -275,7 +275,11 @@ void fetch::ui::MainWindow::saveMicroscopeConfig()
   // store last good location back to settings
   { QFileInfo info(filename);
     settings.setValue(d,info.absoluteFilePath());  
+    settings.setValue("Microscope/Config/DefaultFilename",info.absoluteFilePath());
   }
+
+  // store as default config to be used next time
+  
 
   return;
 ErrorFileAccess:

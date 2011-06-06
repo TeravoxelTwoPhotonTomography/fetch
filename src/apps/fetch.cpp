@@ -70,16 +70,32 @@ void Init(void)
   Reporting_Setup_Log_To_VSDebugger_Console();
   Reporting_Setup_Log_To_Filename("lastrun.log");
   Reporting_Setup_Log_To_Qt();
-  
-  QFile cfgfile(":/config/microscope");
-  Guarded_Assert(cfgfile.open(QIODevice::ReadOnly));
-  Guarded_Assert(cfgfile.isReadable());
-  //cfgfile.setTextModeEnabled(true);
-  
+ 
   google::protobuf::TextFormat::Parser parser;
   MyErrorCollector e;
   parser.RecordErrorsTo(&e);
-  Guarded_Assert(parser.ParseFromString(cfgfile.readAll().constData(),&g_config));
+  QSettings settings;
+  { QFile cfgfile(settings.value("Microscope/Config/DefaultFilename",":/config/microscope").toString());
+    
+    if(  cfgfile.open(QIODevice::ReadOnly) 
+      && cfgfile.isReadable() 
+      && parser.ParseFromString(cfgfile.readAll().constData(),&g_config))
+    {
+      qDebug() << "Config file loaded from " << cfgfile.fileName();
+      return;
+    }      
+  }
+  
+  {
+    //try again from default
+    QFile cfgfile(":/config/microscope");
+    Guarded_Assert(cfgfile.open(QIODevice::ReadOnly));
+    Guarded_Assert(cfgfile.isReadable());
+    Guarded_Assert(parser.ParseFromString(cfgfile.readAll().constData(),&g_config));
+    qDebug() << "Config file loaded from " << cfgfile.fileName();
+    settings.setValue("Microscope/Config/DefaultFilename",":/config/microscope");
+  }
+  //cfgfile.setTextModeEnabled(true);
 
   gp_microscope = new fetch::device::Microscope(&g_config);
 }
