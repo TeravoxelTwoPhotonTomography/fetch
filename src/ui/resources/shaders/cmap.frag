@@ -28,16 +28,16 @@ void main(void)
   switch(show_mode)
   { 
   case 1:
-    { FragColor = texture2D(cmap,uvw.st);     //directly output cmap; ignore image
+    { FragColor = texture(cmap,uvw.st);     //directly output cmap; ignore image
       return;
     }
   case 2:
-    { vec4 c = texture2D(sctrl,uvw.st);
+    { vec4 c = texture(sctrl,uvw.st);
       FragColor = vec4(c.x,c.x,c.x,1.0);
     }
     return;
   case 3:
-    { vec4 c = texture2D(tctrl,uvw.st);
+    { vec4 c = texture(tctrl,uvw.st);
       FragColor = vec4(c.x,c.x,c.x,1.0);
     }
     return;
@@ -48,7 +48,7 @@ void main(void)
       v.x       = gain*v.x - bias;                //adjust instensity
       v.x       = texture(tctrl,vec2(v.x,0.0)).x; //use the lookup
       
-      //vec4 c  = texture2D(cmap,vec2(1.0,v.x));  //cmap (sample along vertical)
+      //vec4 c  = texture(cmap,vec2(1.0,v.x));  //cmap (sample along vertical)
       vec4 c    = vec4(v.x,v.x,v.x,1.0);          //cmap black and white
       FragColor = vec4(c.r,c.g,c.b,1.0);
       return;
@@ -62,10 +62,10 @@ void main(void)
         uvw.z = a*i;              // addresses the channel
         v = texture(plane,uvw); // luma
         { vec2 mu = vec2(v.x,uvw.z);
-          p.x = texture2D(sctrl,mu).x;
-          p.y = texture2D(tctrl,mu).x;
+          p.x = texture(sctrl,mu).x;
+          p.y = texture(tctrl,mu).x;
         }
-        c += fill*texture2D(cmap,p);
+        c += fill*texture(cmap,p);
       }
       c.w=1.0;
       FragColor = c;
