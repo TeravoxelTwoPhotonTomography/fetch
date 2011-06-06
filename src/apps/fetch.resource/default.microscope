@@ -27,8 +27,8 @@ scanner3d {
         record_size: 7196
         num_records: 256
         reference: 0
-        chan_names: "0,1,2"
-        nchannels: 3								   # this should correspond to the number of data channels acquired.  Used to guess memory requirements.  If it's wrong that's ok.
+        chan_names: "0"
+        nchannels: 1								   # this should correspond to the number of data channels acquired.  Used to guess memory requirements.  If it's wrong that's ok.
         line_trigger_src: 1
         channel { name: "0" range: 0.2 enabled: true }
         channel { name: "1" range: 2.0 enabled: true }

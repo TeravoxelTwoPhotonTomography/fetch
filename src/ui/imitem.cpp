@@ -9,6 +9,7 @@
 namespace mylib {
 #include <array.h>
 #include <image.h>
+#include <histogram.h>
 }
 
 #include <util/util-gl.h>
@@ -36,6 +37,8 @@ _text("Nothing to see here :/"),
 	_hTexture(0),
   _pixel_size_meters(100e-9,100e-9),
   _loaded(0),
+  _autoscale_next(false),
+  _selected_channel(0),
   _show_mode(0),
   _nchan(3),
   _cmap_ctrl_count(2),
@@ -267,6 +270,11 @@ void ImItem::push(mylib::Array *plane)
   }
   else
     _nchan = 1;
+
+  if(_autoscale_next)
+  { _autoscale(plane,_selected_channel,0.01);
+    _autoscale_next = false;
+  }
 	
 	//Guess the opacity of different planes
 	_fill = 10.0/_nchan;
@@ -363,7 +371,7 @@ void ImItem::_setupShader()
 
 void ImItem::_updateCmapCtrlPoints()
 {
-  assert(_nchan>1); // not sure this is necessary
+  //if(_nchan<=1) return;
   assert(_cmap_ctrl_count>=2);
 
   // adjust size if necessary
@@ -377,15 +385,15 @@ void ImItem::_updateCmapCtrlPoints()
       int ir,ic,i;
 
       // convention here is that channels are evenly spaced along s and intensity on t
-      for(int i=_cmap_ctrl_last_size;i<nelem;++i)
+      for(GLuint i=_cmap_ctrl_last_size;i<nelem;++i)
       {
         ir = i/_cmap_ctrl_count;
         ic = i%_cmap_ctrl_count;
         _cmap_ctrl_s[i] = ir/(_nchan-1.0f);
         _cmap_ctrl_t[i] = ic/(_cmap_ctrl_count-1.0f);
-      }
-      _cmap_ctrl_last_size = nelem;
+      }      
     }
+    _cmap_ctrl_last_size = nelem;
   }
 
   // upload to the gpu  
@@ -409,7 +417,6 @@ void ImItem::_updateCmapCtrlPoints()
     GL_LUMINANCE, GL_FLOAT,
     _cmap_ctrl_t);
   glBindTexture(GL_TEXTURE_2D,0);  
-
   
   glActiveTexture(GL_TEXTURE0);
 	checkGLError();
@@ -417,6 +424,35 @@ void ImItem::_updateCmapCtrlPoints()
   return;
 MemoryError:
   error("(%s:%d) Memory (re)allocation failed."ENDL,__FILE__,__LINE__);  
+}
+
+void ImItem::_autoscale(mylib::Array *data, int ichannel, float percent)
+{ mylib::Array c = *data;
+  if(ichannel>=data->dims[2])
+  { warning("(%s:%d) Autoscale: selected channel out of bounds."ENDL,__FILE__,__LINE__);
+    return;
+  }
+  mylib::Get_Array_Plane(&c,(mylib::Dimn_Type)ichannel);
+  mylib::Histogram *h = mylib::Histogram_Array(&c,0,mylib::VALU(0),mylib::VALU(0));
+  mylib::Value
+    vmx = mylib::Percentile2Value(h,1.0-percent),
+    vmn = mylib::Percentile2Value(h,    percent);
+  float max,min,t0,t1;
+  if(data->type<=mylib::UINT64_TYPE)
+  { max = vmx.uval;
+    min = vmn.uval;
+  } else if(data->type<=mylib::INT64_TYPE)
+  { max = vmx.ival;
+    min = vmn.ival;
+  } else
+  { max = vmx.rval;
+    min = vmn.rval;
+  }
+  t0 = min/(min-max);
+  t1 = (1.0f-min)/(max-min);
+
+  _cmap_ctrl_t[_selected_channel*_cmap_ctrl_count    ] = t0;
+  _cmap_ctrl_t[_selected_channel*_cmap_ctrl_count + 1] = t1;
 }
 
 void ImItem::mouseDoubleClickEvent (QGraphicsSceneMouseEvent *e)

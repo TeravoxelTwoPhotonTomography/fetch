@@ -23,6 +23,8 @@ public:
 	void push(mylib::Array *plane);
   void flip(int isupdate=1);
 
+  void autoscale(int chan)                                                {_selected_channel=chan; _autoscale_next=true;}
+
 	inline const QRectF& bbox_px() {return _bbox_px;}
 
          void   setPixelSizeMicrons(double width, double height);
@@ -39,6 +41,7 @@ protected:
 	void _loadTex(mylib::Array *im);
   void _setupShader();
   void _updateCmapCtrlPoints();
+  void _autoscale(mylib::Array *data, int ichannel, float percent);
 
   void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *e);
 
@@ -66,7 +69,9 @@ protected:
   QSizeF _pixel_size_meters;
   double _rotation_radians;
 
-  int _loaded;
+  int  _loaded;
+  bool _autoscale_next;
+  int  _selected_channel;
 };
 
 

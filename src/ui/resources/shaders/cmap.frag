@@ -44,10 +44,12 @@ void main(void)
   default:
     if( (nchan-1.0)<1e-2 ) // nchan==1
     { 
-      vec4 v = texture(plane,uvw);  //luma
-      v.x = gain*v.x - bias;                     //adjust instensity
-      //vec4 c = texture2D(cmap,vec2(1.0,v.x));  //cmap (sample along vertical)
-      vec4 c = vec4(v.x,v.x,v.x,1.0);          //cmap black and white
+      vec4 v    = texture(plane,uvw);             //luma
+      v.x       = gain*v.x - bias;                //adjust instensity
+      v.x       = texture(tctrl,vec2(v.x,0.0)).x; //use the lookup
+      
+      //vec4 c  = texture2D(cmap,vec2(1.0,v.x));  //cmap (sample along vertical)
+      vec4 c    = vec4(v.x,v.x,v.x,1.0);          //cmap black and white
       FragColor = vec4(c.r,c.g,c.b,1.0);
       return;
     } else

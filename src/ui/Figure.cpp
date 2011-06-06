@@ -117,7 +117,8 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
   readSettings();
   updatePos();
   createActions();
-  createMenus();
+
+  setContextMenuPolicy(Qt::ActionsContextMenu);
 }
 
 void Figure::createActions()
@@ -143,6 +144,24 @@ void Figure::createActions()
   connect(c,SIGNAL(triggered()),this,SLOT(setDragModeToSelect()));
   addAction(c);
   _rubberBandModeAct = c;
+
+  c = new QAction(tr("Autoscale &0"),this);
+  c->setShortcut(QKeySequence(tr("0","Autoscale|Channel0")));
+  c->setStatusTip(tr("Autoscale channel 0."));
+  connect(c,SIGNAL(triggered()),this,SLOT(autoscale0()));
+  addAction(c);   
+
+  c = new QAction(tr("Autoscale &1"),this);
+  c->setShortcut(QKeySequence(tr("1","Autoscale|Channel1")));
+  c->setStatusTip(tr("Autoscale channel 1."));
+  connect(c,SIGNAL(triggered()),this,SLOT(autoscale1()));
+  addAction(c);
+
+  c = new QAction(tr("Autoscale &2"),this);
+  c->setShortcut(QKeySequence(tr("2","Autoscale|Channel2")));
+  c->setStatusTip(tr("Autoscale channel 2."));
+  connect(c,SIGNAL(triggered()),this,SLOT(autoscale2()));
+  addAction(c);
   
   //c = new QAction(tr("Add Tiles"),this);
   //QList<QKeySequence> shortcuts;
@@ -193,10 +212,6 @@ void Figure::setDragModeToPan()
 //  setPalette(p);
 //  //_view->setDragMode(QGraphicsView::NoDrag);
 //}
-
-void Figure::createMenus()
-{  
-}
 
 void
 Figure::readSettings()

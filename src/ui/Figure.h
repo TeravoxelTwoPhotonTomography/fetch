@@ -49,6 +49,9 @@ public slots:
   inline void fitNext(void)                                                {/*_isFitOnNext=true;*/}
   inline void updatePos(void)                                              {_item->setPos(units::cvt<units::PIXEL_SCALE,PlanarStageController::Unit>(_sc->pos()));}
   inline void updatePos(QPointF r)                                         {_item->setPos(units::cvt<units::PIXEL_SCALE,PlanarStageController::Unit>(r));}
+  inline void autoscale0()                                                 {_item->autoscale(0);}
+  inline void autoscale1()                                                 {_item->autoscale(1);}
+  inline void autoscale2()                                                 {_item->autoscale(2);}
 
   inline void setPixelSizeMicrons(double w, double h)                      {_item->setPixelSizeMicrons(w,h);}
   inline void setPixelGeometry(double w, double h, double angle)           {_item->setPixelGeometry(w,h,angle);}
@@ -66,10 +69,11 @@ protected:
   void readSettings();
   void writeSettings();
 
+//  void contextMenuEvent(QContextMenuEvent *event); 
+
 private:
   inline void maybeFit()                                                   {if(_isFitOnNext) {fit(); _isFitOnNext=false;}}
-         void createActions();
-         void createMenus();
+         void createActions();         
 private:
   PlanarStageController *_sc;
 	ZoomableView*      _view;
