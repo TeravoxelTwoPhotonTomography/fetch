@@ -223,11 +223,11 @@ Error:
   
   void C843Stage::waitForMove_()
   { 
-    BOOL isMoving[3] = {0,0,0};
-    while(any(3,isMoving))    
-    { C843ERR( C843_IsMoving(handle_,"123",isMoving) );
+    BOOL isMoving = TRUE;
+    while(isMoving == TRUE)    
+    { C843ERR( C843_IsMoving(handle_,"",&isMoving) );
       Sleep(20); // check ~ 50x/sec
-    }
+    }    
   }
   
   void C843Stage::reference_()
