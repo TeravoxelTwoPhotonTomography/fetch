@@ -240,7 +240,7 @@ Frame_With_Interleaved_Pixels::
       src->format(dst);                   // Format metadata is the same so just copy it in
       dst->id = FRAME_INTERLEAVED_PIXELS; // Set the format tag properly
       { size_t pp = src->Bpp,
-               shape[] = {  src->height, src->nchan, src->width},
+               shape[] = {  src->height, src->nchan, pp*src->width},
                dst_pitch[4],
                src_pitch[4];
         Compute_Pitch( dst_pitch, src->height, src->width, src->nchan, pp );
@@ -255,7 +255,7 @@ Frame_With_Interleaved_Pixels::
       src->format(dst);                   // Format metadata is the same so just copy it in
       dst->id = FRAME_INTERLEAVED_PIXELS; // Set the format tag properly
       { size_t pp = src->Bpp,
-               shape[] = {  src->width, src->height, src->nchan},
+               shape[] = {  src->width, src->height, pp*src->nchan},
                dst_pitch[4],
                src_pitch[4];
         // This ends up apparently transposing width and height.
@@ -333,7 +333,7 @@ Frame_With_Interleaved_Lines::
       src->format(dst);                   // Format metadata is the same so just copy it in
       dst->id = FRAME_INTERLEAVED_LINES;  // Set the format tag properly 
       { size_t pp = src->Bpp,
-               shape[] = { src->height, src->width, src->nchan },
+               shape[] = { src->height, src->width, pp*src->nchan },
                dst_pitch[4],
                src_pitch[4];
         Compute_Pitch( dst_pitch, src->height, src->nchan, src->width, pp );
@@ -348,7 +348,7 @@ Frame_With_Interleaved_Lines::
       src->format(dst);                   // Format metadata is the same so just copy it in
       dst->id = FRAME_INTERLEAVED_LINES;  // Set the format tag properly
       { size_t pp = src->Bpp,
-               shape[] = { src->nchan, src->height, src->width },
+               shape[] = { src->nchan, src->height, pp*src->width },
                dst_pitch[4],
                src_pitch[4];
         Compute_Pitch( dst_pitch, src->height,  src->nchan, src->width, pp );
@@ -424,7 +424,7 @@ Frame_With_Interleaved_Planes::
       src->format(dst);                   // Format metadata is the same so just copy it in
       dst->id = FRAME_INTERLEAVED_PLANES; // Set the format tag properly 
       { size_t pp = src->Bpp,
-               shape[] = { src->height , src->width, src->nchan},
+               shape[] = { src->height , src->width, pp*src->nchan},
                dst_pitch[4],
                src_pitch[4];
         // This ends up apparently transposing width and height.
@@ -441,7 +441,7 @@ Frame_With_Interleaved_Planes::
       src->format(dst);                   // Format metadata is the same so just copy it in
       dst->id = FRAME_INTERLEAVED_PLANES; // Set the format tag properly
       { size_t pp = src->Bpp,
-               shape[] = { src->height, src->nchan, src->width },
+               shape[] = { src->height, src->nchan, pp*src->width },
                dst_pitch[4],
                src_pitch[4];
         Compute_Pitch( dst_pitch,  src->nchan, src->height, src->width, pp );

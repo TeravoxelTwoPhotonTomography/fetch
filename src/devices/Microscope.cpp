@@ -352,8 +352,8 @@
     {
       _is_valid = true;
       if(!CreateDirectory(path,NULL/*default security*/))
-      {
-        switch(GetLastError())
+      { DWORD err;
+        switch(err=GetLastError())
         {
         case ERROR_ALREADY_EXISTS: /*ignore*/ 
           break;
@@ -363,7 +363,8 @@
           break;
         default:
           _is_valid = false;
-          error("Unexpected error returned after call to CreateDirectory()\r\n");
+          warning("Unexpected error returned after call to CreateDirectory()\r\n");
+          ReportLastWindowsError();
         }
       }
     }

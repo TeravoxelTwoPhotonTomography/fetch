@@ -106,6 +106,14 @@ Error:
       return status!=VI_SUCCESS;
     }
 
+    void NIScopeDigitizer::onUpdate()
+    { if(_agent->is_armed())
+      { Task *last = _agent->_task;
+        _agent->disarm();
+        _agent->arm(last,_agent->_owner);               
+      }
+    }
+
     void NIScopeDigitizer::__common_setup()
     {
       // Setup output queues.
@@ -198,12 +206,14 @@ Error:
         NISCOPE_ATTR_ACQ_ARM_SOURCE,
         NISCOPE_VAL_PFI_1 ));
 
-      // Update the config to reflect the setup
-      Config c = get_config();
-      c.set_record_size(recsz);
-      c.set_num_records(nrecords);
-      set_config(c);
-      return;
+      //// Update the config to reflect the setup
+      //// Is this necessary? It causes an infinite loop via the update callback.
+      
+      //Config c = get_config();
+      //c.set_record_size(recsz);
+      //c.set_num_records(nrecords);      
+      //set_config(c);
+      //return;
     }
 
     size_t NIScopeDigitizer::record_size( double record_frequency_Hz, double duty )

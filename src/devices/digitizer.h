@@ -73,6 +73,7 @@ namespace fetch
       virtual size_t nchan() = 0;
       
       virtual bool   aux_info(int *n, size_t **sizes) { *n=0; return 0; }
+      virtual void   onUpdate() {};
     }; 
 
     template<class T>
@@ -97,6 +98,7 @@ namespace fetch
 
       unsigned int on_attach(void);
       unsigned int on_detach(void);
+      virtual void onUpdate();
 
       virtual void   setup(int nrecords, double record_frequency_Hz, double duty);
       virtual size_t record_size(double record_frequency_Hz, double duty);
@@ -156,6 +158,7 @@ namespace fetch
       void setKind(Config::DigitizerType kind);
       virtual void _set_config(Config IN *cfg);
       virtual void _set_config(const Config &cfg); // only updates the digitizer selected by cfg.kind().
+      virtual void onUpdate() {_idigitizer->onUpdate();};
 
       virtual void setup(int nrecords, double record_frequency_Hz, double duty) {_idigitizer->setup(nrecords,record_frequency_Hz,duty);}
 

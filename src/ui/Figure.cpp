@@ -164,6 +164,24 @@ void Figure::createActions()
   c->setStatusTip(tr("Autoscale channel 2."));
   connect(c,SIGNAL(triggered()),this,SLOT(autoscale2()));
   addAction(c);
+    
+  c = new QAction(tr("Reset 0"),this);
+  c->setShortcut(QKeySequence(tr("Shift+0","Autoscale|Channel0")));
+  c->setStatusTip(tr("Autoscale channel 0."));
+  connect(c,SIGNAL(triggered()),this,SLOT(resetscale0()));
+  addAction(c); 
+    
+  c = new QAction(tr("Reset 1"),this);
+  c->setShortcut(QKeySequence(tr("Shift+1","Autoscale|Channel1")));
+  c->setStatusTip(tr("Autoscale channel 1."));
+  connect(c,SIGNAL(triggered()),this,SLOT(resetscale1()));
+  addAction(c);
+    
+  c = new QAction(tr("Reset 2"),this);
+  c->setShortcut(QKeySequence(tr("Shift+2","Autoscale|Channel2")));
+  c->setStatusTip(tr("Autoscale channel 2."));
+  connect(c,SIGNAL(triggered()),this,SLOT(resetscale2()));
+  addAction(c);
   
   //c = new QAction(tr("Add Tiles"),this);
   //QList<QKeySequence> shortcuts;

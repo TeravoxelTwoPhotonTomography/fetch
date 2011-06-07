@@ -39,10 +39,11 @@ _text("Nothing to see here :/"),
   //_pixel_size_meters(100e-9,100e-9),
   _loaded(0),
   _autoscale_next(false),
+  _resetscale_next(false),
   _selected_channel(0),
   _show_mode(0),
   _nchan(3),
-  _cmap_ctrl_count(2),
+  _cmap_ctrl_count(256),
   _cmap_ctrl_last_size(0),
   _cmap_ctrl_s(NULL),
   _cmap_ctrl_t(NULL)
@@ -147,7 +148,7 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     checkGLError();
     painter->endNativePainting();
      
-    painter->setPen(Qt::white);    
+    painter->setPen(Qt::yellow);    
     painter->drawRect(boundingRect());
   } else
   {
@@ -180,7 +181,11 @@ GLuint typeMapMylibToGLType(mylib::Array **pa)
   if(ret == (GLuint)-1)
   { 
     
+    //mylib::Write_Image("typeMapMylibToGLType_before.tif",a,mylib::DONT_PRESS);
     *pa = mylib::Convert_Image(a,mylib::PLAIN_KIND,mylib::FLOAT32_TYPE,32);
+    if(mylib::UINT64_TYPE<a->type && a->type<=mylib::INT64_TYPE)
+      mylib::Scale_Array(*pa,0.5,1.0); // 0.5*(x+1.0)    
+    //mylib::Write_Image("typeMapMylibToGLType_after.tif",*pa,mylib::DONT_PRESS);
     
     //Free_Array(a); //[ngc] don't do this...owner is still responsible for his array.
     ret = GL_FLOAT;
@@ -213,7 +218,7 @@ void ImItem::_loadTex(mylib::Array *im)
 void ImItem::updateDisplayLists()
 { 
 	float t,b,l,r;//,cx,cy;
-  float ph,pw;
+  //float ph,pw;
 	checkGLError();
   b = cvt<PIXEL_SCALE,UM>(_bbox_um.bottom());
 	t = cvt<PIXEL_SCALE,UM>(_bbox_um.top());
@@ -262,6 +267,10 @@ void ImItem::push(mylib::Array *plane)
   if(_autoscale_next)
   { _autoscale(plane,_selected_channel,0.01f);
     _autoscale_next = false;
+  }
+  if(_resetscale_next)
+  { _resetscale(_selected_channel);
+    _resetscale_next = false;
   }
 	
 	//Guess the opacity of different planes
@@ -348,8 +357,7 @@ void ImItem::_updateCmapCtrlPoints()
 
     // fill in uninitizalized data (if any)
     if(nelem>_cmap_ctrl_last_size)
-    { float *s,*t;
-      int ir,ic,i;
+    { int ir,ic;
 
       // convention here is that channels are evenly spaced along s and intensity on t
       for(GLuint i=_cmap_ctrl_last_size;i<nelem;++i)
@@ -394,32 +402,46 @@ MemoryError:
 }
 
 void ImItem::_autoscale(mylib::Array *data, int ichannel, float percent)
-{ mylib::Array c = *data;
-  if(ichannel>=data->dims[2])
+{ mylib::Array c;
+  if(ichannel>=data->dims[2] || (ichannel>=_nchan))
   { warning("(%s:%d) Autoscale: selected channel out of bounds."ENDL,__FILE__,__LINE__);
     return;
   }
+  mylib::Array *t = Convert_Image(data,mylib::PLAIN_KIND,mylib::FLOAT32_TYPE,32);  
+  c = *t;
+  if(mylib::UINT64_TYPE<data->type && data->type<=mylib::INT64_TYPE)
+    mylib::Scale_Array(&c,0.5,1.0); // 0.5*(x+1.0) 
   mylib::Get_Array_Plane(&c,(mylib::Dimn_Type)ichannel);
-  mylib::Histogram *h = mylib::Histogram_Array(&c,0,mylib::VALU(0),mylib::VALU(0));
-  mylib::Value
-    vmx = mylib::Percentile2Value(h,1.0-percent),
-    vmn = mylib::Percentile2Value(h,    percent);
-  float max,min,t0,t1;
-  if(data->type<=mylib::UINT64_TYPE)
-  { max = vmx.uval;
-    min = vmn.uval;
-  } else if(data->type<=mylib::INT64_TYPE)
-  { max = vmx.ival;
-    min = vmn.ival;
-  } else
-  { max = vmx.rval;
-    min = vmn.rval;
+  
+  //mylib::Write_Image("ImItem_autoscale_input.tif",data,mylib::DONT_PRESS);
+  //mylib::Write_Image("ImItem_autoscale_channel_flost.tif",&c,mylib::DONT_PRESS);
+  
+  float max,min,m,b;
+  mylib::Range_Bundle range;
+  mylib::Array_Range(&range,&c);
+  
+  mylib::Free_Array(t);
+  max = range.maxval.rval;
+  min = range.minval.rval;  
+  m = 1.0f/(max-min);
+  b = min/(min-max);
+  
+  for(int i=0;i<_cmap_ctrl_count;++i)
+  { float x = i/(_cmap_ctrl_count-1.0f);
+    _cmap_ctrl_t[ichannel*_cmap_ctrl_count+i] = m*x+b; // upload to gpu will clamp to [0,1]
   }
-  t0 = min/(min-max);
-  t1 = (1.0f-min)/(max-min);
+  
+  
+  _updateCmapCtrlPoints();
+}
 
-  _cmap_ctrl_t[_selected_channel*_cmap_ctrl_count    ] = t0;
-  _cmap_ctrl_t[_selected_channel*_cmap_ctrl_count + 1] = t1;
+void ImItem::_resetscale(int ichannel)
+{
+  if(ichannel<_nchan)
+  { for(int i=0;i<_cmap_ctrl_count;++i)    
+      _cmap_ctrl_t[ichannel*_cmap_ctrl_count+i] = i/(_cmap_ctrl_count-1.0f);
+    _updateCmapCtrlPoints();
+  }
 }
 
 void ImItem::mouseDoubleClickEvent (QGraphicsSceneMouseEvent *e)

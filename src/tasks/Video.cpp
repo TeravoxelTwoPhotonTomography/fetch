@@ -73,7 +73,15 @@ namespace fetch
       // config() and update() use Scanner2D's abstracted interface.
       // The run() functions rely on specific hardware API calls, so there's a different run function for each supported API.
 
-      template<class TPixel> unsigned int Video<TPixel>::config (IDevice *d)      {return config(dynamic_cast<device::Scanner2D*>(d));}      
+      template<class TPixel> unsigned int Video<TPixel>::config (IDevice *d)//      {return config(dynamic_cast<device::Scanner2D*>(d));}
+      {
+        { device::Scanner2D *s = dynamic_cast<device::Scanner2D*>(d);
+          if(s) return config(s);// else return 2;
+        }
+        { device::Scanner3D *s = dynamic_cast<device::Scanner3D*>(d);
+          if(s) return config(&s->_scanner2d); else return 2;
+        }
+      }      
       template<class TPixel> unsigned int Video<TPixel>::update (IDevice *d)      {return update(dynamic_cast<device::Scanner2D*>(d));}
      
       

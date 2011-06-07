@@ -23,7 +23,7 @@ void main(void)
 {
   
   vec3 uvw = vec3(0.0,0.0,0.0);
-  uvw.st = TexCoord0; //gl_TexCoord[0].st;
+  uvw.st = TexCoord0; //gl_TexCoord[0].st; 
 
   switch(show_mode)
   { 
@@ -46,7 +46,7 @@ void main(void)
     { 
       vec4 v    = texture(plane,uvw);             //luma
       v.x       = gain*v.x - bias;                //adjust instensity
-      v.x       = texture(tctrl,vec2(v.x,0.0)).x; //use the lookup
+      v.x       = texture(tctrl,vec2(v.x,0.0)).x; //use the lookup from the first channel
       
       //vec4 c  = texture(cmap,vec2(1.0,v.x));  //cmap (sample along vertical)
       vec4 c    = vec4(v.x,v.x,v.x,1.0);          //cmap black and white

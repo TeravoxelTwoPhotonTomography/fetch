@@ -24,6 +24,7 @@ public:
   void flip(int isupdate=1);
 
   void autoscale(int chan)                                                {_selected_channel=chan; _autoscale_next=true;}
+  void resetscale(int chan)                                               {_selected_channel=chan; _resetscale_next=true;}
 
 	//inline const QRectF& bbox_px() {return _bbox_px;}
 
@@ -43,6 +44,7 @@ protected:
   void _setupShader();
   void _updateCmapCtrlPoints();
   void _autoscale(mylib::Array *data, int ichannel, float percent);
+  void _resetscale(int ichannel);
 
   void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *e);
 
@@ -73,6 +75,7 @@ protected:
   double _rotation_radians;
 
   int  _loaded;
+  bool _resetscale_next;
   bool _autoscale_next;
   int  _selected_channel;
 };

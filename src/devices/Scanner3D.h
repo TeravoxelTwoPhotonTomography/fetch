@@ -74,7 +74,7 @@ namespace fetch
       virtual void _set_config(const Config& cfg);
 
       virtual void onConfigTask();
-      virtual void onUpdate() {generateAO();}
+      virtual void onUpdate() {_scanner2d._digitizer.onUpdate(); generateAO();}
       virtual void generateAO();
               void generateAOConstZ();
               void generateAOConstZ(float z_um);

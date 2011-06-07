@@ -49,7 +49,7 @@ namespace task {
         break;
     }
     
-    //fsrc->dump("FrameInvert-src.%s",TypeStrFromID(fsrc->rtti));
+    //fsrc->dump("FrameInvert-dst.%s",TypeStrFromID(fsrc->rtti));
     
     return 1; // success
   }

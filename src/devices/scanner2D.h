@@ -104,7 +104,7 @@ namespace fetch
       virtual void _set_config(const Config& cfg);
 
       virtual void onConfigTask();
-      virtual void onUpdate() {generateAO();}
+      virtual void onUpdate() {_digitizer.onUpdate(); generateAO();}
       virtual void generateAO();
       virtual void writeAO();
           

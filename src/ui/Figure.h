@@ -52,6 +52,9 @@ public slots:
   inline void autoscale0()                                                 {_item->autoscale(0);}
   inline void autoscale1()                                                 {_item->autoscale(1);}
   inline void autoscale2()                                                 {_item->autoscale(2);}
+  inline void resetscale0()                                                {_item->resetscale(0);}
+  inline void resetscale1()                                                {_item->resetscale(1);}
+  inline void resetscale2()                                                {_item->resetscale(2);}
   inline void fovGeometryChanged(float w_um,float h_um, float radians)     {_item->setFOVGeometry(w_um,h_um,radians);}
 
   //inline void setPixelSizeMicrons(double w, double h)                      {_item->setPixelSizeMicrons(w,h);}

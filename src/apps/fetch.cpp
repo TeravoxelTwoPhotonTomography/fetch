@@ -82,7 +82,7 @@ void Init(void)
       && parser.ParseFromString(cfgfile.readAll().constData(),&g_config))
     {
       qDebug() << "Config file loaded from " << cfgfile.fileName();
-      return;
+      goto Success;
     }      
   }
   
@@ -97,6 +97,7 @@ void Init(void)
   }
   //cfgfile.setTextModeEnabled(true);
 
+Success:
   gp_microscope = new fetch::device::Microscope(&g_config);
 }
 
