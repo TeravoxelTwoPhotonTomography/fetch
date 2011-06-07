@@ -110,7 +110,7 @@ namespace fetch {
       int32 written,
             N = _config->ao_samples_per_waveform();
             
-#if 0
+#if 1
       { 
         uInt32 nchan;
         char 

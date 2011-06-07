@@ -76,31 +76,38 @@ namespace fetch
       template<class TPixel> unsigned int Video<TPixel>::config (IDevice *d)//      {return config(dynamic_cast<device::Scanner2D*>(d));}
       {
         { device::Scanner2D *s = dynamic_cast<device::Scanner2D*>(d);
-          if(s) return config(s);// else return 2;
+          if(s) return _config(s);// else return 2;
         }
         { device::Scanner3D *s = dynamic_cast<device::Scanner3D*>(d);
-          if(s) return config(&s->_scanner2d); else return 2;
+          if(s) return _config(s); else return 2;
         }
       }      
-      template<class TPixel> unsigned int Video<TPixel>::update (IDevice *d)      {return update(dynamic_cast<device::Scanner2D*>(d));}
+      template<class TPixel> unsigned int Video<TPixel>::update (IDevice *d)      {
+        { device::Scanner2D *s = dynamic_cast<device::Scanner2D*>(d);
+          if(s) return _update(s);// else return 2;
+        }
+        { device::Scanner3D *s = dynamic_cast<device::Scanner3D*>(d);
+          if(s) return _update(s); else return 2;
+        }
+      }  //      {return update(dynamic_cast<device::Scanner2D*>(d));}
      
       
-      template<class TPixel> unsigned int Video<TPixel>::run(device::Scanner3D* d)  {return run(&d->_scanner2d);}
+      //template<class TPixel> unsigned int Video<TPixel>::run(device::Scanner3D* d)  {return run(&d->_scanner2d);}
       template<class TPixel> unsigned int Video<TPixel>::run(IDevice *d)
       {
         { device::Scanner2D *s = dynamic_cast<device::Scanner2D*>(d);
-          if(s) return run(s);// else return 2;
+          if(s) return _run(s);// else return 2;
         }
         { device::Scanner3D *s = dynamic_cast<device::Scanner3D*>(d);
-          if(s) return run(s); else return 2;
+          if(s) return _run(s); else return 2;
         }
       }
 
-      template<class TPixel> unsigned int Video<TPixel>::run(device::Scanner2D* s)
+      template<class TPixel> unsigned int Video<TPixel>::_run(device::IScanner* s)
       { 
         //device::Scanner2D *s;
         //Guarded_Assert(s = dynamic_cast<device::Scanner2D*>(d));
-        device::Digitizer::Config digcfg = s->_digitizer.get_config();
+        device::Digitizer::Config digcfg = s->get2d()->_digitizer.get_config();
         switch(digcfg.kind())
         {
         case cfg::device::Digitizer_DigitizerType_NIScope:
@@ -121,7 +128,7 @@ namespace fetch
 
       template<class TPixel>
       unsigned int
-      Video<TPixel>::config(device::Scanner2D *d)
+      Video<TPixel>::_config(device::IScanner *d)
       { 
         d->onConfigTask();
 
@@ -132,7 +139,7 @@ namespace fetch
 
       template<class TPixel>
       unsigned int
-      Video<TPixel>::update(device::Scanner2D *scanner)
+      Video<TPixel>::_update(device::IScanner *scanner)
       { 
         scanner->generateAO();        
         return 1;
@@ -175,9 +182,9 @@ namespace fetch
 
       template<class TPixel>
       unsigned int
-      Video<TPixel>::run_niscope(device::Scanner2D *d)
-      { Chan *qdata = Chan_Open(d->_out->contents[0],CHAN_WRITE),
-              *qwfm = Chan_Open(d->_out->contents[1],CHAN_WRITE);
+      Video<TPixel>::run_niscope(device::IScanner *d)
+      { Chan *qdata = Chan_Open(d->get2d()->_out->contents[0],CHAN_WRITE),
+              *qwfm = Chan_Open(d->get2d()->_out->contents[1],CHAN_WRITE);
         Frame *frm   = NULL;
         Frame_With_Interleaved_Lines ref;
         struct niScope_wfmInfo *wfm = NULL;
@@ -192,13 +199,13 @@ namespace fetch
                     inner_clock = tic();
         double dt_in=0.0,
                dt_out=0.0;
-        device::NIScopeDigitizer *dig = d->_digitizer._niscope;
+        device::NIScopeDigitizer *dig = d->get2d()->_digitizer._niscope;
         device::NIScopeDigitizer::Config digcfg = dig->get_config();
         Guarded_Assert(dig!=NULL);
         ViSession        vi = dig->_vi;
         ViChar        *chan = const_cast<ViChar*>(digcfg.chan_names().c_str());
 
-        ref = _describe_actual_frame_niscope<TPixel>(dig,d->get_config().nscans(),&width,&nwfm);
+        ref = _describe_actual_frame_niscope<TPixel>(dig,d->get2d()->get_config().nscans(),&width,&nwfm);
         nbytes = ref.size_bytes();
         nbytes_info = nwfm*sizeof(struct niScope_wfmInfo);
         //
@@ -211,12 +218,12 @@ namespace fetch
         //
         ref.format(frm);
 
-        d->_shutter.Open();
+        d->get2d()->_shutter.Open();
         d->writeAO();
-        CHKJMP(d->_daq.startAO());
+        CHKJMP(d->get2d()->_daq.startAO());
         do
         { 
-          CHKJMP(d->_daq.startCLK());
+          CHKJMP(d->get2d()->_daq.startCLK());
           DIGJMP( niScope_InitiateAcquisition(vi));
 
           dt_out = toc(&outer_clock);
@@ -242,42 +249,42 @@ namespace fetch
           dt_in  = toc(&inner_clock);
                    toc(&outer_clock);
                    
-          CHKJMP(d->_daq.waitForDone(SCANNER2D_DEFAULT_TIMEOUT));
-          d->_daq.stopCLK();
+          CHKJMP(d->get2d()->_daq.waitForDone(SCANNER2D_DEFAULT_TIMEOUT));
+          d->get2d()->_daq.stopCLK();
           d->writeAO();
           ++i;
-        } while ( !d->_agent->is_stopping() );
+        } while ( !d->get2d()->_agent->is_stopping() );
         
         status = 0;
         DBG("Scanner - Video task completed normally.\r\n");
 Finalize:
-        d->_shutter.Shut();
+        d->get2d()->_shutter.Shut();
         free( frm );
         free( wfm );
         Chan_Close(qdata);
         Chan_Close(qwfm);
         niscope_debug_print_status(vi);
 
-        CHKERR(d->_daq.stopAO());
-        CHKERR(d->_daq.stopCLK());
+        CHKERR(d->get2d()->_daq.stopAO());
+        CHKERR(d->get2d()->_daq.stopCLK());
         DIGERR( niScope_Abort(vi) );
         return status; // status == 0 implies success, error otherwise
 Error:
         warning("Error occurred during Video<%s> task.\r\n",TypeStr<TPixel>());
-        d->_daq.stopAO();
-        d->_daq.stopCLK();
+        d->get2d()->_daq.stopAO();
+        d->get2d()->_daq.stopCLK();
         goto Finalize;
       }
 
 
       template<class TPixel>
-      unsigned int fetch::task::scanner::Video<TPixel>::run_simulated( device::Scanner2D *d )
-      { Chan *qdata = Chan_Open(d->_out->contents[0],CHAN_WRITE);
+      unsigned int fetch::task::scanner::Video<TPixel>::run_simulated( device::IScanner *d )
+      { Chan *qdata = Chan_Open(d->get2d()->_out->contents[0],CHAN_WRITE);
         Frame *frm   = NULL;        
-        device::SimulatedDigitizer *dig = d->_digitizer._simulated;
+        device::SimulatedDigitizer *dig = d->get2d()->_digitizer._simulated;
         Frame_With_Interleaved_Planes ref(
           dig->get_config().width(),
-          d->get_config().nscans()*2,
+          d->get2d()->get_config().nscans()*2,
           3,
           TypeID<TPixel>());
         size_t nbytes;
@@ -290,7 +297,7 @@ Error:
         ref.format(frm);
 
         debug("Simulated Video!\r\n");
-        while(!d->_agent->is_stopping())
+        while(!d->get2d()->_agent->is_stopping())
         { size_t pitch[4];
           size_t n[3];
           frm->compute_pitches(pitch);
@@ -345,7 +352,7 @@ Error:
       }
 
       template<class TPixel>
-      unsigned int fetch::task::scanner::Video<TPixel>::run_alazar( device::Scanner2D *d )
+      unsigned int fetch::task::scanner::Video<TPixel>::run_alazar( device::IScanner *d )
       {
         warning("Implement me!\r\n");
         return 1;

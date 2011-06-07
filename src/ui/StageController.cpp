@@ -44,6 +44,10 @@ fetch::ui::TilingController::TilingController( device::Stage *stage, device::Sta
     &listener_,SIGNAL(sig_fov_changed(float,float,float)),
     this,      SIGNAL(fovGeometryChanged(float,float,float)),
     Qt::QueuedConnection);
+  connect(
+    &listener_,SIGNAL(sig_moved()),
+    this,        SLOT(updatePlane()),
+    Qt::QueuedConnection);  
 }
 
 bool fetch::ui::TilingController::fovGeometry( TRectVerts *out )
@@ -169,11 +173,12 @@ bool fetch::ui::TilingController::mark( const QPainterPath& path, device::StageT
     QPainter painter(&im);
 
     // 3. Fill in the path
-    //im.save("TilingController_mark__before.tif");
+    im.save("TilingController_mark__before.tif");
     painter.setCompositionMode(mode);
     painter.fillPath(lpath,QColor((QRgb)attr)); // (QRgb) cast is a uint32 cast
     //SHOW(lpath);
-    //im.save("TilingController_mark__after.tif");
+    im.save("TilingController_mark__after.tif");
+    warning("Dumping Tiling mark data"ENDL);
     return true;
   }
   return false;

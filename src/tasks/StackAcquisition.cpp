@@ -293,8 +293,7 @@ namespace fetch
             d->generateAORampZ((float)z_um);
             d->writeAO();
             ++i;
-          };
-
+          }
           status = 0;
           DBG("Scanner - Stack Acquisition task completed normally.\r\n");
 Finalize: 
@@ -303,7 +302,7 @@ Finalize:
           free(wfm);
           Chan_Close(qdata);
           Chan_Close(qwfm);
-          niscope_debug_print_status(vi);  
+          niscope_debug_print_status(vi);          
           CHKERR(d->_scanner2d._daq.stopAO());
           CHKERR(d->_scanner2d._daq.stopCLK());
           DIGERR(niScope_Abort(vi));

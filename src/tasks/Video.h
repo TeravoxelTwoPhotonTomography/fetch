@@ -27,21 +27,21 @@ namespace fetch
       template<class TPixel>
       class Video : public Task, public IUpdateable
       {
-        public:
+        public:         
+          //unsigned int run    (device::Scanner3D *d);
+          unsigned int run    (IDevice *d);
           unsigned int config (IDevice *d);
-          unsigned int run    (device::Scanner2D *d);
-          unsigned int run    (device::Scanner3D *d);
           unsigned int update (IDevice *d);
           
-          unsigned int config (device::Scanner2D *d);          
-          unsigned int update (device::Scanner2D *d);
+          unsigned int _run    (device::IScanner *d);          
+          unsigned int _config (device::IScanner *d);          
+          unsigned int _update (device::IScanner *d);
 
-          unsigned int run_niscope(device::Scanner2D *d);
-          unsigned int run_alazar(device::Scanner2D *d);
-          unsigned int run_simulated(device::Scanner2D *d);
+          unsigned int run_niscope(device::IScanner *d);
+          unsigned int run_alazar(device::IScanner *d);
+          unsigned int run_simulated(device::IScanner *d);
 
         protected:
-          unsigned int run    (IDevice *d);
       };
 
       template<typename T>

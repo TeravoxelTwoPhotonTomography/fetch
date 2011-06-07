@@ -92,18 +92,21 @@ namespace fetch
         device::StageTiling* tiling = dc->stage()->tiling();
         while(!dc->_agent->is_stopping() && tiling->nextInPlanePosition(tilepos))
         {
-          debug("[Tiling Task] tilepos: %5.1f %5.1 %5.1f"ENDL,tilepos[0],tilepos[1],tilepos[2]);
+          debug("[Tiling Task] tilepos: %5.1f %5.1f %5.1f"ENDL,tilepos[0],tilepos[1],tilepos[2]);
           filename = dc->stack_filename(); 
           dc->file_series.ensurePathExists();
           eflag |= dc->disk.open(filename,"w");
           if(eflag)
           { 
             warning("Couldn't open file: %s"ENDL, filename.c_str());
-            tiling->markDone(eflag==0);
+            //tiling->markDone(eflag==0);
             return eflag;
           }
 
           // Move stage
+          Vector3f curpos = dc->stage()->getPos(); // FIXME HACK
+          tilepos[2] = curpos[2]*1000.0f;
+          
           dc->stage()->setPos(0.001f*tilepos); // convert um to mm
 
           eflag |= dc->runPipeline();

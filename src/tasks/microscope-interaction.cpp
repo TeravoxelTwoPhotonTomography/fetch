@@ -39,7 +39,7 @@ namespace fetch
         cur =  dc->configPipeline();
 	      cur =  dc->trash.apply(cur);
 	              
-        dc->__scan_agent.arm(&focus,&dc->scanner._scanner2d);
+        dc->__scan_agent.arm(&focus,&dc->scanner);
 	      //dc->__scan_agent.arm_nowait(&focus,&dc->scanner._scanner2d,INFINITE);
 	      
         return 1; //success

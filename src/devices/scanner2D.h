@@ -71,6 +71,8 @@ namespace fetch
 {
   namespace device
   {
+    class Scanner2D;
+  
     class IScanner
     {
     public:
@@ -79,6 +81,8 @@ namespace fetch
       virtual void onConfigTask()   = 0; // called in a 2d scanning task's config function
       virtual void generateAO() = 0;
       virtual void writeAO()    = 0;
+      
+      virtual Scanner2D* get2d() = 0;
 
     protected:
       vector_f64 *_ao_workspace;
@@ -107,6 +111,8 @@ namespace fetch
       virtual void onUpdate() {_digitizer.onUpdate(); generateAO();}
       virtual void generateAO();
       virtual void writeAO();
+      
+      virtual Scanner2D* get2d() {return this;}
           
       Chan *getVideoChannel() { return _out->contents[0]; }
 

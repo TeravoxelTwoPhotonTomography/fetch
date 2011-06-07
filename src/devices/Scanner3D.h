@@ -81,6 +81,8 @@ namespace fetch
               void generateAORampZ();
               void generateAORampZ(float z_um);
       virtual void writeAO();
+      
+      virtual Scanner2D* get2d() {return &_scanner2d;}
 
     };
   

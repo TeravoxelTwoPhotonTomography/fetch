@@ -353,7 +353,7 @@ namespace device {
   size_t StageTiling::plane_mm()
   {
     Vector3f r(0,0,(float)plane());
-    r = latticeToStageTransform() * r;
+    r = latticeToStageTransform() * r * 0.001;
     return r(2);
   }
 
