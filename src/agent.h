@@ -462,8 +462,7 @@ namespace fetch {
       return 0;
     }
     //debug( "De-queued request:  Config(0x%p): %d V\t Timestamp: %d\tQ capacity: %d\r\n",v.data, v.size, v.time, q->q->ring->nelem );
-    Guarded_Assert(v.self);
-    v.self->transaction_lock();
+    Guarded_Assert(v.self);   
     if( (v.time - lasttime) > 0 )  // The <time> is used to synchronize "simultaneous" requests
     { Config cfg(v.self->get_config());
       lasttime = v.time;             // Only process requests dated after the last request.      
@@ -473,8 +472,7 @@ namespace fetch {
       updated = true;      
     }
 Finalize:
-    Chan_Close(reader);
-    v.self->transaction_unlock();
+    Chan_Close(reader);    
     if(updated)
       v.self->update();
     return err;
