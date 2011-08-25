@@ -22,7 +22,7 @@ scanner3d {
     digitizer {
       kind: NIScope #Simulated #NIScope #Alazar
       niscope {
-        name: "Dev3"
+        name: "Dev2"
         sample_rate: 60000000
         record_size: 7196
         num_records: 256

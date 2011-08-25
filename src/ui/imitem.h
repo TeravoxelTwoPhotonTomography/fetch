@@ -15,32 +15,25 @@ class ImItem: public QGraphicsItem
 public:
   ImItem();
   virtual ~ImItem();
-	
+  
   QRectF boundingRect  () const;                                           // in meters
   void   paint         (QPainter                       *painter,
                         const QStyleOptionGraphicsItem *option,
                         QWidget                        *widget = 0);
-	void push(mylib::Array *plane);
+  void push(mylib::Array *plane);
   void flip(int isupdate=1);
 
   void autoscale(int chan)                                                {_selected_channel=chan; _autoscale_next=true;}
   void resetscale(int chan)                                               {_selected_channel=chan; _resetscale_next=true;}
 
-	//inline const QRectF& bbox_px() {return _bbox_px;}
-
-  //     void   setPixelSizeMicrons(double width, double height);
          void   setRotation(double radians);
-  //     void   setPixelGeometry(double width_um, double height_um, double radians);
          void   setFOVGeometry(float w_um, float h_um, float rotation_radians);
 
-  inline double rotationRadians()                                         {return _rotation_radians;} 
-  //inline QSizeF pixelSizeMeters()                                         {return _pixel_size_meters;}
-//signals:
-  //void sizeChanged(const QRectF& bbox);                                    // [?] is this ever used?  What units does bbox have here?
+  inline double rotationRadians()                                         {return _rotation_radians;}  
 protected:
   void updateDisplayLists();
   void _common_setup();
-	void _loadTex(mylib::Array *im);
+  void _loadTex(mylib::Array *im);
   void _setupShader();
   void _updateCmapCtrlPoints();
   void _autoscale(mylib::Array *data, int ichannel, float percent);
@@ -48,13 +41,11 @@ protected:
 
   void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *e);
 
-	float _fill;
-	
-  //QRectF _bbox_px;
-
+  float _fill;
+  
   QGraphicsSimpleTextItem _text;
   GLuint _hQuadDisplayList;
-	GLuint _hTexture;
+  GLuint _hTexture;
   GLuint _nchan;                   // updated when an image is pushed
   GLuint _show_mode;
 

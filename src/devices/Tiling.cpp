@@ -6,7 +6,6 @@ using namespace Eigen;
 
 namespace mylib
 {
-#include <flood.fill.h>
 #include <image.h>
 }
 
@@ -164,9 +163,9 @@ namespace device {
   //
 
 #if 0
-	struct FloodFillArgs
-	{ StageTiling         *self;
-	  device::StageTravel  travel; // in lattice coords
+  struct FloodFillArgs
+  { StageTiling         *self;
+    device::StageTravel  travel; // in lattice coords
 
     FloodFillArgs(StageTiling *s, device::StageTravel *t)
       : self(s)
@@ -184,16 +183,16 @@ namespace device {
       memcpy(&travel,c.data(),6*sizeof(float));
     }
 
-	};
-	  
+  };
+    
   typedef mylib::Dimn_Type Dimn_Type;
 
   static mylib::boolean isInBox(mylib::Indx_Type p, void *argt)
   { 
-  	FloodFillArgs *args         = (FloodFillArgs*)argt;
-  	StageTiling   *self         = args->self;
-  	device::StageTravel *travel = &args->travel; // in lattice coords
-  	mylib::Coordinate *coord    = mylib::Idx2CoordA(args->self->attributeArray(),p);    
+    FloodFillArgs *args         = (FloodFillArgs*)argt;
+    StageTiling   *self         = args->self;
+    device::StageTravel *travel = &args->travel; // in lattice coords
+    mylib::Coordinate *coord    = mylib::Idx2CoordA(args->self->attributeArray(),p);    
     Dimn_Type *r = ADIMN(coord);
     /*SHOW(c);
     SHOW(self->latticeToStageTransform().matrix());
@@ -209,8 +208,8 @@ namespace device {
 
   static void actionMarkAddressable(mylib::Indx_Type p, void *arga)
   { 
-  	FloodFillArgs *args                       = (FloodFillArgs*)arga;
-  	AUINT32(args->self->attributeArray())[p] |= StageTiling::Addressable;
+    FloodFillArgs *args                       = (FloodFillArgs*)arga;
+    AUINT32(args->self->attributeArray())[p] |= StageTiling::Addressable;
   }
 
   void StageTiling::markAddressable_(device::StageTravel *travel)

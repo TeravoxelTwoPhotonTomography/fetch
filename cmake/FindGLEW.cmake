@@ -11,23 +11,19 @@
 # - 32 vs 64 bit builds
 SET(GLEW_FOUND FALSE)
 
-# Handle missing requirements
-FUNCTION(_GLEW_ASSERT _VAR _MSG)
-IF(NOT ${_VAR})
-  message(${_VAR})
-  IF(${GLEW_FIND_REQUIRED})
-    MESSAGE(FATAL_ERROR ${_MSG}) 
-  ELSE()
-    MESSAGE(STATUS ${_MSG}) 
-  ENDIF()
-ENDIF()
-ENDFUNCTION(_GLEW_ASSERT)
+#32 or 64 bit
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  set(arch x64)
+else()
+  set(arch x32)
+endif()
 
-# The HINTS variable is used for values computed from the system
 SET(_GLEW_HINTS
   ~/src/mylib
-  "$ENV{USERPROFILE}/Desktop/src/libs/glew-1.5.6/x32"
-  ${CMAKE_SOURCE_DIR}/3rdParty/glew-1.5.6/x32
+  "$ENV{USERPROFILE}/Desktop/src/libs/glew-1.6.0/${arch}"
+  ${CMAKE_SOURCE_DIR}/3rdParty/glew-1.6.0/${arch}
+  "$ENV{USERPROFILE}/Desktop/src/libs/glew-1.5.6/${arch}"
+  ${CMAKE_SOURCE_DIR}/3rdParty/glew-1.5.6/${arch}
 )
 
 FIND_LIBRARY(GLEW_GLEW_LIBRARY
@@ -38,7 +34,6 @@ FIND_LIBRARY(GLEW_GLEW_LIBRARY
         lib
   DOC "Location of Glew library"
 )
-_GLEW_ASSERT(GLEW_GLEW_LIBRARY "Could not find Glew library.")
 
 FIND_FILE(GLEW_DLL_LIBRARY
   glew32.dll
@@ -46,7 +41,6 @@ FIND_FILE(GLEW_DLL_LIBRARY
   PATH_SUFFIXES bin
   DOC "Location of Glew DLL"
 )
-_GLEW_ASSERT(GLEW_DLL_LIBRARY "Could not find Glew DLL.")
 
 FIND_PATH(GLEW_INCLUDE_DIR
   NAMES GL/glew.h
@@ -56,11 +50,16 @@ FIND_PATH(GLEW_INCLUDE_DIR
   PATH_SUFFIXES include
   DOC "Root directory for Glew include files."
 )
-_GLEW_ASSERT(GLEW_INCLUDE_DIR "Could not find Glew include files.")
 
 SET(GLEW_LIBRARIES ${GLEW_GLEW_LIBRARY})
 SET(GLEW_DIR ${GLEW_INCLUDE_DIR})
 SET(GLEW_FOUND TRUE)
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(GLEW
+        REQUIRED_VARS
+          GLEW_INCLUDE_DIR
+          GLEW_LIBRARIES
+          )
 
 if(GLEW_FOUND)
   include_directories(${GLEW_INCLUDE_DIR})

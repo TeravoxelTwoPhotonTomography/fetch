@@ -20,65 +20,73 @@ FIND_PATH(MYLIB_INCLUDE_DIR
   DOC "Root directory for Mylib include files."
 )
 
+#Some path variables
+if(MSVC OR XCODE)
+  set(_DEBUG_HINTS   ${CMAKE_GENERATOR}/Debug)
+  set(_RELEASE_HINTS ${CMAKE_GENERATOR}/RelWithDebInfo)
+else()
+  set(_DEBUG_HINTS   build/Debug)
+  set(_RELEASE_HINTS build/RelWithDebInfo)
+endif()
+
+#Macro: Handle missing release version (MSVC chokes in some cases)
+macro(HANDLE_MISSING N A B)
+  if(NOT ${${A}})
+    message(WARNING "Could not find release version for ${N}. Replacing with debug version.")
+    set(${A} ${${B}} CACHE filepath "" FORCE)
+  endif()
+endmacro()
+
 #mylib
-FIND_LIBRARY(MYLIB_MYLIB_LIBRARY
-  NAMES libmylib.a
-        mylib.lib
+set(mylib_names libmylib.a mylib.lib)
+FIND_LIBRARY(MYLIB_MYLIB_LIBRARY_D
+  NAMES ${mylib_names}
   HINTS ${_MYLIB_HINTS}
-  PATH_SUFFIXES build/Debug
-                build/Release
-                build
-                xcode/Debug
-                xcode/Release
-                xcode
-                vc2010
-                vc2010/Debug
-                vc2010/Release
-                vc2010x64
-                vc2010x64/Debug
-                vc2010x64/Release
-  DOC "Location of Mylib library"
+  PATH_SUFFIXES ${_DEBUG_HINTS}
+  DOC "Location of the debug version of Mylib library"
 )
+FIND_LIBRARY(MYLIB_MYLIB_LIBRARY_R
+  NAMES ${mylib_names}
+  HINTS ${_MYLIB_HINTS}
+  PATH_SUFFIXES ${_RELEASE_HINTS}
+  DOC "Location of the optimized version of Mylib library"
+)
+HANDLE_MISSING(Mylib MYLIB_MYLIB_LIBRARY_R MYLIB_MYLIB_LIBRARY_D)
+set(MYLIB_MYLIB_LIBRARY debug ${MYLIB_MYLIB_LIBRARY_D} optimized ${MYLIB_MYLIB_LIBRARY_R})
 
 #mytiff
-FIND_LIBRARY(MYLIB_MYTIFF_LIBRARY
-  NAMES libmytiff.a
-        mytiff.lib
+set(mytiff_names libmytiff.a mytiff.lib)
+FIND_LIBRARY(MYLIB_MYTIFF_LIBRARY_D
+  NAMES ${mytiff_names}
   HINTS ${_MYLIB_HINTS}
-  PATH_SUFFIXES build/MY_TIFF/Debug
-                build/MY_TIFF/Release
-                build/MY_TIFF
-                xcode/MY_TIFF/Debug
-                xcode/MY_TIFF/Release
-                xcode/MY_TIFF
-                vc2010/MY_TIFF
-                vc2010/MY_TIFF/Debug
-                vc2010/MY_TIFF/Release
-                vc2010x64/MY_TIFF
-                vc2010x64/MY_TIFF/Debug
-                vc2010x64/MY_TIFF/Release
-  DOC "Location of Mylib TIFF library"
+  PATH_SUFFIXES ${_DEBUG_HINTS}
+  DOC "Location of the debug version of Mylib TIFF library"
 )
+FIND_LIBRARY(MYLIB_MYTIFF_LIBRARY_R
+  NAMES ${mytiff_names}
+  HINTS ${_MYLIB_HINTS}
+  PATH_SUFFIXES ${_RELEASE_HINTS}
+  DOC "Location of the optimized version of Mylib TIFF library"
+)
+HANDLE_MISSING(MyTIFF MYLIB_MYTIFF_LIBRARY_R MYLIB_MYTIFF_LIBRARY_D)
+set(MYLIB_MYTIFF_LIBRARY debug ${MYLIB_MYTIFF_LIBRARY_D} optimized ${MYLIB_MYTIFF_LIBRARY_R})
 
 #myfft
-FIND_LIBRARY(MYLIB_MYFFT_LIBRARY
-  NAMES libmyfft.a
-        myfft.lib
+set(myfft_names libmyfft.a myfft.lib)
+FIND_LIBRARY(MYLIB_MYFFT_LIBRARY_D
+  NAMES ${myfft_names}
   HINTS ${_MYLIB_HINTS}
-  PATH_SUFFIXES build/MY_FFT/Debug
-                build/MY_FFT/Release
-                build/MY_FFT
-                xcode/MY_FFT/Debug
-                xcode/MY_FFT/Release
-                xcode/MY_FFT
-                vc2010/MY_FFT
-                vc2010/MY_FFT/Debug
-                vc2010/MY_FFT/Release
-                vc2010x64/MY_FFT
-                vc2010x64/MY_FFT/Debug
-                vc2010x64/MY_FFT/Release
-  DOC "Location of Mylib FFT library"
+  PATH_SUFFIXES ${_DEBUG_HINTS}
+  DOC "Location of the debug version of Mylib FFT library"
 )
+FIND_LIBRARY(MYLIB_MYFFT_LIBRARY_R
+  NAMES ${myfft_names}
+  HINTS ${_MYLIB_HINTS}
+  PATH_SUFFIXES ${_RELEASE_HINTS}
+  DOC "Location of the optimized version of Mylib FFT library"
+)
+HANDLE_MISSING(MyFFT MYLIB_MYFFT_LIBRARY_R MYLIB_MYFFT_LIBRARY_D)
+set(MYLIB_MYFFT_LIBRARY debug ${MYLIB_MYFFT_LIBRARY_D} optimized ${MYLIB_MYFFT_LIBRARY_R})
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(MYLIB

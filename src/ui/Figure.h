@@ -14,37 +14,36 @@ namespace ui {
 
 class ZoomableView:public QGraphicsView
 {
-	Q_OBJECT
+  Q_OBJECT
 public:
-	ZoomableView(QGraphicsScene *scene, QWidget *parent=0);
-	
+  ZoomableView(QGraphicsScene *scene, QWidget *parent=0);
+  
   //inline double metersToPixels()                                           {return _scalebar.unit2px();}
   //inline void   setMetersToPixels(double unit2px)                          {_scalebar.setUnit(unit2px);}
-	virtual void	wheelEvent(QWheelEvent *event);
+  virtual void	wheelEvent(QWheelEvent *event);
 
   inline void notifyZoomChanged()                                            {emit zoomChanged(transform().m11());}
 signals:
-	void zoomChanged(double zoom);
-	
+  void zoomChanged(double zoom);
+  
 protected:
-	virtual void drawForeground(QPainter* painter, const QRectF& rect);
-	
+  virtual void drawForeground(QPainter* painter, const QRectF& rect);
+  
 private:
-	ScaleBar _scalebar;
+  ScaleBar _scalebar;
 };
-
 
 class Figure:public QWidget
 {
   Q_OBJECT
 public:
-	Figure(PlanarStageController *stageController, QWidget *parent=0);
+  Figure(PlanarStageController *stageController, QWidget *parent=0);
   Figure(double unit2px, QWidget *parent=0);
   virtual ~Figure();
-	
+  
 public slots:
-	inline void push(mylib::Array *im)                                       {_item->push(im); updatePos(); emit pushed(); maybeFit();}
-	inline void imshow(mylib::Array *im)                                     {_item->push(im); updatePos(); _item->flip(); maybeFit(); }
+  inline void push(mylib::Array *im)                                       {_item->push(im); updatePos(); emit pushed(); maybeFit();}
+  inline void imshow(mylib::Array *im)                                     {_item->push(im); updatePos(); _item->flip(); maybeFit(); }
   inline void fit(void)                                                    {_view->fitInView(_item->mapRectToScene(_item->boundingRect()),Qt::KeepAspectRatio);_view->notifyZoomChanged();}
   inline void fitNext(void)                                                {/*_isFitOnNext=true;*/}
   inline void updatePos(void)                                              {_item->setPos(units::cvt<units::PIXEL_SCALE,PlanarStageController::Unit>(_sc->pos()));}
@@ -66,23 +65,23 @@ public slots:
          //void setDelTilesMode();
 
 signals:
-	void lastFigureClosed();
+  void lastFigureClosed();
   void pushed();
 
 protected:
   void readSettings();
   void writeSettings();
 
-//  void contextMenuEvent(QContextMenuEvent *event); 
+//  void contextMenuEvent(QContextMenuEvent *event);
 
 private:
   inline void maybeFit()                                                   {if(_isFitOnNext) {fit(); _isFitOnNext=false;}}
          void createActions();         
 private:
   PlanarStageController *_sc;
-	ZoomableView*      _view;
-	StageScene         _scene;
-	ImItem*            _item;
+  ZoomableView*      _view;
+  StageScene         _scene;
+  ImItem*            _item;
   StageView*         _stage;
   TilesView*         _tv;
 

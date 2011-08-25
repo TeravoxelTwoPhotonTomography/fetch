@@ -11,17 +11,6 @@
 #
 
 #
-FUNCTION(_C843_ASSERT _VAR _MSG)
-IF(NOT ${_VAR})
-  IF(C843_FIND_REQUIRED)
-    MESSAGE(FATAL_ERROR ${_MSG}) 
-  ELSE()
-    MESSAGE(STATUS ${_MSG}) 
-  ENDIF()
-ENDIF()
-ENDFUNCTION(_C843_ASSERT)
-
-#
 set(C843_FOUND "NO")
 set(HAVE_C843 0)
 
@@ -30,21 +19,25 @@ set(_C843_HINTS
     $ENV{PROGRAMFILES}/PI/C-843/C843_GCS_DLL
    )
 
-
 find_path(C843_INCLUDE_DIR C843_GCS_DLL.H
     HINTS
     ${_C843_HINTS}
 )
-#_C843_ASSERT(C843_INCLUDE_DIR "[C843] Could not find C843_GCS_DLL.h")
 
-find_library(C843_LIBRARY C843_GCS_DLL.lib
-  HINTS
-    ${_C843_HINTS}
-  PATH_SUFFIXES
-    win32
-    x64
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set( libname C843_GCS_DLL_x64 )
+else()
+    set( libname C843_GCS_DLL_x64 )
+endif()
+  
+find_library(C843_LIBRARY ${libname}
+  HINTS ${_C843_HINTS}
+  PATH_SUFFIXES win32 x64
 )
-#_C843_ASSERT(C843_LIBRARY "[C843] Could not find C843_GCS_DLL.lib")
+FIND_FILE(C843_DLL_LIBRARY
+  ${libname}.dll
+  HINTS ${_C843_HINTS}
+)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(C843
@@ -55,4 +48,7 @@ find_package_handle_standard_args(C843
 # message("C843_INCLUDE_DIR is ${C843_INCLUDE_DIR}")
 # message("C843_LIBRARY is ${C843_LIBRARY}")
 
-
+if(C843_FOUND)
+  include_directories(${C843_INCLUDE_DIR})
+  FILE(COPY ${C843_DLL_LIBRARY} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+endif(C843_FOUND)

@@ -421,8 +421,8 @@ void ImItem::_autoscale(mylib::Array *data, int ichannel, float percent)
   mylib::Array_Range(&range,&c);
   
   mylib::Free_Array(t);
-  max = range.maxval.rval;
-  min = range.minval.rval;  
+  max = range.maxval.fval;
+  min = range.minval.fval;  
   m = 1.0f/(max-min);
   b = min/(min-max);
   

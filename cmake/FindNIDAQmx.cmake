@@ -15,17 +15,6 @@
 #
 
 #
-FUNCTION(_NIDAQMX_ASSERT _VAR _MSG)
-IF(NOT ${_VAR})
-  IF(${NIDAQMX_FIND_REQUIRED})
-    MESSAGE(FATAL_ERROR ${_MSG}) 
-  ELSE()
-    MESSAGE(STATUS ${_MSG}) 
-  ENDIF()
-ENDIF()
-ENDFUNCTION(_NIDAQMX_ASSERT)
-
-#
 set(NIDAQMX_FOUND "NO")
 set(HAVE_NIDAQMX 0)
 
@@ -34,16 +23,26 @@ find_path(NIDAQMX_INCLUDE_DIR NIDAQmx.h
     $ENV{NIEXTCCOMPILERSUPP}
     PATH_SUFFIXES include
 )
-_NIDAQMX_ASSERT(NIDAQMX_INCLUDE_DIR "Could not find NIDAQmx.h")
 
-find_library(NIDAQMX_LIBRARY NIDAQmx.lib
-  HINTS
-  $ENV{NIEXTCCOMPILERSUPP}
-  PATH_SUFFIXES lib32/msvc lib64/msvc
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  set(dir lib64/msvc)
+else()
+  set(dir lib32/msvc)
+endif()
+
+find_library(NIDAQMX_LIBRARY NIDAQmx.lib 
+  PATHS $ENV{NIEXTCCOMPILERSUPP}
+  PATH_SUFFIXES ${dir}
   )
-_NIDAQMX_ASSERT(NIDAQMX_LIBRARY "Could not find NIDAQmx.lib")
 
-set(NIDAQMX_FOUND "YES")
-set(HAVE_NIDAQMX 1)
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(NIDAQMX
+        REQUIRED_VARS
+          NIDAQMX_INCLUDE_DIR
+          NIDAQMX_LIBRARY
+          )
+set(NIDAQMX_FOUND TRUE)
+set(HAVE_NIDAQMX  TRUE)
+
 # message("NIDAQMX_INCLUDE_DIR is ${NIDAQMX_INCLUDE_DIR}")
 # message("NIDAQMX_LIBRARY is ${NIDAQMX_LIBRARY}")

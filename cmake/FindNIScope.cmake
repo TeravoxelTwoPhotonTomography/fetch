@@ -31,11 +31,19 @@ ENDFUNCTION(_NISCOPE_ASSERT)
 set(NISCOPE_FOUND "NO")
 set(HAVE_NISCOPE 0)
 
+# 64 or 32 bit
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  set(hints  $ENV{VXIPNPPATH64}/Win64)
+  set(suffix lib/msc Lib_x64/msc)
+else()
+  set(hints  $ENV{VXIPNPPATH}/win95 $ENV{VXIPNPPATH}/winnt)
+  set(suffix lib/msc)
+endif()
+
+
 # includes
 find_path(NISCOPE_INCLUDE_DIR niscope.h
-    HINTS
-    $ENV{VXIPNPPATH}/win95/
-    $ENV{VXIPNPPATH}/winnt/
+    HINTS ${hints}
     PATH_SUFFIXES include
 )
 #message("NISCOPE_INCLUDE_DIR is ${NISCOPE_INCLUDE_DIR}")
@@ -43,28 +51,22 @@ _NISCOPE_ASSERT(NISCOPE_INCLUDE_DIR "Could not find niscope.h")
       
 # libs
 find_library(NISCOPE_NISCOPE_LIBRARY niscope.lib# ivi.lib niModInst.lib
-  HINTS
-  $ENV{VXIPNPPATH}/win95/
-  $ENV{VXIPNPPATH}/winnt/
-  PATH_SUFFIXES lib/msc
+  HINTS ${hints}
+  PATH_SUFFIXES ${suffix}
   )
 #message("NISCOPE_NISCOPE_LIBRARY is ${NISCOPE_NISCOPE_LIBRARY}")
 _NISCOPE_ASSERT(NISCOPE_NISCOPE_LIBRARY "Could not find niscope.lib")
 
 find_library(NISCOPE_IVI_LIBRARY ivi.lib
-  HINTS
-  $ENV{VXIPNPPATH}/win95/
-  $ENV{VXIPNPPATH}/winnt/
-  PATH_SUFFIXES lib/msc
+  HINTS ${hints}
+  PATH_SUFFIXES ${suffix}
   )
 #message("NISCOPE_IVI_LIBRARY is ${NISCOPE_IVI_LIBRARY}")
 _NISCOPE_ASSERT(NISCOPE_IVI_LIBRARY "Could not find ivi.lib")
 
 find_library(NISCOPE_NIMODINST_LIBRARY niModInst.lib 
-  HINTS
-  $ENV{VXIPNPPATH}/win95/
-  $ENV{VXIPNPPATH}/winnt/
-  PATH_SUFFIXES lib/msc
+  HINTS ${hints}
+  PATH_SUFFIXES ${suffix}
   )
 #message("NISCOPE_NIMODINST_LIBRARY is ${NISCOPE_NIMODINST_LIBRARY}")
 _NISCOPE_ASSERT(NISCOPE_NIMODINST_LIBRARY "Could not find niModInst.lib")
