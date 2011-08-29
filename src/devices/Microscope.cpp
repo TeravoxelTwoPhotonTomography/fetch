@@ -31,6 +31,7 @@
       ,__io_agent("IO",&disk)
       ,scanner(&__scan_agent)    
       ,stage_(&__self_agent)  
+      ,vibratome_(&__self_agent)
       ,fov_(_config->fov())
       ,disk(&__io_agent)
       ,frame_averager("FrameAverager")
@@ -60,6 +61,7 @@
       ,__io_agent("IO",&disk)
       ,scanner(&__scan_agent)       
       ,stage_(&__self_agent)
+      ,vibratome_(&__self_agent)
       ,fov_(cfg.fov())
       ,disk(&__io_agent)
       ,frame_averager("FrameAverager")
@@ -82,6 +84,7 @@
       ,__io_agent("IO",&disk)
       ,scanner(&__scan_agent,cfg->mutable_scanner3d())       
       ,stage_(&__self_agent,cfg->mutable_stage())
+      ,vibratome_(&__self_agent,cfg->mutable_vibratome())
       ,fov_(cfg->fov())
       ,disk(&__io_agent)
       ,frame_averager(cfg->mutable_frame_average(),"FrameAverager")
@@ -122,6 +125,7 @@
 
       eflag |= __scan_agent.attach(); //scanner.attach(); 
       eflag |= stage_.on_attach();
+      eflag |= vibratome_.on_attach();
 
       std::string stackname = _config->file_prefix()+_config->stack_extension();
       file_series.ensurePathExists();   
@@ -144,6 +148,7 @@
       eflag |= disk._agent->detach();
 
       eflag |= stage_.on_detach();
+      eflag |= vibratome_.on_detach();
       return eflag;  
     }
     

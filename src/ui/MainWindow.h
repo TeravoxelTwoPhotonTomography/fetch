@@ -11,6 +11,7 @@ namespace ui {
 class VideoAcquisitionDockWidget;
 class StackAcquisitionDockWidget;
 class MicroscopeStateDockWidget;
+class VibratomeDockWidget;
 class Figure;
 class IPlayerThread;
 
@@ -45,26 +46,28 @@ public: // semi-private
   QState  *fullscreenStateOn;
   QState  *fullscreenStateOff;
 
-  VideoAcquisitionDockWidget *_videoAcquisitionDockWidget;
-  StackAcquisitionDockWidget *_stackAcquisitionDockWidget;
-  MicroscopeStateDockWidget  *_microscopesStateDockWidget;
-  Figure *_display;
-  IPlayerThread *_player;
-  
-  QTimer _poller;
-  AgentController             _scope_state_controller;
-  
-  PlanarStageController*      _stageController;  
+  VideoAcquisitionDockWidget   *_videoAcquisitionDockWidget; 
+  StackAcquisitionDockWidget   *_stackAcquisitionDockWidget; 
+  MicroscopeStateDockWidget    *_microscopesStateDockWidget; 
+  VibratomeDockWidget          *_vibratomeDockWidget;
+  Figure                       *_display;                                          
+  IPlayerThread                *_player;                                    
+                                                             
+  QTimer _poller;                                            
+  AgentController               _scope_state_controller;     
+                                                             
+  PlanarStageController        *_stageController;            
   
   // Property controllers
-  ResonantTurnController*     _resonant_turn_controller;
-  LinesController*            _vlines_controller;
-  LSMVerticalRangeController* _lsm_vert_range_controller;
-  PockelsController*          _pockels_controller;
+  ResonantTurnController       *_resonant_turn_controller;  
+  LinesController              *_vlines_controller;         
+  LSMVerticalRangeController   *_lsm_vert_range_controller; 
+  PockelsController            *_pockels_controller;        
+  VibratomeAmplitudeController *_vibratome_controller;
 
-  ZPiezoMaxController*        _zpiezo_max_control;
-  ZPiezoMinController*        _zpiezo_min_control;
-  ZPiezoStepController*       _zpiezo_step_control;
+  ZPiezoMaxController          *_zpiezo_max_control;  
+  ZPiezoMinController          *_zpiezo_min_control;  
+  ZPiezoStepController         *_zpiezo_step_control; 
 
 protected slots:
     void openMicroscopeConfig();

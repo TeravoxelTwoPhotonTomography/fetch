@@ -195,6 +195,7 @@ qt4_wrap_cpp(MOC_SRCS
   src/ui/TilesView.h
   src/ui/VideoAcquisitionDockWidget.h
   src/ui/StackAcquisitionDockWidget.h
+  src/ui/VibratomeDockWidget.h
   src/ui/AgentController.h
   src/ui/StageController.h
   src/ui/DevicePropController.h

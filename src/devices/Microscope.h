@@ -30,6 +30,7 @@
 #include "devices/pockels.h"
 #include "devices/Stage.h"
 #include "devices/FieldOfViewGeometry.h"
+#include "devices/Vibratome.h"
 #include "tasks/microscope-interaction.h"
 #include "tasks/StackAcquisition.h"
 #include "tasks/TiledAcquisition.h"  
@@ -104,6 +105,7 @@ namespace fetch
     public:
       device::Scanner3D                  scanner;
       device::Stage                      stage_;
+      device::Vibratome                  vibratome_;
       device::FieldOfViewGeometry        fov_;
 
       worker::FrameAverageAgent 	       frame_averager;
@@ -125,6 +127,7 @@ namespace fetch
       inline Pockels*       pockels() {return &scanner._scanner2d._pockels;}
       inline ZPiezo*         zpiezo() {return &scanner._zpiezo;}
       inline Stage*           stage() {return &stage_;}
+      inline Vibratome*   vibratome() {return &vibratome_;}
 
     public:
       FileSeries file_series;

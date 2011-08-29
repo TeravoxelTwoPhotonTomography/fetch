@@ -4,8 +4,6 @@
 #include "MainWindow.h"
 namespace fetch{
 
-  
-
   namespace ui{
 
     class VideoAcquisitionDockWidget:public QDockWidget

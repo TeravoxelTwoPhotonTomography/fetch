@@ -76,7 +76,8 @@ namespace device {
   }
 
   unsigned int SerialControlVibratome::on_attach()
-  { Config c = get_config();
+  { debug("Vibratome: on_attach");
+    Config c = get_config();
     unsigned int sts = 0;
     Guarded_Assert_WinErr( INVALID_HANDLE_VALUE!=( 
         _h=CreateFile(c.port().c_str()              // file name
@@ -112,7 +113,7 @@ Error:
   }
   
   unsigned int SerialControlVibratome::_close()
-  {
+  { debug("Vibratome: _close");    
     if( _h!=INVALID_HANDLE_VALUE )
     { Guarded_Assert_WinErr( CloseHandle(_h) );
       _h = INVALID_HANDLE_VALUE;
@@ -159,11 +160,13 @@ Error:
   // API.  That's why they're here even though they don't do anything.  It's
   // basically just in case the serial interface changes.
   int SerialControlVibratome::start()
-  { return START();
+  { debug("Vibratome: start");
+    return START();
   }
 
   int SerialControlVibratome::stop()
-  { return STOP();
+  { debug("Vibratome: stop");
+    return STOP();
   }
 
   ///// SERIAL COMMANDS

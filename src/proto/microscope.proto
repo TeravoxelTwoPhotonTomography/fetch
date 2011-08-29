@@ -2,6 +2,7 @@ package fetch.cfg.device;
 
 import "scanner3d.proto";
 import "stage.proto";
+import "vibratome.proto";
 import "workers.proto";
 import "file.proto";
 
@@ -20,13 +21,14 @@ message Microscope
 {
   required Scanner3D                   scanner3d             = 1;
   required Stage                       stage                 = 2;
-  optional FieldOfViewGeometry         fov                   = 3;
-  required worker.ResonantWrap         resonant_wrap         = 4;
-  required worker.HorizontalDownsample horizontal_downsample = 5;
-  required worker.FrameAverage         frame_average         = 6;
-  required FileSeries                  file_series           = 7;
-  optional string                      file_prefix           = 8 [default="default"];
-  optional string                      stack_extension       = 9 [default=".tif"];
-  optional string                      config_extension      =10 [default=".microscope"];
-  optional string                      metadata_extension    =11 [default=".acquisition"];
+  optional Vibratome                   vibratome             = 3;
+  optional FieldOfViewGeometry         fov                   = 4;
+  required worker.ResonantWrap         resonant_wrap         = 5;
+  required worker.HorizontalDownsample horizontal_downsample = 6;
+  required worker.FrameAverage         frame_average         = 7;
+  required FileSeries                  file_series           = 8;
+  optional string                      file_prefix           = 9 [default="default"];
+  optional string                      stack_extension       =10 [default=".tif"];
+  optional string                      config_extension      =11 [default=".microscope"];
+  optional string                      metadata_extension    =12 [default=".acquisition"];
 }

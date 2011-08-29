@@ -7,6 +7,7 @@
 #include "Player.h"
 #include "StackAcquisitionDockWidget.h"
 #include "MicroscopeStateDockWidget.h"
+#include "VibratomeDockWidget.h"
 #include "StageController.h"
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/io/tokenizer.h>
@@ -21,6 +22,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,fullscreenStateOn(0)
   ,_videoAcquisitionDockWidget(0)
   ,_microscopesStateDockWidget(0)
+  ,_vibratomeDockWidget(0)
   ,_display(0)
   ,_player(0)
   ,_scope_state_controller(&dc->__self_agent)
@@ -41,7 +43,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   _zpiezo_step_control      = new ZPiezoStepController(dc->zpiezo(),"Z &Step (um)");
 
   _stageController          = new PlanarStageController(dc->stage());
-  
+  _vibratome_controller     = new VibratomeAmplitudeController(dc->vibratome(),"Amplitude (0-255)");
 
   createActions();
   createStateMachines();
@@ -74,9 +76,9 @@ fetch::ui::MainWindow::~MainWindow()
 void fetch::ui::MainWindow::createActions()
 {
   {
-	  fullscreenAct = new QAction(QIcon(":/icons/fullscreen"),"&Full Screen",this);
-	  fullscreenAct->setShortcut(Qt::CTRL + Qt::Key_F);
-	  fullscreenAct->setStatusTip("Display over full screen");
+    fullscreenAct = new QAction(QIcon(":/icons/fullscreen"),"&Full Screen",this);
+    fullscreenAct->setShortcut(Qt::CTRL + Qt::Key_F);
+    fullscreenAct->setStatusTip("Display over full screen");
   }
 
   {
@@ -129,17 +131,17 @@ void fetch::ui::MainWindow::createStateMachines()
   assert(fullscreenAct);
 
   { //Fullscreen
-	  fullscreenStateOn  = new QState();
-	  fullscreenStateOff = new QState();
-	  connect(fullscreenStateOn, SIGNAL(entered()),this,SLOT(showFullScreen()));
-	  connect(fullscreenStateOff,SIGNAL(entered()),this,SLOT(showNormal()));  
-	  fullscreenStateOn->addTransition( fullscreenAct,SIGNAL(triggered()),fullscreenStateOff);
-	  fullscreenStateOff->addTransition(fullscreenAct,SIGNAL(triggered()),fullscreenStateOn);
-	
-	  fullscreenStateMachine.addState(fullscreenStateOff);
-	  fullscreenStateMachine.addState(fullscreenStateOn);
-	  fullscreenStateMachine.setInitialState(fullscreenStateOff);
-	  fullscreenStateMachine.start();
+    fullscreenStateOn  = new QState();
+    fullscreenStateOff = new QState();
+    connect(fullscreenStateOn, SIGNAL(entered()),this,SLOT(showFullScreen()));
+    connect(fullscreenStateOff,SIGNAL(entered()),this,SLOT(showNormal()));  
+    fullscreenStateOn->addTransition( fullscreenAct,SIGNAL(triggered()),fullscreenStateOff);
+    fullscreenStateOff->addTransition(fullscreenAct,SIGNAL(triggered()),fullscreenStateOn);
+  
+    fullscreenStateMachine.addState(fullscreenStateOff);
+    fullscreenStateMachine.addState(fullscreenStateOn);
+    fullscreenStateMachine.setInitialState(fullscreenStateOff);
+    fullscreenStateMachine.start();
   }
 }
 
@@ -159,6 +161,11 @@ void fetch::ui::MainWindow::createDockWidgets()
   addDockWidget(Qt::LeftDockWidgetArea,_microscopesStateDockWidget);
   viewMenu->addAction(_microscopesStateDockWidget->toggleViewAction());
   _microscopesStateDockWidget->setObjectName("_microscopesStateDockWidget");
+
+  _vibratomeDockWidget = new VibratomeDockWidget(_dc,this);
+  addDockWidget(Qt::LeftDockWidgetArea,_vibratomeDockWidget);
+  viewMenu->addAction(_vibratomeDockWidget->toggleViewAction());
+  _vibratomeDockWidget->setObjectName("_vibratomeStateDockWidget");
 }
 
 void fetch::ui::MainWindow::createViews()
@@ -190,6 +197,7 @@ void fetch::ui::MainWindow::load_settings_()
   ok &= restoreDockWidget(_videoAcquisitionDockWidget);
   ok &= restoreDockWidget(_stackAcquisitionDockWidget);
   ok &= restoreDockWidget(_microscopesStateDockWidget);
+  ok &= restoreDockWidget(_vibratomeDockWidget);
 }
 
 void fetch::ui::MainWindow::save_settings_()

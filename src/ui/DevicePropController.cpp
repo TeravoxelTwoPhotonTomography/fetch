@@ -112,6 +112,16 @@ QValidator* GetSetPockels::createValidator_(QObject* parent)
 { return new QIntValidator(0,2000,parent);
 }
 
+void GetSetVibratomeAmplitude::Set_(device::Vibratome *dc, u32 &v)
+{ dc->setAmplitude(v);
+}
+u32 GetSetVibratomeAmplitude::Get_(device::Vibratome *dc)
+{ return dc->getAmplitude_ControllerUnits();
+}
+QValidator* GetSetVibratomeAmplitude::createValidator_(QObject* parent)
+{ return new QIntValidator(0,255,parent);
+}
+
 // Stack
 
 void GetSetZPiezoMin::Set_(device::ZPiezo *dc, f64 &v)

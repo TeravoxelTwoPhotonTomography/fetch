@@ -3,6 +3,7 @@
 #include "devices\Microscope.h"
 #include "devices\LinearScanMirror.h"
 #include "devices\pockels.h"
+#include "devices\Vibratome.h"
 #include "common.h"
 
 // TODO
@@ -55,14 +56,14 @@ namespace ui {
     public:
       DevicePropController(TDevice *dc, char* label);
 
-			QLineEdit *createLineEdit();
+      QLineEdit *createLineEdit();
       QLineEdit *createLineEditAndAddToLayout(QFormLayout *layout);
 
-		protected:
-			void setByLineEdit(QWidget *source);
+    protected:
+      void setByLineEdit(QWidget *source);
       
     protected:
-			TGetSetInterface interface_;
+      TGetSetInterface interface_;
 
     private:
       TDevice    *dc_;
@@ -70,12 +71,12 @@ namespace ui {
 
       QSignalMapper lineEditSignalMapper_;
 
-			QLineEdit  *le_;
-			
+      QLineEdit  *le_;
+      
   };
 
-	template<typename TConfig> inline QString  ValueToQString(TConfig v);
-	template<typename TConfig>        TConfig  QStringToValue(QString &s,bool *ok);
+  template<typename TConfig> inline QString  ValueToQString(TConfig v);
+  template<typename TConfig>        TConfig  QStringToValue(QString &s,bool *ok);
 
   /* Note:
    * Don't really need a virtual base class here because the interface is
@@ -85,29 +86,31 @@ namespace ui {
 
   template<typename TDevice, typename TConfig>
   struct IGetSet
-	{ virtual void Set_(TDevice *dc, TConfig &v) = 0;
+  { virtual void Set_(TDevice *dc, TConfig &v) = 0;
     virtual TConfig Get_(TDevice *dc)          = 0;
     virtual QValidator* createValidator_(QObject* parent) = 0;
   };
-	
+  
 #define	DECL_GETSET_CLASS(NAME,TDC,T) \
-	struct NAME:public IGetSet<TDC,T> \
-	{ void Set_(TDC *dc, T &v);\
+  struct NAME:public IGetSet<TDC,T> \
+  { void Set_(TDC *dc, T &v);\
     T Get_(TDC *dc);\
     QValidator* createValidator_(QObject* parent);\
   }
 
   // Video
 
-	DECL_GETSET_CLASS(GetSetResonantTurn,device::Microscope,f64);
-	DECL_GETSET_CLASS(GetSetLines,device::Microscope,i32);
-	DECL_GETSET_CLASS(GetSetLSMVerticalRange,device::LinearScanMirror,f64);
-	DECL_GETSET_CLASS(GetSetPockels,device::Pockels,u32);
+  DECL_GETSET_CLASS(GetSetResonantTurn,device::Microscope,f64);
+  DECL_GETSET_CLASS(GetSetLines,device::Microscope,i32);
+  DECL_GETSET_CLASS(GetSetLSMVerticalRange,device::LinearScanMirror,f64);
+  DECL_GETSET_CLASS(GetSetPockels,device::Pockels,u32);
+  DECL_GETSET_CLASS(GetSetVibratomeAmplitude,device::Vibratome,u32);
 
-	typedef DevicePropController<device::Microscope,f64,GetSetResonantTurn>           ResonantTurnController;
-	typedef DevicePropController<device::Microscope,i32,GetSetLines>                  LinesController;
-	typedef DevicePropController<device::LinearScanMirror,f64,GetSetLSMVerticalRange> LSMVerticalRangeController;
-	typedef DevicePropController<device::Pockels,u32,GetSetPockels>                   PockelsController;
+  typedef DevicePropController<device::Microscope,f64,GetSetResonantTurn>           ResonantTurnController;
+  typedef DevicePropController<device::Microscope,i32,GetSetLines>                  LinesController;
+  typedef DevicePropController<device::LinearScanMirror,f64,GetSetLSMVerticalRange> LSMVerticalRangeController;
+  typedef DevicePropController<device::Pockels,u32,GetSetPockels>                   PockelsController;
+  typedef DevicePropController<device::Vibratome,u32,GetSetVibratomeAmplitude>      VibratomeAmplitudeController;
 
   // Stack
 
@@ -132,7 +135,7 @@ namespace ui {
   
   template<typename TDevice, typename TConfig, class TGetSetInterface> 
   DevicePropController<TDevice,TConfig,TGetSetInterface>::DevicePropController(TDevice *dc, char* label)
-	: dc_(dc)
+  : dc_(dc)
   , label_(label)
   , le_(NULL)
   { 
@@ -140,29 +143,32 @@ namespace ui {
   }
 
   template<typename TDevice, typename TConfig, class TGetSetInterface>
-	void DevicePropController<TDevice,TConfig,TGetSetInterface>::setByLineEdit(QWidget* source)
-	{ 
+  void DevicePropController<TDevice,TConfig,TGetSetInterface>::setByLineEdit(QWidget* source)
+  { 
     bool ok;    
     QLineEdit* le = qobject_cast<QLineEdit*>(source);
     Guarded_Assert(le);
 
-		TConfig v = QStringToValue<TConfig>(le->text(),&ok);
-		if(ok)
-			interface_.Set_(dc_,v);
-	}
+    TConfig v = QStringToValue<TConfig>(le->text(),&ok);
+    if(ok)
+      interface_.Set_(dc_,v);
+  }
 
   template<typename TDevice, typename TConfig, class TGetSetInterface>
-	QLineEdit* DevicePropController<TDevice,TConfig,TGetSetInterface>::createLineEdit()
-	{ le_ = new QLineEdit(ValueToQString(interface_.Get_(dc_)));
-		QValidator *v = interface_.createValidator_(le_);
-		if(v)
-			le_->setValidator(v);
+  QLineEdit* DevicePropController<TDevice,TConfig,TGetSetInterface>::createLineEdit()
+  { TConfig vv = interface_.Get_(dc_);
+    QString s = ValueToQString(vv);
+    le_ = new QLineEdit(s);
+    //le_ = new QLineEdit(ValueToQString(interface_.Get_(dc_)));
+    QValidator *v = interface_.createValidator_(le_);
+    if(v)
+      le_->setValidator(v);
 
     lineEditSignalMapper_.setMapping(le_,le_);
-		connect(le_,SIGNAL(editingFinished()),&lineEditSignalMapper_,SLOT(map()));
+    connect(le_,SIGNAL(editingFinished()),&lineEditSignalMapper_,SLOT(map()));
     //connect(le_,SIGNAL(editingFinished()),this,SLOT(report()));
-		return le_;
-	}
+    return le_;
+  }
 
 
   template<typename TDevice, typename TConfig, class TGetSetInterface>
@@ -173,5 +179,5 @@ namespace ui {
   }
 
 
-	template<typename TConfig> inline QString ValueToQString(TConfig v) {return QString().setNum(v);}
+  template<typename TConfig> inline QString ValueToQString(TConfig v) {return QString().setNum(v);}
 }} //end fetch::ui

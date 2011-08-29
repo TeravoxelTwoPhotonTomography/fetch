@@ -384,7 +384,7 @@ namespace fetch {
   template<class Tcfg>
   void IConfigurableDevice<Tcfg>::set_config( const Config& cfg )
   {
-	  transaction_lock();
+    transaction_lock();
     _set_config(cfg);    
     transaction_unlock();
     update(); // if another thread imposes an update here, it's ok.  Machine will have a consistent view.
@@ -408,7 +408,7 @@ namespace fetch {
   template<class Tcfg>
   int IConfigurableDevice<Tcfg>::set_config_nowait( const Config &cfg )
   {
-	  typedef IConfigurableDevice<Tcfg> TSelf;
+    typedef IConfigurableDevice<Tcfg> TSelf;
     struct T {TSelf *self;u8 data[CONFIG_BUFFER_MAX_BYTES]; size_t size; int time;};
     struct T v = {0};
     static Chan *writer, *q=NULL;
