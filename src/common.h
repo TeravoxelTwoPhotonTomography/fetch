@@ -24,6 +24,10 @@ UINT MyCreateUserWindowMessage( const char *name, size_t id );
      static const UINT name = MyCreateUserWindowMessage( #name, id )
 #define DEFINE_USER_MESSAGE_INT__NON_STATIC(name,id) \
      name = MyCreateUserWindowMessage( #name, id )
+// -------------------
+// Windows/Posix alias
+// -------------------
+#define snprintf _snprintf
 
 // -----------------
 // fixed width types

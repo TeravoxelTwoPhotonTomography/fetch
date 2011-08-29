@@ -1,0 +1,24 @@
+package fetch.cfg.device;
+
+message SimulatedVibratome
+{ optional string token = 1 [default="Simulated"];
+}
+
+message SerialControlVibratome
+{
+  optional string port          = 1 [default="COM3"];      // serial communications port for controller.  
+  optional uint32 baud          = 2 [default=9600];        // baud rate - not sure this matters.          
+  optional uint32 amplitude     = 3 [default=255];         // amplitude in controller units (0-255)       
+  optional double amp2mm        = 4 [default=0.000392156]; // (units/percent) - Convert controller units to length.  amplitude * pct2mm = amplitude in mm.
+}
+
+message Vibratome
+{ enum VibratomeType
+  {
+    Simulated = 0;
+    Serial    = 1;
+  }
+  optional VibratomeType            kind = 1 [default=Serial];
+  optional SerialControlVibratome serial = 2;
+  optional SimulatedVibratome  simulated = 3;
+}
