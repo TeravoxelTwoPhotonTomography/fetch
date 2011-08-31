@@ -153,14 +153,19 @@ class SimulatedVibratome:public VibratomeBase<cfg::device::SimulatedVibratome>
       void _set_config( Config IN *cfg );
       void _set_config( const Config &cfg );
 
-      virtual int isValidAmplitude(int val)      {return _ivibratome->isValidAmplitude(val);}
-      virtual int setAmplitude(int val)          {return _ivibratome->setAmplitude(val);}      
-      virtual int setAmplitudeNoWait(int val)    {return _ivibratome->setAmplitudeNoWait(val);}      
-      virtual int getAmplitude_ControllerUnits() {return _ivibratome->getAmplitude_ControllerUnits();}
-      virtual double getAmplitude_mm()           {return _ivibratome->getAmplitude_mm();}
-
-      virtual int start()                        {return _ivibratome->start();}
-      virtual int stop()                         {return _ivibratome->stop();}
+      virtual int isValidAmplitude(int val)        {return _ivibratome->isValidAmplitude(val);}
+      virtual int setAmplitude(int val)            {return _ivibratome->setAmplitude(val);}      
+      virtual int setAmplitudeNoWait(int val)      {return _ivibratome->setAmplitudeNoWait(val);}      
+      virtual int getAmplitude_ControllerUnits()   {return _ivibratome->getAmplitude_ControllerUnits();}
+      virtual double getAmplitude_mm()             {return _ivibratome->getAmplitude_mm();}
+                                                   
+      virtual int start()                          {return _ivibratome->start();}
+      virtual int stop()                           {return _ivibratome->stop();}
+                                                   
+              void  feed_begin_pos_mm(float *x, float *y);
+              void  feed_end_pos_mm(float *x, float *y);
+              float feed_vel_mm_p_s();
+      
     };
 
   } // end namespace device

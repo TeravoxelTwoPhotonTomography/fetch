@@ -5,12 +5,14 @@
 #include "agent.h"
 #include <list>
 #include <set>
-#include "FieldOfViewGeometry.h"
-
-#include "FieldOfViewGeometry.h"
+#include "devices/FieldOfViewGeometry.h"
 
 #include <Eigen/Core>
 using namespace Eigen;
+
+
+#define TODO_ERR error("%s(%d) TODO",__FILE__,__LINE__)
+#define TODO_WRN error("%s(%d) TODO",__FILE__,__LINE__)
 
 namespace fetch {
 namespace device {
@@ -48,7 +50,7 @@ namespace device {
       virtual int  setPos            ( const Vector3f &r)                   {return setPos(r[0],r[1],r[2]);}
       virtual int  setPos            ( const TilePos &r)                    {return setPos(r.x,r.y,r.z);}
       virtual void setPosNoWait      ( float  x, float  y, float  z)    = 0;
-      inline  void setPosNoWait      ( const Vector3f &r)                   {setVelocityNoWait(r[0],r[1],r[2]);}      
+      inline  void setPosNoWait      ( const Vector3f &r)                   {setPosNoWait(r[0],r[1],r[2]);}      
 
       //Move Relative
   };
@@ -73,10 +75,10 @@ namespace device {
       virtual void getTravel         ( StageTravel* out);
       virtual void getVelocity       ( float *vx, float *vy, float *vz);
       virtual int  setVelocity       ( float vx, float vy, float vz);
-      virtual void setVelocityNoWait ( float vx, float vy, float vz)       {Config c = get_config(); /**TODO**/ Guarded_Assert_WinErr(set_config_nowait(c));}
+      virtual void setVelocityNoWait ( float vx, float vy, float vz)       {Config c = get_config(); /**TODO**/TODO_ERR; Guarded_Assert_WinErr(set_config_nowait(c));}
       virtual void getPos            ( float *x, float *y, float *z);
       virtual int  setPos            ( float  x, float  y, float  z);
-      virtual void setPosNoWait      ( float  x, float  y, float  z)       {Config c = get_config(); /**TODO**/ Guarded_Assert_WinErr(set_config_nowait(c));}
+      virtual void setPosNoWait      ( float  x, float  y, float  z)       {Config c = get_config(); /**TODO**/TODO_ERR; Guarded_Assert_WinErr(set_config_nowait(c));}
     private:
      int handle_;
      
@@ -91,8 +93,8 @@ namespace device {
       SimulatedStage(Agent *agent);
       SimulatedStage(Agent *agent, Config *cfg);  
 
-      virtual unsigned int on_attach() {/**TODO**/ return 0;}
-      virtual unsigned int on_detach() {/**TODO**/ return 0;}
+      virtual unsigned int on_attach() {/**TODO**/TODO_WRN; return 0;}
+      virtual unsigned int on_detach() {/**TODO**/TODO_WRN; return 0;}
 
       virtual void getTravel         ( StageTravel* out);
       virtual void getVelocity       ( float *vx, float *vy, float *vz);

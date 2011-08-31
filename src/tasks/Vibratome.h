@@ -5,7 +5,10 @@
 namespace fetch{
 
 // Forward declarations
-namespace device { class Vibratome; }
+namespace device { 
+  class Vibratome; 
+  class Microscope;
+}
 
 namespace task {
 namespace vibratome {
@@ -16,10 +19,16 @@ namespace vibratome {
     virtual unsigned int run(device::Vibratome* dc);
   };
 
+} // end fetch::task::vibratome
+
+namespace microscope {  
+
   // Turn the vibratome on and feed using the stage.
-  class Cut : public TTask<device::Vibratome>
+  class Cut : public TTask<device::Microscope>
   { public:
-    virtual unsigned int run(device::Vibratome* dc);
+    virtual unsigned int run(device::Microscope* dc);
   };
 
-}}} // fetch::task::vibratome
+} // fetch::task::microscope
+
+}}

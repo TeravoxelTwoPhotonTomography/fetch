@@ -32,10 +32,11 @@ message Vibratome
   { X = 0;
     Y = 1;
   }
-  optional VibratomeType            kind = 1 [default=Serial];
-  optional SerialControlVibratome serial = 2;
-  optional SimulatedVibratome  simulated = 3;
-  optional VibratomeFeedAxis   feed_axis = 4;
-  optional double                feed_mm = 5 [default=10.0];
-  optional VibratomeGeometry    geometry = 6;
+  optional VibratomeType                      kind = 1 [default=Serial];
+  optional SerialControlVibratome           serial = 2;
+  optional SimulatedVibratome            simulated = 3;
+  optional VibratomeFeedAxis             feed_axis = 4;
+  optional double              feed_vel_mm_per_sec = 5 [default=1.0];
+  optional double                          feed_mm = 6 [default=10.0];
+  optional VibratomeGeometry              geometry = 7;
 }

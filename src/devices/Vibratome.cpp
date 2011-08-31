@@ -14,6 +14,7 @@
 
 #include "Vibratome.h"
 #include "task.h"
+#include "vibratome.pb.h"
 
 #define CHK(expr) \
   if(!(expr))                                                                                             \
@@ -325,6 +326,25 @@ Error:
   {
     Guarded_Assert(_idevice);
     return _idevice->on_detach();
+  }
+
+  void Vibratome::feed_begin_pos_mm(float *x, float *y)
+  { cfg::device::Point2d p = _config->geometry().cut_pos_mm();   
+    *x=p.x(); *y=p.y();
+  }
+
+  void Vibratome::feed_end_pos_mm(float *x, float *y)
+  { feed_begin_pos_mm(&x,&y);
+    switch( _config->feed_axis() )
+    { case cfg::device::Vibratome_VibratomeFeedAxis_X: (*x) += _config->feed_mm(); break;
+      case cfg::device::Vibratome_VibratomeFeedAxis_Y: (*y) += _config->feed_mm(); break;
+      default:
+        error("%s(%d): Bad value.  Should not be here.",__FILE__,__LINE__);
+    }
+  }
+
+  float Vibratome::feed_vel_mm_p_s()
+  { return _config->feed_vel_mm_per_sec();
   }
 
 } //end device namespace
