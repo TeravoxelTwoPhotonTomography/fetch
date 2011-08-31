@@ -11,8 +11,8 @@
 using namespace Eigen;
 
 
-#define TODO_ERR error("%s(%d) TODO",__FILE__,__LINE__)
-#define TODO_WRN error("%s(%d) TODO",__FILE__,__LINE__)
+#define TODO_ERR   error("%s(%d) TODO",__FILE__,__LINE__)
+#define TODO_WRN warning("%s(%d) TODO",__FILE__,__LINE__)
 
 namespace fetch {
 namespace device {
@@ -136,7 +136,8 @@ namespace device {
 
       virtual void getTravel         ( StageTravel* out)                    {_istage->getTravel(out);}
       virtual void getVelocity       ( float *vx, float *vy, float *vz)     {_istage->getVelocity(vx,vy,vz);}
-      virtual int  setVelocity       ( float vx, float vy, float vz)        {return _istage->setVelocity(vx,vy,vz);}
+      virtual int  setVelocity       ( float vx, float vy, float vz)        {return _istage->setVelocity(vx,vy,vz);}      
+      virtual int  setVelocity       ( float v )                            {return setVelocity(v,v,v);}
       virtual void setVelocityNoWait ( float vx, float vy, float vz)        {_istage->setVelocityNoWait(vx,vy,vz);}
       virtual void getPos            ( float *x, float *y, float *z)        {_istage->getPos(x,y,z);}      
       inline  Vector3f getPos        ()                                     {float x,y,z; getPos(&x,&y,&z); return Vector3f(x,y,z);}

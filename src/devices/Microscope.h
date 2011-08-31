@@ -34,6 +34,7 @@
 #include "tasks/microscope-interaction.h"
 #include "tasks/StackAcquisition.h"
 #include "tasks/TiledAcquisition.h"  
+#include "tasks/Vibratome.h"
 
 #include <string>
 
@@ -121,6 +122,7 @@ namespace fetch
       task::microscope::Interaction      interaction_task;
       task::microscope::StackAcquisition stack_task;      
       task::microscope::TiledAcquisition tiling_task;
+      task::microscope::Cut              cut_task;
 
       inline Chan*  getVideoChannel() {return frame_formatter._out->contents[0];}
       inline LinearScanMirror*  LSM() {return &scanner._scanner2d._LSM;}

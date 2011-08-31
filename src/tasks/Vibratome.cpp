@@ -11,7 +11,7 @@ namespace vibratome {
   { dc->start();
     while(!dc->_agent->is_stopping());
     dc->stop();
-    return 0;
+    return 1;
   }
 } // end fetch::task::vibratome
 
@@ -53,7 +53,7 @@ namespace microscope {
     dc->stage()->setVelocity(10.0,10.0,10.0);
     dc->stage()->setPos(cx,cy,cz);
     dc->stage()->setVelocity(vz,vy,vz);
-    return 0;
+    return 1;
   }
 
 } // end fetch::task::microscope

@@ -73,7 +73,7 @@ void GetSetResonantTurn::Set_(device::Microscope *dc, f64 &v)
 }
 f64 GetSetResonantTurn::Get_(device::Microscope *dc)
 { device::Microscope::Config c = dc->get_config(); 
-	return c.resonant_wrap().turn_px();
+  return c.resonant_wrap().turn_px();
 }
 QValidator* GetSetResonantTurn::createValidator_(QObject* parent)
 { return new QDoubleValidator (0.0, 2048.0, 1, parent);
@@ -86,7 +86,7 @@ void GetSetLines::Set_(device::Microscope *dc, i32 &v)
 }
 i32 GetSetLines::Get_(device::Microscope *dc)
 { device::Microscope::Config c = dc->get_config(); 
-	return 2*c.scanner3d().scanner2d().nscans();
+  return 2*c.scanner3d().scanner2d().nscans();
 }          
 QValidator* GetSetLines::createValidator_(QObject* parent)
 { return new EvenIntValidator(2,4096,parent);

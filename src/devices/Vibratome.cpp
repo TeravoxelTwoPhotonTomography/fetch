@@ -107,10 +107,12 @@ namespace device {
     timeouts.WriteTotalTimeoutMultiplier =50;
     timeouts.WriteTotalTimeoutConstant   =10;
     Guarded_Assert_WinErr( SetCommTimeouts(_h,&timeouts) );
+
+    CHK(AMP(_config->amplitude()));
     return 0;
-//Error:
-//    _close();
-//    return 1; // failure
+Error:
+    _close();
+    return 1; // failure
   }
   
   unsigned int SerialControlVibratome::_close()
@@ -150,11 +152,11 @@ Error:
   }
 
   int SerialControlVibratome::getAmplitude_ControllerUnits()
-  { return qAMP();
+  { return _config->amplitude();
   }
 
   double SerialControlVibratome::getAmplitude_mm()
-  { return qAMP()*_config->amp2mm();
+  { return getAmplitude_ControllerUnits()*_config->amp2mm();
   }
 
   // The idea here is that these class translate the serial API to a public
@@ -334,7 +336,7 @@ Error:
   }
 
   void Vibratome::feed_end_pos_mm(float *x, float *y)
-  { feed_begin_pos_mm(&x,&y);
+  { feed_begin_pos_mm(x,y);
     switch( _config->feed_axis() )
     { case cfg::device::Vibratome_VibratomeFeedAxis_X: (*x) += _config->feed_mm(); break;
       case cfg::device::Vibratome_VibratomeFeedAxis_Y: (*y) += _config->feed_mm(); break;

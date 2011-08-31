@@ -86,7 +86,7 @@ namespace fetch
   { public:
       virtual unsigned int config(IDevice *d) {return config(dynamic_cast<TDevice*>(d));}
       virtual unsigned int run(IDevice *d)    {return    run(dynamic_cast<TDevice*>(d));}
-      virtual unsigned int config(TDevice *d) {return 0;}
+      virtual unsigned int config(TDevice *d) {return 1;}
       virtual unsigned int run(TDevice *d)    = 0;
   };
   
