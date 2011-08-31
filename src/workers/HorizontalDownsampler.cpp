@@ -80,15 +80,15 @@ namespace fetch
       //fsrc->dump("HorizontalDownsampler-src.%s",TypeStrFromID(fsrc->rtti));
       switch(fsrc->rtti)
       { 
-        case id_u8 : pwa<u8 >(fdst->data,fsrc->data,N,nelem); break;
-        case id_u16: pwa<u16>(fdst->data,fsrc->data,N,nelem); break;
-        case id_u32: pwa<u32>(fdst->data,fsrc->data,N,nelem); break;
-        case id_u64: pwa<u64>(fdst->data,fsrc->data,N,nelem); break;
-        case id_i8 : pwa<i8 >(fdst->data,fsrc->data,N,nelem); break;
-        case id_i16: pwa<i16>(fdst->data,fsrc->data,N,nelem); break;
-        case id_i32: pwa<i32>(fdst->data,fsrc->data,N,nelem); break;
-        case id_i64: pwa<i64>(fdst->data,fsrc->data,N,nelem); break;
-        case id_f32: pwa<f32>(fdst->data,fsrc->data,N,nelem); break;
+        case id_u8 : pwa<u8 >(fdst->data,fsrc->data,N,(size_t)nelem); break;
+        case id_u16: pwa<u16>(fdst->data,fsrc->data,N,(size_t)nelem); break;
+        case id_u32: pwa<u32>(fdst->data,fsrc->data,N,(size_t)nelem); break;
+        case id_u64: pwa<u64>(fdst->data,fsrc->data,N,(size_t)nelem); break;
+        case id_i8 : pwa<i8 >(fdst->data,fsrc->data,N,(size_t)nelem); break;
+        case id_i16: pwa<i16>(fdst->data,fsrc->data,N,(size_t)nelem); break;
+        case id_i32: pwa<i32>(fdst->data,fsrc->data,N,(size_t)nelem); break;
+        case id_i64: pwa<i64>(fdst->data,fsrc->data,N,(size_t)nelem); break;
+        case id_f32: pwa<f32>(fdst->data,fsrc->data,N,(size_t)nelem); break;
         //case id_f64: pwa<f64>(fdst->data,fsrc->data,N,nelem); break;
         default:
           error("Unrecognized source type (id=%d).\r\n",fsrc->rtti);        

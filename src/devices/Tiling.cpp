@@ -353,7 +353,7 @@ namespace device {
   {
     Vector3f r(0,0,(float)plane());
     r = latticeToStageTransform() * r * 0.001;
-    return r(2);
+    return (size_t)r(2);
   }
 
 }} // end namespace fetch::device

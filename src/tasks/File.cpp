@@ -117,7 +117,7 @@ namespace file {
     
     while( CHAN_SUCCESS(Chan_Next(q,&buf,nbytes)) ) //!dc->_agent->is_stopping() && 
       { double dt = toc(&t);
-        nbytes = Chan_Buffer_Size_Bytes(q);
+        nbytes = (DWORD) Chan_Buffer_Size_Bytes(q);
         disk_stream_debug("FPS: %3.1f Frame time: %5.4f            MB/s: %3.1f Q: %3d Write %8d bytes to %s\r\n",
                 1.0/dt, dt,                      nbytes/1000000.0/dt,
                 q->q->head - q->q->tail,nbytes, stream->path );
@@ -197,7 +197,7 @@ namespace file {
   WriteMessage::run(device::HFILEDiskStreamBase *dc)
   { Chan *q   = Chan_Open(dc->_in->contents[0],CHAN_READ);
     void *buf = Chan_Token_Buffer_Alloc(q);
-    DWORD nbytes = Chan_Buffer_Size_Bytes(q);
+    size_t nbytes = Chan_Buffer_Size_Bytes(q);
 
     TicTocTimer t = tic();
     while(CHAN_SUCCESS( Chan_Next(q,&buf,nbytes) ))                 //!dc->_agent->is_stopping() &&

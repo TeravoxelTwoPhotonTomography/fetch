@@ -34,7 +34,7 @@ ImItem::ImItem()
 : _fill(1.0),
 _text("Nothing to see here :/"),
   _hQuadDisplayList(0),
-	_hTexture(0),
+  _hTexture(0),
   _bbox_um(),
   //_pixel_size_meters(100e-9,100e-9),
   _loaded(0),
@@ -55,7 +55,7 @@ _text("Nothing to see here :/"),
 
 ImItem::~ImItem()
 {
-	glDeleteTextures(1, &_hTexture);
+  glDeleteTextures(1, &_hTexture);
   glDeleteTextures(1, &_hTexCmapCtrlS);
   glDeleteTextures(1, &_hTexCmapCtrlT);  
   glDeleteTextures(1, &_hTexCmap);
@@ -79,10 +79,10 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
   if(_loaded)
   { 
     painter->beginNativePainting();
-		checkGLError();                                                                              
+    checkGLError();                                                                              
 
     glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_3D, _hTexture);
+    glBindTexture(GL_TEXTURE_3D, _hTexture);
     glTexParameterf( GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
     glTexParameterf( GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
     glTexParameterf( GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP );
@@ -111,22 +111,22 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		
-		glActiveTexture(GL_TEXTURE0); // Omitting this line will give a stack underflow
-		_shader.bind();
-		_shader.setUniformValue(_hShaderPlane,0);
-		_shader.setUniformValue(_hShaderCmap ,1);
+    
+    glActiveTexture(GL_TEXTURE0); // Omitting this line will give a stack underflow
+    _shader.bind();
+    _shader.setUniformValue(_hShaderPlane,0);
+    _shader.setUniformValue(_hShaderCmap ,1);
     _shader.setUniformValue("sctrl",2);
     _shader.setUniformValue("tctrl",3);
     _shader.setUniformValue("nchan",(GLfloat)_nchan);
-		_shader.setUniformValue("fill",(GLfloat)_fill);
-		_shader.setUniformValue("gain",(GLfloat)1.0  );
-		_shader.setUniformValue("bias",(GLfloat)0.0  );    
+    _shader.setUniformValue("fill",(GLfloat)_fill);
+    _shader.setUniformValue("gain",(GLfloat)1.0  );
+    _shader.setUniformValue("bias",(GLfloat)0.0  );    
     _shader.setUniformValue("show_mode",(GLint)(_show_mode%4));    
     checkGLError();
     //glPushMatrix();
     //glRotatef(_rotation_radians*180.0/M_PI,0.0,0.0,1.0);
-		glCallList(_hQuadDisplayList);
+    glCallList(_hQuadDisplayList);
     //glPopMatrix();
     _shader.release();
     checkGLError();
@@ -196,20 +196,20 @@ GLuint typeMapMylibToGLType(mylib::Array **pa)
 void ImItem::_loadTex(mylib::Array *im)
 {
   mylib::Array *original = im;
-	checkGLError();
+  checkGLError();
   glActiveTexture(GL_TEXTURE0);
   //glEnable(GL_TEXTURE_3D);
-	glBindTexture(GL_TEXTURE_3D, _hTexture);
+  glBindTexture(GL_TEXTURE_3D, _hTexture);
     GLuint gltype = typeMapMylibToGLType(&im);
     //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	  glTexImage3D(GL_TEXTURE_3D, 0, GL_LUMINANCE,
-							   im->dims[0], im->dims[1], _nchan, 0,
-							   GL_LUMINANCE,
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_LUMINANCE,
+                 im->dims[0], im->dims[1], _nchan, 0,
+                 GL_LUMINANCE,
                  gltype,
-							   im->data);  
+                 im->data);  
   glBindTexture(GL_TEXTURE_3D, 0);
   //glDisable(GL_TEXTURE_3D);
-	checkGLError();
+  checkGLError();
   if(original!=im) // typeMapMylibToGLType() had to make a copy.  Free it now.
     Free_Array(im);
   _loaded = 1;
@@ -217,42 +217,42 @@ void ImItem::_loadTex(mylib::Array *im)
 
 void ImItem::updateDisplayLists()
 { 
-	float t,b,l,r;//,cx,cy;
+  float t,b,l,r;//,cx,cy;
   //float ph,pw;
-	checkGLError();
+  checkGLError();
   b = cvt<PIXEL_SCALE,UM>(_bbox_um.bottom());
-	t = cvt<PIXEL_SCALE,UM>(_bbox_um.top());
-	l = cvt<PIXEL_SCALE,UM>(_bbox_um.left());
-	r = cvt<PIXEL_SCALE,UM>(_bbox_um.right());
-	
-	glNewList(_hQuadDisplayList, GL_COMPILE);
-	glBegin(GL_QUADS);
-	glTexCoord2f(1.0, 0.0); glVertex2f(l, t);//glVertex2f(r, b);
-	glTexCoord2f(1.0, 1.0); glVertex2f(l, b);//glVertex2f(r, t);				
-	glTexCoord2f(0.0, 1.0); glVertex2f(r, b);//glVertex2f(l, t);				
-	glTexCoord2f(0.0, 0.0); glVertex2f(r, t);//glVertex2f(l, b);		
-	glEnd();
-	glEndList();
-	
-	checkGLError();
+  t = cvt<PIXEL_SCALE,UM>(_bbox_um.top());
+  l = cvt<PIXEL_SCALE,UM>(_bbox_um.left());
+  r = cvt<PIXEL_SCALE,UM>(_bbox_um.right());
+  
+  glNewList(_hQuadDisplayList, GL_COMPILE);
+  glBegin(GL_QUADS);
+  glTexCoord2f(1.0, 0.0); glVertex2f(l, t);//glVertex2f(r, b);
+  glTexCoord2f(1.0, 1.0); glVertex2f(l, b);//glVertex2f(r, t);				
+  glTexCoord2f(0.0, 1.0); glVertex2f(r, b);//glVertex2f(l, t);				
+  glTexCoord2f(0.0, 0.0); glVertex2f(r, t);//glVertex2f(l, b);		
+  glEnd();
+  glEndList();
+  
+  checkGLError();
 }
 
 void ImItem::flip(int isupdate/*=0*/)
 {
-	checkGLError();
+  checkGLError();
   if( isupdate )
     update();
-	checkGLError();
+  checkGLError();
 }
 
 // double-buffers, so you might not see your image right away.
 void ImItem::push(mylib::Array *plane)
 {
-	checkGLError();
+  checkGLError();
 
-	float w,h;
-	w = plane->dims[0];
-	h = plane->dims[1];
+  float w,h;
+  w = plane->dims[0];
+  h = plane->dims[1];
   if(plane->ndims>2)
   {
     if(_nchan!=plane->dims[2])
@@ -272,13 +272,13 @@ void ImItem::push(mylib::Array *plane)
   { _resetscale(_selected_channel);
     _resetscale_next = false;
   }
-	
-	//Guess the opacity of different planes
-	_fill = 10.0/_nchan;
-	_fill = (_fill>1.0)?1.0:_fill;
-	
-	_loadTex(plane);
-	checkGLError();
+  
+  //Guess the opacity of different planes
+  _fill = 10.0/_nchan;
+  _fill = (_fill>1.0)?1.0:_fill;
+  
+  _loadTex(plane);
+  checkGLError();
 }
 
 #define DBL_EQ(a,b) (abs((b)-(a))<1e-6)
@@ -307,7 +307,7 @@ void ImItem::setFOVGeometry( float w_um, float h_um, float rotation_radians )
 #define SHADERASSERT(expr) if(!(expr)) qCritical()<<_shader.log()
 void ImItem::_setupShader()
 {
-	checkGLError();
+  checkGLError();
   // shader
   SHADERASSERT( _shader.addShaderFromSourceFile(
         QGLShader::Vertex,
@@ -316,33 +316,33 @@ void ImItem::_setupShader()
         QGLShader::Fragment,
         ":/shaders/frag/cmap") );
   SHADERASSERT( _shader.link() );
-	SHADERASSERT( _shader.bind() );
-	_hShaderPlane = _shader.uniformLocation("plane");
-	_hShaderCmap  = _shader.uniformLocation("cmap");
+  SHADERASSERT( _shader.bind() );
+  _hShaderPlane = _shader.uniformLocation("plane");
+  _hShaderCmap  = _shader.uniformLocation("cmap");
   _shader.setUniformValue("nchan",(GLfloat)_nchan);
   _shader.release();
 
-	// Colormap
-	QImage cmap;
+  // Colormap
+  QImage cmap;
   glActiveTexture(GL_TEXTURE1);	
   {
-	  assert(cmap.load(":/cmap/2","JPG"));
+    assert(cmap.load(":/cmap/2","JPG"));
     //qDebug()<<cmap.format();
-	  glGenTextures(1, &_hTexCmap);
-	  glBindTexture(GL_TEXTURE_2D, _hTexCmap);
+    glGenTextures(1, &_hTexCmap);
+    glBindTexture(GL_TEXTURE_2D, _hTexCmap);
     {
-	    glTexImage2D(GL_TEXTURE_2D, 
-							     0, 
-							     GL_RGBA, 
-							     cmap.width(), cmap.height(), 0, 
-							     GL_BGRA, GL_UNSIGNED_BYTE,
-							     cmap.constBits());
+      glTexImage2D(GL_TEXTURE_2D, 
+                   0, 
+                   GL_RGBA, 
+                   cmap.width(), cmap.height(), 0, 
+                   GL_BGRA, GL_UNSIGNED_BYTE,
+                   cmap.constBits());
     }
     glBindTexture(GL_TEXTURE_2D,0);
   }
 
   glActiveTexture(GL_TEXTURE0);
-	checkGLError();
+  checkGLError();
 }
 
 void ImItem::_updateCmapCtrlPoints()
@@ -368,7 +368,7 @@ void ImItem::_updateCmapCtrlPoints()
         _cmap_ctrl_t[i] = ic/(_cmap_ctrl_count-1.0f);
       }      
     }
-    _cmap_ctrl_last_size = nelem;
+    _cmap_ctrl_last_size = (GLuint) nelem;
   }
 
   // upload to the gpu  
@@ -381,7 +381,7 @@ void ImItem::_updateCmapCtrlPoints()
     GL_LUMINANCE, GL_FLOAT,
     _cmap_ctrl_s);
   glBindTexture(GL_TEXTURE_2D,0);  
-	checkGLError();
+  checkGLError();
                              
   glActiveTexture(GL_TEXTURE3);
   glBindTexture(GL_TEXTURE_2D,_hTexCmapCtrlT);
@@ -394,14 +394,14 @@ void ImItem::_updateCmapCtrlPoints()
   glBindTexture(GL_TEXTURE_2D,0);  
   
   glActiveTexture(GL_TEXTURE0);
-	checkGLError();
+  checkGLError();
 
   return;
 MemoryError:
   error("(%s:%d) Memory (re)allocation failed."ENDL,__FILE__,__LINE__);  
 }
 
-void ImItem::_autoscale(mylib::Array *data, int ichannel, float percent)
+void ImItem::_autoscale(mylib::Array *data, GLuint ichannel, float percent)
 { mylib::Array c;
   if(ichannel>=data->dims[2] || (ichannel>=_nchan))
   { warning("(%s:%d) Autoscale: selected channel out of bounds."ENDL,__FILE__,__LINE__);
@@ -426,7 +426,7 @@ void ImItem::_autoscale(mylib::Array *data, int ichannel, float percent)
   m = 1.0f/(max-min);
   b = min/(min-max);
   
-  for(int i=0;i<_cmap_ctrl_count;++i)
+  for(GLuint i=0;i<_cmap_ctrl_count;++i)
   { float x = i/(_cmap_ctrl_count-1.0f);
     _cmap_ctrl_t[ichannel*_cmap_ctrl_count+i] = m*x+b; // upload to gpu will clamp to [0,1]
   }
@@ -435,10 +435,10 @@ void ImItem::_autoscale(mylib::Array *data, int ichannel, float percent)
   _updateCmapCtrlPoints();
 }
 
-void ImItem::_resetscale(int ichannel)
+void ImItem::_resetscale(GLuint ichannel)
 {
   if(ichannel<_nchan)
-  { for(int i=0;i<_cmap_ctrl_count;++i)    
+  { for(GLuint i=0;i<_cmap_ctrl_count;++i)    
       _cmap_ctrl_t[ichannel*_cmap_ctrl_count+i] = i/(_cmap_ctrl_count-1.0f);
     _updateCmapCtrlPoints();
   }
@@ -458,7 +458,7 @@ void ImItem::_common_setup()
   glGenTextures(1, &_hTexCmapCtrlS);
   glGenTextures(1, &_hTexCmapCtrlT);
   _updateCmapCtrlPoints();
-	checkGLError();
+  checkGLError();
 }
 
 }} // end fetch::ui

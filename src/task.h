@@ -80,6 +80,15 @@ namespace fetch
 
     static bool eq(Task *a, Task *b); // a eq b iff addresses of config and run virtual functions share the same address
   };
+
+  template<typename TDevice>
+    class TTask : public Task
+  { public:
+      virtual unsigned int config(IDevice *d) {return config(dynamic_cast<TDevice*>(d));}
+      virtual unsigned int run(IDevice *d)    {return    run(dynamic_cast<TDevice*>(d));}
+      virtual unsigned int config(TDevice *d) {return 0;}
+      virtual unsigned int run(TDevice *d)    = 0;
+  };
   
   /*
      IUpdateable

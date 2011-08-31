@@ -136,6 +136,7 @@ namespace fetch
       Agent __self_agent;
       Agent __scan_agent;
       Agent __io_agent;
+      Agent __vibratome_agent;
     };
     //end namespace fetch::device
   }

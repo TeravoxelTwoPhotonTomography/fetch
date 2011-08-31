@@ -12,13 +12,30 @@ message SerialControlVibratome
   optional double amp2mm        = 4 [default=0.000392156]; // (units/percent) - Convert controller units to length.  amplitude * pct2mm = amplitude in mm.
 }
 
+message Point2d
+{ optional double x = 1 [default = 0.0];
+  optional double y = 2 [default = 0.0];
+}
+
+message VibratomeGeometry
+{ optional Point2d cut_pos_mm = 1;
+  repeated Point2d bounds_mm  = 2;
+}
+
 message Vibratome
 { enum VibratomeType
   {
     Simulated = 0;
     Serial    = 1;
   }
+  enum VibratomeFeedAxis
+  { X = 0;
+    Y = 1;
+  }
   optional VibratomeType            kind = 1 [default=Serial];
   optional SerialControlVibratome serial = 2;
   optional SimulatedVibratome  simulated = 3;
+  optional VibratomeFeedAxis   feed_axis = 4;
+  optional double                feed_mm = 5 [default=10.0];
+  optional VibratomeGeometry    geometry = 6;
 }

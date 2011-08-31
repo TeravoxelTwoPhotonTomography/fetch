@@ -30,8 +30,8 @@
  */
 #pragma once
 
-#include "../agent.h"
-#include "../util/util-niscope.h"
+#include "agent.h"
+#include "util/util-niscope.h"
 #include "digitizer.pb.h"
 #include "object.h"
 #include "types.h"

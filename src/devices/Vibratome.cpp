@@ -107,9 +107,9 @@ namespace device {
     timeouts.WriteTotalTimeoutConstant   =10;
     Guarded_Assert_WinErr( SetCommTimeouts(_h,&timeouts) );
     return 0;
-Error:
-    _close();
-    return 1; // failure
+//Error:
+//    _close();
+//    return 1; // failure
   }
   
   unsigned int SerialControlVibratome::_close()
@@ -203,7 +203,6 @@ Error:
 
   int SerialControlVibratome::AMP(int val)
   { char buf[1024];
-    BOOL ok;
     int n;
     memset(buf,0,sizeof(buf));
     n=snprintf(buf,sizeof(buf),"amp %d\n",val);

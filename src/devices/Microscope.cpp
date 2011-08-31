@@ -29,9 +29,10 @@
       ,__self_agent("Microscope",NULL)
       ,__scan_agent("Scanner",&scanner)
       ,__io_agent("IO",&disk)
+      ,__vibratome_agent("Vibratome",&vibratome_)
       ,scanner(&__scan_agent)    
       ,stage_(&__self_agent)  
-      ,vibratome_(&__self_agent)
+      ,vibratome_(&__vibratome_agent)
       ,fov_(_config->fov())
       ,disk(&__io_agent)
       ,frame_averager("FrameAverager")
@@ -58,10 +59,11 @@
       :IConfigurableDevice<Config>(&__self_agent)
       ,__self_agent("Microscope",NULL)
       ,__scan_agent("Scanner",&scanner)
-      ,__io_agent("IO",&disk)
+      ,__io_agent("IO",&disk) 
+      ,__vibratome_agent("Vibratome",&vibratome_) 
       ,scanner(&__scan_agent)       
       ,stage_(&__self_agent)
-      ,vibratome_(&__self_agent)
+      ,vibratome_(&__vibratome_agent)
       ,fov_(cfg.fov())
       ,disk(&__io_agent)
       ,frame_averager("FrameAverager")
@@ -81,10 +83,11 @@
       :IConfigurableDevice<Config>(&__self_agent,cfg)
       ,__self_agent("Microscope",NULL)
       ,__scan_agent("Scanner",&scanner)
-      ,__io_agent("IO",&disk)
+      ,__io_agent("IO",&disk)  
+      ,__vibratome_agent("Vibratome",&vibratome_) 
       ,scanner(&__scan_agent,cfg->mutable_scanner3d())       
       ,stage_(&__self_agent,cfg->mutable_stage())
-      ,vibratome_(&__self_agent,cfg->mutable_vibratome())
+      ,vibratome_(&__vibratome_agent,cfg->mutable_vibratome())
       ,fov_(cfg->fov())
       ,disk(&__io_agent)
       ,frame_averager(cfg->mutable_frame_average(),"FrameAverager")
@@ -105,6 +108,7 @@
       if(__scan_agent.detach()) warning("Microscope __scan_agent did not detach cleanly\r\n");
       if(__self_agent.detach()) warning("Microscope __self_agent did not detach cleanly\r\n");
       if(  __io_agent.detach()) warning("Microscope __io_agent did not detach cleanly\r\n");
+      if(  __vibratome_agent.detach()) warning("Microscope __vibratome_agent did not detach cleanly\r\n");
     } 
 
     unsigned int

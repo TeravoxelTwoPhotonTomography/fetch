@@ -36,8 +36,8 @@ protected:
   void _loadTex(mylib::Array *im);
   void _setupShader();
   void _updateCmapCtrlPoints();
-  void _autoscale(mylib::Array *data, int ichannel, float percent);
-  void _resetscale(int ichannel);
+  void _autoscale(mylib::Array *data, GLuint ichannel, float percent);
+  void _resetscale(GLuint ichannel);
 
   void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *e);
 

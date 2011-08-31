@@ -466,7 +466,7 @@ namespace fetch {
     if( (v.time - lasttime) > 0 )  // The <time> is used to synchronize "simultaneous" requests
     { Config cfg(v.self->get_config());
       lasttime = v.time;             // Only process requests dated after the last request.      
-      goto_if_fail(cfg.ParseFromArray(v.data,v.size),FailedToParse);
+      goto_if_fail(cfg.ParseFromArray(v.data,(int)v.size),FailedToParse);
       v.self->set_config(cfg);
       //goto_if_fail(v.self->_config->ParseFromArray(v.data,v.size),FailedToParse);
       updated = true;      

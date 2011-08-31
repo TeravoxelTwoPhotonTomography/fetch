@@ -139,11 +139,11 @@ namespace fetch
           // Output metadata and Increment file
           eflag |= dc->disk.close();
           dc->write_stack_metadata();
-            dc->file_series.inc(); // increment regardless of completion status
+          dc->file_series.inc(); // increment regardless of completion status
 
-            eflag |= dc->stopPipeline(); // wait till everything stops
-            tiling->resetCursor();
-           
+          eflag |= dc->stopPipeline(); // wait till everything stops
+          tiling->resetCursor();
+          
         } // end loop over tiles
         eflag |= dc->stopPipeline(); // wait till the  pipeline stops
         

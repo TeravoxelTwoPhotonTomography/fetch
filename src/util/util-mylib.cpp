@@ -39,7 +39,7 @@ namespace mylib
     64 //id_f64,
   };
 
-  size_t fetchTypeToArrayScale(Basic_Type_ID id)
+  int fetchTypeToArrayScale(Basic_Type_ID id)
   {
     assert(id!=id_unspecified);
     assert(id<MAX_TYPE_ID);
