@@ -24,6 +24,17 @@ template<> i64 QStringToValue<i64>(QString &s,bool *ok) { CVT(i64,toLongLong);}
 template<> f32 QStringToValue<f32>(QString &s,bool *ok) { CVT(f32,toFloat );}
 template<> f64 QStringToValue<f64>(QString &s,bool *ok) { CVT(f64,toDouble);}
  
+
+void DevicePropControllerBase::report() 
+{ QStringListModel *model = qobject_cast<QStringListModel*>(le_->completer()->model());
+  if(model)
+  { QStringList hist = model->stringList();
+    hist.append(le_->text());
+    hist.removeDuplicates();
+    model->setStringList(hist);
+  }
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Auxiliary QValidators
 //////////////////////////////////////////////////////////////////////////
@@ -112,6 +123,8 @@ QValidator* GetSetPockels::createValidator_(QObject* parent)
 { return new QIntValidator(0,2000,parent);
 }
 
+// Vibratome
+
 void GetSetVibratomeAmplitude::Set_(device::Vibratome *dc, u32 &v)
 { dc->setAmplitude(v);
 }
@@ -120,6 +133,28 @@ u32 GetSetVibratomeAmplitude::Get_(device::Vibratome *dc)
 }
 QValidator* GetSetVibratomeAmplitude::createValidator_(QObject* parent)
 { return new QIntValidator(0,255,parent);
+}
+
+void GetSetVibratomeFeedDist::Set_(device::Vibratome *dc, double &v)
+{ dc->setFeedDist_mm(v);
+}
+double GetSetVibratomeFeedDist::Get_(device::Vibratome *dc)
+{ return dc->getFeedDist_mm();
+}
+QValidator* GetSetVibratomeFeedDist::createValidator_(QObject* parent)
+{ //should check against stage bounds
+  return new QDoubleValidator(0.0,100.0/*mm*/,4/*decimals*/,parent);
+}     
+
+void GetSetVibratomeFeedVel::Set_(device::Vibratome *dc, double &v)
+{ dc->setFeedVel_mm(v);
+}
+double GetSetVibratomeFeedVel::Get_(device::Vibratome *dc)
+{ return dc->getFeedVel_mm();
+}
+QValidator* GetSetVibratomeFeedVel::createValidator_(QObject* parent)
+{ //should check against stage bounds
+  return new QDoubleValidator(0.0,10.0/*mm/sec*/,4/*decimals*/,parent);
 }
 
 // Stack

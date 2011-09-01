@@ -56,11 +56,13 @@ namespace fetch
     class IVibratome
     {
     public:
-      virtual int isValidAmplitude(int val)      = 0;
-      virtual int setAmplitude(int val)          = 0; 
-      virtual int setAmplitudeNoWait(int val)    = 0;
-      virtual int getAmplitude_ControllerUnits() = 0;
-      virtual double getAmplitude_mm()           = 0;
+      typedef cfg::device::Vibratome_VibratomeFeedAxis FeedAxis;
+
+      virtual int      isValidAmplitude(int val)        = 0;
+      virtual int      setAmplitude(int val)            = 0; 
+      virtual int      setAmplitudeNoWait(int val)      = 0;
+      virtual int      getAmplitude_ControllerUnits()   = 0;
+      virtual double   getAmplitude_mm()                = 0;
 
       virtual int start() = 0;
       virtual int stop()  = 0;
@@ -165,6 +167,20 @@ class SimulatedVibratome:public VibratomeBase<cfg::device::SimulatedVibratome>
               void  feed_begin_pos_mm(float *x, float *y);
               void  feed_end_pos_mm(float *x, float *y);
               float feed_vel_mm_p_s();
+
+
+              
+      virtual int      setFeedDist_mm(double val);
+      virtual int      setFeedDistNoWait_mm(double val);
+      virtual double   getFeedDist_mm(void);
+                                                        
+      virtual int      setFeedVel_mm(double val);
+      virtual int      setFeedVelNoWait_mm(double val);
+      virtual double   getFeedVel_mm(void);
+                       
+      virtual int      setFeedAxis(FeedAxis val);
+      virtual int      setFeedAxisNoWait(FeedAxis val);
+      virtual FeedAxis getFeedAxis(void);
       
     };
 

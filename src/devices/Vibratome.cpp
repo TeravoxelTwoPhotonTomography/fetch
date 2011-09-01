@@ -349,5 +349,56 @@ Error:
   { return _config->feed_vel_mm_per_sec();
   }
 
+
+  
+  int Vibratome::setFeedDist_mm(double val)
+  { transaction_lock();
+    _config->set_feed_mm(val);    
+    transaction_unlock();
+    return 1;
+  }
+  int Vibratome::setFeedDistNoWait_mm(double val)
+  { Config cfg = get_config();
+    cfg.set_feed_mm(val);
+    set_config_nowait(cfg);
+    return 1;
+  }
+  double Vibratome::getFeedDist_mm()
+  { return _config->feed_mm();
+  }
+
+  int Vibratome::setFeedVel_mm(double val)
+  { transaction_lock();
+    _config->set_feed_vel_mm_per_sec(val);    
+    transaction_unlock();
+    return 1;
+  }
+  int Vibratome::setFeedVelNoWait_mm(double val)
+  { Config cfg = get_config();
+    cfg.set_feed_vel_mm_per_sec(val);
+    set_config_nowait(cfg);
+    return 1;
+  }
+  double Vibratome::getFeedVel_mm()
+  { return _config->feed_vel_mm_per_sec();
+  }
+  
+  int Vibratome::setFeedAxis(Vibratome::FeedAxis val)
+  { transaction_lock();
+    _config->set_feed_axis(val);    
+    transaction_unlock();
+    return 1;
+  }
+  int Vibratome::setFeedAxisNoWait(Vibratome::FeedAxis val)
+  { Config cfg = get_config();
+    cfg.set_feed_axis(val);
+    set_config_nowait(cfg);
+    return 1;
+  }
+  Vibratome::FeedAxis Vibratome::getFeedAxis()
+  { return _config->feed_axis();
+  }
+
+
 } //end device namespace
 }   //end fetch  namespace

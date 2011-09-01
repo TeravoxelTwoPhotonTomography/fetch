@@ -63,7 +63,9 @@ public: // semi-private
   LinesController              *_vlines_controller;         
   LSMVerticalRangeController   *_lsm_vert_range_controller; 
   PockelsController            *_pockels_controller;        
-  VibratomeAmplitudeController *_vibratome_controller;
+  VibratomeAmplitudeController *_vibratome_amp_controller;
+  VibratomeFeedDisController   *_vibratome_feed_distance_controller;
+  VibratomeFeedVelController   *_vibratome_feed_velocity_controller;
 
   ZPiezoMaxController          *_zpiezo_max_control;  
   ZPiezoMinController          *_zpiezo_min_control;  

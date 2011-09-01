@@ -5,13 +5,13 @@ package fetch.cfg.device;
 message C843StageController
 { 
   message Axis
-	{
-		optional uint32 id    = 1 [default=1];         //1-4
-		optional string stage = 2 [default="NOSTAGE"]; //M-511.DD (XY), M-501.DG (Z)
-	}
+    {
+        optional uint32 id    = 1 [default=1];         //1-4
+        optional string stage = 2 [default="NOSTAGE"]; //M-511.DD (XY), M-501.DG (Z)
+    }
 
-	optional uint32 id   = 1 [default=1];
-	repeated Axis   axis = 2;
+    optional uint32 id   = 1 [default=1];
+    repeated Axis   axis = 2;
 }
 
 message SimulatedStage
@@ -20,7 +20,7 @@ message SimulatedStage
   { optional float min_mm = 1 [default=  0.0];
     optional float max_mm = 2 [default=100.0];
   }
-	repeated Axis   axis = 2;
+  repeated Axis axis = 2;
 }
 
 message Stage

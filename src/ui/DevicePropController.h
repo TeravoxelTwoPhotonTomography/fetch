@@ -45,8 +45,14 @@ namespace ui {
   class DevicePropControllerBase:public QObject
   {
     Q_OBJECT;
+    protected:
+      QLineEdit  *le_;
+
+    public:
+      DevicePropControllerBase() : le_(NULL) {}
+
     protected slots:
-      void report() {HERE;}
+      virtual void report();
       virtual void setByLineEdit(QWidget *source)=0;
   };
 
@@ -59,6 +65,7 @@ namespace ui {
       QLineEdit *createLineEdit();
       QLineEdit *createLineEditAndAddToLayout(QFormLayout *layout);
 
+
     protected:
       void setByLineEdit(QWidget *source);
       
@@ -69,10 +76,7 @@ namespace ui {
       TDevice    *dc_;
       QString     label_;
 
-      QSignalMapper lineEditSignalMapper_;
-
-      QLineEdit  *le_;
-      
+      QSignalMapper lineEditSignalMapper_;          
   };
 
   template<typename TConfig> inline QString  ValueToQString(TConfig v);
@@ -103,17 +107,23 @@ namespace ui {
   DECL_GETSET_CLASS(GetSetResonantTurn,device::Microscope,f64);
   DECL_GETSET_CLASS(GetSetLines,device::Microscope,i32);
   DECL_GETSET_CLASS(GetSetLSMVerticalRange,device::LinearScanMirror,f64);
-  DECL_GETSET_CLASS(GetSetPockels,device::Pockels,u32);
-  DECL_GETSET_CLASS(GetSetVibratomeAmplitude,device::Vibratome,u32);
+  DECL_GETSET_CLASS(GetSetPockels,device::Pockels,u32);  
 
   typedef DevicePropController<device::Microscope,f64,GetSetResonantTurn>           ResonantTurnController;
   typedef DevicePropController<device::Microscope,i32,GetSetLines>                  LinesController;
   typedef DevicePropController<device::LinearScanMirror,f64,GetSetLSMVerticalRange> LSMVerticalRangeController;
   typedef DevicePropController<device::Pockels,u32,GetSetPockels>                   PockelsController;
+
+  // Vibratome
+  DECL_GETSET_CLASS(GetSetVibratomeAmplitude,device::Vibratome,u32);
+  DECL_GETSET_CLASS(GetSetVibratomeFeedDist,device::Vibratome,double);
+  DECL_GETSET_CLASS(GetSetVibratomeFeedVel ,device::Vibratome,double);
+  //DECL_GETSET_CLASS(GetSetVibratomeFeedAxis,device::Vibratome,...);
   typedef DevicePropController<device::Vibratome,u32,GetSetVibratomeAmplitude>      VibratomeAmplitudeController;
+  typedef DevicePropController<device::Vibratome,double,GetSetVibratomeFeedDist>    VibratomeFeedDisController;
+  typedef DevicePropController<device::Vibratome,double,GetSetVibratomeFeedVel >    VibratomeFeedVelController;
 
   // Stack
-
   DECL_GETSET_CLASS(GetSetZPiezoMin ,device::ZPiezo,f64);
   DECL_GETSET_CLASS(GetSetZPiezoMax ,device::ZPiezo,f64);
   DECL_GETSET_CLASS(GetSetZPiezoStep,device::ZPiezo,f64);
@@ -137,7 +147,6 @@ namespace ui {
   DevicePropController<TDevice,TConfig,TGetSetInterface>::DevicePropController(TDevice *dc, char* label)
   : dc_(dc)
   , label_(label)
-  , le_(NULL)
   { 
     connect(&lineEditSignalMapper_,SIGNAL(mapped(QWidget*)),this,SLOT(setByLineEdit(QWidget*)));
   }
@@ -158,18 +167,22 @@ namespace ui {
   QLineEdit* DevicePropController<TDevice,TConfig,TGetSetInterface>::createLineEdit()
   { TConfig vv = interface_.Get_(dc_);
     QString s = ValueToQString(vv);
-    le_ = new QLineEdit(s);
-    //le_ = new QLineEdit(ValueToQString(interface_.Get_(dc_)));
+    le_ = new QLineEdit(s);    
     QValidator *v = interface_.createValidator_(le_);
     if(v)
       le_->setValidator(v);
 
+    QStringListModel *history = new QStringListModel(this);
+    QCompleter *c = new QCompleter(history,this);
+    c->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
+    c->setModelSorting(QCompleter::UnsortedModel);
+    le_->setCompleter(c);
+
     lineEditSignalMapper_.setMapping(le_,le_);
     connect(le_,SIGNAL(editingFinished()),&lineEditSignalMapper_,SLOT(map()));
-    //connect(le_,SIGNAL(editingFinished()),this,SLOT(report()));
+    connect(le_,SIGNAL(editingFinished()),this,SLOT(report()));
     return le_;
   }
-
 
   template<typename TDevice, typename TConfig, class TGetSetInterface>
   QLineEdit* DevicePropController<TDevice,TConfig,TGetSetInterface>::createLineEditAndAddToLayout( QFormLayout *layout )

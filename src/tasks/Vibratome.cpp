@@ -47,7 +47,7 @@ namespace microscope {
     dc->stage()->setVelocity(v);
     // do the cut
     dc->vibratome()->start();
-    dc->stage()->setPos(bx,by,cz);    
+    dc->stage()->setPos(bx,by,cz);
     dc->vibratome()->stop();
     // Move back, and set old velocity
     dc->stage()->setVelocity(10.0,10.0,10.0);

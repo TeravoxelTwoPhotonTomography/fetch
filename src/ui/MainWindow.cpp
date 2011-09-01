@@ -43,7 +43,9 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   _zpiezo_step_control      = new ZPiezoStepController(dc->zpiezo(),"Z &Step (um)");
 
   _stageController          = new PlanarStageController(dc->stage());
-  _vibratome_controller     = new VibratomeAmplitudeController(dc->vibratome(),"Amplitude (0-255)");
+  _vibratome_amp_controller = new VibratomeAmplitudeController(dc->vibratome(),"Amplitude (0-255)");
+  _vibratome_feed_distance_controller = new VibratomeFeedDisController(dc->vibratome(),"Feed distance (mm)");
+  _vibratome_feed_velocity_controller = new VibratomeFeedVelController(dc->vibratome(),"Feed velocity (mm/s)");
 
   createActions();
   createStateMachines();
