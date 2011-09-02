@@ -33,7 +33,7 @@ scanner3d {
         channel { name: "0" range: 0.2 enabled: true }
         channel { name: "1" range: 2.0 enabled: true }
         channel { name: "2" range: 2.0 enabled: true }
-		channel { name: "2" range: 2.0 enabled: true }
+        channel { name: "2" range: 2.0 enabled: true }
       }
       alazar {
         system_id: 1
@@ -104,13 +104,13 @@ scanner3d {
   zref_um: 0
 }
 stage {
-	kind: Simulated   #C843 #Simulated
-	c843 {
-	  id: 1
-		axis {id: 1   stage: "M-511.DD_NEW"}
-		axis {id: 2   stage: "M-511.DD_NEW"}
-		axis {id: 3   stage: "M-501.1DG"}
-	}
+    kind: Simulated   #C843 #Simulated
+    c843 {
+      id: 1
+        axis {id: 1   stage: "M-511.DD_NEW"}
+        axis {id: 2   stage: "M-511.DD_NEW"}
+        axis {id: 3   stage: "M-501.1DG"}
+    }
   simulated {
     axis { min_mm: 0.0  max_mm: 100.0}
     axis { min_mm: 0.0  max_mm: 100.0}
@@ -119,6 +119,11 @@ stage {
 
   tilemode: PixelAligned #StageAligned #PixelAligned
 }    
+vibratome {
+  serial {
+  }
+  feed_axis: X
+}  
 fov {
     x_size_um: 500.0
     y_size_um: 400.0

@@ -12,6 +12,7 @@ class VideoAcquisitionDockWidget;
 class StackAcquisitionDockWidget;
 class MicroscopeStateDockWidget;
 class VibratomeDockWidget;
+class VibratomeGeometryDockWidget;
 class Figure;
 class IPlayerThread;
 
@@ -50,6 +51,7 @@ public: // semi-private
   StackAcquisitionDockWidget   *_stackAcquisitionDockWidget; 
   MicroscopeStateDockWidget    *_microscopesStateDockWidget; 
   VibratomeDockWidget          *_vibratomeDockWidget;
+  VibratomeGeometryDockWidget  *_vibratomeGeometryDockWidget;
   Figure                       *_display;                                          
   IPlayerThread                *_player;                                    
                                                              
@@ -69,11 +71,14 @@ public: // semi-private
 
   ZPiezoMaxController          *_zpiezo_max_control;  
   ZPiezoMinController          *_zpiezo_min_control;  
-  ZPiezoStepController         *_zpiezo_step_control; 
+  ZPiezoStepController         *_zpiezo_step_control;
+
+signals:
+  void configUpdated();
 
 protected slots:
-    void openMicroscopeConfig();
-    void saveMicroscopeConfig();
+  void openMicroscopeConfig();
+  void saveMicroscopeConfig();
 
 private:  
   void load_settings_();

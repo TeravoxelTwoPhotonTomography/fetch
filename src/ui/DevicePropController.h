@@ -41,6 +41,7 @@
 
 namespace fetch {
 namespace ui {
+  class MainWindow;
 
   class DevicePropControllerBase:public QObject
   {
@@ -50,24 +51,29 @@ namespace ui {
 
     public:
       DevicePropControllerBase() : le_(NULL) {}
+      
+    signals:
+      void configUpdated();
 
     protected slots:
       virtual void report();
-      virtual void setByLineEdit(QWidget *source)=0;
+      virtual void setByLineEdit(QWidget *source) =0;
+      virtual void updateLineEdit(QWidget *source)=0;
+
   };
 
   template<typename TDevice, typename TConfig, class TGetSetInterface> 
   class DevicePropController:public DevicePropControllerBase
   { 
     public:
-      DevicePropController(TDevice *dc, char* label);
+      DevicePropController(TDevice *dc, char* label, MainWindow *parent);
 
       QLineEdit *createLineEdit();
       QLineEdit *createLineEditAndAddToLayout(QFormLayout *layout);
 
-
     protected:
-      void setByLineEdit(QWidget *source);
+      void setByLineEdit(QWidget *source);      
+      void updateLineEdit(QWidget *source);
       
     protected:
       TGetSetInterface interface_;
@@ -76,7 +82,9 @@ namespace ui {
       TDevice    *dc_;
       QString     label_;
 
-      QSignalMapper lineEditSignalMapper_;          
+      QSignalMapper lineEditSignalMapper_;
+      QSignalMapper configUpdateSignalMapper_;
+
   };
 
   template<typename TConfig> inline QString  ValueToQString(TConfig v);
@@ -118,7 +126,6 @@ namespace ui {
   DECL_GETSET_CLASS(GetSetVibratomeAmplitude,device::Vibratome,u32);
   DECL_GETSET_CLASS(GetSetVibratomeFeedDist,device::Vibratome,double);
   DECL_GETSET_CLASS(GetSetVibratomeFeedVel ,device::Vibratome,double);
-  //DECL_GETSET_CLASS(GetSetVibratomeFeedAxis,device::Vibratome,...);
   typedef DevicePropController<device::Vibratome,u32,GetSetVibratomeAmplitude>      VibratomeAmplitudeController;
   typedef DevicePropController<device::Vibratome,double,GetSetVibratomeFeedDist>    VibratomeFeedDisController;
   typedef DevicePropController<device::Vibratome,double,GetSetVibratomeFeedVel >    VibratomeFeedVelController;
@@ -143,12 +150,33 @@ namespace ui {
 namespace fetch {
 namespace ui {
   
+  // The idea here is:
+  // When a widget gets changed:
+  //    1. the signal from the widget is connected to a signal mapper
+  //    2. the mapper triggers another signal that calls an update-from-widget function.
+  //    -  Right now, line edits are handled specifically, but one could use type information
+  //       to get the data on a case by case basis.
+  //    -  The "GetSetInterface" defines how the value actually gets written to the config.
+  // When the config is changed, the MainWindow should be notified via the configUpdate() signal.
+  //    1. That signal is connected on construction to the property controller's configUpdate().
+  //    2. This is mapped to an "update" function that updates viewing widgets.
+  //  
+  // It Should be easy to add support for multiple widgets of differnt kinds, but so far I'm just
+  // using this for the ubiquitous LineEdit.
+
+  // Protobuf types that are giving me trouble
+  //  - enums    - currently using a custom combo box
+  //  - repeated - currently using a custom table
   template<typename TDevice, typename TConfig, class TGetSetInterface> 
-  DevicePropController<TDevice,TConfig,TGetSetInterface>::DevicePropController(TDevice *dc, char* label)
+  DevicePropController<TDevice,TConfig,TGetSetInterface>::
+    DevicePropController(TDevice *dc, char* label, MainWindow *parent)
   : dc_(dc)
   , label_(label)
   { 
     connect(&lineEditSignalMapper_,SIGNAL(mapped(QWidget*)),this,SLOT(setByLineEdit(QWidget*)));
+    connect(&configUpdateSignalMapper_,SIGNAL(mapped(QWidget*)),this,SLOT(updateLineEdit(QWidget*)));
+
+    connect(parent,SIGNAL(configUpdated()),this,SIGNAL(configUpdated()));
   }
 
   template<typename TDevice, typename TConfig, class TGetSetInterface>
@@ -161,6 +189,17 @@ namespace ui {
     TConfig v = QStringToValue<TConfig>(le->text(),&ok);
     if(ok)
       interface_.Set_(dc_,v);
+  }
+
+  template<typename TDevice, typename TConfig, class TGetSetInterface>
+  void DevicePropController<TDevice,TConfig,TGetSetInterface>::updateLineEdit(QWidget* source)
+  { 
+    bool ok;
+    QLineEdit* le = qobject_cast<QLineEdit*>(source);
+    if(le)
+    { QString s = ValueToQString(interface_.Get_(dc_));
+      le_->setText(s);
+    }
   }
 
   template<typename TDevice, typename TConfig, class TGetSetInterface>
@@ -181,6 +220,10 @@ namespace ui {
     lineEditSignalMapper_.setMapping(le_,le_);
     connect(le_,SIGNAL(editingFinished()),&lineEditSignalMapper_,SLOT(map()));
     connect(le_,SIGNAL(editingFinished()),this,SLOT(report()));
+
+    configUpdateSignalMapper_.setMapping(this,le_);
+    connect(this,SIGNAL(configUpdated()),&configUpdateSignalMapper_,SLOT(map()));
+
     return le_;
   }
 
@@ -190,7 +233,6 @@ namespace ui {
     layout->addRow(label_,le);
     return le;
   }
-
 
   template<typename TConfig> inline QString ValueToQString(TConfig v) {return QString().setNum(v);}
 }} //end fetch::ui

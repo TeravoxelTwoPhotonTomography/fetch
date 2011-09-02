@@ -33,19 +33,19 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,_pockels_controller(NULL)
 {  
 
-  _resonant_turn_controller = new ResonantTurnController(dc,"&Turn (px)");
-  _vlines_controller        = new LinesController(dc,"Y &Lines (px)");
-  _lsm_vert_range_controller= new LSMVerticalRangeController(dc->LSM(),"&Y Range (Vpp)");
-  _pockels_controller       = new PockelsController(dc->pockels(),"&Pockels (mV)");
+  _resonant_turn_controller = new ResonantTurnController(dc,"&Turn (px)",this);
+  _vlines_controller        = new LinesController(dc,"Y &Lines (px)",this);
+  _lsm_vert_range_controller= new LSMVerticalRangeController(dc->LSM(),"&Y Range (Vpp)",this);
+  _pockels_controller       = new PockelsController(dc->pockels(),"&Pockels (mV)",this);
 
-  _zpiezo_max_control       = new ZPiezoMaxController(dc->zpiezo(), "Z Ma&x (um)");
-  _zpiezo_min_control       = new ZPiezoMinController(dc->zpiezo(), "Z Mi&n (um)");
-  _zpiezo_step_control      = new ZPiezoStepController(dc->zpiezo(),"Z &Step (um)");
+  _zpiezo_max_control       = new ZPiezoMaxController(dc->zpiezo(), "Z Ma&x (um)",this);
+  _zpiezo_min_control       = new ZPiezoMinController(dc->zpiezo(), "Z Mi&n (um)",this);
+  _zpiezo_step_control      = new ZPiezoStepController(dc->zpiezo(),"Z &Step (um)",this);
 
   _stageController          = new PlanarStageController(dc->stage());
-  _vibratome_amp_controller = new VibratomeAmplitudeController(dc->vibratome(),"Amplitude (0-255)");
-  _vibratome_feed_distance_controller = new VibratomeFeedDisController(dc->vibratome(),"Feed distance (mm)");
-  _vibratome_feed_velocity_controller = new VibratomeFeedVelController(dc->vibratome(),"Feed velocity (mm/s)");
+  _vibratome_amp_controller = new VibratomeAmplitudeController(dc->vibratome(),"Amplitude (0-255)",this);
+  _vibratome_feed_distance_controller = new VibratomeFeedDisController(dc->vibratome(),"Feed distance (mm)",this);
+  _vibratome_feed_velocity_controller = new VibratomeFeedVelController(dc->vibratome(),"Feed velocity (mm/s)",this);
 
   createActions();
   createStateMachines();
@@ -167,7 +167,12 @@ void fetch::ui::MainWindow::createDockWidgets()
   _vibratomeDockWidget = new VibratomeDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_vibratomeDockWidget);
   viewMenu->addAction(_vibratomeDockWidget->toggleViewAction());
-  _vibratomeDockWidget->setObjectName("_vibratomeStateDockWidget");
+  _vibratomeDockWidget->setObjectName("_vibratomeStateDockWidget");  
+
+  _vibratomeGeometryDockWidget = new VibratomeGeometryDockWidget(_dc,this);
+  addDockWidget(Qt::LeftDockWidgetArea,_vibratomeGeometryDockWidget);
+  viewMenu->addAction(_vibratomeGeometryDockWidget->toggleViewAction());
+  _vibratomeGeometryDockWidget->setObjectName("_vibratomeGeometryDockWidget");
 }
 
 void fetch::ui::MainWindow::createViews()
@@ -246,7 +251,8 @@ void fetch::ui::MainWindow::openMicroscopeConfig()
     CHKJMP(parser.ParseFromString(cfgfile.readAll().constData(),&cfg),ParseError);
 
     // commit
-    _dc->set_config(cfg);  
+    _dc->set_config(cfg);
+    emit configUpdated();
   }  
 
   return;
