@@ -198,7 +198,10 @@ namespace ui {
       t_->setContextMenuPolicy(Qt::CustomContextMenu);
       connect(t_, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(geometryCtxMenu(const QPoint &)));
 
-      //connect(parent,SIGNAL(configUpdated()),this,/***/);
+      connect(parent,SIGNAL(configUpdated()),m,SIGNAL(layoutAboutToBeChanged()));
+      connect(parent,SIGNAL(configUpdated()),m,SLOT(revert()));
+      connect(parent,SIGNAL(configUpdated()),t_,SLOT(reset()));      
+      connect(parent,SIGNAL(configUpdated()),m,SIGNAL(layoutChanged()));
 
       form->addRow(t_);
     }
