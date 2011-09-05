@@ -5,6 +5,7 @@
 #include "devices\pockels.h"
 #include "devices\Vibratome.h"
 #include "common.h"
+#include <google\protobuf\descriptor.h>
 
 // TODO
 // [ ] Update other views when there's a change
@@ -47,18 +48,21 @@ namespace ui {
   {
     Q_OBJECT;
     protected:
-      QLineEdit  *le_;
+      QLineEdit  *le_;      // do these really need to be here?
+      QComboBox  *cmb_;
 
     public:
-      DevicePropControllerBase() : le_(NULL) {}
+      DevicePropControllerBase() : le_(NULL), cmb_(NULL) {}
       
     signals:
       void configUpdated();
 
     protected slots:
       virtual void report();
-      virtual void setByLineEdit(QWidget *source) =0;
-      virtual void updateLineEdit(QWidget *source)=0;
+      virtual void setByLineEdit (QWidget *source) =0;
+      virtual void updateLineEdit(QWidget *source) =0;
+      virtual void setByComboBox (QWidget *source) =0;
+      virtual void updateComboBox(QWidget *source) =0;
 
   };
 
@@ -69,11 +73,15 @@ namespace ui {
       DevicePropController(TDevice *dc, char* label, MainWindow *parent);
 
       QLineEdit *createLineEdit();
+      QComboBox *createComboBox();
       QLineEdit *createLineEditAndAddToLayout(QFormLayout *layout);
+      QComboBox *createComboBoxAndAddToLayout(QFormLayout *layout);
 
     protected:
-      void setByLineEdit(QWidget *source);      
+      void setByLineEdit (QWidget *source);      
       void updateLineEdit(QWidget *source);
+      void setByComboBox (QWidget *source);
+      void updateComboBox(QWidget *source);
       
     protected:
       TGetSetInterface interface_;
@@ -83,6 +91,7 @@ namespace ui {
       QString     label_;
 
       QSignalMapper lineEditSignalMapper_;
+      QSignalMapper comboBoxSignalMapper_;
       QSignalMapper configUpdateSignalMapper_;
 
   };
@@ -101,6 +110,8 @@ namespace ui {
   { virtual void Set_(TDevice *dc, TConfig &v) = 0;
     virtual TConfig Get_(TDevice *dc)          = 0;
     virtual QValidator* createValidator_(QObject* parent) = 0;
+
+    virtual const ::google::protobuf::EnumDescriptor* enum_descriptor(TDevice *dc) {return NULL;}
   };
   
 #define	DECL_GETSET_CLASS(NAME,TDC,T) \
@@ -109,6 +120,13 @@ namespace ui {
     T Get_(TDC *dc);\
     QValidator* createValidator_(QObject* parent);\
   }
+#define	DECL_GETSET_DESC_CLASS(NAME,TDC,T) \
+  struct NAME:public IGetSet<TDC,T> \
+  { void Set_(TDC *dc, T &v);\
+    T Get_(TDC *dc);\
+    QValidator* createValidator_(QObject* parent);\
+    const ::google::protobuf::EnumDescriptor* enum_descriptor(TDC *dc);\
+  }
 
   // Video
 
@@ -116,7 +134,6 @@ namespace ui {
   DECL_GETSET_CLASS(GetSetLines,device::Microscope,i32);
   DECL_GETSET_CLASS(GetSetLSMVerticalRange,device::LinearScanMirror,f64);
   DECL_GETSET_CLASS(GetSetPockels,device::Pockels,u32);  
-
   typedef DevicePropController<device::Microscope,f64,GetSetResonantTurn>           ResonantTurnController;
   typedef DevicePropController<device::Microscope,i32,GetSetLines>                  LinesController;
   typedef DevicePropController<device::LinearScanMirror,f64,GetSetLSMVerticalRange> LSMVerticalRangeController;
@@ -126,15 +143,16 @@ namespace ui {
   DECL_GETSET_CLASS(GetSetVibratomeAmplitude,device::Vibratome,u32);
   DECL_GETSET_CLASS(GetSetVibratomeFeedDist,device::Vibratome,double);
   DECL_GETSET_CLASS(GetSetVibratomeFeedVel ,device::Vibratome,double);
-  typedef DevicePropController<device::Vibratome,u32,GetSetVibratomeAmplitude>      VibratomeAmplitudeController;
-  typedef DevicePropController<device::Vibratome,double,GetSetVibratomeFeedDist>    VibratomeFeedDisController;
-  typedef DevicePropController<device::Vibratome,double,GetSetVibratomeFeedVel >    VibratomeFeedVelController;
+  DECL_GETSET_DESC_CLASS(GetSetVibratomeFeedAxis,device::Vibratome,cfg::device::Vibratome::VibratomeFeedAxis);
+  typedef DevicePropController<device::Vibratome,u32,GetSetVibratomeAmplitude>                                      VibratomeAmplitudeController;
+  typedef DevicePropController<device::Vibratome,double,GetSetVibratomeFeedDist>                                    VibratomeFeedDisController;
+  typedef DevicePropController<device::Vibratome,double,GetSetVibratomeFeedVel >                                    VibratomeFeedVelController;
+  typedef DevicePropController<device::Vibratome,cfg::device::Vibratome::VibratomeFeedAxis,GetSetVibratomeFeedAxis> VibratomeFeedAxisController;
 
   // Stack
   DECL_GETSET_CLASS(GetSetZPiezoMin ,device::ZPiezo,f64);
   DECL_GETSET_CLASS(GetSetZPiezoMax ,device::ZPiezo,f64);
   DECL_GETSET_CLASS(GetSetZPiezoStep,device::ZPiezo,f64);
-
   typedef DevicePropController<device::ZPiezo,f64,GetSetZPiezoMin>              ZPiezoMinController;
   typedef DevicePropController<device::ZPiezo,f64,GetSetZPiezoMax>              ZPiezoMaxController;
   typedef DevicePropController<device::ZPiezo,f64,GetSetZPiezoStep>             ZPiezoStepController;
@@ -176,13 +194,16 @@ namespace ui {
     connect(&lineEditSignalMapper_,SIGNAL(mapped(QWidget*)),this,SLOT(setByLineEdit(QWidget*)));
     connect(&configUpdateSignalMapper_,SIGNAL(mapped(QWidget*)),this,SLOT(updateLineEdit(QWidget*)));
 
+    connect(&comboBoxSignalMapper_,SIGNAL(mapped(QWidget*)),this,SLOT(setByComboBox(QWidget*)));
+    connect(&configUpdateSignalMapper_,SIGNAL(mapped(QWidget*)),this,SLOT(updateComboBox(QWidget*)));
+
     connect(parent,SIGNAL(configUpdated()),this,SIGNAL(configUpdated()));
   }
 
   template<typename TDevice, typename TConfig, class TGetSetInterface>
-  void DevicePropController<TDevice,TConfig,TGetSetInterface>::setByLineEdit(QWidget* source)
-  { 
-    bool ok;    
+  void DevicePropController<TDevice,TConfig,TGetSetInterface>::
+    setByLineEdit(QWidget* source)
+  { bool ok;  
     QLineEdit* le = qobject_cast<QLineEdit*>(source);
     Guarded_Assert(le);
 
@@ -192,9 +213,9 @@ namespace ui {
   }
 
   template<typename TDevice, typename TConfig, class TGetSetInterface>
-  void DevicePropController<TDevice,TConfig,TGetSetInterface>::updateLineEdit(QWidget* source)
-  { 
-    bool ok;
+  void DevicePropController<TDevice,TConfig,TGetSetInterface>::
+    updateLineEdit(QWidget* source)
+  {
     QLineEdit* le = qobject_cast<QLineEdit*>(source);
     if(le)
     { QString s = ValueToQString(interface_.Get_(dc_));
@@ -203,7 +224,39 @@ namespace ui {
   }
 
   template<typename TDevice, typename TConfig, class TGetSetInterface>
-  QLineEdit* DevicePropController<TDevice,TConfig,TGetSetInterface>::createLineEdit()
+  void DevicePropController<TDevice,TConfig,TGetSetInterface>::
+    setByComboBox(QWidget* source)
+  {   
+    QComboBox* w = qobject_cast<QComboBox*>(source);
+    if(!w) return;
+
+    int v = w->currentIndex();;
+    const ::google::protobuf::EnumDescriptor* d =  interface_.enum_descriptor(dc_);
+    TConfig vv = (TConfig) (d->value(v)->number());
+    interface_.Set_(dc_,vv);
+  }
+
+  template<typename TDevice, typename TConfig, class TGetSetInterface>
+  void DevicePropController<TDevice,TConfig,TGetSetInterface>::
+    updateComboBox(QWidget* source)
+  {
+    QComboBox* w = qobject_cast<QComboBox*>(source);
+    if(w)
+    { 
+      int i,v = interface_.Get_(dc_);
+      const ::google::protobuf::EnumDescriptor* d =  interface_.enum_descriptor(dc_);
+      for(i=0;i<d->value_count();++i) // search for value in combo box; <i> will correspond by construction
+        if(d->value(i)->number()==v)
+          break;
+      if(i==d->value_count())
+        error("%s(%d) Did not recognize value.",__FILE__,__LINE__); // getting here is probably a logic error in the code
+      w->setCurrentIndex(i);
+    }
+  }
+
+  template<typename TDevice, typename TConfig, class TGetSetInterface>
+  QLineEdit* DevicePropController<TDevice,TConfig,TGetSetInterface>::
+    createLineEdit()
   { TConfig vv = interface_.Get_(dc_);
     QString s = ValueToQString(vv);
     le_ = new QLineEdit(s);    
@@ -228,11 +281,40 @@ namespace ui {
   }
 
   template<typename TDevice, typename TConfig, class TGetSetInterface>
-  QLineEdit* DevicePropController<TDevice,TConfig,TGetSetInterface>::createLineEditAndAddToLayout( QFormLayout *layout )
+  QComboBox* 
+    DevicePropController<TDevice,TConfig,TGetSetInterface>::
+    createComboBox()
+  { TConfig vv = interface_.Get_(dc_);
+    cmb_ = new QComboBox;
+
+    const ::google::protobuf::EnumDescriptor* d =  interface_.enum_descriptor(dc_);
+    for(int i=0;i<d->value_count();++i) // populate combo box
+      cmb_->addItem(d->value(i)->name().c_str(), d->value(i)->number());
+    cmb_->setEditable(false);      
+    updateComboBox(cmb_);
+    
+    comboBoxSignalMapper_.setMapping(cmb_,cmb_);
+    connect(cmb_,SIGNAL(currentIndexChanged(int)),&comboBoxSignalMapper_,SLOT(map()));
+    //connect(cmb_,SIGNAL(currentIndexChanged(int)),this,SLOT(report()));
+
+    configUpdateSignalMapper_.setMapping(this,cmb_);
+    connect(this,SIGNAL(configUpdated()),&configUpdateSignalMapper_,SLOT(map()));   
+    return cmb_;
+  }
+
+  template<typename TDevice, typename TConfig, class TGetSetInterface>
+  QLineEdit* DevicePropController<TDevice,TConfig,TGetSetInterface>::
+    createLineEditAndAddToLayout( QFormLayout *layout )
   { QLineEdit *le = createLineEdit();
     layout->addRow(label_,le);
     return le;
   }
 
-  template<typename TConfig> inline QString ValueToQString(TConfig v) {return QString().setNum(v);}
+  template<typename TDevice, typename TConfig, class TGetSetInterface>
+  QComboBox* DevicePropController<TDevice,TConfig,TGetSetInterface>::
+    createComboBoxAndAddToLayout( QFormLayout *layout )
+  { QComboBox *w = createComboBox();
+    layout->addRow(label_,w);
+    return w;
+  }  
 }} //end fetch::ui

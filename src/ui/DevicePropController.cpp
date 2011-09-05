@@ -1,6 +1,7 @@
 #include<ui/DevicePropController.h>
 #include<types.h>
 #include "common.h"
+#include <google\protobuf\descriptor.h>
 
 namespace fetch {
 namespace ui {
@@ -23,15 +24,29 @@ template<> i32 QStringToValue<i32>(QString &s,bool *ok) { CVT(i32,toInt);}
 template<> i64 QStringToValue<i64>(QString &s,bool *ok) { CVT(i64,toLongLong);}
 template<> f32 QStringToValue<f32>(QString &s,bool *ok) { CVT(f32,toFloat );}
 template<> f64 QStringToValue<f64>(QString &s,bool *ok) { CVT(f64,toDouble);}
- 
+
+template<> QString ValueToQString(u8  v) {return QString().setNum(v);}
+template<> QString ValueToQString(u16 v) {return QString().setNum(v);}
+template<> QString ValueToQString(u32 v) {return QString().setNum(v);}
+template<> QString ValueToQString(u64 v) {return QString().setNum(v);}
+template<> QString ValueToQString(i8  v) {return QString().setNum(v);}
+template<> QString ValueToQString(i16 v) {return QString().setNum(v);}
+template<> QString ValueToQString(i32 v) {return QString().setNum(v);}
+template<> QString ValueToQString(i64 v) {return QString().setNum(v);}
+template<> QString ValueToQString(f32 v) {return QString().setNum(v);}
+template<> QString ValueToQString(f64 v) {return QString().setNum(v);}
+
 
 void DevicePropControllerBase::report() 
-{ QStringListModel *model = qobject_cast<QStringListModel*>(le_->completer()->model());
-  if(model)
-  { QStringList hist = model->stringList();
-    hist.append(le_->text());
-    hist.removeDuplicates();
-    model->setStringList(hist);
+{ 
+  if(le_)
+  { QStringListModel *model = qobject_cast<QStringListModel*>(le_->completer()->model());
+    if(model)
+    { QStringList hist = model->stringList();
+      hist.append(le_->text());
+      hist.removeDuplicates();
+      model->setStringList(hist);
+    }
   }
 }
 
@@ -157,6 +172,48 @@ QValidator* GetSetVibratomeFeedVel::createValidator_(QObject* parent)
   return new QDoubleValidator(0.0,10.0/*mm/sec*/,4/*decimals*/,parent);
 }
 
+void 
+  GetSetVibratomeFeedAxis::
+  Set_(device::Vibratome *dc, cfg::device::Vibratome::VibratomeFeedAxis &v)
+{ dc->setFeedAxis(v);
+}
+cfg::device::Vibratome::VibratomeFeedAxis 
+  GetSetVibratomeFeedAxis::
+  Get_(device::Vibratome *dc)
+{ return dc->getFeedAxis();
+}
+QValidator* 
+  GetSetVibratomeFeedAxis::
+  createValidator_(QObject* parent)
+{ return NULL;
+}
+const ::google::protobuf::EnumDescriptor* 
+  GetSetVibratomeFeedAxis::
+  enum_descriptor(device::Vibratome *dc)
+{ return dc->_config->VibratomeFeedAxis_descriptor();
+}
+template<>
+cfg::device::Vibratome_VibratomeFeedAxis
+  QStringToValue<cfg::device::Vibratome_VibratomeFeedAxis>(QString &s, bool *ok)
+{ cfg::device::Vibratome t;
+  const ::google::protobuf::EnumDescriptor* d = t.VibratomeFeedAxis_descriptor();
+  *ok = false;
+  for(int i=0;i<d->value_count();++i)
+    if(s.compare(d->value(i)->name().c_str(),Qt::CaseInsensitive)==0)
+    { *ok = true;
+      return (cfg::device::Vibratome_VibratomeFeedAxis)(d->value(i)->number());
+    }
+  return (cfg::device::Vibratome_VibratomeFeedAxis)(d->value(0)->number());
+}
+template<>
+QString ValueToQString<cfg::device::Vibratome_VibratomeFeedAxis>(cfg::device::Vibratome_VibratomeFeedAxis v)
+{ cfg::device::Vibratome t;
+  const ::google::protobuf::EnumDescriptor* d = t.VibratomeFeedAxis_descriptor();
+  for(int i=0;i<d->value_count();++i)
+    if(d->value(i)->number()==(int)v)
+      return d->value(i)->name().c_str();
+  return QString();
+}
 // Stack
 
 void GetSetZPiezoMin::Set_(device::ZPiezo *dc, f64 &v)

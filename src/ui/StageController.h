@@ -17,9 +17,9 @@ namespace ui {
   {      
     Q_OBJECT
   public:
-    void tile_done( size_t index, const Vector3f& pos,uint32_t sts )       {emit sig_tile_done(index,sts);}
+    void tile_done( size_t index, const Vector3f& pos,uint32_t sts )       {emit sig_tile_done(index,(unsigned int)sts);}
     void tiling_changed( device::StageTiling *tiling )                     {emit sig_tiling_changed(tiling);}
-    void tile_next( size_t index, const Vector3f& pos )                    {emit sig_tile_next(index);}
+    void tile_next( size_t index, const Vector3f& pos )                    {emit sig_tile_next((unsigned int)index);}
     void fov_changed(const device::FieldOfViewGeometry *fov)               {emit sig_fov_changed(fov->field_size_um_[0],fov->field_size_um_[1],fov->rotation_radians_);}      
     void moved(void)                                                       {emit sig_moved();}  
     

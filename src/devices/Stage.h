@@ -11,8 +11,8 @@
 using namespace Eigen;
 
 
-#define TODO_ERR   error("%s(%d) TODO",__FILE__,__LINE__)
-#define TODO_WRN warning("%s(%d) TODO",__FILE__,__LINE__)
+#define TODO_ERR   error("%s(%d) TODO"ENDL,__FILE__,__LINE__)
+#define TODO_WRN warning("%s(%d) TODO"ENDL,__FILE__,__LINE__)
 
 namespace fetch {
 namespace device {

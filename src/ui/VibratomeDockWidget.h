@@ -17,7 +17,6 @@ namespace fetch{
     public slots:
       void start() {dc_->vibratome()->start();}
       void stop()  {dc_->vibratome()->stop();}
-      void feedAxisChanged(int i);
     };
 
 
