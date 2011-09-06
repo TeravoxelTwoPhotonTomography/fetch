@@ -106,7 +106,8 @@ namespace fetch
       
       virtual bool   aux_info(int *n, size_t **sizes);
     public:
-      ViSession _vi;
+      ViSession   _vi;
+      std::string _lastResourceName;
 
     private:
       void __common_setup();

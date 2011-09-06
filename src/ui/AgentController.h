@@ -16,6 +16,7 @@ namespace ui {
     signals:
       void onAttach();
       void onDetach();
+      void onArm();
       void onArm(Task *t);
       void onDisarm();
       void onRun();

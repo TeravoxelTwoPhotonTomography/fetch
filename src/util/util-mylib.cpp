@@ -74,11 +74,15 @@ namespace mylib
       *a=*b;
       *b=t;
     }
+  }  
+  template<class Tsrc, class Tdst> void copy(size_t N, Tsrc *s, Tdst *d)
+  { for(size_t i=0;i<N;++i)
+      d[i] = (Tdst) s[i];
   }
 
-  void castFetchFrameToDummyArray(Array* dest, fetch::Frame* src, size_t dims[3])
+  void castFetchFrameToDummyArray(Array* dest, fetch::Frame* src, mylib::Dimn_Type dims[3])
   {
-    assert(sizeof(size_t)==sizeof(mylib::Dimn_Type));
+    size_t d[3];    
     dest->dims = (Dimn_Type*) dims;
     dest->ndims = 3;
     dest->kind = PLAIN_KIND;
@@ -87,8 +91,9 @@ namespace mylib
     dest->data = src->data;
     dest->type  = fetchTypeToArrayType(src->rtti);
     dest->scale = fetchTypeToArrayScale(src->rtti);
-    src->get_shape(dims);
-    reverse<size_t>(dest->ndims,dims);
+    src->get_shape(d);
+    copy<size_t,mylib::Dimn_Type>(dest->ndims,d,dims);
+    reverse<mylib::Dimn_Type>(dest->ndims,dims);
     dest->size = dims[0]*dims[1]*dims[2];
   }
 } //end namespace mylib

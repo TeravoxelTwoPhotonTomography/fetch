@@ -21,6 +21,12 @@
 #define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, error  ))
 #define DAQJMP( expr )  goto_if_fail( 0==DAQWRN(expr), Error)
 
+#define CHKJMP(expr,lbl) \
+  if(!(expr)) \
+    { warning("%s(%d):"ENDL"\tExpression: %s"ENDL"\tEvaluated as false."ENDL,__FILE__,__LINE__,#expr); \
+      goto lbl; \
+    }
+
 namespace fetch
 {
 
@@ -53,13 +59,12 @@ namespace fetch
     }
 
     unsigned int Scanner2D::on_attach()
-    {
-      unsigned int eflag = 0; //success = 0, error = 1
-      return_val_if(eflag |= _shutter.on_attach()  ,eflag);
-      return_val_if(eflag |= _digitizer.on_attach(),eflag);
-      return_val_if(eflag |= _daq.on_attach()      ,eflag);
-      return_val_if(eflag |= _LSM.on_attach()      ,eflag);
-      return_val_if(eflag |= _pockels.on_attach()  ,eflag);
+    {      
+      CHKJMP(_shutter.on_attach()==0   ,ESHUTTER);
+      CHKJMP(_digitizer.on_attach()==0 ,EDIGITIZER);
+      CHKJMP(_daq.on_attach()==0       ,EDAQ);
+      CHKJMP(_LSM.on_attach()==0       ,ELSM);
+      CHKJMP(_pockels.on_attach()==0   ,EPOCKELS);
 
       if(!_out)
       { 
@@ -75,7 +80,7 @@ namespace fetch
         size_t *sizes;
         _digitizer.aux_info(&n,&sizes);
         {
-          nout+=1;
+          nout+=n;
           size_t *nbuf, *nbytes;
           nbuf   = (size_t*)Guarded_Malloc(sizeof(size_t)*nout,"Scanner2D::on_attach()");
           nbytes = (size_t*)Guarded_Malloc(sizeof(size_t)*nout,"Scanner2D::on_attach()");
@@ -91,8 +96,19 @@ namespace fetch
           free(nbuf);
         }        
       }
-
-      return eflag;
+        
+      return 0; // success
+      // On error, try to detached successfully attached subdevices.
+EPOCKELS:
+      _LSM.on_detach();
+ELSM:
+      _daq.on_detach();
+EDAQ:
+      _digitizer.on_detach();
+EDIGITIZER:
+      _shutter.on_detach();
+ESHUTTER:
+      return 1; // error flag
     }
 
     unsigned int Scanner2D::on_detach()

@@ -21,6 +21,12 @@
 #define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, error  ))
 #define DAQJMP( expr )        goto_if_fail( 0==DAQWRN(expr), Error)
 
+#define CHKJMP(expr,lbl) \
+  if(!(expr)) \
+    { warning("%s(%d):"ENDL"\tExpression: %s"ENDL"\tEvaluated as false."ENDL,__FILE__,__LINE__,#expr); \
+      goto lbl; \
+    }
+
 namespace fetch
 {
   namespace device
@@ -44,10 +50,9 @@ namespace fetch
     }
 
     unsigned int Scanner3D::on_attach()
-    {
-      unsigned int eflag = 0; //success = 0, error = 1
-      return_val_if(eflag |= _scanner2d.on_attach()  ,eflag);
-      return_val_if(eflag |= _zpiezo.on_attach()     ,eflag);
+    {      
+      CHKJMP(_scanner2d.on_attach()==0  ,ESCAN2D);
+      CHKJMP(   _zpiezo.on_attach()==0  ,EZPIEZO);
       
       if(!_out)
       {
@@ -60,7 +65,12 @@ namespace fetch
         
       }      
       //
-      return eflag;
+      return 0;
+      // on error, try to detach attached sub-devices
+EZPIEZO:
+      _scanner2d.on_detach();
+ESCAN2D:
+      return 1;
     }
 
     unsigned int Scanner3D::on_detach()

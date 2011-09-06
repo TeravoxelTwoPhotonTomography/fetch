@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include "config.h"
 
 #define HAVE_QT4 // TODO move this to a config.h or something
 
@@ -147,18 +148,18 @@ void debug  (const char* fmt, ...);
 
 #define Guarded_Assert(expression) \
   if(!(expression))\
-    error("Assertion failed: %s\n\tIn %s (line: %u)\n", #expression, __FILE__ , __LINE__ )
+    error("Assertion failed: %s\n\tIn %s (line: %u)"ENDL, #expression, __FILE__ , __LINE__ )
     
 #define Guarded_Assert_WinErr(expression) \
   if(!(expression))\
   { ReportLastWindowsError();\
-    error("Windows call - Assertion failed: %s\n\tIn %s (line: %u)\n", #expression, __FILE__ , __LINE__ );\
+    error("Windows call - Assertion failed: %s\n\tIn %s (line: %u)"ENDL, #expression, __FILE__ , __LINE__ );\
   }
   
 #define Guarded_Assert_WinErr__NoPanic(expression) \
   if(!(expression))\
   { ReportLastWindowsError();\
-    warning("Windows call - Assertion failed: %s\n\tIn %s (line: %u)\n", #expression, __FILE__ , __LINE__ );\
+    warning("Windows call - Assertion failed: %s\n\tIn %s (line: %u)"ENDL, #expression, __FILE__ , __LINE__ );\
   }  
 
 #define return_if_fail( cond )          { if(!(cond)) return; }
@@ -168,8 +169,8 @@ void debug  (const char* fmt, ...);
 #define return_val_if_fail( cond, val ) { if(!(cond)) return (val); }
 #define return_val_if( cond, val )      { if( (cond)) return (val); }
 
-#define UNREACHABLE warning("Should never get here: %s (%d)\r\n",__FILE__,__LINE__)
-#define HERE debug("Here: %s (%d)\r\n",__FILE__,__LINE__)
+#define UNREACHABLE warning("Should never get here: %s (%d)"ENDL,__FILE__,__LINE__)
+#define HERE debug("Here: %s (%d)"ENDL,__FILE__,__LINE__)
 // ------
 // Memory
 // ------
@@ -264,7 +265,7 @@ void vector_##type##_dump( vector_##type *self, char* stack_filename ) \
   Guarded_Assert(fp = fopen(stack_filename,"wb"));                     \
   fwrite(self->contents,sizeof(type),self->nelem,fp);            \
   fclose(fp);                                                    \
-  warning("Wrote %s\r\n",stack_filename);                              \
+  warning("Wrote %s"ENDL,stack_filename);                              \
 }
 
 TYPE_VECTOR_DECLARE(char);

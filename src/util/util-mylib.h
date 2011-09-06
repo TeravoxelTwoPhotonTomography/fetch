@@ -12,7 +12,7 @@ namespace mylib
 {
   mylib::Value_Type fetchTypeToArrayType(Basic_Type_ID id);
   int fetchTypeToArrayScale(Basic_Type_ID id);
-  void castFetchFrameToDummyArray(mylib::Array* dest, fetch::Frame* src, size_t dims[3]);
+  void castFetchFrameToDummyArray(mylib::Array* dest, fetch::Frame* src, mylib::Dimn_Type dims[3]);
 } //end namespace mylib
 
 namespace mytiff

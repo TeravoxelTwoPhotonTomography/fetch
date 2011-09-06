@@ -124,8 +124,8 @@ namespace fetch
     connect(this,ichan,source,ichan);
     if( _out==NULL )
       __task_instance.alloc_output_queues(this);// Task must implement this.  Must connect() first.  WorkTask has a default impl. that assumes in[0]->out[0].  These should handle pre-existing queues (by freecycling).
-    Guarded_Assert(_agent->disarm(WORKER_DEFAULT_TIMEOUT));
-    Guarded_Assert(_agent->arm(&__task_instance,this,WORKER_DEFAULT_TIMEOUT));
+    Guarded_Assert(_agent->disarm(WORKER_DEFAULT_TIMEOUT)==0);
+    Guarded_Assert(_agent->arm(&__task_instance,this,WORKER_DEFAULT_TIMEOUT)==0);
     //Guarded_Assert(_agent->run());
     return this;
   }

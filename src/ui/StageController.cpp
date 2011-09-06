@@ -10,6 +10,8 @@
 using namespace std;
 using namespace Eigen;
 
+#define DEBUG_DUMP_TILING_MARK_DATA 0
+
 #undef HERE
 #define HERE "[STAGECONTROLLER] At " << __FILE__ << "("<<__LINE__<<")\n"
 #define DBG(e) if(!(e)) qDebug() << HERE << "(!)\tCheck failed for Expression "#e << "\n" 
@@ -173,12 +175,16 @@ bool fetch::ui::TilingController::mark( const QPainterPath& path, device::StageT
     QPainter painter(&im);
 
     // 3. Fill in the path
+#if DEBUG_DUMP_TILING_MARK_DATA
     im.save("TilingController_mark__before.tif");
+#endif
     painter.setCompositionMode(mode);
     painter.fillPath(lpath,QColor((QRgb)attr)); // (QRgb) cast is a uint32 cast
     //SHOW(lpath);
+#if DEBUG_DUMP_TILING_MARK_DATA
     im.save("TilingController_mark__after.tif");
     warning("Dumping Tiling mark data"ENDL);
+#endif
     return true;
   }
   return false;

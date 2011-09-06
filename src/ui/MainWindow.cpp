@@ -12,6 +12,8 @@
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/io/tokenizer.h>
 
+const char fetch::ui::MainWindow::defaultConfigPathKey[] = "Microscope/Config/DefaultFilename";
+
 fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   :_dc(dc)
   ,quitAct(0)
@@ -30,7 +32,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,_resonant_turn_controller(NULL)
   ,_vlines_controller(NULL)
   ,_lsm_vert_range_controller(NULL)
-  ,_pockels_controller(NULL)
+  ,_pockels_controller(NULL)  
 {  
 
   _resonant_turn_controller = new ResonantTurnController(dc,"&Turn (px)",this);
@@ -48,14 +50,20 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   _vibratome_feed_velocity_controller = new VibratomeFeedVelController(dc->vibratome(),"Feed velocity (mm/s)",this);
   _vibratome_feed_axis_controller     = new VibratomeFeedAxisController(dc->vibratome(),"Feed Axis",this);
 
+  _config_watcher = new QFileSystemWatcher(this);
+  connect(_config_watcher, SIGNAL(fileChanged(const QString&)),
+                     this,   SLOT(openMicroscopeConfigDelayed(const QString&)));
+
   createActions();
   createStateMachines();
   createMenus();
   createDockWidgets();
   createViews();
   load_settings_();
-  
+   
   connect(&_poller,SIGNAL(timeout()),&_scope_state_controller,SLOT(poll()));
+  connect(&_scope_state_controller,SIGNAL(onArm()),this,SLOT(startVideo()));
+  connect(&_scope_state_controller,SIGNAL(onDisarm()),this,SLOT(stopVideo()));
   _poller.start(50 /*ms*/);  
 }    
 
@@ -100,16 +108,14 @@ void fetch::ui::MainWindow::createActions()
     openAct = new QAction(QIcon(":/icons/open"),"&Open",this);
     openAct->setShortcut(QKeySequence::Open);
     openAct->setStatusTip("Open a configuration file.");
-    connect(openAct,SIGNAL(triggered()),this,SLOT(openMicroscopeConfig()));
-    // TODO: connect to something
+    connect(openAct,SIGNAL(triggered()),this,SLOT(openMicroscopeConfigViaFileDialog()));
   }
 
   {
     saveToAct = new QAction(QIcon(":/icons/saveto"),"&Save To",this);
     saveToAct->setShortcut(QKeySequence::Save);
     saveToAct->setStatusTip("Save the configuration to a file."); 
-    connect(saveToAct,SIGNAL(triggered()),this,SLOT(saveMicroscopeConfig()));
-    // TODO:  connect to something
+    connect(saveToAct,SIGNAL(triggered()),this,SLOT(saveMicroscopeConfigViaFileDialog()));
   }
 }
 
@@ -179,18 +185,18 @@ void fetch::ui::MainWindow::createDockWidgets()
 void fetch::ui::MainWindow::createViews()
 {
   _display = new Figure(_stageController);
-  _player  = new AsynqPlayer(_dc->getVideoChannel(),_display);
+  
   setCentralWidget(_display);
   connect(_videoAcquisitionDockWidget,SIGNAL(onRun()),
           _display,                   SLOT(fitNext()));
   connect(_stackAcquisitionDockWidget,SIGNAL(onRun()),
           _display,                   SLOT(fitNext()));
-  _player->start();
+  //_player->start();
 }
 
 void fetch::ui::MainWindow::closeEvent( QCloseEvent *event )
 {
-  _player->stop();
+  stopVideo();
   _poller.stop();
   save_settings_();
   QMainWindow::closeEvent(event);  
@@ -223,25 +229,44 @@ class MainWindowProtobufErrorCollector:public google::protobuf::io::ErrorCollect
   virtual void AddWarning(int line, int col, const std::string & message)  {warning("Protobuf: Warning - at line %d(%d):"ENDL"\t%s"ENDL,line,col,message.c_str());}
 };
 
-void fetch::ui::MainWindow::openMicroscopeConfig()
-{
-  const QString d("MainWindow/LastConfigDirectory");
-  QSettings settings;
+void fetch::ui::MainWindow::openMicroscopeConfigViaFileDialog()
+{ QSettings settings;
   QString filename = QFileDialog::getOpenFileName(this,
     tr("Load configuration"),
-    settings.value(d,QDir::currentPath()).toString(),
+    settings.value(defaultConfigPathKey,QDir::currentPath()).toString(),
     tr("Microscope Config (*.microscope);;Text Files (*.txt);;Any (*.*)"));
   if(filename.isEmpty())
     return;
 
-  QFile cfgfile(filename);
+  openMicroscopeConfig(filename);
+}
+
+void 
+  fetch::ui::MainWindow::
+  openMicroscopeConfigDelayed(const QString& filename)
+{ 
+  HERE;
+  qDebug() << _config_watcher->files();
+
+  _config_delayed_load_mapper.removeMappings(&_config_delayed_load_timer);
+  _config_delayed_load_mapper.setMapping(&_config_delayed_load_timer,filename);
+  connect(&_config_delayed_load_timer , SIGNAL(timeout()),
+          &_config_delayed_load_mapper, SLOT(map()));
+  connect(&_config_delayed_load_mapper, SIGNAL(mapped(const QString&)),
+                                  this, SLOT(openMicroscopeConfig(const QString&)));
+
+  _config_delayed_load_timer.setSingleShot(true);
+  _config_delayed_load_timer.setInterval(100/*ms*/);
+  _config_delayed_load_timer.start();
+}
+
+void 
+  fetch::ui::MainWindow::
+  openMicroscopeConfig(const QString& filename)
+{ QFile cfgfile(filename);
+
   CHKJMP(cfgfile.open(QIODevice::ReadOnly), ErrorFileAccess);
   CHKJMP(cfgfile.isReadable()             , ErrorFileAccess);
-
-  // store last good location back to settings
-  { QFileInfo info(filename);
-    settings.setValue(d,info.absoluteFilePath());
-  }
 
   //load and parse
   { google::protobuf::TextFormat::Parser parser;
@@ -256,50 +281,109 @@ void fetch::ui::MainWindow::openMicroscopeConfig()
     emit configUpdated();
   }  
 
+  update_active_config_location_(filename);
+
   return;
 ErrorFileAccess:
-  warning("(%d:%s) MainWindow - could not open file for reading."ENDL,__FILE__,__LINE__);
+  warning("%s(%d) MainWindow"ENDL
+          "\tCould not open file for reading."ENDL
+          "\tFile name: %s"ENDL,
+          __FILE__,__LINE__,filename.toLocal8Bit().data());
   return;
 ParseError:
-  warning("(%d:%s) MainWindow - could not parse config file."ENDL,__FILE__,__LINE__);
+  warning("%s(%d) MainWindow - could not parse config file."ENDL,__FILE__,__LINE__);
+  update_active_config_location_(filename); // keep watching the file
   return;
 }
 
-void fetch::ui::MainWindow::saveMicroscopeConfig()
+/*
+  void saveMicroscopeConfigViaFileDialog();
+  void saveMicroscopeConfigToLastGoodLocation();
+  void saveMicroscopeConfig(const QString& filename);
+*/
+
+void
+  fetch::ui::MainWindow::
+  saveMicroscopeConfigViaFileDialog()
 {
-  const QString d("MainWindow/LastConfigDirectory");
   QSettings settings;
   QString filename = QFileDialog::getSaveFileName(this,
     tr("Save configuration"),
-    settings.value(d,QDir::currentPath()).toString(),
+    settings.value(defaultConfigPathKey,QDir::currentPath()).toString(),
     tr("Microscope Config (*.microscope);;Text Files (*.txt);;Any (*.*)"));
   if(filename.isEmpty())
     return;
 
+  saveMicroscopeConfig(filename);
+}
 
-  {    
-    QFile file(filename);
-    CHKJMP(file.open(QIODevice::WriteOnly|QIODevice::Truncate),ErrorFileAccess);
-    QTextStream fout(&file);
+void 
+  fetch::ui::MainWindow::
+  saveMicroscopeConfigToLastGoodLocation()
+{ QSettings s;
+  QVariant v = s.value(defaultConfigPathKey);
+  if(v.isValid())
+    saveMicroscopeConfig(v.toString());
+  else
+    warning("%s(%d): Attempted save to last config location, but there was no last config location."ENDL,__FILE__,__LINE__);
+}
 
+void
+  fetch::ui::MainWindow::
+  saveMicroscopeConfig(const QString& filename)
+{    
+  QFile file(filename);
+  CHKJMP(file.open(QIODevice::WriteOnly|QIODevice::Truncate),ErrorFileAccess);
+    
+  { QTextStream fout(&file);  
     std::string s;
-    fetch::cfg::device::Microscope c = _dc->get_config();
-    google::protobuf::TextFormat::PrintToString(c,&s);
+    google::protobuf::TextFormat::PrintToString(_dc->get_config(),&s);
     fout << s.c_str();
-  //get_config().SerializePartialToOstream(&fout);
   }
 
-  // store last good location back to settings
-  { QFileInfo info(filename);
-    settings.setValue(d,info.absoluteFilePath());  
-    settings.setValue("Microscope/Config/DefaultFilename",info.absoluteFilePath());
-  }
-
-  // store as default config to be used next time
+  update_active_config_location_(filename);
   
-
   return;
 ErrorFileAccess:
   warning("(%d:%s) MainWindow - could not open file for writing."ENDL,__FILE__,__LINE__);
   return;
+}
+
+void 
+  fetch::ui::MainWindow::
+  update_active_config_location_(const QString& filename)
+{
+  // store location back to settings - use as default next time GUI is opened
+  { QFileInfo info(filename);
+    QSettings settings;
+    settings.setValue(defaultConfigPathKey,info.absoluteFilePath());  
+    //settings.setValue("Microscope/Config/DefaultFilename",info.absoluteFilePath());
+  }
+
+  // Update watcher
+  QStringList files = _config_watcher->files();
+  if(!files.isEmpty())
+    _config_watcher->removePaths(files);
+  
+  _config_watcher->addPath(filename);
+
+}
+
+void
+  fetch::ui::MainWindow::
+  startVideo()
+{ if(_player)
+    error("%s(%d):"ENDL"\t_player should be NULL"ENDL,__FILE__,__LINE__);
+
+  _player  = new AsynqPlayer(_dc->getVideoChannel(),_display);
+  _player->start();
+}
+
+void
+  fetch::ui::MainWindow::
+  stopVideo()
+{ if(!_player) return;
+  _player->stop();
+  delete _player;
+  _player = NULL;
 }

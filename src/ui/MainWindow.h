@@ -24,6 +24,8 @@ public:
   MainWindow(device::Microscope *dc);
   virtual ~MainWindow();
 
+  static const char defaultConfigPathKey[];
+
 protected:
   void closeEvent(QCloseEvent *event);  
 
@@ -74,17 +76,30 @@ public: // semi-private
   ZPiezoMinController          *_zpiezo_min_control;  
   ZPiezoStepController         *_zpiezo_step_control;
 
+  QFileSystemWatcher           *_config_watcher;  
+
 signals:
   void configUpdated();
 
 protected slots:
-  void openMicroscopeConfig();
-  void saveMicroscopeConfig();
+  void openMicroscopeConfigViaFileDialog();
+  void openMicroscopeConfigDelayed(const QString& filename);
+  void openMicroscopeConfig(const QString& filename);
+  void saveMicroscopeConfigViaFileDialog();
+  void saveMicroscopeConfigToLastGoodLocation();
+  void saveMicroscopeConfig(const QString& filename);
+
+  void startVideo();
+  void stopVideo();
 
 private:  
+  void update_active_config_location_(const QString& path);
   void load_settings_();
   void save_settings_();
   static const int version__ = 0;
+
+  QSignalMapper _config_delayed_load_mapper;
+  QTimer        _config_delayed_load_timer;
 };
 
 //namespace ends

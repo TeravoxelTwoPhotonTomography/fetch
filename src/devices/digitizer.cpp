@@ -34,6 +34,12 @@
 #define CheckPanic( expression ) (niscope_chk( this->_vi, expression, #expression, &error   ))
 #define ViErrChk( expression )    goto_if( CheckWarn(expression), Error )
 
+#define CHKJMP(expr) \
+  if(!(expr))                                                                         \
+  { warning("[DIGITIZER] %s(%d)"ENDL"\tExpression: %s"ENDL"\twas false."ENDL,__FILE__,__LINE__,#expr);  \
+    goto Error;                                                                       \
+  }
+
 namespace fetch
 {
   namespace device 
@@ -41,32 +47,16 @@ namespace fetch
     NIScopeDigitizer::NIScopeDigitizer(Agent *agent)
       :DigitizerBase<cfg::device::NIScopeDigitizer>(agent)
       ,_vi(0)
+      ,_lastResourceName("")
     { __common_setup();
     }
 
     NIScopeDigitizer::NIScopeDigitizer(Agent *agent,Config *cfg)
       :DigitizerBase<cfg::device::NIScopeDigitizer>(agent,cfg)
       ,_vi(0)
+      ,_lastResourceName("")
     { __common_setup();
-    }   
-
-    //NIScopeDigitizer::NIScopeDigitizer(size_t nbuf, size_t nbytes_per_frame, size_t nwfm)
-    //  : _vi(0)
-    //{ size_t Bpp    = 2, //bytes per pixel to initially allocated for
-    //         _nbuf[2] = {nbuf,nbuf},
-    //           sz[2] = {nbytes_per_frame,
-    //                    nwfm*sizeof(struct niScope_wfmInfo)};
-    //  _alloc_qs( &this->_out, 2, _nbuf, sz );
-    //}
-
-    //Digitizer::Digitizer(const Config& cfg)
-    //          : _vi(0),
-    //            config(&_default_config)
-    //{ config->CopyFrom(cfg);
-    //  Guarded_Assert(config->IsInitialized());
-    //  __common_setup();
-
-    //} 
+    }
 
     NIScopeDigitizer::~NIScopeDigitizer(void)
     {      
@@ -81,7 +71,8 @@ namespace fetch
       if(this->_vi)
         DIGJMP(niScope_close(this->_vi));  // Close the session
       status = 0;  // success
-      digitizer_debug("Digitizer: Detached.\r\n");
+      digitizer_debug("Digitizer: Detached.\r\n");      
+      _lastResourceName.clear();
 Error:
       this->_vi = 0;
       return status;
@@ -94,7 +85,7 @@ Error:
       digitizer_debug("NIScopeDigitizer: Attach\r\n");      
       if( _vi == NULL )
       { // Open the NI-SCOPE instrument handle
-        DIGERR(
+        DIGJMP(
           status=niScope_init (
             const_cast<ViRsrc>(_config->name().c_str()),
             NISCOPE_VAL_TRUE,    // ID Query
@@ -103,15 +94,24 @@ Error:
           );
       }      
       digitizer_debug("\tGot session %3d with status %d\n",_vi,status);
+      _lastResourceName = _config->name();
       return status!=VI_SUCCESS;
+    Error:
+      return 1; // failure
     }
 
     void NIScopeDigitizer::onUpdate()
     { if(_agent->is_armed())
       { Task *last = _agent->_task;
-        _agent->disarm();
-        _agent->arm(last,_agent->_owner);               
+        CHKJMP(_agent->disarm()==0);
+        if(_config->name().compare(_lastResourceName)!=0) // resource change
+        { CHKJMP(_agent->detach()==0);
+          CHKJMP(_agent->attach()==0);
+        }
+        CHKJMP(_agent->arm(last,_agent->_owner)==0);
       }
+    Error:
+      return;
     }
 
     void NIScopeDigitizer::__common_setup()
@@ -133,7 +133,7 @@ Error:
 
     void NIScopeDigitizer::setup(int nrecords, double record_frequency_Hz, double duty)
     {
-      ViSession vi =  this->NIScopeDigitizer::_vi;      
+      ViSession vi = _vi;      
 
       ViReal64   refPosition         = _config->reference();
       ViReal64   verticalOffset      = 0.0;

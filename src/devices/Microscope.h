@@ -124,7 +124,7 @@ namespace fetch
       task::microscope::TiledAcquisition tiling_task;
       task::microscope::Cut              cut_task;
 
-      inline Chan*  getVideoChannel() {return frame_formatter._out->contents[0];}
+      inline Chan*  getVideoChannel() {if(frame_formatter._out) return frame_formatter._out->contents[0]; else return NULL;}
       inline LinearScanMirror*  LSM() {return &scanner._scanner2d._LSM;}
       inline Pockels*       pockels() {return &scanner._scanner2d._pockels;}
       inline ZPiezo*         zpiezo() {return &scanner._zpiezo;}

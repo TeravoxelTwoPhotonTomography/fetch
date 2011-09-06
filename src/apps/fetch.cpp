@@ -75,7 +75,7 @@ void Init(void)
   MyErrorCollector e;
   parser.RecordErrorsTo(&e);
   QSettings settings;
-  { QFile cfgfile(settings.value("Microscope/Config/DefaultFilename",":/config/microscope").toString());
+  { QFile cfgfile(settings.value(fetch::ui::MainWindow::defaultConfigPathKey,":/config/microscope").toString());
     
     if(  cfgfile.open(QIODevice::ReadOnly) 
       && cfgfile.isReadable() 
@@ -93,17 +93,12 @@ void Init(void)
     Guarded_Assert(cfgfile.isReadable());
     Guarded_Assert(parser.ParseFromString(cfgfile.readAll().constData(),&g_config));
     qDebug() << "Config file loaded from " << cfgfile.fileName();
-    settings.setValue("Microscope/Config/DefaultFilename",":/config/microscope");
+    settings.setValue(fetch::ui::MainWindow::defaultConfigPathKey,":/config/microscope");
   }
   //cfgfile.setTextModeEnabled(true);
 
 Success:
   gp_microscope = new fetch::device::Microscope(&g_config);
-}
-
-void LoadDefaultConfig()
-{ 
-  
 }
 
 int main(int argc, char *argv[])

@@ -1,5 +1,6 @@
 
 #include "common.h"
+#include "config.h"
 
 namespace w32file {
 

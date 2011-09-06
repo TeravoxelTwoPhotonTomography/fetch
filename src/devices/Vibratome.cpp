@@ -16,6 +16,11 @@
 #include "task.h"
 #include "vibratome.pb.h"
 
+#define CHKLBL(expr,lbl) \
+  if(!(expr))                                                                                             \
+  { warning("Device [Vibratome] - Expression failed."ENDL"\t%s(%d)"ENDL"\t%s",__FILE__,__LINE__,#expr); \
+    goto lbl;                                                                                         \
+  }
 #define CHK(expr) \
   if(!(expr))                                                                                             \
   { warning("Device [Vibratome] - Expression failed."ENDL"\t%s(%d)"ENDL"\t%s",__FILE__,__LINE__,#expr); \
@@ -77,10 +82,10 @@ namespace device {
   }
 
   unsigned int SerialControlVibratome::on_attach()
-  { debug("Vibratome: on_attach");
+  { debug("Vibratome: on_attach"ENDL);
     Config c = get_config();
     unsigned int sts = 0;
-    Guarded_Assert_WinErr( INVALID_HANDLE_VALUE!=( 
+    CHKLBL( INVALID_HANDLE_VALUE!=( 
         _h=CreateFile(c.port().c_str()              // file name
                      ,GENERIC_READ | GENERIC_WRITE  // desired access
                      ,0                             // share mode
@@ -88,7 +93,7 @@ namespace device {
                      ,OPEN_EXISTING                 // creation disposition
                      ,FILE_ATTRIBUTE_NORMAL         // flags and attr
                      ,0)                            // template file
-        ));
+        ),ESERIAL);
 
     DCB dcb = {0};
     dcb.DCBlength=sizeof(dcb);
@@ -110,13 +115,15 @@ namespace device {
 
     CHK(AMP(_config->amplitude()));
     return 0;
+
 Error:
     _close();
+ESERIAL:
     return 1; // failure
   }
   
   unsigned int SerialControlVibratome::_close()
-  { debug("Vibratome: _close");    
+  { debug("Vibratome: _close"ENDL);    
     if( _h!=INVALID_HANDLE_VALUE )
     { Guarded_Assert_WinErr( CloseHandle(_h) );
       _h = INVALID_HANDLE_VALUE;

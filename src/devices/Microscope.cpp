@@ -20,6 +20,12 @@
 #include "stack.pb.h"
 #include "microscope.pb.h"
 #include "google\protobuf\text_format.h"
+
+#define CHKJMP(expr,lbl) \
+  if(!(expr)) \
+  { warning("[MICROSCOPE] %s(%d): "ENDL"\tExpression: %s"ENDL"\tevaluated false."ENDL,__FILE__,__LINE__,#expr); \
+    goto lbl; \
+  }
  
  namespace fetch
 { namespace device {
@@ -114,8 +120,6 @@
     unsigned int
     Microscope::on_attach(void)
     { 
-      int eflag = 0; // 0 success, 1 failure
-
       // argh this is a confusing way to do things.  which attach to call when.
       //
       // Really the agent's interface should be the primary one for changing the run state, but
@@ -126,15 +130,24 @@
       //
       // also on_attach/on_detach only gets called for the owner, so the events have to be forwarded
       // to devices that share the agent.  This seems awkward :C
+      std::string stackname;
 
-      eflag |= __scan_agent.attach(); //scanner.attach(); 
-      eflag |= stage_.on_attach();
-      eflag |= vibratome_.on_attach();
+      CHKJMP( __scan_agent.attach()==0,ESCAN);   //scanner.attach(); 
+      CHKJMP(    stage_.on_attach()==0,ESTAGE);
+      CHKJMP(vibratome_.on_attach()==0,EVIBRATOME);
 
-      std::string stackname = _config->file_prefix()+_config->stack_extension();
+      stackname = _config->file_prefix()+_config->stack_extension();
       file_series.ensurePathExists();   
 
-      return eflag;  
+      return 0;   // success
+EVIBRATOME:
+      stage_.on_detach();
+ESTAGE:
+      __scan_agent.detach();
+ESCAN:
+      return 1;
+
+
     }
     
     unsigned int
@@ -254,8 +267,11 @@
     {
       __self_agent._owner = this;
       stage_.setFOV(&fov_);
-      Guarded_Assert(_agent->attach()==0);
-      Guarded_Assert(_agent->arm(&interaction_task,this,INFINITE));
+      //configPipeline();
+      CHKJMP(_agent->attach()==0,Error);
+      CHKJMP(_agent->arm(&interaction_task,this,INFINITE)==0,Error);
+    Error:
+      return;
     }
 
     unsigned int Microscope::runPipeline()
@@ -367,12 +383,13 @@
         case ERROR_ALREADY_EXISTS: /*ignore*/ 
           break;
         case ERROR_PATH_NOT_FOUND:
-          error("(%s:%d) FileSeries: Could not find %s:\r\n\t%s\r\n",__FILE__,__LINE__,description,root); // [ ] TODO chage this to a warning
+        case ERROR_NOT_READY:
+          error("[FileSeries] %s(%d)"ENDL"\tCould not find %s:"ENDL"\t%s"ENDL,__FILE__,__LINE__,description,root); // [ ] TODO chage this to a warning
           _is_valid = false;
-          break;
+          break;        
         default:
           _is_valid = false;
-          warning("Unexpected error returned after call to CreateDirectory()\r\n");
+          warning("[FileSeries] %s(%d)"ENDL"\tUnexpected error returned after call to CreateDirectory()"ENDL"\tFor Path: %s"ENDL,__FILE__,__LINE__,path);
           ReportLastWindowsError();
         }
       }

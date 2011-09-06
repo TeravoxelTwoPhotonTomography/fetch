@@ -82,6 +82,11 @@ namespace fetch {
       return sts;
     }
 
+    void NationalInstrumentsDAQ::onUpdate()
+    { _ao.onUpdate();
+      _clk.onUpdate();
+    }
+
     int NationalInstrumentsDAQ::waitForDone(DWORD timeout_ms/*=INFINITE*/)
     {
       HANDLE hs[] = {
@@ -110,7 +115,7 @@ namespace fetch {
       int32 written,
             N = _config->ao_samples_per_waveform();
             
-#if 1
+#if 0
       { 
         uInt32 nchan;
         char 

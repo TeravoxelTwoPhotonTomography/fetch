@@ -1,4 +1,5 @@
 #include "common.h"
+#include "config.h"
 #include "frame.h"
 #include "util/util-file.h"
 #include "util/util-image.h"

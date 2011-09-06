@@ -204,12 +204,12 @@ namespace fetch
         NULL )); // don't worry about the thread id
       this->unlock();
       DBG("Armed %s 0x%p\r\n",name(), this);
-      return 1;
+      return 0;
 Error:             
       this->_is_available = 1;
       this->_task = NULL;
       this->unlock();
-      return 0;
+      return 1;
     }
 
     DWORD WINAPI _agent_arm_thread_proc(LPVOID lparam)
@@ -276,7 +276,7 @@ Error:
       this->set_available();
       sts &= _owner->on_disarm();
       this->unlock();
-      DBG("Disarmed %s 0x%p\r\n",name(), this);
+      DBG("Disarmed %20s 0x%p\r\n",name(), this);
       return sts;
     }
     
@@ -531,7 +531,7 @@ Error:
     if(sts==0)
       set_available();
     else
-      warning("[%s] Agent's owner did not attach properly.\r\n\tFile: %s (%d)",name(),__FILE__,__LINE__);
+      warning("[%s] Agent's owner did not attach properly."ENDL"\tFile: %s (%d)"ENDL,name(),__FILE__,__LINE__);
     unlock();
     return sts;
   }
@@ -542,8 +542,8 @@ Error:
   unsigned int Agent::detach( void )
   {
     unsigned int sts=1;
-    if(!disarm(AGENT_DEFAULT_TIMEOUT))
-      warning("[%s] Could not cleanly disarm (device at 0x%p)\r\n",name(), _owner);
+    if(disarm(AGENT_DEFAULT_TIMEOUT))
+      warning("[%s] Could not cleanly disarm (device at 0x%p)"ENDL,name(), _owner);
     lock();
     sts = _owner->on_detach();
     _is_available=0;

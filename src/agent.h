@@ -146,7 +146,7 @@ namespace fetch {
     // It's called from within the Agent's mutex.
     // Use it to disarm sub-devices.
     // eg. Used by fetch::device::Microscope to disarm running workers.
-    virtual unsigned int on_disarm(void) {return 1;/*success*/} // Returns 1 on success, 0 otherwise
+    virtual unsigned int on_disarm(void) {return 0;/*success*/} // Returns 0 on success, nonzero otherwise
 
     // Queue manipulation
     static void connect(IDevice *dst, size_t dst_chan, IDevice *src, size_t src_chan);

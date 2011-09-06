@@ -71,6 +71,8 @@ namespace fetch
       virtual unsigned int on_attach();
       virtual unsigned int on_detach();
 
+      virtual void onUpdate();
+
       int waitForDone(DWORD timeout_ms=INFINITE);
 
       void setupCLK(float64 nrecords, float64 record_frequency_Hz);
