@@ -160,7 +160,7 @@ void TilesView::paint(QPainter                       *painter,
   glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
   
   glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
-	draw_grid_();
+  draw_grid_();
   draw_cursor_();
   glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);  
 
