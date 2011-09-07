@@ -100,10 +100,10 @@ namespace fetch
       switch (mode.c_str()[0])
       {
       case 'r':
-        Guarded_Assert( _agent->arm(_reader,this,DISKSTREAM_DEFAULT_TIMEOUT) );
+        Guarded_Assert( _agent->arm(_reader,this,DISKSTREAM_DEFAULT_TIMEOUT)==0 );
         break;
       case 'w':
-        Guarded_Assert( _agent->arm(_writer,this,DISKSTREAM_DEFAULT_TIMEOUT) );
+        Guarded_Assert( _agent->arm(_writer,this,DISKSTREAM_DEFAULT_TIMEOUT)==0 );
         break;
       default:
         error("IDiskStream::open() -- Couldn't interpret mode.  Got %s\r\n",mode);

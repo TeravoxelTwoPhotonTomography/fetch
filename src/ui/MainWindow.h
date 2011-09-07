@@ -24,10 +24,25 @@ public:
   MainWindow(device::Microscope *dc);
   virtual ~MainWindow();
 
-  static const char defaultConfigPathKey[];
+  static const char defaultConfigPathKey[];       
+
+signals:
+  void configUpdated();
+  void configFileChanged(const QString& filename);
 
 protected:
-  void closeEvent(QCloseEvent *event);  
+  void closeEvent(QCloseEvent *event); 
+
+protected slots:
+  void openMicroscopeConfigViaFileDialog();
+  void openMicroscopeConfigDelayed(const QString& filename);
+  void openMicroscopeConfig(const QString& filename);
+  void saveMicroscopeConfigViaFileDialog();
+  void saveMicroscopeConfigToLastGoodLocation();
+  void saveMicroscopeConfig(const QString& filename);
+
+  void startVideo();
+  void stopVideo(); 
 
 public: // semi-private
   void createStateMachines();
@@ -49,48 +64,32 @@ public: // semi-private
   QState  *fullscreenStateOn;
   QState  *fullscreenStateOff;
 
-  VideoAcquisitionDockWidget   *_videoAcquisitionDockWidget; 
-  StackAcquisitionDockWidget   *_stackAcquisitionDockWidget; 
-  MicroscopeStateDockWidget    *_microscopesStateDockWidget; 
+  VideoAcquisitionDockWidget   *_videoAcquisitionDockWidget;
+  StackAcquisitionDockWidget   *_stackAcquisitionDockWidget;
+  MicroscopeStateDockWidget    *_microscopesStateDockWidget;
   VibratomeDockWidget          *_vibratomeDockWidget;
   VibratomeGeometryDockWidget  *_vibratomeGeometryDockWidget;
-  Figure                       *_display;                                          
-  IPlayerThread                *_player;                                    
+  Figure                       *_display;
+  IPlayerThread                *_player;
                                                              
   QTimer _poller;                                            
-  AgentController               _scope_state_controller;     
-                                                             
-  PlanarStageController        *_stageController;            
+  AgentController               _scope_state_controller;
+  PlanarStageController        *_stageController;
   
   // Property controllers
-  ResonantTurnController       *_resonant_turn_controller;  
-  LinesController              *_vlines_controller;         
-  LSMVerticalRangeController   *_lsm_vert_range_controller; 
-  PockelsController            *_pockels_controller;        
+  ResonantTurnController       *_resonant_turn_controller;
+  LinesController              *_vlines_controller;
+  LSMVerticalRangeController   *_lsm_vert_range_controller;
+  PockelsController            *_pockels_controller;
   VibratomeAmplitudeController *_vibratome_amp_controller;
   VibratomeFeedDisController   *_vibratome_feed_distance_controller;
   VibratomeFeedVelController   *_vibratome_feed_velocity_controller;
   VibratomeFeedAxisController  *_vibratome_feed_axis_controller;
-
-  ZPiezoMaxController          *_zpiezo_max_control;  
-  ZPiezoMinController          *_zpiezo_min_control;  
+  ZPiezoMaxController          *_zpiezo_max_control;
+  ZPiezoMinController          *_zpiezo_min_control;
   ZPiezoStepController         *_zpiezo_step_control;
 
-  QFileSystemWatcher           *_config_watcher;  
-
-signals:
-  void configUpdated();
-
-protected slots:
-  void openMicroscopeConfigViaFileDialog();
-  void openMicroscopeConfigDelayed(const QString& filename);
-  void openMicroscopeConfig(const QString& filename);
-  void saveMicroscopeConfigViaFileDialog();
-  void saveMicroscopeConfigToLastGoodLocation();
-  void saveMicroscopeConfig(const QString& filename);
-
-  void startVideo();
-  void stopVideo();
+  QFileSystemWatcher           *_config_watcher;
 
 private:  
   void update_active_config_location_(const QString& path);
@@ -100,6 +99,17 @@ private:
 
   QSignalMapper _config_delayed_load_mapper;
   QTimer        _config_delayed_load_timer;
+};
+
+
+class ConfigFileNameDisplay : public QLabel
+{ Q_OBJECT
+
+  public:
+    ConfigFileNameDisplay(const QString& filename, QWidget *parent=0);
+
+  public slots:
+    void update(const QString& filename);
 };
 
 //namespace ends

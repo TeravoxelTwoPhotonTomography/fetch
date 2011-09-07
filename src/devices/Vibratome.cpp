@@ -113,10 +113,9 @@ namespace device {
     timeouts.WriteTotalTimeoutConstant   =10;
     Guarded_Assert_WinErr( SetCommTimeouts(_h,&timeouts) );
 
-    CHK(AMP(_config->amplitude()));
+    CHKLBL(AMP(_config->amplitude()),EAMP);
     return 0;
-
-Error:
+EAMP:
     _close();
 ESERIAL:
     return 1; // failure

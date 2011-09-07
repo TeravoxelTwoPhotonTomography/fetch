@@ -11,8 +11,37 @@
 #include "StageController.h"
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/io/tokenizer.h>
+#include <QtGui>
 
 const char fetch::ui::MainWindow::defaultConfigPathKey[] = "Microscope/Config/DefaultFilename";
+
+//////////////////////////////////////////////////////////////////////////////
+// CONFIGFILENAMEDISPLAY
+//////////////////////////////////////////////////////////////////////////////
+
+fetch::ui::ConfigFileNameDisplay::
+  ConfigFileNameDisplay(const QString& filename, QWidget *parent)
+  : QLabel(parent)
+{             
+  setOpenExternalLinks(true);
+  setTextFormat(Qt::RichText);
+  setTextInteractionFlags(Qt::NoTextInteraction
+      |Qt::TextBrowserInteraction
+      |Qt::LinksAccessibleByKeyboard
+      |Qt::LinksAccessibleByMouse);
+  update(filename);
+}
+
+void 
+  fetch::ui::ConfigFileNameDisplay::
+  update(const QString& filename)
+{ QString link = QString("<a href=\"file:///%1\">%1</a>").arg(filename);
+  setText(link);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// MAINWINDOW
+//////////////////////////////////////////////////////////////////////////////
 
 fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   :_dc(dc)
@@ -64,7 +93,15 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   connect(&_poller,SIGNAL(timeout()),&_scope_state_controller,SLOT(poll()));
   connect(&_scope_state_controller,SIGNAL(onArm()),this,SLOT(startVideo()));
   connect(&_scope_state_controller,SIGNAL(onDisarm()),this,SLOT(stopVideo()));
-  _poller.start(50 /*ms*/);  
+  _poller.start(50 /*ms*/);
+
+  { QStatusBar *bar = statusBar();
+    QString f = _config_watcher->files().at(0);
+    ConfigFileNameDisplay *w = new ConfigFileNameDisplay(f);
+    connect(this,SIGNAL(configFileChanged(const QString&)),w,SLOT(update(const QString&)));
+    bar->addPermanentWidget(w);
+    bar->setSizeGripEnabled(true);
+  }
 }    
 
 #define SAFE_DELETE(expr) if(expr) delete (expr)
@@ -212,6 +249,13 @@ void fetch::ui::MainWindow::load_settings_()
   ok &= restoreDockWidget(_stackAcquisitionDockWidget);
   ok &= restoreDockWidget(_microscopesStateDockWidget);
   ok &= restoreDockWidget(_vibratomeDockWidget);
+
+  { QString filename = settings.value(defaultConfigPathKey,":/config/microscope").toString();
+    QStringList files = _config_watcher->files();
+    if(!files.isEmpty())
+      _config_watcher->removePaths(files);  
+    _config_watcher->addPath(filename);
+  }
 }
 
 void fetch::ui::MainWindow::save_settings_()
@@ -363,10 +407,10 @@ void
   // Update watcher
   QStringList files = _config_watcher->files();
   if(!files.isEmpty())
-    _config_watcher->removePaths(files);
-  
+    _config_watcher->removePaths(files);  
   _config_watcher->addPath(filename);
-
+  
+  emit configFileChanged(filename);
 }
 
 void

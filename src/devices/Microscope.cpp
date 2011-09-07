@@ -351,17 +351,17 @@ ESCAN:
    
     void FileSeries::ensurePathExists()
     {
-      std::string t;
+      std::string s,t;
       char strSeriesNo[32];
 
       renderSeriesNo(strSeriesNo,sizeof(strSeriesNo));
       updateDate();
       
-      t = _desc->root()+_desc->pathsep()+_desc->date();
-      tryCreateDirectory(t.c_str(), "root path", _desc->root().c_str());
+      s = _desc->root()+_desc->pathsep()+_desc->date();
+      tryCreateDirectory(s.c_str(), "root path", _desc->root().c_str());
 
-      t += _desc->pathsep()+strSeriesNo;
-      tryCreateDirectory(t.c_str(), "date path", _desc->root().c_str());
+      t = s + _desc->pathsep()+strSeriesNo;
+      tryCreateDirectory(t.c_str(), "date path", s.c_str());
     }
 
     void FileSeries::renderSeriesNo( char * strSeriesNo,int maxbytes )
@@ -384,7 +384,7 @@ ESCAN:
           break;
         case ERROR_PATH_NOT_FOUND:
         case ERROR_NOT_READY:
-          error("[FileSeries] %s(%d)"ENDL"\tCould not find %s:"ENDL"\t%s"ENDL,__FILE__,__LINE__,description,root); // [ ] TODO chage this to a warning
+          warning("[FileSeries] %s(%d)"ENDL"\tCould not create %s:"ENDL"\t%s"ENDL,__FILE__,__LINE__,description,root); // [ ] TODO chage this to a warning
           _is_valid = false;
           break;        
         default:
