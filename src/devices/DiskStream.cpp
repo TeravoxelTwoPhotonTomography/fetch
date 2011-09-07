@@ -38,11 +38,11 @@ namespace fetch
 { 
   namespace device
   {
-	
-	  template class HFILEDiskStream<task::file::ReadMessage,task::file::WriteMessage>;      // DiskStreamMessage;
+  
+    template class HFILEDiskStream<task::file::ReadMessage,task::file::WriteMessage>;      // DiskStreamMessage;
     template class HFILEDiskStream<task::file::ReadRaw    ,task::file::WriteRaw>;          // DiskStreamRaw;    
     template class HFILEDiskStream<task::file::ReadRaw    ,task::file::WriteMessageAsRaw>; // DiskStreamMessageAsRaw;
-	
+  
     IDiskStream::IDiskStream(Agent *agent)
       :IConfigurableDevice<Config>(agent)
       ,_reader(NULL)
@@ -55,9 +55,10 @@ namespace fetch
       ,_reader(NULL)
       ,_writer(NULL)
     {
+
     }
 
-	
+  
     IDiskStream::IDiskStream(Agent*agent, char *fname, char *m)
       :IConfigurableDevice<Config>(agent)
     {

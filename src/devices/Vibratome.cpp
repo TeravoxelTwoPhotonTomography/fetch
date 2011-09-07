@@ -18,12 +18,12 @@
 
 #define CHKLBL(expr,lbl) \
   if(!(expr))                                                                                             \
-  { warning("Device [Vibratome] - Expression failed."ENDL"\t%s(%d)"ENDL"\t%s",__FILE__,__LINE__,#expr); \
+  { warning("Device [Vibratome] - Expression failed."ENDL"\t%s(%d)"ENDL"\t%s"ENDL,__FILE__,__LINE__,#expr); \
     goto lbl;                                                                                         \
   }
 #define CHK(expr) \
   if(!(expr))                                                                                             \
-  { warning("Device [Vibratome] - Expression failed."ENDL"\t%s(%d)"ENDL"\t%s",__FILE__,__LINE__,#expr); \
+  { warning("Device [Vibratome] - Expression failed."ENDL"\t%s(%d)"ENDL"\t%s"ENDL,__FILE__,__LINE__,#expr); \
     goto Error;                                                                                         \
   }
 
@@ -47,7 +47,7 @@ namespace device {
 
   SerialControlVibratome::~SerialControlVibratome() 
   { if(_h!=INVALID_HANDLE_VALUE)
-      warning("%s(%d): Vibratome's COM port wasn't closed properly.",__FILE__,__LINE__); // should've been close in on_detach()
+      warning("%s(%d): Vibratome's COM port wasn't closed properly."ENDL,__FILE__,__LINE__); // should've been close in on_detach()
   }
 
   struct _baudrate
@@ -114,10 +114,12 @@ namespace device {
     Guarded_Assert_WinErr( SetCommTimeouts(_h,&timeouts) );
 
     CHKLBL(AMP(_config->amplitude()),EAMP);
+    _lastAttachedPort = c.port();
     return 0;
 EAMP:
     _close();
 ESERIAL:
+    _lastAttachedPort.clear();
     return 1; // failure
   }
   
@@ -145,6 +147,27 @@ Error:
     return ok;
   }
 
+  void
+    SerialControlVibratome::
+    onUpdate()
+  { Config c = get_config();
+    setAmplitude(c.amplitude());
+    //ignore baud rate changes...I don't think they do anything
+    if(_lastAttachedPort.compare(c.port())!=0)
+    { Task *last = 0;
+      if(_agent->is_armed())
+      { last = _agent->_task;
+        CHKLBL(_agent->disarm()==0,Error);
+      }
+      CHKLBL(_agent->detach()==0,Error);
+      CHKLBL(_agent->attach()==0,Error);
+      if(last)
+        CHKLBL(_agent->arm(last,_agent->_owner)==0,Error);             
+    }
+  Error:
+    return;    
+  }
+
 
   int SerialControlVibratome::setAmplitudeNoWait(int val)
   { int ok = 0;
@@ -169,12 +192,12 @@ Error:
   // API.  That's why they're here even though they don't do anything.  It's
   // basically just in case the serial interface changes.
   int SerialControlVibratome::start()
-  { debug("Vibratome: start");
+  { debug("Vibratome: start"ENDL);
     return START();
   }
 
   int SerialControlVibratome::stop()
-  { debug("Vibratome: stop");
+  { debug("Vibratome: stop"ENDL);
     return STOP();
   }
 

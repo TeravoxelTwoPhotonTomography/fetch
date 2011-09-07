@@ -26,6 +26,8 @@
  *    STOP        - stops wave generation.
  *    AMP         - queries for the amplitude.  Returns a string of the form
  *                  "Amplitude X" where X is a number from 0-255.
+ *                  While stopped, AMP will always return 0 regardless of the
+ *                  last AMP call.
  *    AMP <x>     - sets the amplitude. <x> should be a value from 0-255.
  *
  * Currently, the serial port communication is implemented using the native
@@ -83,6 +85,7 @@ namespace fetch
     class SerialControlVibratome:public VibratomeBase<cfg::device::SerialControlVibratome>
     {    
       HANDLE _h;
+      std::string _lastAttachedPort;
     public:
 
       SerialControlVibratome(Agent *agent);
@@ -92,6 +95,7 @@ namespace fetch
 
       virtual unsigned int on_attach(); // open  handle to the com port
       virtual unsigned int on_detach(); // close handle to the com port
+                      void  onUpdate();
 
       virtual int isValidAmplitude(int val) {return (val>=0)&&(val<=255);}
       virtual int setAmplitude(int val);
@@ -150,6 +154,7 @@ class SimulatedVibratome:public VibratomeBase<cfg::device::SimulatedVibratome>
 
       virtual unsigned int on_attach();
       virtual unsigned int on_detach();
+      virtual         void  onUpdate()             {_idevice->onUpdate();}
 
       void setKind(Config::VibratomeType kind);
       void _set_config( Config IN *cfg );

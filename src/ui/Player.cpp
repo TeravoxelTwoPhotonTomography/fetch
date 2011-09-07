@@ -79,7 +79,7 @@ void AsynqPlayer::run()
       buf->format(buf);                                                    // resets the data pointer  - super gross and icky
       castFetchFrameToDummyArray(&im,buf,dims);
       emit imageReady(&im);                                                // blocks until receiver returns      
-    }
+    }                                                                           //...waht if there's not reciever?
   }
   Chan_Close(reader);  
   Chan_Token_Buffer_Free(buf);  

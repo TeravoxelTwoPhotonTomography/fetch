@@ -47,6 +47,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   :_dc(dc)
   ,quitAct(0)
   ,openAct(0)
+  ,saveAct(0)
   ,saveToAct(0)
   ,fullscreenAct(0)
   ,fullscreenStateOff(0)
@@ -105,10 +106,11 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
 }    
 
 #define SAFE_DELETE(expr) if(expr) delete (expr)
+#define SAFE_DELETE_THREAD(expr) if(expr) { (expr)->wait(); delete (expr); }
 
 fetch::ui::MainWindow::~MainWindow()
 {
-  SAFE_DELETE(_player);
+  SAFE_DELETE_THREAD(_player);
 
   SAFE_DELETE(_resonant_turn_controller);
   SAFE_DELETE(_vlines_controller);
@@ -149,8 +151,15 @@ void fetch::ui::MainWindow::createActions()
   }
 
   {
-    saveToAct = new QAction(QIcon(":/icons/saveto"),"&Save To",this);
-    saveToAct->setShortcut(QKeySequence::Save);
+    saveAct = new QAction(QIcon(":/icons/save"),"&Save",this);
+    saveAct->setShortcut(QKeySequence::Save);
+    saveAct->setStatusTip("Save the configuration to the last loaded location."); 
+    connect(saveAct,SIGNAL(triggered()),this,SLOT(saveMicroscopeConfigToLastGoodLocation()));
+  }
+
+  {
+    saveToAct = new QAction(QIcon(":/icons/saveas"),"Save &As",this);
+    saveToAct->setShortcut(QKeySequence::SaveAs);
     saveToAct->setStatusTip("Save the configuration to a file."); 
     connect(saveToAct,SIGNAL(triggered()),this,SLOT(saveMicroscopeConfigViaFileDialog()));
   }
@@ -161,10 +170,12 @@ void fetch::ui::MainWindow::createMenus()
   assert(fullscreenAct);
   assert(quitAct);
   assert(openAct);
+  assert(saveAct);
   assert(saveToAct);
   
   fileMenu = menuBar()->addMenu("&File");
   fileMenu->addAction(openAct);
+  fileMenu->addAction(saveAct);
   fileMenu->addAction(saveToAct);
   fileMenu->addAction(quitAct);                                                                                                                                                                                                                                           
 
@@ -292,8 +303,12 @@ void
   HERE;
   qDebug() << _config_watcher->files();
 
+  // cleanup old signals
+  _config_delayed_load_timer.disconnect();
+  _config_delayed_load_mapper.disconnect();
   _config_delayed_load_mapper.removeMappings(&_config_delayed_load_timer);
-  _config_delayed_load_mapper.setMapping(&_config_delayed_load_timer,filename);
+  // init the new ones
+  _config_delayed_load_mapper.setMapping(&_config_delayed_load_timer,filename);  
   connect(&_config_delayed_load_timer , SIGNAL(timeout()),
           &_config_delayed_load_mapper, SLOT(map()));
   connect(&_config_delayed_load_mapper, SIGNAL(mapped(const QString&)),
@@ -428,6 +443,22 @@ void
   stopVideo()
 { if(!_player) return;
   _player->stop();
+  _player->disconnect();
+  _player->wait(); // hrmmmmmmmmmmmmmmmm...looks like trouble
+  /*
+  I think the problem is:
+  1. Need to wait for stop before deleting old player
+  2. wait for player stop blocks main thread
+  3. Figure widget must run in main thread and waits for the player to emit the next image
+  4. deadlock: player waiting for figure to accept, main thread is stuck here so figure can't accept
+
+  Solution:
+  a. don't delete player.  just swap channels when necessary.  must allow for a null channel.
+  b. will disconnecting the signal prevent the wait?  If so then, _player->stop(),_player->disconnect(),_player->wait() should
+     be ok.
+      --- maybe this (b) worked.
+  c. try using deleteLater()
+  */
   delete _player;
   _player = NULL;
 }

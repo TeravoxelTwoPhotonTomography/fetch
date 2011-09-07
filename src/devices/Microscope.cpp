@@ -122,19 +122,13 @@
     { 
       // argh this is a confusing way to do things.  which attach to call when.
       //
-      // Really the agent's interface should be the primary one for changing the run state, but
-      // the way I've put things together, it looks like the IDevices is primary.  In part this
-      // is because the IDevice child provides an API for the device it represents.  Need a way
-      // of distinguishing.  Perhaps just rename IDevice's attach()/detach() to __attach()/__detach()
-      // or onAttach/onDetach...something to remind me it's a callback.
-      //
-      // also on_attach/on_detach only gets called for the owner, so the events have to be forwarded
+      // on_attach/on_detach only gets called for the owner, so attach/detach events have to be forwarded
       // to devices that share the agent.  This seems awkward :C
       std::string stackname;
 
-      CHKJMP( __scan_agent.attach()==0,ESCAN);   //scanner.attach(); 
-      CHKJMP(    stage_.on_attach()==0,ESTAGE);
-      CHKJMP(vibratome_.on_attach()==0,EVIBRATOME);
+      CHKJMP(     __scan_agent.attach()==0,ESCAN);
+      CHKJMP(        stage_.on_attach()==0,ESTAGE);
+      CHKJMP(__vibratome_agent.attach()==0,EVIBRATOME);
 
       stackname = _config->file_prefix()+_config->stack_extension();
       file_series.ensurePathExists();   
@@ -165,7 +159,7 @@ ESCAN:
       eflag |= disk._agent->detach();
 
       eflag |= stage_.on_detach();
-      eflag |= vibratome_.on_detach();
+      eflag |= vibratome_._agent->detach();
       return eflag;  
     }
     
@@ -181,7 +175,7 @@ ESCAN:
       sts &= frame_formatter._agent->disarm();
       sts &= trash._agent->disarm();
       sts &= disk._agent->disarm();
-      
+      sts &= vibratome_._agent->disarm();
       return sts;
     }
     
@@ -244,9 +238,13 @@ ESCAN:
     void Microscope::onUpdate()
     {
       scanner.onUpdate();
+      vibratome_.onUpdate();
       fov_.update(_config->fov());
       stage_.setFOV(&fov_);
-      //stage_.onUpdate(); // only update the stage fov parameter to recompute the tiling.  probably, want to do that with another, more explicit, mechanism
+      // update microscope's run state based on sub-agents
+      // require scan agent and vibratome agent to be attached
+      if( __self_agent.is_attached() && !(__scan_agent.is_attached() && __vibratome_agent.is_attached()))
+        __self_agent.detach();
     }
 
     IDevice* Microscope::configPipeline()

@@ -58,6 +58,7 @@ public: // semi-private
 
   QAction *quitAct;
   QAction *openAct;
+  QAction *saveAct;
   QAction *saveToAct;
 
   QAction *fullscreenAct;
