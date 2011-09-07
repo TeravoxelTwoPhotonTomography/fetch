@@ -176,7 +176,7 @@ namespace fetch
         // thread could still become invalidated between if and wait, but need to enter wait unlocked
         // I expect Wait will return WAIT_FAILED immediately if that's the case, so this isn't really
         // a problem.
-		    sts = WaitForSingleObject(this->_thread,timeout_ms) == WAIT_OBJECT_0;      
+        sts = WaitForSingleObject(this->_thread,timeout_ms) == WAIT_OBJECT_0;      
       return sts;
     }
 
