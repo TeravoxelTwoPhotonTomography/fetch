@@ -227,6 +227,12 @@ ESCAN:
       frame_averager._set_config(cfg->mutable_frame_average());
       wrap._set_config(cfg->mutable_resonant_wrap());
       file_series._desc = cfg->mutable_file_series();
+
+      vibratome_._set_config(cfg->mutable_vibratome());
+
+      fov_.update(_config->fov());
+      stage_._set_config(cfg->mutable_stage());
+      stage_.setFOV(&fov_);
     }
 
     void Microscope::_set_config( const Config& cfg )
