@@ -127,7 +127,7 @@ namespace device {
       Stage(Agent *agent, Config *cfg);
       
       void setKind(Config::StageType kind);
-      void setFOV(FieldOfViewGeometry *fov)                                 {_fov=fov; _notifyFOVGeometryChanged();}
+                                    void setFOV(FieldOfViewGeometry *fov)                                 {_fov=fov; _createTiling(); _notifyFOVGeometryChanged();}
 
       virtual unsigned int on_attach();
       virtual unsigned int on_detach();

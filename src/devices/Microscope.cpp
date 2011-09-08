@@ -232,7 +232,7 @@ ESCAN:
 
       fov_.update(_config->fov());
       stage_._set_config(cfg->mutable_stage());
-      stage_.setFOV(&fov_);
+      //stage_.setFOV(&fov_);
     }
 
     void Microscope::_set_config( const Config& cfg )

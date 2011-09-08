@@ -36,8 +36,9 @@ fetch::ui::TilingController::TilingController( device::Stage *stage, device::Sta
     Qt::QueuedConnection);
   connect(
     &listener_,SIGNAL(sig_tiling_changed(device::StageTiling*)),
-    this,        SLOT(update(device::StageTiling*)),
-    Qt::BlockingQueuedConnection);
+    this,        SLOT(update(device::StageTiling*)),    
+    Qt::DirectConnection
+    );
   connect(
     &listener_,SIGNAL(sig_tile_next(unsigned)),
     this,      SIGNAL(nextTileRequest(unsigned)), // Not connected to anything right now
