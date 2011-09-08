@@ -387,14 +387,23 @@ Error:
 
   // Only use when attached but disarmed.
   void Stage::_createTiling()
-  { if(_tiling) {delete _tiling; _tiling=NULL;}    
-    device::StageTravel travel;
+  { device::StageTravel travel;
+    _destroyTiling();
     getTravel(&travel);
     if(_fov)
     {
       FieldOfViewGeometry fov = *_fov;
       _tiling = new StageTiling(travel, fov, _config->tilemode());
       _notifyTilingChanged();
+    }
+  }
+
+  void Stage::_destroyTiling()
+  { if(_tiling)
+    { StageTiling *t = _tiling;
+      _tiling = NULL;
+      _notifyTilingChanged();
+      delete t;
     }
   }
 
@@ -437,11 +446,8 @@ Error:
   unsigned int Stage::on_detach()
   {
     unsigned int eflag = _idevice->on_detach();
-    if((eflag==0)&&_tiling) 
-    {
-      delete _tiling; 
-      _tiling=NULL;
-    } 
+    if((eflag==0)&&_tiling)
+      _destroyTiling();
     return eflag;
   }
 

@@ -154,6 +154,7 @@ namespace device {
       inline  StageTiling* tiling()                                         {return _tiling;}
   protected:
       void    _createTiling();       //only call when disarmed
+      void    _destroyTiling();      //only call when disarmed
       void    _notifyTilingChanged();
       void    _notifyMoved();
       void    _notifyFOVGeometryChanged();

@@ -37,7 +37,7 @@ fetch::ui::TilingController::TilingController( device::Stage *stage, device::Sta
   connect(
     &listener_,SIGNAL(sig_tiling_changed(device::StageTiling*)),
     this,        SLOT(update(device::StageTiling*)),
-    Qt::QueuedConnection);
+    Qt::BlockingQueuedConnection);
   connect(
     &listener_,SIGNAL(sig_tile_next(unsigned)),
     this,      SIGNAL(nextTileRequest(unsigned)), // Not connected to anything right now
@@ -55,7 +55,7 @@ fetch::ui::TilingController::TilingController( device::Stage *stage, device::Sta
 bool fetch::ui::TilingController::fovGeometry( TRectVerts *out )
 { 
   if(tiling_)
-  {  
+  { 
     device::FieldOfViewGeometry fov(tiling_->fov());
     TRectVerts rect;
     rect << 

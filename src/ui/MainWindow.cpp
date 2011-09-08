@@ -245,6 +245,8 @@ void fetch::ui::MainWindow::createViews()
 void fetch::ui::MainWindow::closeEvent( QCloseEvent *event )
 {
   stopVideo();
+  _dc->stage()->delListener(_stageController->listener());
+  _dc->stage()->delListener(_stageController->tiling()->listener());
   _poller.stop();
   save_settings_();
   QMainWindow::closeEvent(event);  

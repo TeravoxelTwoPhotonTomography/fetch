@@ -74,6 +74,7 @@ namespace ui {
     // other ideas: imaging started, move start, move end
 
   private:
+
     device::Stage       *stage_;
     device::StageTiling *tiling_;
     TilingControllerListener listener_;
@@ -110,7 +111,8 @@ namespace ui {
       QPointF pos()                                                        { float  x, y, z; stage_->getPos(&x,&y,&z); return QPointF(x,y); } 
 
       TilingController* tiling()                                           {return &tiling_controller_;}
-
+      PlanarStageControllerListener* listener()                            {return &listener_;}
+                                                                     
   signals:
       void moved();            // eventually updates the imitem's position
       void moved(QPointF pos); // eventually updates the imitem's position
