@@ -187,8 +187,7 @@ namespace fetch
       {
         warning("[%s] Agent unavailable.  Perhaps another task is running?\r\n\tAborting attempt to arm.\r\n",name());
         goto Error;
-      }
-      this->_task = task; // save the task
+      }      
       // Exec task config function
       if(!(task->config)(dc)){
         warning("[%s] While loading task, something went wrong with the task configuration.\r\n\tAgent not armed.\r\n",name());
@@ -202,6 +201,7 @@ namespace fetch
         dc,                 // arguments
         CREATE_SUSPENDED,   // don't start yet
         NULL )); // don't worry about the thread id
+      this->_task = task; // save the task - this also indicates the agent is armed
       this->unlock();
       DBG("Armed %s 0x%p\r\n",name(), this);
       return 0;
