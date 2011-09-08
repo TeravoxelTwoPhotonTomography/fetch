@@ -24,28 +24,28 @@ namespace ui{
 /************************************************************************/
 
 ZoomableView::ZoomableView(QGraphicsScene *scene, QWidget *parent)
-	: QGraphicsView(scene,parent) 
+  : QGraphicsView(scene,parent) 
   , _scalebar()
 {	QObject::connect(this     ,SIGNAL(zoomChanged(double)),
-									&_scalebar,SLOT(setZoom(double)));
+                  &_scalebar,SLOT(setZoom(double)));
   setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing);
 }
 
 void	ZoomableView::wheelEvent(QWheelEvent *event)
 {
-	float s,d;
-	d = event->delta()/MOUSEWHEEL_SCALE;
-	s = powf(MOUSEWHEEL_POW,-d);
-	scale(s,s);
+  float s,d;
+  d = event->delta()/MOUSEWHEEL_SCALE;
+  s = powf(MOUSEWHEEL_POW,-d);
+  scale(s,s);
   notifyZoomChanged();	
 }
 
 void
 ZoomableView::drawForeground(QPainter* painter, const QRectF& rect)
 { QRectF vp(viewport()->geometry());
-	QRectF sc = _scalebar.boundingRect();
-	sc.moveBottomRight(vp.bottomRight());
-	painter->resetTransform();                                               //painter starts with the scene transform
+  QRectF sc = _scalebar.boundingRect();
+  sc.moveBottomRight(vp.bottomRight());
+  painter->resetTransform();                                               //painter starts with the scene transform
 
   {  
     QPointF p  = QPointF(   mapFromGlobal(QCursor::pos())),
@@ -60,10 +60,10 @@ ZoomableView::drawForeground(QPainter* painter, const QRectF& rect)
     painter->drawEllipse(r);
   }
   
-	// translate, but allow for a one px border 
-	// between text and the edge of the viewport
-	painter->translate(sc.topLeft()-QPointF(2,2));
-	_scalebar.paint(painter, rect);
+  // translate, but allow for a one px border 
+  // between text and the edge of the viewport
+  painter->translate(sc.topLeft()-QPointF(2,2));
+  _scalebar.paint(painter, rect);
 }
 
 /************************************************************************/
@@ -76,12 +76,12 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
 {	
   _view = new ZoomableView(&_scene); 
   QGLWidget *viewport; 
-	//_view = new QGraphicsView(&_scene);  
+  //_view = new QGraphicsView(&_scene);  
   _view->setViewport(viewport = new QGLWidget);   
-	viewport->makeCurrent();
+  viewport->makeCurrent();
   checkGLError();
   initOpenGLSentinal();
-	assert(viewport->context()->isValid());
+  assert(viewport->context()->isValid());
   assert(viewport->isValid());
   
   _view->setDragMode(QGraphicsView::ScrollHandDrag); //RubberBandDrag would be nice for zooming...but need a change of mode
@@ -99,8 +99,8 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
   connect(stageController->tiling(),SIGNAL(fovGeometryChanged(float,float,float)),
           this,SLOT(fovGeometryChanged(float,float,float)));
 
-	_item = new ImItem;
-	_scene.addItem(_item);
+  _item = new ImItem;
+  _scene.addItem(_item);
   checkGLError(); 
 
   _tv = new TilesView(stageController->tiling());
@@ -111,10 +111,10 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
   connect(&_scene,SIGNAL(removeSelectedArea(const QPainterPath&)),
               _tv,SLOT(  removeSelection(const QPainterPath&)));
 
-	QGridLayout *layout = new QGridLayout;
-	layout->setContentsMargins(0,0,0,0);
-	layout->addWidget(_view, 0, 0);
-	setLayout(layout);
+  QGridLayout *layout = new QGridLayout;
+  layout->setContentsMargins(0,0,0,0);
+  layout->addWidget(_view, 0, 0);
+  setLayout(layout);
 
   readSettings();
   updatePos();
@@ -290,14 +290,14 @@ static OpenImageWidgetSet g_open;
 
 Figure* imshow(mylib::Array *im)
 { _HERE_; Print_Inuse_List(stderr,1);
-	Figure *w = new Figure;
+  Figure *w = new Figure;
   g_open.insert(w);
   checkGLError();
   _HERE_; Print_Inuse_List(stderr,1);
-	w->imshow(im);
-	checkGLError();
+  w->imshow(im);
+  checkGLError();
   w->show();
-	return w;
+  return w;
 }
 
 void imclose(Figure *w/*=0*/)

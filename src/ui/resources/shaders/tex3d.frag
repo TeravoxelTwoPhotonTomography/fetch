@@ -20,31 +20,31 @@ void main(void)
   { gl_FragColor = texture2D(cmap,uvw.st);     //directly output cmap; ignore image
     return;
   }
-		
+        
 
   
   if( (nchan-1.0)<1e-2 ) // nchan==1
   { 
-		vec4 v = texture3D(plane,uvw);  //luma
+        vec4 v = texture3D(plane,uvw);  //luma
     v.x = gain*v.x - bias;                     //adjust instensity
-		//vec4 c = texture2D(cmap,vec2(1.0,v.x));  //cmap (sample along vertical)
-		//vec4 c = texture2D(cmap,uvw.st);         //directly output cmap; ignore image
+        //vec4 c = texture2D(cmap,vec2(1.0,v.x));  //cmap (sample along vertical)
+        //vec4 c = texture2D(cmap,uvw.st);         //directly output cmap; ignore image
     vec4 c = vec4(v.x,v.x,v.x,1.0);          //cmap black and white
-		gl_FragColor = vec4(c.r,c.g,c.b,1.0);
+        gl_FragColor = vec4(c.r,c.g,c.b,1.0);
     return;
   } else
   {
     float a = 1.0/(nchan-1.0);
-		vec4 c = vec4(0.0,0.0,0.0,1.0);
-		for(float i=0.0;i<nchan;++i)
+        vec4 c = vec4(0.0,0.0,0.0,1.0);
+        for(float i=0.0;i<nchan;++i)
     { vec4 v;
       uvw.z = a*i;
       v = texture3D(plane,uvw);
-			c += fill*texture2D(cmap,vec2(uvw.z,gain*v.x-bias));
+            c += fill*texture2D(cmap,vec2(uvw.z,gain*v.x-bias));
     }
     c.w=1.0;
     gl_FragColor = c;
-		return;
+        return;
   }
 }
 
@@ -79,6 +79,6 @@ void main(void)
  /*
 void main(void)
 {
-	gl_FragColor = vec4(1.0,1.0,0.0,1.0);
+    gl_FragColor = vec4(1.0,1.0,0.0,1.0);
 }
 */
