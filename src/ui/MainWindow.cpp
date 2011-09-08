@@ -243,13 +243,13 @@ void fetch::ui::MainWindow::createViews()
 }
 
 void fetch::ui::MainWindow::closeEvent( QCloseEvent *event )
-{
+{ 
+  QMainWindow::closeEvent(event);   // must come before stopVideo
   stopVideo();
   _dc->stage()->delListener(_stageController->listener());
   _dc->stage()->delListener(_stageController->tiling()->listener());
   _poller.stop();
-  save_settings_();
-  QMainWindow::closeEvent(event);  
+  save_settings_();  
 }
 
 void fetch::ui::MainWindow::load_settings_()
@@ -460,6 +460,8 @@ void
      be ok.
       --- maybe this (b) worked.
   c. try using deleteLater()
+
+  - Still get a rare deadlock
   */
   delete _player;
   _player = NULL;
