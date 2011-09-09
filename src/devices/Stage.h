@@ -18,7 +18,7 @@ namespace fetch {
 namespace device {
 
   class StageTiling;
-  typedef Matrix<size_t,1,3> Vector3z;
+  typedef Matrix<size_t,1,3>           Vector3z;
 
   struct StageAxisTravel  { float min,max; };
   struct StageTravel      { StageAxisTravel x,y,z; };
@@ -121,13 +121,14 @@ namespace device {
     StageTiling         *_tiling;
     TListeners           _listeners;
     FieldOfViewGeometry *_fov;
+    FieldOfViewGeometry  _lastfov;
     
     public:
       Stage(Agent *agent);
       Stage(Agent *agent, Config *cfg);
       
       void setKind(Config::StageType kind);
-                                    void setFOV(FieldOfViewGeometry *fov)                                 {_fov=fov; _createTiling(); _notifyFOVGeometryChanged();}
+      void setFOV(FieldOfViewGeometry *fov);
 
       virtual unsigned int on_attach();
       virtual unsigned int on_detach();

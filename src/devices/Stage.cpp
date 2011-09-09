@@ -350,6 +350,17 @@ Error:
     }
   }
 
+  void Stage::setFOV(FieldOfViewGeometry *fov)
+  {
+    if(!(_fov && _lastfov==(*fov)))
+    {
+      _fov=fov; 
+      _lastfov=*fov; 
+      _createTiling(); 
+    } 
+    _notifyFOVGeometryChanged();
+  }
+
   void Stage::_set_config( Config IN *cfg )
   {
     setKind(cfg->kind());
@@ -394,6 +405,10 @@ Error:
     {
       FieldOfViewGeometry fov = *_fov;
       _tiling = new StageTiling(travel, fov, _config->tilemode());
+      { TListeners::iterator i;
+        for(i=_listeners.begin();i!=_listeners.end();++i)
+          _tiling->addListener(*i);
+      }
       _notifyTilingChanged();
     }
   }

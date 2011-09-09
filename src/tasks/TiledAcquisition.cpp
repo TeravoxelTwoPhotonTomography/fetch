@@ -21,6 +21,8 @@
 #include "devices\Microscope.h"
 #include "devices\tiling.h"
 
+#define CHKJMP(expr) if(!(expr)) {warning("%s(%d)"ENDL"\tExpression indicated failure:"ENDL"\t%s"ENDL,__FILE__,__LINE__,#expr); goto Error;}
+
 namespace fetch
 {
 
@@ -48,18 +50,19 @@ namespace fetch
         IDevice *cur;
         cur = d->configPipeline();
 
-        d->file_series.ensurePathExists();
+        CHKJMP(d->file_series.ensurePathExists());
         d->file_series.inc();
         filename = d->stack_filename();
         IDevice::connect(&d->disk,0,cur,0);
         Guarded_Assert( d->disk.close()==0 );
         //Guarded_Assert( d->disk.open(filename,"w")==0);
 
-        d->__scan_agent.arm(&grabstack,&d->scanner);                       // why was this arm_nowait?     - should prolly move this to run
-
-        d->stage()->tiling()->resetCursor();                               // this is here so that run/stop cycles will pick up where they left off
+        d->__scan_agent.arm(&grabstack,&d->scanner);  // why was this arm_nowait?     - should prolly move this to run
+        d->stage()->tiling()->resetCursor();          // this is here so that run/stop cycles will pick up where they left off
 
         return 1; //success
+Error:
+        return 0;
       }
 
       static int _handle_wait_for_result(DWORD result, const char *msg)
@@ -87,9 +90,9 @@ namespace fetch
         Vector3f tilepos;
         
         Guarded_Assert(dc->__scan_agent.is_runnable());
-        //Guarded_Assert(dc->__io_agent.is_running());
 
         device::StageTiling* tiling = dc->stage()->tiling();
+        tiling->resetCursor();
         while(!dc->_agent->is_stopping() && tiling->nextInPlanePosition(tilepos))
         {
           debug("[Tiling Task] tilepos: %5.1f %5.1f %5.1f"ENDL,tilepos[0],tilepos[1],tilepos[2]);
@@ -102,12 +105,13 @@ namespace fetch
             //tiling->markDone(eflag==0);
             return eflag;
           }
-
+          
           // Move stage
           Vector3f curpos = dc->stage()->getPos(); // FIXME HACK
           tilepos[2] = curpos[2]*1000.0f;
           
           dc->stage()->setPos(0.001f*tilepos); // convert um to mm
+          dc->write_stack_metadata();          // go ahead and write the metadata
 
           eflag |= dc->runPipeline();
           eflag |= dc->__scan_agent.run() != 1;          
@@ -136,13 +140,12 @@ namespace fetch
             }
           }  // end waiting block
 
-          // Output metadata and Increment file
+          // Output and Increment files
           eflag |= dc->disk.close();
-          dc->write_stack_metadata();
+          
           dc->file_series.inc(); // increment regardless of completion status
 
-          eflag |= dc->stopPipeline(); // wait till everything stops
-          tiling->resetCursor();
+          eflag |= dc->stopPipeline(); // wait till everything stops          
           
         } // end loop over tiles
         eflag |= dc->stopPipeline(); // wait till the  pipeline stops

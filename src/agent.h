@@ -375,19 +375,39 @@ namespace fetch {
   template<class Tcfg>
   void IConfigurableDevice<Tcfg>::set_config(Tcfg *cfg)
   {    
+    int run;
+    _agent->lock(); //will generate a recursive lock :(
+    run = _agent->is_running();
+    if(run)      
+      _agent->stop(AGENT_DEFAULT_TIMEOUT); 
+
     transaction_lock();    
     _set_config(cfg);    
     transaction_unlock();
-    update();
+    update();     
+
+    if(run)
+      _agent->run();    
+    _agent->unlock();    
   }
   
   template<class Tcfg>
   void IConfigurableDevice<Tcfg>::set_config( const Config& cfg )
-  {
-    transaction_lock();
+  {   
+    int run;
+    _agent->lock(); //will generate a recursive lock :(
+    run = _agent->is_running();
+    if(run)      
+      _agent->stop(AGENT_DEFAULT_TIMEOUT); 
+
+    transaction_lock();    
     _set_config(cfg);    
     transaction_unlock();
-    update(); // if another thread imposes an update here, it's ok.  Machine will have a consistent view.
+    update();     
+
+    if(run)
+      _agent->run();    
+    _agent->unlock(); 
   }
 
 #define CONFIG_BUFFER_MAX_BYTES 2048

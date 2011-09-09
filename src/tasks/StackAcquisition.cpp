@@ -32,7 +32,7 @@
 #define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, error  ))
 #define DAQJMP( expr )  goto_if_fail( 0==DAQWRN(expr), Error)
 
-#define CHKERR( expr )  {if(expr) {error("Expression indicated failure:\r\n\t%s\r\n",#expr);}} 0 //( (expr), #expr, error  ))
+#define CHKERR( expr )  if(expr) {error("%s(%d)"ENDL"\tExpression indicated failure:"ENDL"\t%s"ENDL,__FILE__,__LINE__,#expr);} //( (expr), #expr, error  ))
 #define CHKJMP( expr )  goto_if((expr),Error)
 
 #if 0
@@ -77,7 +77,8 @@ namespace fetch
         IDevice *cur;
         cur = d->configPipeline();
 
-        d->file_series.ensurePathExists();
+        CHKJMP( !d->file_series.ensurePathExists() );
+
         d->file_series.inc();
         filename = d->stack_filename();
         IDevice::connect(&d->disk,0,cur,0);
@@ -87,6 +88,8 @@ namespace fetch
         d->__scan_agent.arm(&grabstack,&d->scanner);                      // why was this arm_nowait?
 
         return 1; //success
+Error:
+        return 0; //failure
       }
 
       static int _handle_wait_for_result(DWORD result, const char *msg)
@@ -95,12 +98,12 @@ namespace fetch
           return_val_if( result == WAIT_OBJECT_0+1, 1 );
           Guarded_Assert_WinErr( result != WAIT_FAILED );
           if(result == WAIT_ABANDONED_0)
-              warning("StackAcquisition: Wait 0 abandoned\r\n\t%s\r\n", msg);
+              warning("StackAcquisition: Wait 0 abandoned"ENDL"\t%s"ENDL, msg);
           if(result == WAIT_ABANDONED_0+1)
-              warning("StackAcquisition: Wait 1 abandoned\r\n\t%s\r\n", msg);
+              warning("StackAcquisition: Wait 1 abandoned"ENDL"\t%s"ENDL, msg);
 
           if(result == WAIT_TIMEOUT)
-              warning("StackAcquisition: Wait timeout\r\n\t%s\r\n", msg);
+              warning("StackAcquisition: Wait timeout"ENDL"\t%s"ENDL, msg);
 
           Guarded_Assert_WinErr( result != WAIT_FAILED );
 
@@ -191,7 +194,7 @@ namespace fetch
           return run_simulated(s);
           break;
         default:
-          warning("ScanStack<>::run() - Got invalid kind() for Digitizer.get_config\r\n");          
+          warning("ScanStack<>::run() - Got invalid kind() for Digitizer.get_config"ENDL);          
         }
         return 0; //failure
       }
@@ -202,7 +205,7 @@ namespace fetch
         config(device::Scanner3D *d)
         {
           d->onConfigTask();
-          debug("Scanner3D configured for StackAcquisition<%s>\r\n", TypeStr<TPixel> ());
+          debug("Scanner3D configured for StackAcquisition<%s>"ENDL, TypeStr<TPixel> ());
           return 1; //success
         }
 
@@ -277,9 +280,9 @@ namespace fetch
 #endif
 
             // Push the acquired data down the output pipes
-            DBG("Task: StackAcquisition<%s>: pushing wfm\r\n", TypeStr<TPixel> ());
+            DBG("Task: StackAcquisition<%s>: pushing wfm"ENDL, TypeStr<TPixel> ());
             Chan_Next_Try(qwfm,(void**)&wfm,nbytes_info);
-            DBG("Task: StackAcquisition<%s>: pushing frame\r\n", TypeStr<TPixel> ());
+            DBG("Task: StackAcquisition<%s>: pushing frame"ENDL, TypeStr<TPixel> ());
             if(CHAN_FAILURE( SCANNER_PUSH(qdata,(void**)&frm,nbytes) ))
             { warning("(%s:%d) Scanner output frame queue overflowed."ENDL"\tAborting stack acquisition task."ENDL,__FILE__,__LINE__);
               goto Error;
@@ -289,13 +292,13 @@ namespace fetch
             toc(&outer_clock);
             CHKJMP(d->_scanner2d._daq.waitForDone(SCANNER2D_DEFAULT_TIMEOUT));
             d->_scanner2d._daq.stopCLK();            
-            debug("Generating AO for z = %f\r\n.",z_um);
+            debug("Generating AO for z = %f."ENDL,z_um);
             d->generateAORampZ((float)z_um);
             d->writeAO();
             ++i;
           }
           status = 0;
-          DBG("Scanner - Stack Acquisition task completed normally.\r\n");
+          DBG("Scanner - Stack Acquisition task completed normally."ENDL);
 Finalize: 
           d->_scanner2d._shutter.Shut();          
           free(frm);
@@ -308,7 +311,7 @@ Finalize:
           DIGERR(niScope_Abort(vi));
           return status;
 Error: 
-          warning("Error occurred during ScanStack<%s> task.\r\n",TypeStr<TPixel>());
+          warning("Error occurred during ScanStack<%s> task."ENDL,TypeStr<TPixel>());
           d->_scanner2d._daq.stopAO();
           d->_scanner2d._daq.stopCLK();
           goto Finalize;
@@ -333,7 +336,7 @@ Error:
           frm = (Frame*)Chan_Token_Buffer_Alloc(qdata);
           ref.format(frm);
 
-          debug("Simulated Stack!\r\n");
+          debug("Simulated Stack!"ENDL);
           HERE;
           d->_zpiezo.getScanRange(&ummin,&ummax,&umstep);
           for(z_um=ummin+umstep;z_um<ummax && !d->_agent->is_stopping();z_um+=umstep)
@@ -356,11 +359,11 @@ Error:
             }
 
             if(CHAN_FAILURE( SCANNER_PUSH(qdata,(void**)&frm,nbytes) ))
-            { warning("Scanner output frame queue overflowed.\r\n\tAborting acquisition task.\r\n");
+            { warning("Scanner output frame queue overflowed."ENDL"\tAborting acquisition task."ENDL);
               goto Error;
             }
             ref.format(frm);
-            DBG("Task: ScanStack<%s>: pushing frame\r\n",TypeStr<TPixel>());
+            DBG("Task: ScanStack<%s>: pushing frame"ENDL,TypeStr<TPixel>());
           }
           HERE;
 Finalize:
@@ -368,7 +371,7 @@ Finalize:
           free( frm );
           return status; // status == 0 implies success, error otherwise
 Error:
-          warning("Error occurred during ScanStack<%s> task.\r\n",TypeStr<TPixel>());
+          warning("Error occurred during ScanStack<%s> task."ENDL,TypeStr<TPixel>());
           goto Finalize;
         }
 
@@ -376,7 +379,7 @@ Error:
         unsigned int fetch::task::scanner::ScanStack<TPixel>::run_alazar( device::Scanner3D *d )
         { Chan *qdata = Chan_Open(d->_out->contents[0],CHAN_WRITE);
           Chan_Close(qdata);
-          warning("Implement me!\r\n");
+          warning("Implement me!"ENDL);
           return 1;
         }
     }

@@ -225,14 +225,11 @@ ESCAN:
       scanner._set_config(cfg->mutable_scanner3d());
       pixel_averager._set_config(cfg->mutable_horizontal_downsample());
       frame_averager._set_config(cfg->mutable_frame_average());
-      wrap._set_config(cfg->mutable_resonant_wrap());
-      file_series._desc = cfg->mutable_file_series();
-
+      wrap._set_config(cfg->mutable_resonant_wrap());      
       vibratome_._set_config(cfg->mutable_vibratome());
 
       fov_.update(_config->fov());
-      stage_._set_config(cfg->mutable_stage());
-      //stage_.setFOV(&fov_);
+      stage_._set_config(cfg->mutable_stage());      
     }
 
     void Microscope::_set_config( const Config& cfg )
@@ -247,6 +244,9 @@ ESCAN:
       vibratome_.onUpdate();
       fov_.update(_config->fov());
       stage_.setFOV(&fov_);
+
+      file_series.updateDesc(_config->mutable_file_series());
+
       // update microscope's run state based on sub-agents
       // require scan agent and vibratome agent to be attached
       if( __self_agent.is_attached() && !(__scan_agent.is_attached() && __vibratome_agent.is_attached()))
@@ -322,8 +322,9 @@ ESCAN:
       } else
       { _desc->set_seriesno(n+1);
       }
+      debug("-------------------------------------------- 1 COPY series no: %d"ENDL,_desc->seriesno());
+      _prev.set_seriesno(_desc->seriesno());
       return *this;
-
     }
 
     const std::string FileSeries::getFullPath(const std::string& prefix, const std::string& ext)
@@ -350,10 +351,23 @@ ESCAN:
       struct tm *t = localtime(&clock);
       char datestr[] = "0000-00-00";      
       sprintf_s(datestr,sizeof(datestr),"%04d-%02d-%02d",t->tm_year+1900,t->tm_mon+1,t->tm_mday);
-      _desc->set_date(datestr);
+      _desc->set_date(datestr);      
+      _prev.set_date(_desc->date());
     }
    
-    void FileSeries::ensurePathExists()
+    bool FileSeries::updateDesc(cfg::FileSeries *desc)
+    { 
+      if(_desc)
+        desc->set_seriesno(_prev.seriesno()); // keep old series no      
+      _desc = desc;
+      _prev.CopyFrom(*_desc);
+      updateDate();
+      ensurePathExists();
+      return is_valid();
+    }
+
+
+    bool FileSeries::ensurePathExists()
     {
       std::string s,t;
       char strSeriesNo[32];
@@ -366,6 +380,8 @@ ESCAN:
 
       t = s + _desc->pathsep()+strSeriesNo;
       tryCreateDirectory(t.c_str(), "date path", s.c_str());
+
+      return is_valid();
     }
 
     void FileSeries::renderSeriesNo( char * strSeriesNo,int maxbytes )

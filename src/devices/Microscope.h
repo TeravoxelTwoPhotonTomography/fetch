@@ -50,12 +50,13 @@ namespace fetch
     class FileSeries
     {
     public:
-      FileSeries() :_desc(&__default_desc), _lastpath("lastpath"), _is_valid(false) {}
-      FileSeries(cfg::FileSeries *desc) :_desc(desc), _lastpath("lastpath"), _is_valid(false) {Guarded_Assert(_desc!=NULL);}
+      FileSeries() :_desc(&__default_desc), _lastpath("lastpath"), _is_valid(false), _prev(__default_desc)  {_lastpath=_desc->root() + _desc->pathsep() + _desc->date();}
+      FileSeries(cfg::FileSeries *desc) :_desc(desc), _lastpath("lastpath"), _is_valid(false)               {Guarded_Assert(_desc!=NULL);_lastpath=_desc->root() + _desc->pathsep() + _desc->date(); _prev.CopyFrom(*_desc);}
 
       FileSeries& inc(void);
       const std::string getFullPath(const std::string& prefix, const std::string& ext);
-      void ensurePathExists();
+      bool updateDesc(cfg::FileSeries *desc);
+      bool ensurePathExists();
       inline bool is_valid()                                              {return _is_valid;};
 
     private:
@@ -64,10 +65,11 @@ namespace fetch
       void updateDate(void);
       std::string _lastpath;
       cfg::FileSeries __default_desc;
-      bool _is_valid;
+      bool _is_valid;      
 
-    public:
+    private:
       cfg::FileSeries *_desc;
+      cfg::FileSeries  _prev;
     };    
 
     class Microscope : public IConfigurableDevice<cfg::device::Microscope>

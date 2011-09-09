@@ -310,11 +310,11 @@ void
   _config_delayed_load_mapper.disconnect();
   _config_delayed_load_mapper.removeMappings(&_config_delayed_load_timer);
   // init the new ones
-  _config_delayed_load_mapper.setMapping(&_config_delayed_load_timer,filename);  
-  connect(&_config_delayed_load_timer , SIGNAL(timeout()),
-          &_config_delayed_load_mapper, SLOT(map()));
-  connect(&_config_delayed_load_mapper, SIGNAL(mapped(const QString&)),
-                                  this, SLOT(openMicroscopeConfig(const QString&)));
+  _config_delayed_load_mapper.setMapping(&_config_delayed_load_timer,filename);         // Use a signal mapper to 
+  connect(&_config_delayed_load_timer , SIGNAL(timeout()),                              // send the string after 
+          &_config_delayed_load_mapper, SLOT(map()));                                   // a specified delay.
+  connect(&_config_delayed_load_mapper, SIGNAL(mapped(const QString&)),                 
+                                  this, SLOT(openMicroscopeConfig(const QString&)));    
 
   _config_delayed_load_timer.setSingleShot(true);
   _config_delayed_load_timer.setInterval(100/*ms*/);
@@ -461,7 +461,7 @@ void
       --- maybe this (b) worked.
   c. try using deleteLater()
 
-  - Still get a rare deadlock
+  - May still get a rare deadlock? although the last time I got a deadlock here using a DirectConnection helped
   */
   delete _player;
   _player = NULL;

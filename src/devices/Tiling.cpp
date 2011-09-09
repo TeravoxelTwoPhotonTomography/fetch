@@ -343,7 +343,9 @@ namespace device {
   const Vector3f StageTiling::computeCursorPos()
   {          
     mylib::Coordinate *c = mylib::Idx2CoordA(attr_,cursor_);     
-    Map<Vector3z> r((size_t*)ADIMN(c));
+    mylib::Dimn_Type *d = (mylib::Dimn_Type*)ADIMN(c);
+    Vector3z r; 
+    r << d[0],d[1],d[2];
     Vector3f pos = latticeToStage_ * r.transpose().cast<float>();
     Free_Array(c);	
     return pos;

@@ -66,6 +66,7 @@ namespace device {
     inline size_t plane()                                                  {return (size_t)(current_plane_offest_/sz_plane_nelem_); }
            size_t plane_mm();
 
+    const TListeners *listeners()                                          {return &listeners_;}    
     inline void addListener(StageListener *listener)                       {listeners_.insert(listener);}
     inline void delListener(StageListener *listener)                       {listeners_.erase(listener);}
 

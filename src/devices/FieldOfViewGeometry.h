@@ -18,6 +18,7 @@ struct FieldOfViewGeometry
   Vector3f overlap_um_;
   float    rotation_radians_;
 
+  FieldOfViewGeometry() : field_size_um_(0,0,0),  overlap_um_(0,0,0), rotation_radians_(0) {}
   FieldOfViewGeometry(float x, float y, float z, float radians) :
         field_size_um_(x,y,z), rotation_radians_(radians) {}
   FieldOfViewGeometry(const cfg::device::FieldOfViewGeometry &cfg) {update(cfg);}
@@ -30,5 +31,7 @@ struct FieldOfViewGeometry
        }
     
 };
+
+bool operator==(const FieldOfViewGeometry &lhs,const FieldOfViewGeometry &rhs);
 
 }} // end namespace fetch::device
