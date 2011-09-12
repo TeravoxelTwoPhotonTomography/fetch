@@ -113,6 +113,32 @@ class ConfigFileNameDisplay : public QLabel
     void update(const QString& filename);
 };
 
+class FileSeriesNameListener : public QObject, public device::FileSeriesListener
+{ Q_OBJECT
+public:
+  virtual void update(const std::string& path)
+  { emit sig_update(QString(path.c_str()));
+  }
+signals:
+  void sig_update(const QString& path);
+};
+
+class FileSeriesNameDisplay : public QLabel
+{ Q_OBJECT
+
+  public:
+    FileSeriesNameDisplay(const QString& filename, QWidget *parent=0);
+
+    inline FileSeriesNameListener* listener() {return &_listener;}
+
+  public slots:
+    void update(const QString& filename);
+
+  private:
+    FileSeriesNameListener _listener;
+
+};
+
 //namespace ends
 } //ui
 } //fetch

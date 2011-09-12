@@ -137,7 +137,7 @@
       CHKJMP(__vibratome_agent.attach()==0,EVIBRATOME);
 
       stackname = _config->file_prefix()+_config->stack_extension();
-      file_series.ensurePathExists();   
+      //file_series.ensurePathExists();   
 
       return 0;   // success
 EVIBRATOME:
@@ -334,9 +334,9 @@ ESCAN:
         _lastpath = seriespath;
       } else
       { _desc->set_seriesno(n+1);
-      }
-      debug("-------------------------------------------- 1 COPY series no: %d"ENDL,_desc->seriesno());
+      }      
       _prev.set_seriesno(_desc->seriesno());
+      notify();
       return *this;
     }
 
@@ -358,6 +358,19 @@ ESCAN:
         + strSeriesNo + part2 + ext;
     }
 
+    const std::string FileSeries::getPath()
+    {
+      VALIDATE;
+      char strSeriesNo[32];      
+      renderSeriesNo(strSeriesNo,sizeof(strSeriesNo));
+      std::string seriespath = _desc->root() + _desc->pathsep() + _desc->date();
+    
+      return seriespath
+        + _desc->pathsep()
+        + strSeriesNo
+        + _desc->pathsep();
+    }
+
     void FileSeries::updateDate( void )
     {
       time_t clock = time(NULL);
@@ -375,7 +388,8 @@ ESCAN:
       _desc = desc;
       _prev.CopyFrom(*_desc);
       updateDate();
-      ensurePathExists();
+      //ensurePathExists();
+      notify();
       return is_valid();
     }
 
@@ -388,11 +402,13 @@ ESCAN:
       renderSeriesNo(strSeriesNo,sizeof(strSeriesNo));
       updateDate();
       
+      tryCreateDirectory(_desc->root().c_str(), "root path", "");
+
       s = _desc->root()+_desc->pathsep()+_desc->date();
-      tryCreateDirectory(s.c_str(), "root path", _desc->root().c_str());
+      tryCreateDirectory(s.c_str(), "date path", _desc->root().c_str());
 
       t = s + _desc->pathsep()+strSeriesNo;
-      tryCreateDirectory(t.c_str(), "date path", s.c_str());
+      tryCreateDirectory(t.c_str(), "series path", s.c_str());
 
       return is_valid();
     }
@@ -417,7 +433,7 @@ ESCAN:
           break;
         case ERROR_PATH_NOT_FOUND:
         case ERROR_NOT_READY:
-          warning("[FileSeries] %s(%d)"ENDL"\tCould not create %s:"ENDL"\t%s"ENDL,__FILE__,__LINE__,description,root); // [ ] TODO chage this to a warning
+          warning("[FileSeries] %s(%d)"ENDL"\tCould not create %s:"ENDL"\t%s"ENDL,__FILE__,__LINE__,description,path); // [ ] TODO chage this to a warning
           _is_valid = false;
           break;        
         default:
@@ -426,6 +442,15 @@ ESCAN:
           ReportLastWindowsError();
         }
       }
+    }
+
+    void 
+      FileSeries::
+      notify()
+    { TListeners::iterator i;
+      std::string path = getPath();
+      for(i=_listeners.begin();i!=_listeners.end();++i)
+        (*i)->update(path);      
     }
 
     //notes

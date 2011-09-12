@@ -38,6 +38,7 @@
 #include "tasks/Vibratome.h"
 
 #include <string>
+#include <set>
 
 #define MICROSCOPE_MAX_WORKERS     10
 #define MICROSCOPE_DEFAULT_TIMEOUT INFINITE
@@ -48,17 +49,25 @@ namespace fetch
   {
   
 //TODO: move this into it's own header and out of namespace fetch::device (move to fetch::)
+    struct FileSeriesListener
+    { virtual void update(const std::string& path) = 0;
+    };
+
     class FileSeries
     {
+      typedef std::set<FileSeriesListener*> TListeners;
     public:
       FileSeries() :_desc(&__default_desc), _lastpath("lastpath"), _is_valid(false), _prev(__default_desc)  {_lastpath=_desc->root() + _desc->pathsep() + _desc->date();}
       FileSeries(cfg::FileSeries *desc) :_desc(desc), _lastpath("lastpath"), _is_valid(false)               {Guarded_Assert(_desc!=NULL);_lastpath=_desc->root() + _desc->pathsep() + _desc->date(); _prev.CopyFrom(*_desc);}
 
       FileSeries& inc(void);
       const std::string getFullPath(const std::string& prefix, const std::string& ext);
+      const std::string getPath();
       bool updateDesc(cfg::FileSeries *desc);
       bool ensurePathExists();
-      inline bool is_valid()                                              {return _is_valid;};
+      inline bool is_valid()  {return _is_valid;};
+
+      void addListener(FileSeriesListener *x) {_listeners.insert(x);}
 
     private:
       void renderSeriesNo( char * strSeriesNo, int maxbytes );
@@ -66,11 +75,14 @@ namespace fetch
       void updateDate(void);
       std::string _lastpath;
       cfg::FileSeries __default_desc;
-      bool _is_valid;      
+      bool _is_valid;
+
+      void notify();
 
     private:
       cfg::FileSeries *_desc;
-      cfg::FileSeries  _prev;
+      cfg::FileSeries  _prev;      
+      TListeners _listeners;
     };    
 
     class Microscope : public IConfigurableDevice<cfg::device::Microscope>

@@ -35,7 +35,35 @@ fetch::ui::ConfigFileNameDisplay::
 void 
   fetch::ui::ConfigFileNameDisplay::
   update(const QString& filename)
-{ QString link = QString("<a href=\"file:///%1\">%1</a>").arg(filename);
+{ QString link = QString("Config: <a href=\"file:///%1\">%1</a>").arg(filename);
+  setText(link);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// FILESERIESNAMEFILENAMEDISPLAY
+//////////////////////////////////////////////////////////////////////////////
+
+fetch::ui::FileSeriesNameDisplay::
+  FileSeriesNameDisplay(const QString& filename, QWidget *parent)
+  : QLabel(parent)
+{             
+  setOpenExternalLinks(true);
+  setTextFormat(Qt::RichText);
+  setTextInteractionFlags(Qt::NoTextInteraction
+      |Qt::TextBrowserInteraction
+      |Qt::LinksAccessibleByKeyboard
+      |Qt::LinksAccessibleByMouse);
+  update(filename);
+
+  connect(listener(),SIGNAL(sig_update(const QString&)),
+                this,SLOT(update(const QString&)),
+    Qt::QueuedConnection);
+}
+
+void 
+  fetch::ui::FileSeriesNameDisplay::
+  update(const QString& filename)
+{ QString link = QString("FileSeries: <a href=\"file:///%1\">%1</a>").arg(filename);
   setText(link);
 }
 
@@ -97,10 +125,17 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   _poller.start(50 /*ms*/);
 
   { QStatusBar *bar = statusBar();
-    QString f = _config_watcher->files().at(0);
-    ConfigFileNameDisplay *w = new ConfigFileNameDisplay(f);
-    connect(this,SIGNAL(configFileChanged(const QString&)),w,SLOT(update(const QString&)));
-    bar->addPermanentWidget(w);
+    { QString f = _config_watcher->files().at(0);
+      ConfigFileNameDisplay *w = new ConfigFileNameDisplay(f);    
+      bar->addPermanentWidget(w);
+      connect(this,SIGNAL(configFileChanged(const QString&)),w,SLOT(update(const QString&)));
+    }
+    { QString f(_dc->file_series.getPath().c_str());
+      FileSeriesNameDisplay *w = new FileSeriesNameDisplay(f);
+      _dc->file_series.addListener(w->listener());
+      bar->addWidget(w);      
+    }
+
     bar->setSizeGripEnabled(true);
   }
 }    
