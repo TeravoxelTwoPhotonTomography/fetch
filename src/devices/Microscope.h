@@ -21,6 +21,7 @@
 #include "workers/Terminator.h"
 #include "workers/FrameCaster.h"
 #include "workers/ResonantWrap.h"
+#include "workers/ResonantUnwarp.h"
 #include "workers/FrameInvert.h"
 #include "workers/FrameFormater.h"
 
@@ -116,6 +117,7 @@ namespace fetch
       worker::FrameCastAgent_i16         cast_to_i16;
       worker::FrameInvertAgent           inverter;
       worker::ResonantWrapAgent          wrap;
+      worker::ResonantUnwarpAgent        unwarp;
       worker::FrameFormatterAgent        frame_formatter;
 
       worker::TerminalAgent		           trash;
@@ -126,7 +128,7 @@ namespace fetch
       task::microscope::TiledAcquisition tiling_task;
       task::microscope::Cut              cut_task;
 
-      inline Chan*  getVideoChannel() {if(frame_formatter._out) return frame_formatter._out->contents[0]; else return NULL;}
+      inline Chan*  getVideoChannel() {if(unwarp._out) return unwarp._out->contents[0]; else return NULL;}
       inline LinearScanMirror*  LSM() {return &scanner._scanner2d._LSM;}
       inline Pockels*       pockels() {return &scanner._scanner2d._pockels;}
       inline ZPiezo*         zpiezo() {return &scanner._zpiezo;}

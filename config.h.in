@@ -29,6 +29,7 @@
 #cmakedefine HAVE_NISCOPE
 #cmakedefine HAVE_ALAZAR
 #cmakedefine HAVE_C843
+#cmakedefine HAVE_CUDA
 
 //////////////////////////////////////////////////////////////////////
 // Line endiings

@@ -8,6 +8,7 @@ cmake_minimum_required(VERSION 2.6)
 # - There's some cross-platform config stuff included here even though
 #   this is a windows only build, really.  It's here because some parts
 #   of the code base are used in other projects that are cross-platform.
+#[ ] "algo" subdirectory needs better name?
 #
 project(fetch)
 
@@ -133,6 +134,19 @@ find_package(Qt4 4.7
 include(${QT_USE_FILE})
 include_directories(${QT_INCLUDE_DIRS})
 
+#CUDA
+find_package(CUDA 4.0)
+if(CUDA_FOUND)
+  set(HAVE_CUDA TRUE)
+  include_directories(${CUDA_INCLUDE_DIR})
+  cuda_build_clean_target()
+  set(cuda_build_cubin on)
+endif()
+
+
+###############################################################################
+#  Config header
+###############################################################################
 configure_file(
         "${PROJECT_SOURCE_DIR}/config.h.in"
         "${PROJECT_BINARY_DIR}/config.h"
@@ -173,6 +187,17 @@ source_group("Header Files\\util" FILES ${FETCH_UTIL_HDRS})
 file(GLOB FETCH_UTIL_SRCS src/util/*.cpp)
 source_group("Source Files\\util" FILES ${FETCH_UTIL_SRCS})
 
+file(GLOB FETCH_ALGO_HDRS src/algo/*.h)
+file(GLOB FETCH_ALGO_SRCS src/algo/*.c)
+file(GLOB FETCH_ALGO_CUDA src/algo/*.cu)
+source_group("Header Files\\Algorithms" FILES 
+  ${FETCH_ALGO_HDRS}
+  )
+source_group("Source Files\\Algorithms" FILES 
+  ${FETCH_ALGO_SRCS}
+  ${FETCH_ALGO_CUDA}
+  )
+
 file(GLOB FETCH_CORE_HDRS src/*.h)
 file(GLOB FETCH_CORE_SRCS src/*.cpp src/*.c)
 include_directories(src)
@@ -210,6 +235,7 @@ source_group("Source Files\\Qt Generated" FILES
   ${MOC_SRCS}
   ${RCC_SRCS}
 )
+
 #  REGULAR_EXPRESSION "(qrc|moc)_.+\\.cxx$")
 
 ###############################################################################
@@ -221,6 +247,7 @@ source_group("Source Files\\Qt Generated" FILES
 # Executable
 #
 
+cuda_compile(FETCH_ALGO_CUDA_OUT STATIC ${FETCH_ALGO_CUDA} OPTIONS -arch=sm_20)
 # FETCH_SRCS is used below and by testing framework
 set(FETCH_SRCS
   ${PROTO_FILES}
@@ -234,6 +261,10 @@ set(FETCH_SRCS
   ${FETCH_UTIL_SRCS}
   ${FETCH_CORE_HDRS}
   ${FETCH_CORE_SRCS}
+  ${FETCH_ALGO_HDRS}
+  ${FETCH_ALGO_SRCS}
+  ${FETCH_ALGO_CUDA}
+  ${FETCH_ALGO_CUDA_OUT}
   "${PROJECT_SOURCE_DIR}/config.h.in"
   )
 add_executable(fetch
@@ -256,6 +287,7 @@ target_link_libraries(fetch
   ${OPENGL_LIBRARY}
   ${GLEW_LIBRARIES}
   ${OPTIONAL_LIBS}
+  ${CUDA_LIBRARIES}
 # ${DIRECTX_LIBRARIES} 
 )
 

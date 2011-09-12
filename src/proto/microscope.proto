@@ -24,6 +24,7 @@ message Microscope
   optional Vibratome                   vibratome             = 3;
   optional FieldOfViewGeometry         fov                   = 4;
   required worker.ResonantWrap         resonant_wrap         = 5;
+  optional worker.ResonantUnwarp       resonant_unwarp       = 13;
   required worker.HorizontalDownsample horizontal_downsample = 6;
   required worker.FrameAverage         frame_average         = 7;
   required FileSeries                  file_series           = 8;

@@ -5,6 +5,11 @@ message ResonantWrap
   optional float turn_px = 1 [default = 0.0];
 }
 
+message ResonantUnwarp
+{ 
+  optional float duty = 1 [default = 0.95];
+}
+
 message HorizontalDownsample
 {
   optional int32 ntimes = 1 [default=1];

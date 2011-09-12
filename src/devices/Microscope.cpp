@@ -46,10 +46,12 @@
       ,cast_to_i16("i16Cast")
       ,inverter("inverter")
       ,wrap()
+      ,unwarp()
       ,frame_formatter("FrameFormatter")
       ,trash("Trash")
     {      
       set_config(_config);
+      unwarp.setDuty(_config->scanner3d().scanner2d().line_duty_cycle());
       __common_setup();
     }  
     /*
@@ -76,12 +78,14 @@
       ,pixel_averager("PixelAverager")
       ,cast_to_i16("i16Cast")
       ,inverter("inverter")
-      ,wrap()     
+      ,wrap()  
+      ,unwarp()   
       ,frame_formatter("FrameFormatter")
       ,trash("Trash")
       ,file_series()
     {
       set_config(cfg);
+      unwarp.setDuty(cfg.scanner3d().scanner2d().line_duty_cycle());
       __common_setup();
     }
 
@@ -100,11 +104,13 @@
       ,pixel_averager(cfg->mutable_horizontal_downsample(),"PixelAverager")
       ,cast_to_i16("i16Cast") 
       ,inverter("Inverter")
-      ,wrap(cfg->mutable_resonant_wrap())   
+      ,wrap(cfg->mutable_resonant_wrap())  
+      ,unwarp(cfg->mutable_resonant_unwarp()) 
       ,frame_formatter("FrameFormatter")
       ,trash("Trash")
       ,file_series(cfg->mutable_file_series())
     {
+      unwarp.setDuty(cfg->scanner3d().scanner2d().line_duty_cycle());
       __common_setup();
     }
 
@@ -154,7 +160,8 @@ ESCAN:
       eflag |= inverter._agent->detach();
       eflag |= cast_to_i16._agent->detach();
       eflag |= wrap._agent->detach();
-      eflag |= frame_formatter._agent->detach();
+      eflag |= frame_formatter._agent->detach(); 
+      eflag |= unwarp._agent->detach();
       eflag |= trash._agent->detach();
       eflag |= disk._agent->detach();
 
@@ -172,7 +179,8 @@ ESCAN:
       sts &= inverter._agent->disarm();
       sts &= cast_to_i16._agent->disarm();
       sts &= wrap._agent->disarm();  
-      sts &= frame_formatter._agent->disarm();
+      sts &= frame_formatter._agent->disarm(); 
+      sts &= unwarp._agent->disarm(); 
       sts &= trash._agent->disarm();
       sts &= disk._agent->disarm();
       sts &= vibratome_._agent->disarm();
@@ -225,7 +233,8 @@ ESCAN:
       scanner._set_config(cfg->mutable_scanner3d());
       pixel_averager._set_config(cfg->mutable_horizontal_downsample());
       frame_averager._set_config(cfg->mutable_frame_average());
-      wrap._set_config(cfg->mutable_resonant_wrap());      
+      wrap._set_config(cfg->mutable_resonant_wrap()); 
+      unwarp._set_config(cfg->mutable_resonant_unwarp());       
       vibratome_._set_config(cfg->mutable_vibratome());
 
       fov_.update(_config->fov());
@@ -244,6 +253,7 @@ ESCAN:
       vibratome_.onUpdate();
       fov_.update(_config->fov());
       stage_.setFOV(&fov_);
+      unwarp.setDuty(_config->scanner3d().scanner2d().line_duty_cycle());
 
       file_series.updateDesc(_config->mutable_file_series());
 
@@ -262,8 +272,9 @@ ESCAN:
       cur =  frame_averager.apply(cur);
       cur =  inverter.apply(cur);
       cur =  cast_to_i16.apply(cur);
-      cur =  wrap.apply(cur);
+      cur =  wrap.apply(cur);      
       cur =  frame_formatter.apply(cur);
+      cur =  unwarp.apply(cur);
       return cur;
     }
 
@@ -280,6 +291,7 @@ ESCAN:
 
     unsigned int Microscope::runPipeline()
     { int sts = 1;                        
+      sts &= unwarp._agent->run();
       sts &= frame_formatter._agent->run();
       sts &= wrap._agent->run();
       sts &= cast_to_i16._agent->run();
@@ -292,6 +304,7 @@ ESCAN:
     unsigned int Microscope::stopPipeline()
     { int sts = 1;
       // These should block till channel's empty 
+      sts &= unwarp._agent->stop();
       sts &= frame_formatter._agent->stop();
       sts &= wrap._agent->stop();
       sts &= cast_to_i16._agent->stop();
