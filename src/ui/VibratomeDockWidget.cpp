@@ -170,11 +170,11 @@ namespace ui {
       int sz = rowCount(parent);
       beginRemoveRows(parent,row,row+count-1);
       qDebug() << "Remove: " << (row) << "\tCount: " << count;
-      for(int i=0;i<count;++i)                    // 1. Circularly permute dudes from the end into interval.
+      if(count>1) for(int i=0;i<count;++i)                    // 1. Circularly permute dudes from the end into interval.
         r->SwapElements(row+i,row+mod(i-1,sz-row));                                                       
       for(int i=0;i<count;++i)  r->RemoveLast();  // 2. Remove the end
       sz-=count;                                  
-      for(int i=count-1;i>=0;--i)                 // 3. Reverse circularly permute.
+      if(count>1) for(int i=count-1;i>=0;--i)                 // 3. Reverse circularly permute.
         r->SwapElements(row+i,row+mod(i-1,sz-row));       
       endRemoveRows();
       return true;
@@ -191,6 +191,8 @@ namespace ui {
       QFormLayout *form = new QFormLayout;
       formwidget->setLayout(form);
       setWidget(formwidget);
+
+      tc_ = parent->tilingController();
 
       t_ = new QTableView(this);
       VibratomeBoundsModel *m = new VibratomeBoundsModel(dc,this);
@@ -218,8 +220,8 @@ namespace ui {
     void VibratomeGeometryDockWidget::insert()
     { QPoint p = t_->mapFromGlobal(lastCtxMenuPos_);
       int row = t_->rowAt(p.y());      
-      if(row>-1)
-        t_->model()->insertRow(row);
+      if(row<=-1) row=0;
+      t_->model()->insertRow(row);
     }
 
     void VibratomeGeometryDockWidget::remove()
@@ -227,5 +229,29 @@ namespace ui {
       int row = t_->rowAt(p.y());
       if(row>-1)
         t_->model()->removeRow(row);
+    }
+
+    void VibratomeGeometryDockWidget::commitToTiling()
+    { // TODO
+      // [ ] Implement
+      //     1. translate data to a QPainterPath, store in <path>
+      //     2. mark Tiles from <lastpath> as addressable in all planes
+      //     3. mark Tiles from <path> as unaddressable in all planes
+      //     4. notify TilesView to update
+      //     5. store <path> in <lastpath>
+      // [ ] Connect
+      //     [ ] add "Commit" button to dock widget 
+      //     [ ] may want a method in the model that yields the QPainterPath
+      //     [x] add tiling controller reference to this widget
+
+      // NOTES
+      // - Currently this method isn't connected to anything
+
+      // TESTING
+      // [ ] confirm paint and update of view
+      // [ ] when changing planes, is the unaddressable area still there?
+      // [ ] confirm tile task will not move stage into unaddressable area
+      //     despite tiles there being marked as active.      
+
     }
 }} //end namespace fetch::ui

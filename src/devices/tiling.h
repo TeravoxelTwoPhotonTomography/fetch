@@ -42,10 +42,10 @@ namespace device {
 
     enum Flags
     { 
-      Addressable = 1,
-      Active      = 2,
-      Done        = 4,
-      TileError   = 8
+      Addressable = 1,                                                     // indicates the stage should be allowed to move to this tile
+      Active      = 2,                                                     // indicates this tile is in the region of interest
+      Done        = 4,                                                     // indicates the tile has been imaged
+      TileError   = 8                                                      // indicates there was some error moving to or imaging this tile
     };
 
              StageTiling(const device::StageTravel& travel,

@@ -11,7 +11,7 @@ class StageView: public QGraphicsItem
 public:
   StageView(PlanarStageController *stageControl,QGraphicsItem *parent=0);
   virtual ~StageView();
-	
+  
   QRectF boundingRect  () const;                                           // in meters
   void   paint         (QPainter                       *painter,
                         const QStyleOptionGraphicsItem *option,

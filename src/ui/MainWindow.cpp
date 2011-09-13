@@ -63,8 +63,20 @@ fetch::ui::FileSeriesNameDisplay::
 void 
   fetch::ui::FileSeriesNameDisplay::
   update(const QString& filename)
-{ QString link = QString("FileSeries: <a href=\"file:///%1\">%1</a>").arg(filename);
-  setText(link);
+{ 
+  // Link to each folder in the path individually  
+  QString sep = QDir::separator();
+  QStringList names = filename.split(sep,QString::SkipEmptyParts);
+  QString text = "FileSeries: ";  
+  QString path;
+  foreach(QString n,names)
+  { n += sep;
+    path += n;
+    qDebug() << n << " " << path;
+    QString link = QString("<a href=\"file:///%1\">%2</a> ").arg(path,n);
+    text += link;    
+  }     
+  setText(text);
 }
 
 //////////////////////////////////////////////////////////////////////////////

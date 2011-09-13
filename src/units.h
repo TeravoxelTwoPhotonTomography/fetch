@@ -14,7 +14,7 @@ namespace units {
    KM =  3,
    LARGEST_LENGTH =  3,
    PIXEL_SCALE    = -6                                                     // The physical scale corresponding to a zoom (or lod) of 1 on the view
- } Length;
+ } Length;                                                                 // [ ] TODO rename PIXEL_SCALE to something like VIEW or REFERENCE _SCALE 
 
 
  // metersBase10

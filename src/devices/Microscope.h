@@ -140,12 +140,12 @@ namespace fetch
       task::microscope::TiledAcquisition tiling_task;
       task::microscope::Cut              cut_task;
 
-      inline Chan*  getVideoChannel() {if(unwarp._out) return unwarp._out->contents[0]; else return NULL;}
-      inline LinearScanMirror*  LSM() {return &scanner._scanner2d._LSM;}
-      inline Pockels*       pockels() {return &scanner._scanner2d._pockels;}
-      inline ZPiezo*         zpiezo() {return &scanner._zpiezo;}
-      inline Stage*           stage() {return &stage_;}
-      inline Vibratome*   vibratome() {return &vibratome_;}
+      inline Chan*  getVideoChannel()    {if(unwarp._out) return unwarp._out->contents[0]; else return NULL;}
+      inline LinearScanMirror*  LSM()    {return &scanner._scanner2d._LSM;}
+      inline Pockels*       pockels()    {return &scanner._scanner2d._pockels;}
+      inline ZPiezo*         zpiezo()    {return &scanner._zpiezo;}
+      inline Stage*           stage()    {return &stage_;}
+      inline Vibratome*   vibratome()    {return &vibratome_;}
 
     public:
       FileSeries file_series;

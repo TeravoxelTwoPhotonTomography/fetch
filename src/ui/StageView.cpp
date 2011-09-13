@@ -31,7 +31,14 @@ StageView::paint(QPainter *p, const QStyleOptionGraphicsItem *o, QWidget *widget
 { 
   p->setPen(pen_);
   p->setBrush(brush_);
-  p->drawRect(cvt<PIXEL_SCALE,M>(bbox_meters_));
+  QRectF bbox = cvt<PIXEL_SCALE,M>(bbox_meters_);
+  p->drawRect(bbox);
+
+  QPointF r = cvt<PIXEL_SCALE,PlanarStageController::Unit>(control_->pos());
+  p->drawLine(QPointF(bbox.left(),r.y()),
+              QPointF(bbox.right(),r.y()));
+  p->drawLine(QPointF(r.x(),bbox.top() ),
+              QPointF(r.x(),bbox.bottom()));
   //qDebug()<<"10 cm to " << cvt<MM,CM>(10.0) << " mm";
   //qDebug()<<"StageView - paint - " << *o;  
   //qDebug()<<"StageView - paint - lod()  - " << o->levelOfDetailFromTransform(p->worldTransform());

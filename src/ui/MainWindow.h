@@ -24,6 +24,8 @@ public:
   MainWindow(device::Microscope *dc);
   virtual ~MainWindow();
 
+  TilingController *tilingController() {return _stageController->tiling();}
+
   static const char defaultConfigPathKey[];       
 
 signals:

@@ -50,8 +50,10 @@ namespace fetch{
       void geometryCtxMenu(const QPoint &);
       void insert();
       void remove();
+      void commitToTiling();
 
     private:
+      TilingController *tc_;
       QTableView *t_;
       QPoint lastCtxMenuPos_;
     };
