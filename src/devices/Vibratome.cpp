@@ -364,6 +364,14 @@ Error:
     *x=p.x(); *y=p.y();
   }
 
+  int Vibratome::set_feed_begin_pos_mm(float x, float y)
+  { transaction_lock();
+    _config->mutable_geometry()->mutable_cut_pos_mm()->set_x(x);
+    _config->mutable_geometry()->mutable_cut_pos_mm()->set_y(y);
+    transaction_unlock();
+    return 1;
+  }
+
   void Vibratome::feed_end_pos_mm(float *x, float *y)
   { feed_begin_pos_mm(x,y);
     switch( _config->feed_axis() )
@@ -377,8 +385,6 @@ Error:
   float Vibratome::feed_vel_mm_p_s()
   { return _config->feed_vel_mm_per_sec();
   }
-
-
   
   int Vibratome::setFeedDist_mm(double val)
   { transaction_lock();

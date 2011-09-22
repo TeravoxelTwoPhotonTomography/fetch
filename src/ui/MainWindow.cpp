@@ -72,7 +72,7 @@ void
   foreach(QString n,names)
   { n += sep;
     path += n;
-    qDebug() << n << " " << path;
+    // qDebug() << n << " " << path;
     QString link = QString("<a href=\"file:///%1\">%2</a> ").arg(path,n);
     text += link;    
   }     
@@ -119,6 +119,8 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   _vibratome_feed_distance_controller = new VibratomeFeedDisController(dc->vibratome(),"Feed distance (mm)",this);
   _vibratome_feed_velocity_controller = new VibratomeFeedVelController(dc->vibratome(),"Feed velocity (mm/s)",this);
   _vibratome_feed_axis_controller     = new VibratomeFeedAxisController(dc->vibratome(),"Feed Axis",this);
+  _vibratome_feed_pos_x_controller    = new VibratomeFeedPosXController(dc->vibratome(),"Cut Pos X (mm)", this);
+  _vibratome_feed_pos_y_controller    = new VibratomeFeedPosYController(dc->vibratome(),"Cut Pos Y (mm)", this);
 
   _config_watcher = new QFileSystemWatcher(this);
   connect(_config_watcher, SIGNAL(fileChanged(const QString&)),

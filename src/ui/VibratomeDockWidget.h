@@ -14,9 +14,14 @@ namespace fetch{
       QComboBox *cmb_feed_axis_;
     public:
       VibratomeDockWidget(device::Microscope *dc, MainWindow* parent);
+
+    signals:
+      void configUpdated();
+
     public slots:
       void start() {dc_->vibratome()->start();}
       void stop()  {dc_->vibratome()->stop();}
+      void setCutPosToCurrent();
     };
 
 

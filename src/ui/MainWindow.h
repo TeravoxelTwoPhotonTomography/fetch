@@ -88,6 +88,8 @@ public: // semi-private
   VibratomeFeedDisController   *_vibratome_feed_distance_controller;
   VibratomeFeedVelController   *_vibratome_feed_velocity_controller;
   VibratomeFeedAxisController  *_vibratome_feed_axis_controller;
+  VibratomeFeedPosXController  *_vibratome_feed_pos_x_controller;
+  VibratomeFeedPosYController  *_vibratome_feed_pos_y_controller;
   ZPiezoMaxController          *_zpiezo_max_control;
   ZPiezoMinController          *_zpiezo_min_control;
   ZPiezoStepController         *_zpiezo_step_control;

@@ -158,7 +158,7 @@ double GetSetVibratomeFeedDist::Get_(device::Vibratome *dc)
 }
 QValidator* GetSetVibratomeFeedDist::createValidator_(QObject* parent)
 { //should check against stage bounds
-  return new QDoubleValidator(0.0,100.0/*mm*/,4/*decimals*/,parent);
+  return new QDoubleValidator(-100.0,100.0/*mm*/,4/*decimals*/,parent);
 }     
 
 void GetSetVibratomeFeedVel::Set_(device::Vibratome *dc, double &v)
@@ -170,6 +170,36 @@ double GetSetVibratomeFeedVel::Get_(device::Vibratome *dc)
 QValidator* GetSetVibratomeFeedVel::createValidator_(QObject* parent)
 { //should check against stage bounds
   return new QDoubleValidator(0.0,10.0/*mm/sec*/,4/*decimals*/,parent);
+}
+     
+void GetSetVibratomeCutPosX::Set_(device::Vibratome *dc, double &v)
+{ float x,y;
+  dc->feed_begin_pos_mm(&x,&y);
+  dc->set_feed_begin_pos_mm(v,y);  
+}
+double GetSetVibratomeCutPosX::Get_(device::Vibratome *dc)
+{ float x,y;
+  dc->feed_begin_pos_mm(&x,&y);  
+  return x;
+}
+QValidator* GetSetVibratomeCutPosX::createValidator_(QObject* parent)
+{ //should check against stage bounds
+  return new QDoubleValidator(0.0,10.0/*mm*/,4/*decimals*/,parent);
+}
+     
+void GetSetVibratomeCutPosY::Set_(device::Vibratome *dc, double &v)
+{ float x,y;
+  dc->feed_begin_pos_mm(&x,&y);
+  dc->set_feed_begin_pos_mm(x,v);  
+}
+double GetSetVibratomeCutPosY::Get_(device::Vibratome *dc)
+{ float x,y;
+  dc->feed_begin_pos_mm(&x,&y);  
+  return y;
+}
+QValidator* GetSetVibratomeCutPosY::createValidator_(QObject* parent)
+{ //should check against stage bounds
+  return new QDoubleValidator(0.0,10.0/*mm*/,4/*decimals*/,parent);
 }
 
 void 

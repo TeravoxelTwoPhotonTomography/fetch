@@ -361,6 +361,17 @@ Error:
     _notifyFOVGeometryChanged();
   }
 
+#define _IN(L,X,H) ( ((L)<=(X)) && ((X)<=(H)) )
+#define INAXIS(NAME) _IN(t.NAME.min,NAME,t.NAME.max)
+  unsigned int Stage::isPosValid( float x, float  y, float z)
+  { 
+    StageTravel t; 
+    getTravel(&t);     
+    return INAXIS(x)&&INAXIS(y)&&INAXIS(z); 
+  }
+#undef _IN
+#undef INAXIS
+
   void Stage::_set_config( Config IN *cfg )
   {
     setKind(cfg->kind());

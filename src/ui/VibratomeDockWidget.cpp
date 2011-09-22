@@ -25,18 +25,27 @@ namespace ui {
     parent->_vibratome_feed_distance_controller->createLineEditAndAddToLayout(form);
     parent->_vibratome_feed_velocity_controller->createLineEditAndAddToLayout(form);
     parent->_vibratome_feed_axis_controller->createComboBoxAndAddToLayout(form);
+    parent->_vibratome_feed_pos_x_controller->createLineEditAndAddToLayout(form);
+    parent->_vibratome_feed_pos_y_controller->createLineEditAndAddToLayout(form);
 
+    { QPushButton *b = new QPushButton("Use current stage location as cut origin",this);
+      connect(b,SIGNAL(clicked()),this,SLOT(setCutPosToCurrent()));
+      form->addRow(b);
+    }
+
+#if 0
     qDebug() << dc->vibratome()->_config->VibratomeFeedAxis_descriptor()->value_count();
     qDebug() << dc->vibratome()->_config->VibratomeFeedAxis_descriptor()->value(0)->name().c_str();
     qDebug() << dc->vibratome()->_config->VibratomeFeedAxis_descriptor()->value(1)->name().c_str();
+#endif
     
     QHBoxLayout *row = new QHBoxLayout();
     
-    QPushButton *b = new QPushButton("&Start",this);
+    QPushButton *b = new QPushButton("On",this);
     connect(b,SIGNAL(clicked()),this,SLOT(start()));
     row->addWidget(b);
 
-    b = new QPushButton("Sto&p",this);
+    b = new QPushButton("Off",this);
     connect(b,SIGNAL(clicked()),this,SLOT(stop()));
     row->addWidget(b);
 
@@ -44,6 +53,17 @@ namespace ui {
 
     AgentControllerButtonPanel *btns = new AgentControllerButtonPanel(&parent->_scope_state_controller,&dc->cut_task);
     form->addRow(btns);    
+
+    connect(this,SIGNAL(configUpdated()),parent,SIGNAL(configUpdated()));
+  }
+
+  void 
+    VibratomeDockWidget::
+    setCutPosToCurrent()
+  { float x,y,z;
+    dc_->stage()->getPos(&x,&y,&z);
+    dc_->vibratome()->set_feed_begin_pos_mm(x,y);
+    emit configUpdated();
   }
 
   //

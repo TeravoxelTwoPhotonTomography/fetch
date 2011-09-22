@@ -26,6 +26,7 @@ namespace microscope {
   // Turn the vibratome on and feed using the stage.
   class Cut : public TTask<device::Microscope>
   { public:
+    virtual unsigned int config(device::Microscope* dc);
     virtual unsigned int run(device::Microscope* dc);
   };
 

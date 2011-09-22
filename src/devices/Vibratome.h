@@ -172,6 +172,8 @@ class SimulatedVibratome:public VibratomeBase<cfg::device::SimulatedVibratome>
               void  feed_begin_pos_mm(float *x, float *y);
               void  feed_end_pos_mm(float *x, float *y);
               float feed_vel_mm_p_s();
+
+              int   set_feed_begin_pos_mm(float x, float y);
               
       virtual int      setFeedDist_mm(double val);
       virtual int      setFeedDistNoWait_mm(double val);

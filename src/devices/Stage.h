@@ -147,6 +147,8 @@ namespace device {
       virtual int  setPos            ( const TilePos &r)                    {return setPos(r.x,r.y,r.z);}
       virtual int  setPos            ( const TilePosList::iterator &cursor) {return setPos(*cursor);}
       virtual void setPosNoWait      ( float  x, float  y, float  z)        {_istage->setPosNoWait(x,y,z);}
+     
+      unsigned int isPosValid        ( float  x, float  y, float  z);
       
       Vector3z getPosInLattice();
   

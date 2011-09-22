@@ -31,6 +31,21 @@ namespace microscope {
   //   However, that's not really useful right now.  It's more 
   //   expedient this way, and maybe it's for the best anyway.
 
+  unsigned int Cut::config(device::Microscope* dc)
+  {
+    // validate
+    float cx,cy,cz,ax,ay,bx,by;
+    dc->stage()->getPos(&cx,&cy,&cz);    
+    dc->vibratome()->feed_begin_pos_mm(&ax,&ay);
+    dc->vibratome()->feed_end_pos_mm(&bx,&by);
+
+    int a = dc->stage()->isPosValid(ax,ay,cz), 
+        b = dc->stage()->isPosValid(bx,by,cz);
+    if(!a) warning("[Vibratome] [Task: Cut] Cut origin is out-of-bounds"ENDL);
+    if(!b) warning("[Vibratome] [Task: Cut] Feed goes out of bound during cut."ENDL);
+    return a&&b;
+  }
+
   unsigned int Cut::run(device::Microscope* dc)
   {     
     float cx,cy,cz,vx,vy,vz,ax,ay,bx,by,v;
