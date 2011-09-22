@@ -139,6 +139,7 @@ namespace device {
       virtual void getVelocity       ( float *vx, float *vy, float *vz)     {_istage->getVelocity(vx,vy,vz);}
       virtual int  setVelocity       ( float vx, float vy, float vz)        {return _istage->setVelocity(vx,vy,vz);}      
       virtual int  setVelocity       ( float v )                            {return setVelocity(v,v,v);}
+      virtual int  setVelocity       ( const cfg::device::Point3d &v)       {return setVelocity(v.x(),v.y(),v.z());}
       virtual void setVelocityNoWait ( float vx, float vy, float vz)        {_istage->setVelocityNoWait(vx,vy,vz);}
       virtual void getPos            ( float *x, float *y, float *z)        {_istage->getPos(x,y,z);}      
       inline  Vector3f getPos        ()                                     {float x,y,z; getPos(&x,&y,&z); return Vector3f(x,y,z);}
@@ -160,6 +161,7 @@ namespace device {
       void    _destroyTiling();      //only call when disarmed
       void    _notifyTilingChanged();
       void    _notifyMoved();
+      void    _notiveVelocityChanged();
       void    _notifyFOVGeometryChanged();
   };
 
@@ -199,6 +201,7 @@ namespace device {
 
     virtual void fov_changed(const FieldOfViewGeometry *fov) {}
     virtual void moved() {}
+    virtual void velocityChanged() {}
   };
 
   // end namespace fetch::Device

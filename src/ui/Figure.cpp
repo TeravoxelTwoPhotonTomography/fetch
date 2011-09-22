@@ -97,7 +97,7 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
   connect(stageController,SIGNAL(moved(QPointF)),
           this,SLOT(updatePos(QPointF)));
   connect(stageController->tiling(),SIGNAL(fovGeometryChanged(float,float,float)),
-          this,SLOT(fovGeometryChanged(float,float,float)));
+          this,SLOT(fovGeometryChanged(float,float,float)));  
 
   _item = new ImItem;
   _scene.addItem(_item);

@@ -63,6 +63,8 @@ namespace ui {
       virtual void updateLineEdit(QWidget *source) =0;
       virtual void setByComboBox (QWidget *source) =0;
       virtual void updateComboBox(QWidget *source) =0;
+      virtual void setByDoubleSpinBox   (QWidget *source) =0;
+      virtual void updateByDoubleSpinBox(QWidget *source) =0;
 
   };
 
@@ -72,16 +74,20 @@ namespace ui {
     public:
       DevicePropController(TDevice *dc, char* label, MainWindow *parent);
 
-      QLineEdit *createLineEdit();
-      QComboBox *createComboBox();
-      QLineEdit *createLineEditAndAddToLayout(QFormLayout *layout);
-      QComboBox *createComboBoxAndAddToLayout(QFormLayout *layout);
+      QLineEdit      *createLineEdit();
+      QDoubleSpinBox *createDoubleSpinBox();
+      QComboBox      *createComboBox();
+      QLineEdit      *createLineEditAndAddToLayout(QFormLayout *layout);
+      QDoubleSpinBox *createDoubleSpinBoxAndAddToLayout(QFormLayout *layout);
+      QComboBox      *createComboBoxAndAddToLayout(QFormLayout *layout);
 
     protected:
-      void setByLineEdit (QWidget *source);      
-      void updateLineEdit(QWidget *source);
-      void setByComboBox (QWidget *source);
-      void updateComboBox(QWidget *source);
+      void setByLineEdit        (QWidget *source);      
+      void updateLineEdit       (QWidget *source);
+      void setByComboBox        (QWidget *source);
+      void updateComboBox       (QWidget *source);
+      void setByDoubleSpinBox   (QWidget *source);
+      void updateByDoubleSpinBox(QWidget *source);
       
     protected:
       TGetSetInterface interface_;
@@ -92,12 +98,14 @@ namespace ui {
 
       QSignalMapper lineEditSignalMapper_;
       QSignalMapper comboBoxSignalMapper_;
+      QSignalMapper doubleSpinBoxSignalMapper_;
       QSignalMapper configUpdateSignalMapper_;
 
   };
 
   template<typename TConfig> inline QString  ValueToQString(TConfig v);
   template<typename TConfig>        TConfig  QStringToValue(QString &s,bool *ok);
+  template<typename TConfig>        TConfig  doubleToValue(double v);
 
   /* Note:
    * Don't really need a virtual base class here because the interface is
@@ -157,9 +165,23 @@ namespace ui {
   DECL_GETSET_CLASS(GetSetZPiezoMin ,device::ZPiezo,f64);
   DECL_GETSET_CLASS(GetSetZPiezoMax ,device::ZPiezo,f64);
   DECL_GETSET_CLASS(GetSetZPiezoStep,device::ZPiezo,f64);
-  typedef DevicePropController<device::ZPiezo,f64,GetSetZPiezoMin>              ZPiezoMinController;
-  typedef DevicePropController<device::ZPiezo,f64,GetSetZPiezoMax>              ZPiezoMaxController;
-  typedef DevicePropController<device::ZPiezo,f64,GetSetZPiezoStep>             ZPiezoStepController;
+  typedef DevicePropController<device::ZPiezo,f64,GetSetZPiezoMin>  ZPiezoMinController;
+  typedef DevicePropController<device::ZPiezo,f64,GetSetZPiezoMax>  ZPiezoMaxController;
+  typedef DevicePropController<device::ZPiezo,f64,GetSetZPiezoStep> ZPiezoStepController;
+
+  // Stage
+  DECL_GETSET_CLASS(GetSetStagePosX,device::Stage,float);
+  DECL_GETSET_CLASS(GetSetStagePosY,device::Stage,float);
+  DECL_GETSET_CLASS(GetSetStagePosZ,device::Stage,float);
+  DECL_GETSET_CLASS(GetSetStageVelX,device::Stage,float);
+  DECL_GETSET_CLASS(GetSetStageVelY,device::Stage,float);
+  DECL_GETSET_CLASS(GetSetStageVelZ,device::Stage,float);
+  typedef DevicePropController<device::Stage,float,GetSetStagePosX> StagePosXController;
+  typedef DevicePropController<device::Stage,float,GetSetStagePosY> StagePosYController;
+  typedef DevicePropController<device::Stage,float,GetSetStagePosZ> StagePosZController;
+  typedef DevicePropController<device::Stage,float,GetSetStageVelX> StageVelXController;
+  typedef DevicePropController<device::Stage,float,GetSetStageVelY> StageVelYController;
+  typedef DevicePropController<device::Stage,float,GetSetStageVelZ> StageVelZController;
 
 }} //end fetch::ui
 
@@ -201,6 +223,9 @@ namespace ui {
     connect(&comboBoxSignalMapper_,SIGNAL(mapped(QWidget*)),this,SLOT(setByComboBox(QWidget*)));
     connect(&configUpdateSignalMapper_,SIGNAL(mapped(QWidget*)),this,SLOT(updateComboBox(QWidget*)));
 
+    connect(&doubleSpinBoxSignalMapper_,SIGNAL(mapped(QWidget*)),this,SLOT(setByDoubleSpinBox(QWidget*)));
+    connect(&configUpdateSignalMapper_,SIGNAL(mapped(QWidget*)),this,SLOT(updateByDoubleSpinBox(QWidget*)));    
+
     connect(parent,SIGNAL(configUpdated()),this,SIGNAL(configUpdated()));
   }
 
@@ -234,7 +259,7 @@ namespace ui {
     QComboBox* w = qobject_cast<QComboBox*>(source);
     if(!w) return;
 
-    int v = w->currentIndex();;
+    int v = w->currentIndex();
     const ::google::protobuf::EnumDescriptor* d =  interface_.enum_descriptor(dc_);
     TConfig vv = (TConfig) (d->value(v)->number());
     interface_.Set_(dc_,vv);
@@ -255,6 +280,27 @@ namespace ui {
       if(i==d->value_count())
         error("%s(%d) Did not recognize value.",__FILE__,__LINE__); // getting here is probably a logic error in the code
       w->setCurrentIndex(i);
+    }
+  }
+
+  template<typename TDevice, typename TConfig, class TGetSetInterface>
+  void DevicePropController<TDevice,TConfig,TGetSetInterface>::
+    setByDoubleSpinBox(QWidget* source)
+  {   
+    QDoubleSpinBox* w = qobject_cast<QDoubleSpinBox*>(source);
+    if(!w) return;
+    TConfig vv = doubleToValue<TConfig> (w->value());
+    interface_.Set_(dc_,vv);
+  }
+
+  template<typename TDevice, typename TConfig, class TGetSetInterface>
+  void DevicePropController<TDevice,TConfig,TGetSetInterface>::
+    updateByDoubleSpinBox(QWidget* source)
+  {
+    QDoubleSpinBox* w = qobject_cast<QDoubleSpinBox*>(source);
+    if(w)
+    { double v = interface_.Get_(dc_);
+      w->setValue(v);
     }
   }
 
@@ -285,6 +331,27 @@ namespace ui {
   }
 
   template<typename TDevice, typename TConfig, class TGetSetInterface>
+  QDoubleSpinBox* 
+    DevicePropController<TDevice,TConfig,TGetSetInterface>::
+    createDoubleSpinBox()
+  { TConfig vv = interface_.Get_(dc_);
+    QString s = ValueToQString(vv);
+    //QValidator *v = interface_.createValidator_(le_);
+    QDoubleSpinBox *w = new QDoubleSpinBox();
+    w->setKeyboardTracking(false);
+    w->setValue(vv);
+    //w->lineEdit()->setValidator(v);
+
+    doubleSpinBoxSignalMapper_.setMapping(w,w);
+    connect(w,SIGNAL(valueChanged(double)),&doubleSpinBoxSignalMapper_,SLOT(map()));
+    //connect(w,SIGNAL(valueChanged(double d)),this,SLOT(report()));
+
+    configUpdateSignalMapper_.setMapping(this,w);
+    connect(this,SIGNAL(configUpdated()),&configUpdateSignalMapper_,SLOT(map()));    
+    return w;
+  }
+
+  template<typename TDevice, typename TConfig, class TGetSetInterface>
   QComboBox* 
     DevicePropController<TDevice,TConfig,TGetSetInterface>::
     createComboBox()
@@ -312,6 +379,15 @@ namespace ui {
   { QLineEdit *le = createLineEdit();
     layout->addRow(label_,le);
     return le;
+  }
+  
+  template<typename TDevice, typename TConfig, class TGetSetInterface>
+  QDoubleSpinBox* 
+    DevicePropController<TDevice,TConfig,TGetSetInterface>::
+    createDoubleSpinBoxAndAddToLayout( QFormLayout *layout )
+  { QDoubleSpinBox *w = createDoubleSpinBox();
+    layout->addRow(label_,w);
+    return w;
   }
 
   template<typename TDevice, typename TConfig, class TGetSetInterface>

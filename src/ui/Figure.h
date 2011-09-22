@@ -46,8 +46,8 @@ public slots:
   inline void imshow(mylib::Array *im)                                     {_item->push(im); updatePos(); _item->flip(); maybeFit(); }
   inline void fit(void)                                                    {_view->fitInView(_item->mapRectToScene(_item->boundingRect()),Qt::KeepAspectRatio);_view->notifyZoomChanged();}
   inline void fitNext(void)                                                {/*_isFitOnNext=true;*/}
-  inline void updatePos(void)                                              {_item->setPos(units::cvt<units::PIXEL_SCALE,PlanarStageController::Unit>(_sc->pos()));}
-  inline void updatePos(QPointF r)                                         {_item->setPos(units::cvt<units::PIXEL_SCALE,PlanarStageController::Unit>(r));}
+  inline void updatePos(void)                                              {_item->setPos(units::cvt<units::PIXEL_SCALE,PlanarStageController::Unit>(_sc->pos())); _stage->update();}
+  inline void updatePos(QPointF r)                                         {_item->setPos(units::cvt<units::PIXEL_SCALE,PlanarStageController::Unit>(r));  _stage->update();}
   inline void autoscale0()                                                 {_item->autoscale(0);}
   inline void autoscale1()                                                 {_item->autoscale(1);}
   inline void autoscale2()                                                 {_item->autoscale(2);}
@@ -66,7 +66,7 @@ public slots:
 
 signals:
   void lastFigureClosed();
-  void pushed();
+  void pushed();  
 
 protected:
   void readSettings();

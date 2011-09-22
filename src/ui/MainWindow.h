@@ -13,6 +13,7 @@ class StackAcquisitionDockWidget;
 class MicroscopeStateDockWidget;
 class VibratomeDockWidget;
 class VibratomeGeometryDockWidget;
+class StageDockWidget;
 class Figure;
 class IPlayerThread;
 
@@ -72,6 +73,7 @@ public: // semi-private
   MicroscopeStateDockWidget    *_microscopesStateDockWidget;
   VibratomeDockWidget          *_vibratomeDockWidget;
   VibratomeGeometryDockWidget  *_vibratomeGeometryDockWidget;
+  StageDockWidget              *_stageDockWidget;
   Figure                       *_display;
   IPlayerThread                *_player;
                                                              
@@ -93,6 +95,12 @@ public: // semi-private
   ZPiezoMaxController          *_zpiezo_max_control;
   ZPiezoMinController          *_zpiezo_min_control;
   ZPiezoStepController         *_zpiezo_step_control;
+  StagePosXController          *_stage_pos_x_control;
+  StagePosYController          *_stage_pos_y_control;
+  StagePosZController          *_stage_pos_z_control;
+  StageVelXController          *_stage_vel_x_control;
+  StageVelYController          *_stage_vel_y_control;
+  StageVelZController          *_stage_vel_z_control;
 
   QFileSystemWatcher           *_config_watcher;
 

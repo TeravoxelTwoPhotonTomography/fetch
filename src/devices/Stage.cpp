@@ -379,6 +379,8 @@ Error:
     if(_c843)      _c843->_set_config(cfg->mutable_c843());
     if(_simulated) _simulated->_set_config(cfg->mutable_simulated());
     _config = cfg;
+    
+    setVelocity(_config->default_velocity_mm_per_sec());
   }
 
   void Stage::_set_config( const Config &cfg )
@@ -397,6 +399,7 @@ Error:
       default:
         error("Unrecognized kind() for SimulatedStage.  Got: %u\r\n",(unsigned)kind);
       }
+      _config->CopyFrom(cfg);
   }
 
   float myroundf(float x) {return floorf(x+0.5f);}
@@ -454,7 +457,13 @@ Error:
     for(i=_listeners.begin();i!=_listeners.end();++i)
       (*i)->moved();
   }
-                   
+  
+  void Stage::_notiveVelocityChanged()
+  { TListeners::iterator i;
+    for(i=_listeners.begin();i!=_listeners.end();++i)
+      (*i)->velocityChanged();
+  }
+
   void Stage::_notifyFOVGeometryChanged()
   {
     TListeners::iterator i;

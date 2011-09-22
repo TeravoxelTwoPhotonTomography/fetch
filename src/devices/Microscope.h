@@ -79,7 +79,7 @@ namespace fetch
 
       void notify();
 
-    private:
+    public: // pseudo-private
       cfg::FileSeries *_desc;
       cfg::FileSeries  _prev;      
       TListeners _listeners;

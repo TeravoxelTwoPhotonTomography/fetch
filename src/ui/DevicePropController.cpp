@@ -6,6 +6,8 @@
 namespace fetch {
 namespace ui {
 
+#define WRN(expr) if(!(expr)) warning("%s(%d) Expression evaluated to false"ENDL"\t%s"ENDL,__FILE__,__LINE__,#expr)
+
 #define CVT(T,FN)   \
     *ok=0;          \
     T v = s.FN(ok);  \
@@ -36,6 +38,16 @@ template<> QString ValueToQString(i64 v) {return QString().setNum(v);}
 template<> QString ValueToQString(f32 v) {return QString().setNum(v);}
 template<> QString ValueToQString(f64 v) {return QString().setNum(v);}
 
+/* Note:
+   This is an ugly little set of convrsion functions.  Ideally, the non-trivial one's would never be used.
+   These help me make polymorphic controllers (that generate a QDoubleSpinBox).
+   Add more on demand.
+*/
+template<> double doubleToValue(double v){return v;}
+template<> float  doubleToValue(double v){return v;}
+template<> int doubleToValue(double v){return (int)v;}
+template<> unsigned int doubleToValue(double v){return (unsigned int)v;}
+template<> cfg::device::Vibratome::VibratomeFeedAxis doubleToValue(double v) { return (v>0.5)?cfg::device::Vibratome_VibratomeFeedAxis_X:cfg::device::Vibratome_VibratomeFeedAxis_Y;}
 
 void DevicePropControllerBase::report() 
 { 
@@ -244,6 +256,102 @@ QString ValueToQString<cfg::device::Vibratome_VibratomeFeedAxis>(cfg::device::Vi
       return d->value(i)->name().c_str();
   return QString();
 }
+
+// Stage
+
+void GetSetStagePosX::Set_(device::Stage *dc, float &v)
+{ float x,y,z;
+  dc->getPos(&x,&y,&z);
+  dc->setPos(v,y,z);
+}
+float GetSetStagePosX::Get_(device::Stage *dc)
+{ float x,y,z;
+  dc->getPos(&x,&y,&z);
+  return x;
+}
+QValidator* GetSetStagePosX::createValidator_(QObject* parent)
+{ return new QDoubleValidator (0.0, 10.0, 1, parent);
+}
+
+void GetSetStagePosY::Set_(device::Stage *dc, float &v)
+{ float x,y,z;
+  dc->getPos(&x,&y,&z);
+  dc->setPos(x,v,z);
+}
+float GetSetStagePosY::Get_(device::Stage *dc)
+{ float x,y,z;
+  dc->getPos(&x,&y,&z);
+  return y;
+}
+QValidator* GetSetStagePosY::createValidator_(QObject* parent)
+{ return new QDoubleValidator (0.0, 10.0, 1, parent);
+} 
+
+void GetSetStagePosZ::Set_(device::Stage *dc, float &v)
+{ float x,y,z;
+  dc->getPos(&x,&y,&z);
+  dc->setPos(x,y,v);
+}
+float GetSetStagePosZ::Get_(device::Stage *dc)
+{ float x,y,z;
+  dc->getPos(&x,&y,&z);
+  return z;
+}
+QValidator* GetSetStagePosZ::createValidator_(QObject* parent)
+{ return new QDoubleValidator (0.0, 10.0, 1, parent);
+}
+
+void GetSetStageVelX::Set_(device::Stage *dc, float &v)
+{ float x,y,z;
+  dc->getVelocity(&x,&y,&z);
+  dc->setVelocity(v,y,z);
+  
+  device::Stage::Config cfg = dc->get_config();
+  cfg::device::Point3d *p = cfg.mutable_default_velocity_mm_per_sec();
+  p->set_x(v);
+  WRN(dc->set_config_nowait(cfg));
+}
+float GetSetStageVelX::Get_(device::Stage *dc)
+{ return dc->get_config().default_velocity_mm_per_sec().x();
+}
+QValidator* GetSetStageVelX::createValidator_(QObject* parent)
+{ return new QDoubleValidator (0.0, 10.0, 1, parent);
+}
+
+void GetSetStageVelY::Set_(device::Stage *dc, float &v)
+{ float x,y,z;
+  dc->getVelocity(&x,&y,&z);
+  dc->setVelocity(x,v,z);
+  
+  device::Stage::Config cfg = dc->get_config();
+  cfg::device::Point3d *p = cfg.mutable_default_velocity_mm_per_sec();  
+  p->set_y(v);  
+  WRN(dc->set_config_nowait(cfg));
+}
+float GetSetStageVelY::Get_(device::Stage *dc)
+{ return dc->get_config().default_velocity_mm_per_sec().y();
+}
+QValidator* GetSetStageVelY::createValidator_(QObject* parent)
+{ return new QDoubleValidator (0.0, 10.0, 1, parent);
+} 
+
+void GetSetStageVelZ::Set_(device::Stage *dc, float &v)
+{ float x,y,z;
+  dc->getVelocity(&x,&y,&z);
+  dc->setVelocity(x,y,v);
+  
+  device::Stage::Config cfg = dc->get_config();
+  cfg::device::Point3d *p = cfg.mutable_default_velocity_mm_per_sec();  
+  p->set_z(v);  
+  WRN(dc->set_config_nowait(cfg));
+}
+float GetSetStageVelZ::Get_(device::Stage *dc)
+{ return dc->get_config().default_velocity_mm_per_sec().z();
+}
+QValidator* GetSetStageVelZ::createValidator_(QObject* parent)
+{ return new QDoubleValidator (0.0, 10.0, 1, parent);
+}
+
 // Stack
 
 void GetSetZPiezoMin::Set_(device::ZPiezo *dc, f64 &v)

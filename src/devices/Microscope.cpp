@@ -318,7 +318,11 @@ ESCAN:
     // FileSeries
     ///////////////////////////////////////////////////////////////////////
     
+#if 0
 #define VALIDATE if(!_is_valid) {warning("(%s:%d) - Invalid location for file series."ENDL,__FILE__,__LINE__);}
+#else
+#define VALIDATE
+#endif
 
     
     FileSeries& FileSeries::inc( void )

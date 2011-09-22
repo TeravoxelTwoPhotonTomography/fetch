@@ -8,6 +8,7 @@
 #include "StackAcquisitionDockWidget.h"
 #include "MicroscopeStateDockWidget.h"
 #include "VibratomeDockWidget.h"
+#include "StageDockWidget.h"
 #include "StageController.h"
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/io/tokenizer.h>
@@ -95,6 +96,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,_videoAcquisitionDockWidget(0)
   ,_microscopesStateDockWidget(0)
   ,_vibratomeDockWidget(0)
+  ,_stageDockWidget(0)
   ,_display(0)
   ,_player(0)
   ,_scope_state_controller(&dc->__self_agent)
@@ -121,6 +123,20 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   _vibratome_feed_axis_controller     = new VibratomeFeedAxisController(dc->vibratome(),"Feed Axis",this);
   _vibratome_feed_pos_x_controller    = new VibratomeFeedPosXController(dc->vibratome(),"Cut Pos X (mm)", this);
   _vibratome_feed_pos_y_controller    = new VibratomeFeedPosYController(dc->vibratome(),"Cut Pos Y (mm)", this);
+
+  _stage_pos_x_control = new StagePosXController(dc->stage(),"Pos X (mm)",this);
+  _stage_pos_y_control = new StagePosYController(dc->stage(),"Pos Y (mm)",this);
+  _stage_pos_z_control = new StagePosZController(dc->stage(),"Pos Z (mm)",this);
+  _stage_vel_x_control = new StageVelXController(dc->stage(),"Vel X (mm)",this);
+  _stage_vel_y_control = new StageVelYController(dc->stage(),"Vel Y (mm)",this);
+  _stage_vel_z_control = new StageVelZController(dc->stage(),"Vel Z (mm)",this);
+  
+  connect(_stageController,SIGNAL(moved()),          _stage_pos_x_control,SIGNAL(configUpdated()));
+  connect(_stageController,SIGNAL(moved()),          _stage_pos_y_control,SIGNAL(configUpdated()));
+  connect(_stageController,SIGNAL(moved()),          _stage_pos_z_control,SIGNAL(configUpdated()));
+  connect(_stageController,SIGNAL(velocityChanged()),_stage_vel_x_control,SIGNAL(configUpdated()));
+  connect(_stageController,SIGNAL(velocityChanged()),_stage_vel_y_control,SIGNAL(configUpdated()));
+  connect(_stageController,SIGNAL(velocityChanged()),_stage_vel_z_control,SIGNAL(configUpdated()));
 
   _config_watcher = new QFileSystemWatcher(this);
   connect(_config_watcher, SIGNAL(fileChanged(const QString&)),
@@ -272,6 +288,11 @@ void fetch::ui::MainWindow::createDockWidgets()
   addDockWidget(Qt::LeftDockWidgetArea,_vibratomeDockWidget);
   viewMenu->addAction(_vibratomeDockWidget->toggleViewAction());
   _vibratomeDockWidget->setObjectName("_vibratomeStateDockWidget");  
+
+  _stageDockWidget = new StageDockWidget(_dc->stage(),this);
+  addDockWidget(Qt::LeftDockWidgetArea,_stageDockWidget);
+  viewMenu->addAction(_stageDockWidget->toggleViewAction());
+  _stageDockWidget->setObjectName("_stageDockWidget");
 
   _vibratomeGeometryDockWidget = new VibratomeGeometryDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_vibratomeGeometryDockWidget);

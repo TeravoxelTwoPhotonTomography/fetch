@@ -23,6 +23,12 @@ message SimulatedStage
   repeated Axis axis = 2;
 }
 
+message Point3d
+{ optional float x = 1 [default=1.0];
+  optional float y = 2 [default=1.0];
+  optional float z = 3 [default=1.0];
+}
+
 message Stage
 {
   enum StageType
@@ -34,8 +40,9 @@ message Stage
   { PixelAligned = 0;
     StageAligned = 1;
   }
-  optional StageType            kind      = 1;
-  optional C843StageController  c843      = 2;
-  optional SimulatedStage       simulated = 3;  
-  optional TilingMode           tilemode  = 5;
+  optional StageType            kind                        = 1;
+  optional C843StageController  c843                        = 2;
+  optional SimulatedStage       simulated                   = 3;  
+  optional TilingMode           tilemode                    = 5;
+  optional Point3d              default_velocity_mm_per_sec = 6;
 }

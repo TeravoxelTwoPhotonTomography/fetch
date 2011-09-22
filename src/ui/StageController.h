@@ -92,8 +92,10 @@ namespace ui {
     Q_OBJECT
   public:
     virtual void moved(void) {emit sig_moved();}
+    virtual void velocityChanged(void) {emit sig_velocityChanged();}
   signals:
     void sig_moved();
+    void sig_velocityChanged();
 
   };
 
@@ -112,10 +114,13 @@ namespace ui {
 
       TilingController* tiling()                                           {return &tiling_controller_;}
       PlanarStageControllerListener* listener()                            {return &listener_;}
+
+      device::Stage *stage()                                               {return stage_;}
                                                                      
   signals:
-      void moved();            // eventually updates the imitem's position
+      void moved();            // eventually updates the imitem's position      
       void moved(QPointF pos); // eventually updates the imitem's position
+      void velocityChanged();
 
     public slots:
       
