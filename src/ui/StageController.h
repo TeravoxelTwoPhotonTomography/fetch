@@ -59,15 +59,24 @@ namespace ui {
 
     bool mapToIndex(const Vector3f & stage_coord, unsigned *index);        // returns false if tiling is invalid or if stage_coord is oob
 
+    QAction* saveDialogAction() {return load_action_;}
+    QAction* loadDialogAction() {return save_action_;}
+
   public slots:
     void update(device::StageTiling *tiling)                               {tiling_=tiling; markAddressable(); emit changed(); emit show(tiling_!=NULL);}
     void stageAttached()                                                   {emit show(true);}
     void stageDetached()                                                   {emit show(false);}    
     void updatePlane()                                                     {markAddressable();}
 
+    void saveViaFileDialog();
+    void loadViaFileDialog();
+    void saveToFile(const QString& filename);
+    void loadFromFile(const QString& filename);
+
   signals:
     void show(bool tf);
     void changed();
+    void planeChanged();
     void tileDone(unsigned itile,unsigned int attr);
     void nextTileRequest(unsigned itile);                                  // really should be nextTileRequested
     void fovGeometryChanged(float w_um, float h_um, float rotation_radians);
@@ -78,6 +87,8 @@ namespace ui {
     device::Stage       *stage_;
     device::StageTiling *tiling_;
     TilingControllerListener listener_;
+    QAction             *load_action_,
+                        *save_action_;
 
     bool mark(     const QPainterPath& path,                               // path should be in scene coords (um)
                    device::StageTiling::Flags attr, 

@@ -345,6 +345,7 @@ Error:
     default:
       error("Unrecognized kind() for Vibratome.  Got: %u\r\n",(unsigned)kind);
     }
+    _config->CopyFrom(cfg);
   }
 
   unsigned int Vibratome::on_attach()
@@ -433,6 +434,35 @@ Error:
   Vibratome::FeedAxis Vibratome::getFeedAxis()
   { return _config->feed_axis();
   }
+
+  int
+    Vibratome::
+    setVerticalOffsetNoWait(float dz_mm)
+  {
+    Config cfg = get_config();
+    cfg.mutable_geometry()->set_dz_mm(dz_mm);
+    return set_config_nowait(cfg);
+  }
+
+  int
+    Vibratome::
+    setVerticalOffsetNoWait(float cutting_plane_mm, float image_plane_mm)
+  {
+    Config cfg = get_config();
+    cfg.mutable_geometry()->set_dz_mm(image_plane_mm-cutting_plane_mm);
+    return set_config_nowait(cfg);
+  }
+
+  int
+    Vibratome::
+    setThicknessUmNoWait(float um)
+  {
+    Config cfg = get_config();
+    cfg.set_cut_thickness_um(um);
+    return set_config_nowait(cfg);
+  }
+
+  
 
 
 } //end device namespace

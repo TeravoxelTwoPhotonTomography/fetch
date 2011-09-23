@@ -27,7 +27,7 @@ namespace device {
     typedef Transform<float,3,Affine>            TTransform;
     typedef std::set<StageListener*>             TListeners;  
   
-  private:
+  public: // pseudo-private
     mylib::Array              *attr_;                                      // tile attribute database
     mylib::Indx_Type           leftmostAddressable_;                       // marks the first tile
     mylib::Indx_Type           cursor_;                                    // marks the current tile

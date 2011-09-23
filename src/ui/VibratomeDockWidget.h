@@ -44,6 +44,15 @@ namespace fetch{
       bool          removeRows  (int row, int count, const QModelIndex & parent = QModelIndex() );
     };
 
+    class MarkButton: public QPushButton
+    {
+      Q_OBJECT
+    public:
+      MarkButton(const QString& lbl, QWidget *parent=0) : QPushButton(lbl,parent) {}
+    public slots:
+      void setValue(float v) {setText(QString("%1 mm").arg(v,5,'f',3));}
+    };
+
     class VibratomeGeometryDockWidget:public QDockWidget
     {
       Q_OBJECT
@@ -57,10 +66,26 @@ namespace fetch{
       void remove();
       void commitToTiling();
 
+      void markImagePlane();
+      void markCutPlane();
+      void commitOffset();
+
+      void updateFromConfig();
+
+    signals:
+      void imagePlane(float z_mm);
+      void cutPlane(float z_mm);
+      void delta(float z_mm);
+
     private:
       TilingController *tc_;
       QTableView *t_;
       QPoint lastCtxMenuPos_;
+
+      bool  is_set__image_plane_;
+      bool  is_set__cut_plane_;
+      float image_plane_mm_;
+      float cut_plane_mm_;
     };
 
     //end namespace fetch::ui

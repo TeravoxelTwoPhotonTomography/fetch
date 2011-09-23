@@ -186,6 +186,13 @@ class SimulatedVibratome:public VibratomeBase<cfg::device::SimulatedVibratome>
       virtual int      setFeedAxis(FeedAxis val);
       virtual int      setFeedAxisNoWait(FeedAxis val);
       virtual FeedAxis getFeedAxis(void);
+              
+              float    verticalOffset()           {return _config->geometry().dz_mm();}
+              int      setVerticalOffsetNoWait(float dz_mm);
+              int      setVerticalOffsetNoWait(float cutting_plane_mm, float image_plane_mm);
+
+              float    thickness_um()             { return _config->cut_thickness_um();}
+              int      setThicknessUmNoWait(float um);
       
     };
 

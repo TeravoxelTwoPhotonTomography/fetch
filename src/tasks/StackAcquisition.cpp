@@ -260,12 +260,13 @@ Error:
           ref.format(frm);
 
           d->_zpiezo.getScanRange(&ummin,&ummax,&umstep);
+          d->_zpiezo.moveTo(ummin); // reset to starting position
           
-          d->generateAORampZ((float)ummin); //d->_generate_ao_waveforms__z_ramp_step(ummin);
+          d->generateAORampZ((float)ummin);
           d->writeAO();
           d->_scanner2d._shutter.Open();
           CHKJMP(d->_scanner2d._daq.startAO());          
-          for(z_um=ummin+umstep;z_um<ummax && !d->_agent->is_stopping();z_um+=umstep)
+          for(z_um=ummin+umstep;z_um<=ummax && !d->_agent->is_stopping();z_um+=umstep)
           { 
             CHKJMP(d->_scanner2d._daq.startCLK());            
             DIGJMP(niScope_InitiateAcquisition(vi));
@@ -291,16 +292,18 @@ Error:
             dt_in = toc(&inner_clock);
             toc(&outer_clock);
             CHKJMP(d->_scanner2d._daq.waitForDone(SCANNER2D_DEFAULT_TIMEOUT));
-            d->_scanner2d._daq.stopCLK();            
+            d->_scanner2d._daq.stopCLK();
             debug("Generating AO for z = %f."ENDL,z_um);
             d->generateAORampZ((float)z_um);
             d->writeAO();
             ++i;
           }
+
           status = 0;
           DBG("Scanner - Stack Acquisition task completed normally."ENDL);
 Finalize: 
           d->_scanner2d._shutter.Shut();          
+          d->_zpiezo.moveTo(ummin); // reset to starting position
           free(frm);
           free(wfm);
           Chan_Close(qdata);

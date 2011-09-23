@@ -1,4 +1,12 @@
 #include "StageController.h"
+#include "tiling.pb.h"
+#include "microscope.pb.h"
+
+namespace mylib {
+#include <image.h>
+}
+
+#include <google\protobuf\text_format.h>
 
 #include <QtGui>
 #include <Eigen/Core>
@@ -6,6 +14,8 @@
 #include <functional>
 
 #include <iostream>
+
+const char defaultTilingConfigPathKey[] = "Microscope/Config/Tiling/DefaultFilename";
 
 using namespace std;
 using namespace Eigen;
@@ -22,7 +32,7 @@ using namespace Eigen;
 #define SHOW2(e) std::cout << HERE << "\t"#e << " is " << std::endl << e << std::endl << "---" << std::endl
 
 //////////////////////////////////////////////////////////////////////////
-//  TilingController  ///// //////////////////////////////////////////////
+//  TilingController  ////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
 fetch::ui::TilingController::TilingController( device::Stage *stage, device::StageTiling *tiling, QObject* parent/*=0*/ )
@@ -51,6 +61,141 @@ fetch::ui::TilingController::TilingController( device::Stage *stage, device::Sta
     &listener_,SIGNAL(sig_moved()),
     this,        SLOT(updatePlane()),
     Qt::QueuedConnection);  
+
+  {
+    load_action_ = new QAction(QIcon(":/icons/open"),"&Open",this);
+    //load_action_->setShortcut(QKeySequence::Open);
+    load_action_->setStatusTip("Open tiling data.");
+    connect(load_action_,SIGNAL(triggered()),this,SLOT(loadViaFileDialog()));
+  }
+  {
+    save_action_ = new QAction(QIcon(":/icons/saveas"),"&Save As",this);
+    //save_action_->setShortcut(QKeySequence::Open);
+    save_action_->setStatusTip("Save tiling data.");
+    connect(save_action_,SIGNAL(triggered()),this,SLOT(saveViaFileDialog()));
+  }
+}
+
+void 
+  fetch::ui::TilingController::
+  saveToFile(const QString& filename)
+{ if(tiling_)
+  { 
+    cfg::data::Tiling metadata;
+    QString arrayFileName = filename + QString(metadata.attr_ext().c_str());
+    tiling_->fov().write(metadata.mutable_fov());    
+    
+    QFileInfo finfo(arrayFileName);    
+    metadata.set_rel_path( finfo.fileName().toLocal8Bit().data() );
+
+    QFile metafile(filename);
+    std::string buf;
+    google::protobuf::TextFormat::PrintToString(metadata,&buf);
+    if(!metafile.open(QFile::ReadWrite))                goto ErrorOpenMetafile;
+    if( buf.length() != metafile.write(buf.c_str()) )   goto ErrorWriteMetafile;
+    if(mylib::Write_Image(arrayFileName.toLocal8Bit().data(),tiling_->attributeArray(),mylib::DONT_PRESS))
+      goto ErrorWriteAttrImage;
+    return;
+ErrorWriteAttrImage:
+    warning("%s(%d)"ENDL"\tSomething went wrong writing tiling attribute data to the file at"ENDL"\t%s"ENDL,
+      __FILE__,__LINE__,arrayFileName.toLocal8Bit().data());
+    metafile.remove();
+    return;
+ErrorWriteMetafile:
+    warning("%s(%d)"ENDL"\tSomething went wrong with writing tiling metadata to the file at"ENDL"\t%s"ENDL,
+      __FILE__,__LINE__,metafile.fileName().toLocal8Bit().data());
+    metafile.remove();
+    return;
+ErrorOpenMetafile:
+    warning("%s(%d)"ENDL"\tCould not open file at %s"ENDL,
+      __FILE__,__LINE__,metafile.fileName().toLocal8Bit().data());
+    return;
+  }
+}
+
+void
+  fetch::ui::TilingController::
+  saveViaFileDialog()
+{ QSettings settings;
+  QString filename = QFileDialog::getSaveFileName(0,
+    tr("Save tiling data"),
+    settings.value(defaultTilingConfigPathKey,QDir::currentPath()).toString(),
+    tr("Tiling Data (*.tiling);;Text Files (*.txt);;Any (*.*)"));
+  if(filename.isEmpty())
+    return;
+  settings.setValue(defaultTilingConfigPathKey,filename);
+
+  saveToFile(filename);
+}
+
+void 
+  fetch::ui::TilingController::
+  loadViaFileDialog()
+{ QSettings settings;
+  QString filename = QFileDialog::getOpenFileName(0,
+    tr("Load tiling data"),
+    settings.value(defaultTilingConfigPathKey,QDir::currentPath()).toString(),
+    tr("Tiling Data (*.tiling);;Text Files (*.txt);;Any (*.*)"));
+  if(filename.isEmpty())
+    return;
+  settings.setValue(defaultTilingConfigPathKey,filename);
+
+  loadFromFile(filename);
+}
+
+void 
+  fetch::ui::TilingController::
+  loadFromFile(const QString& filename)
+{ cfg::data::Tiling metadata;
+  QFileInfo finfo(filename);
+  QFile metafile(filename);
+  QDir path(finfo.absolutePath());
+  QString attrname;
+  mylib::Array *attr = 0;
+  int Bpp[] = {1,2,3,4,1,2,3,4,4,8};
+
+  // Read in the data
+  if(!metafile.open(QFile::ReadOnly)) goto ErrorOpenMetafile;
+  { QByteArray buf = metafile.readAll();
+    if(!google::protobuf::TextFormat::ParseFromString(buf.data(),&metadata)) goto ErrorParseMetadata;
+  }
+  
+  attrname = path.filePath( metadata.rel_path().c_str() );
+  { QFile attrfile(attrname);
+    if(!attrfile.exists()) goto ErrorAttrFileNotFound;
+  }
+  if(!(attr = mylib::Read_Image(attrname.toLocal8Bit().data(),0))) goto ErrorReadAttrArray;
+
+  // Commit  
+  tiling_->fov_.update(metadata.fov());
+  stage_->setFOV(&tiling_->fov_); // forces refresh of tiling if the fov is different
+  if( tiling_->attributeArray()->size != attr->size ) goto ErrorArrays;
+  memcpy( tiling_->attributeArray()->data, attr->data, Bpp[attr->type]*attr->size );
+
+  Free_Array(attr);
+  emit changed();
+  return;
+  // Error handling
+ErrorArrays:
+  Free_Array(attr);
+  error("%s(%d)"ENDL"Programing error.  Need attribute arrays to be the same size."ENDL);
+  return;
+ErrorReadAttrArray:
+  warning("%s(%d)"ENDL"\tCould not read attribute array at"ENDL"\t%s"ENDL,
+    __FILE__,__LINE__,attrname.toLocal8Bit().data());
+  return;
+ErrorAttrFileNotFound:  
+  warning("%s(%d)"ENDL"\tAttribute array not found at"ENDL"\t%s"ENDL,
+    __FILE__,__LINE__,attrname.toLocal8Bit().data());
+  return;
+ErrorParseMetadata:
+  warning("%s(%d)"ENDL"\tError reading metadata from %s"ENDL,
+    __FILE__,__LINE__,metafile.fileName().toLocal8Bit().data());
+  return;
+ErrorOpenMetafile:
+  warning("%s(%d)"ENDL"\tCould not open file at %s"ENDL,
+    __FILE__,__LINE__,metafile.fileName().toLocal8Bit().data());
+  return;
 }
 
 bool fetch::ui::TilingController::fovGeometry( TRectVerts *out )
@@ -297,6 +442,8 @@ fetch::ui::PlanarStageController::PlanarStageController( device::Stage *stage, Q
     &listener_,SIGNAL(sig_velocityChanged()),
     this,SIGNAL(velocityChanged()),
     Qt::QueuedConnection);
+
+  connect(this,SIGNAL(moved()),tiling(),SIGNAL(planeChanged()));
 
   stage_->addListener(&listener_);
   stage_->addListener(tiling_controller_.listener());

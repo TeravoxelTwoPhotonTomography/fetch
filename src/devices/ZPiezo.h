@@ -36,6 +36,9 @@ namespace fetch
       virtual void setMin(f64 v) = 0;
       virtual void setMax(f64 v) = 0;
       virtual void setStep(f64 v) = 0;
+
+      //
+      virtual int moveTo(f64 z_um) = 0; // should return 1 on success, and 0 on error
     };
 
     template<class T>
@@ -74,6 +77,7 @@ namespace fetch
       virtual void setMax(f64 v)  {Config c = get_config(); c.set_um_max(v);  set_config_nowait(c);}
       virtual void setStep(f64 v) {Config c = get_config(); c.set_um_step(v); set_config_nowait(c);}
 
+      virtual int moveTo(f64 z_um);  // should return 1 on success, and 0 on error
     };
       
     class SimulatedZPiezo:public ZPiezoBase<cfg::device::SimulatedZPiezo>
@@ -100,6 +104,8 @@ namespace fetch
       virtual void setMin(f64 v)  {Config c = get_config(); c.set_um_min(v);  set_config_nowait(c);}
       virtual void setMax(f64 v)  {Config c = get_config(); c.set_um_max(v);  set_config_nowait(c);}
       virtual void setStep(f64 v) {Config c = get_config(); c.set_um_step(v); set_config_nowait(c);}
+
+      virtual int moveTo(f64 z_um) {return 1; /* success */}
     };
 
     class ZPiezo:public ZPiezoBase<cfg::device::ZPiezo>
@@ -133,6 +139,8 @@ namespace fetch
       virtual void setMin(f64 v)  { _izpiezo->setMin(v); }
       virtual void setMax(f64 v)  { _izpiezo->setMax(v); }
       virtual void setStep(f64 v) { _izpiezo->setStep(v);}
+
+      virtual int moveTo(f64 z_um) {return _izpiezo->moveTo(z_um);}
     };
 
   }

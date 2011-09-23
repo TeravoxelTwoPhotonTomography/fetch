@@ -91,6 +91,49 @@ namespace fetch
       *step_um = c.um_step();
     }
 
+#define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, warning))
+#define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, error  ))
+#define DAQJMP( expr )  goto_if_fail( 0==DAQWRN(expr), Error)
+#define DAQRTN( expr )  return_val_if_fail(0==DAQWRN(expr),1)
+
+    int32 DAQmxMaxMinInterset(TaskHandle h, const char* name, f64 *min, f64 *max)
+    { int32 ecode = DAQmxSuccess;
+      f64 mn,mx;
+      DAQJMP(ecode = DAQmxGetAODACRngHigh(h,name,&mx));
+      DAQJMP(ecode = DAQmxGetAODACRngLow(h,name,&mn));
+      *max = (*max<mx)?*max:mx; // take the min
+      *min = (*min>mn)?*min:mn; // take the max
+Error:
+      return ecode;
+    }
+
+    int NIDAQZPiezo::moveTo(f64 z_um)
+    { int isok = 1;
+      f64 mx  = _config->v_lim_max(),
+          mn  = _config->v_lim_min();
+      f64 off = z_um * _config->um2v();
+      TaskHandle h=0;
+      DAQJMP(DAQmxCreateTask ("", &h));      
+      DAQJMP(DAQmxCreateAOVoltageChan(h,physicalChannel()->name(),"",
+             -0.1,0.1, //arbitrary-ish limits.  Must be different, min<max, and within device limits
+             DAQmx_Val_Volts,""));
+      DAQJMP(DAQmxMaxMinInterset(h,physicalChannel()->name(),&mn,&mx));
+      DAQJMP(DAQmxSetAOMax(h,physicalChannel()->name(),mx));
+      DAQJMP(DAQmxSetAOMin(h,physicalChannel()->name(),mn));      
+      DAQJMP(DAQmxStartTask(h));
+      DAQJMP(DAQmxWriteAnalogScalarF64(h,1,10,off,NULL));
+
+Finalize:
+      if(h)
+      { DAQJMP(DAQmxStopTask(h));
+        DAQJMP(DAQmxClearTask(h));
+      }
+      return isok;
+Error:
+      isok = 0;
+      goto Finalize;
+    }
+
     //
     // Simulate ZPiezo
     //

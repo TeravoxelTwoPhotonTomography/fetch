@@ -153,12 +153,16 @@ namespace ui {
   DECL_GETSET_CLASS(GetSetVibratomeFeedVel ,device::Vibratome,double);
   DECL_GETSET_CLASS(GetSetVibratomeCutPosX ,device::Vibratome,double);
   DECL_GETSET_CLASS(GetSetVibratomeCutPosY ,device::Vibratome,double);
+  DECL_GETSET_CLASS(GetSetVibratomeZOffset ,device::Vibratome,float);
+  DECL_GETSET_CLASS(GetSetVibratomeThick   ,device::Vibratome,float);
   DECL_GETSET_DESC_CLASS(GetSetVibratomeFeedAxis,device::Vibratome,cfg::device::Vibratome::VibratomeFeedAxis);
   typedef DevicePropController<device::Vibratome,u32,GetSetVibratomeAmplitude>                                      VibratomeAmplitudeController;
   typedef DevicePropController<device::Vibratome,double,GetSetVibratomeFeedDist>                                    VibratomeFeedDisController;
   typedef DevicePropController<device::Vibratome,double,GetSetVibratomeFeedVel >                                    VibratomeFeedVelController;
   typedef DevicePropController<device::Vibratome,double,GetSetVibratomeCutPosX >                                    VibratomeFeedPosXController;
   typedef DevicePropController<device::Vibratome,double,GetSetVibratomeCutPosY >                                    VibratomeFeedPosYController;
+  typedef DevicePropController<device::Vibratome,float ,GetSetVibratomeZOffset >                                    VibratomeZOffsetController;
+  typedef DevicePropController<device::Vibratome,float ,GetSetVibratomeThick >                                      VibratomeThickController;
   typedef DevicePropController<device::Vibratome,cfg::device::Vibratome::VibratomeFeedAxis,GetSetVibratomeFeedAxis> VibratomeFeedAxisController;
 
   // Stack

@@ -1,3 +1,5 @@
+// [ ] TODO: REFACTOR: MicroscopeStateDockWidget to TilingDockWidget
+
 #include <QtGui>
 #include "devices/Microscope.h"
 #include "AgentController.h"

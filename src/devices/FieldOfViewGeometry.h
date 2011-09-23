@@ -29,6 +29,16 @@ struct FieldOfViewGeometry
          overlap_um_ << cfg.x_overlap_um(),cfg.y_overlap_um(),cfg.z_overlap_um();
          rotation_radians_ = cfg.rotation_radians();           
        }
+
+  void write(cfg::device::FieldOfViewGeometry *cfg) const
+  { cfg->set_x_overlap_um     (   overlap_um_[0]);
+    cfg->set_y_overlap_um     (   overlap_um_[1]);
+    cfg->set_z_overlap_um     (   overlap_um_[2]);
+    cfg->set_x_size_um        (field_size_um_[0]);
+    cfg->set_y_size_um        (field_size_um_[1]);
+    cfg->set_z_size_um        (field_size_um_[2]);
+    cfg->set_rotation_radians (rotation_radians_);
+  }
     
 };
 

@@ -40,4 +40,5 @@ message Vibratome
   optional double              feed_vel_mm_per_sec = 5 [default=1.0];
   optional double                          feed_mm = 6 [default=10.0];
   optional VibratomeGeometry              geometry = 7;
+  optional double                 cut_thickness_um = 8 [default=100.0];
 }

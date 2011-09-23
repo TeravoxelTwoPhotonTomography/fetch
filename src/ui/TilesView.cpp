@@ -75,6 +75,9 @@ TilesView::TilesView(TilingController *tc, QGraphicsItem *parent)
     tc,SIGNAL(tileDone(unsigned, unsigned int)),
     this,SLOT(refreshLatticeAttributes(unsigned,unsigned int))
     );
+  connect(
+    tc,SIGNAL(planeChanged()),
+    this,SLOT(refreshPlane()));
     
   initVBO();
   updateVBO();
@@ -474,6 +477,15 @@ void TilesView::paint_lattice_attribute_image_()
     painter.translate(offset);
   }  
   //latticeImage_->save("TilesView_initCBO_latticeImage__after.tif");  
+}
+
+void TilesView::refreshPlane()
+{
+  if(!tc_->is_valid())
+    return;
+  paint_lattice_attribute_image_();
+  updateCBO();
+  update();
 }
 
 void TilesView::refreshLatticeAttributes(unsigned itile, unsigned int attr)

@@ -27,6 +27,7 @@ namespace ui {
     parent->_vibratome_feed_axis_controller->createComboBoxAndAddToLayout(form);
     parent->_vibratome_feed_pos_x_controller->createLineEditAndAddToLayout(form);
     parent->_vibratome_feed_pos_y_controller->createLineEditAndAddToLayout(form);
+    parent->_vibratome_thick_controller->createLineEditAndAddToLayout(form);
 
     { QPushButton *b = new QPushButton("Use current stage location as cut origin",this);
       connect(b,SIGNAL(clicked()),this,SLOT(setCutPosToCurrent()));
@@ -198,7 +199,7 @@ namespace ui {
         r->SwapElements(row+i,row+mod(i-1,sz-row));       
       endRemoveRows();
       return true;
-    }    
+    }        
 
     //
     // VibratomeGeometryDockWidget
@@ -207,6 +208,10 @@ namespace ui {
     VibratomeGeometryDockWidget::VibratomeGeometryDockWidget(device::Microscope *dc, MainWindow* parent)
       : QDockWidget("Vibratome Geometry",parent)
       , dc_(dc)
+      , is_set__image_plane_(0)
+      , is_set__cut_plane_(0)
+      , image_plane_mm_(0.0f)
+      , cut_plane_mm_(0.0f)
     { QWidget *formwidget = new QWidget(this);
       QFormLayout *form = new QFormLayout;
       formwidget->setLayout(form);
@@ -214,6 +219,49 @@ namespace ui {
 
       tc_ = parent->tilingController();
 
+      // Add Cut offset buttons
+      { QGridLayout *row = new QGridLayout();        
+        MarkButton *b;
+        QLabel *w;
+        QGroupBox *g;
+        QVBoxLayout *v;
+        w = new QLabel("Z Offset:");
+        row->addWidget(w,0,0);
+
+        g = new QGroupBox("Image");
+        b = new MarkButton("Mark");
+        v = new QVBoxLayout();
+        v->addWidget(b);
+        g->setLayout(v);
+        row->addWidget(g,0,1);
+        connect(b,SIGNAL(clicked()),this,SLOT(markImagePlane()));
+        connect(this,SIGNAL(imagePlane(float)),b,SLOT(setValue(float)));
+        
+        g = new QGroupBox("Cut");
+        b = new MarkButton("Mark");
+        v = new QVBoxLayout();
+        v->addWidget(b);
+        g->setLayout(v);
+        row->addWidget(g,0,2);
+        connect(b,SIGNAL(clicked()),this,SLOT(markCutPlane()));
+        connect(this,SIGNAL(cutPlane(float)),b,SLOT(setValue(float)));
+                
+        g = new QGroupBox("Offset");
+        b = new MarkButton("Commit");
+        v = new QVBoxLayout();
+        v->addWidget(b);
+        g->setLayout(v);
+        row->addWidget(g,0,3);
+        connect(b,SIGNAL(clicked()),this,SLOT(commitOffset()));
+        connect(this,SIGNAL(delta(float)),b,SLOT(setValue(float)));
+        connect(parent->_vibratome_z_offset_controller, SIGNAL(configUpdated()),
+                this,SLOT(updateFromConfig()));
+        emit updateFromConfig();
+      
+        form->addRow(row);
+      }
+
+      // Add TableView
       t_ = new QTableView(this);
       VibratomeBoundsModel *m = new VibratomeBoundsModel(dc,this);
       t_->setModel(m);
@@ -273,5 +321,37 @@ namespace ui {
       // [ ] confirm tile task will not move stage into unaddressable area
       //     despite tiles there being marked as active.      
 
+    }
+
+    void 
+      VibratomeGeometryDockWidget::
+      markImagePlane()
+    { float x,y;
+      dc_->stage()->getPos(&x,&y,&image_plane_mm_);
+      is_set__image_plane_ = 1;
+      emit imagePlane(image_plane_mm_);
+    }
+
+    void 
+      VibratomeGeometryDockWidget::
+      markCutPlane()
+    { float x,y;
+      dc_->stage()->getPos(&x,&y,&cut_plane_mm_);
+      is_set__cut_plane_ = 1;
+      emit cutPlane(cut_plane_mm_);
+    }
+
+    void 
+      VibratomeGeometryDockWidget::
+      commitOffset()
+    { if( is_set__cut_plane_ && is_set__image_plane_ )      
+        dc_->vibratome()->setVerticalOffsetNoWait(cut_plane_mm_,image_plane_mm_);
+      emit delta(image_plane_mm_-cut_plane_mm_);
+    }
+
+    void 
+      VibratomeGeometryDockWidget::
+      updateFromConfig()
+    { emit delta(dc_->vibratome()->verticalOffset());
     }
 }} //end namespace fetch::ui

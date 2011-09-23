@@ -123,6 +123,8 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   _vibratome_feed_axis_controller     = new VibratomeFeedAxisController(dc->vibratome(),"Feed Axis",this);
   _vibratome_feed_pos_x_controller    = new VibratomeFeedPosXController(dc->vibratome(),"Cut Pos X (mm)", this);
   _vibratome_feed_pos_y_controller    = new VibratomeFeedPosYController(dc->vibratome(),"Cut Pos Y (mm)", this);
+  _vibratome_z_offset_controller      = new VibratomeZOffsetController(dc->vibratome(),"Z Offset (mm)", this);
+  _vibratome_thick_controller         = new VibratomeThickController(dc->vibratome(),"Slice Thickness (µm)", this);
 
   _stage_pos_x_control = new StagePosXController(dc->stage(),"Pos X (mm)",this);
   _stage_pos_y_control = new StagePosYController(dc->stage(),"Pos Y (mm)",this);
@@ -246,6 +248,10 @@ void fetch::ui::MainWindow::createMenus()
 
   viewMenu = menuBar()->addMenu("&View");
   viewMenu->addAction(fullscreenAct);
+
+  QMenu *t = menuBar()->addMenu("&Tiling");
+  t->addAction(tilingController()->loadDialogAction());
+  t->addAction(tilingController()->saveDialogAction());
 }
 
 void fetch::ui::MainWindow::createStateMachines()

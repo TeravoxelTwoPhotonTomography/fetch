@@ -256,6 +256,26 @@ QString ValueToQString<cfg::device::Vibratome_VibratomeFeedAxis>(cfg::device::Vi
       return d->value(i)->name().c_str();
   return QString();
 }
+    
+void GetSetVibratomeZOffset::Set_(device::Vibratome *dc, float &v)
+{ dc->setVerticalOffsetNoWait(v); 
+}
+float GetSetVibratomeZOffset::Get_(device::Vibratome *dc)
+{ return dc->verticalOffset();
+}
+QValidator* GetSetVibratomeZOffset::createValidator_(QObject* parent)
+{ return new QDoubleValidator(-10.0,10.0/*mm*/,4/*decimals*/,parent);
+}
+    
+void GetSetVibratomeThick::Set_(device::Vibratome *dc, float &v)
+{ dc->setThicknessUmNoWait(v); 
+}
+float GetSetVibratomeThick::Get_(device::Vibratome *dc)
+{ return dc->thickness_um();
+}
+QValidator* GetSetVibratomeThick::createValidator_(QObject* parent)
+{ return new QDoubleValidator(0.0,1000.0/*um*/,4/*decimals*/,parent);
+}
 
 // Stage
 

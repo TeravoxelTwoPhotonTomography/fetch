@@ -37,6 +37,7 @@ public slots:
 
   void update_tiling();
   void show(bool tf);
+  void refreshPlane();
   void refreshLatticeAttributes(unsigned itile, unsigned int attr);
 
 protected:
