@@ -196,7 +196,7 @@ extern "C" int unwarp_gpu(Array *out, Array *in, float duty)
       uint width_in  =  in->dims[0],
            width_out = out->dims[0];
       dim3 threads(BLOCK_SIZE,1,1),
-           grid(ceil(nrows/(float)BLOCK_SIZE),1,1);
+           grid((unsigned int)ceil(nrows/(float)BLOCK_SIZE),1,1);
 
       switch(in->type)
       {                                                     

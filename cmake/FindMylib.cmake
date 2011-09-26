@@ -31,10 +31,14 @@ endif()
 
 #Macro: Handle missing release version (MSVC chokes in some cases)
 macro(HANDLE_MISSING N A B)
-  if(NOT ${${A}})
+  if(NOT EXISTS ${${A}} )
     message(WARNING "Could not find release version for ${N}. Replacing with debug version.")
     set(${A} ${${B}} CACHE filepath "" FORCE)
   endif()
+endmacro()
+
+macro(SHOW V)
+  message("${V} is ${${V}}")
 endmacro()
 
 #mylib

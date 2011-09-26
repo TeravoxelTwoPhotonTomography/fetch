@@ -44,12 +44,14 @@ namespace device {
     char buf[1024];
     long e;
     if(handle<0)
-      report(
+    { report(
         "(%s:%d) C843 Error:"ENDL
         "\t%s"ENDL
         "\tInvalid device id (Got %d)."ENDL,
         file,line,expr,handle);
-    if(!ok)
+      return true;
+    }
+    else if(!ok)
     { e = C843_GetError(handle);
 
       if(C843_TranslateError(e,buf,sizeof(buf)))
@@ -148,7 +150,7 @@ Error:
     goto Finalize;
   }
 
-  void C843Stage::getTravel(StageTravel* out)
+  int C843Stage::getTravel(StageTravel* out)
   { 
     /* NOTES:
        o  qTMN and q TMX I think
@@ -156,38 +158,50 @@ Error:
        o  Assume that (xyz) <==> "123"
        */
     double t[3];
-    C843ERR( C843_qTMN(handle_,"123",t) );
+    C843JMP( C843_qTMN(handle_,"123",t) );
     
     out->x.min = t[0];
     out->y.min = t[1];
     out->z.min = t[2];    
 
-    C843ERR( C843_qTMX(handle_,"123",t) );
+    C843JMP( C843_qTMX(handle_,"123",t) );
     out->x.max = t[0];
     out->y.max = t[1];
     out->z.max = t[2];   
+    return 1;
+Error:
+    return 0;
   }
 
-  void C843Stage::getVelocity( float *vx, float *vy, float *vz )
+  int C843Stage::getVelocity( float *vx, float *vy, float *vz )
   { double t[3];
-    C843ERR( C843_qVEL(handle_,"123",t) );
+    C843JMP( C843_qVEL(handle_,"123",t) );
     *vx = t[0];
     *vy = t[1];
     *vz = t[2];
+    return 1;
+Error:
+    return 0;
   }
 
   int C843Stage::setVelocity( float vx, float vy, float vz )
   { const double t[3] = {vx,vy,vz};
-    C843ERR( C843_VEL(handle_,"123",t) );
-    return 0; // success
+    C843JMP( C843_VEL(handle_,"123",t) );
+    return 1; // success
+Error:
+    return 0;
+    
   }
 
-  void C843Stage::getPos( float *x, float *y, float *z )
+  int C843Stage::getPos( float *x, float *y, float *z )
   { double t[3];
-    C843ERR( C843_qPOS(handle_,"123",t) );
+    C843JMP( C843_qPOS(handle_,"123",t) );
     *x = t[0];
     *y = t[1];
     *z = t[2];
+    return 1;
+Error:
+    return 0;
   }
 
   int C843Stage::setPos( float x, float y, float z )
@@ -197,13 +211,15 @@ Error:
       getVelocity(&vx,&vy,&vz);
       debug("(%s:%d): C843 Velocity %f %f %f"ENDL,__FILE__,__LINE__,vx,vy,vz);
     }
-    C843ERR( C843_MOV(handle_,"123",t) );
+    C843JMP( C843_MOV(handle_,"123",t) );
     waitForMove_();
     // TODO
     // o  intelligent velocity?
     // o  better error handling in case I hit limits
     // o  what is behavior around limits?
-    return 0; // success
+    return 1; // success
+Error:
+    return 0;
   }
 
   void C843Stage::waitForController_()
@@ -225,9 +241,11 @@ Error:
   { 
     BOOL isMoving = TRUE;
     while(isMoving == TRUE)    
-    { C843ERR( C843_IsMoving(handle_,"",&isMoving) );
+    { C843JMP( C843_IsMoving(handle_,"",&isMoving) );
       Sleep(20); // check ~ 50x/sec
     }    
+Error:
+    return;
   }
   
   void C843Stage::reference_()
@@ -261,13 +279,13 @@ Error:
     ,vz_(0.0f)
   {}
                               
-  void SimulatedStage::getTravel( StageTravel* out )
+  int SimulatedStage::getTravel( StageTravel* out )
   { 
     Config c = get_config();
     if(c.axis_size()<3)
     {
       memset(out,0,sizeof(StageTravel));
-      return;
+      return 1;
     }
 
     out->x.min = c.axis(0).min_mm();
@@ -276,13 +294,14 @@ Error:
     out->y.max = c.axis(1).max_mm();
     out->z.min = c.axis(2).min_mm();
     out->z.max = c.axis(2).max_mm();
-
+    return 1;
   }
 
-  void SimulatedStage::getVelocity( float *vx, float *vy, float *vz )
+  int SimulatedStage::getVelocity( float *vx, float *vy, float *vz )
   { *vx=vx_;
     *vy=vy_;
     *vz=vz_;
+    return 1;
   }
 
   int SimulatedStage::setVelocity( float vx, float vy, float vz )
@@ -290,10 +309,11 @@ Error:
     return 1;
   }
 
-  void SimulatedStage::getPos( float *x, float *y, float *z )
+  int SimulatedStage::getPos( float *x, float *y, float *z )
   { *x=x_;
     *y=y_;
     *z=z_;
+    return 1;
   }
 
   int SimulatedStage::setPos( float x, float y, float z )
@@ -412,12 +432,13 @@ Error:
 
   // Only use when attached but disarmed.
   void Stage::_createTiling()
-  { device::StageTravel travel;
-    _destroyTiling();
-    getTravel(&travel);
+  { device::StageTravel travel;    
+    if(!getTravel(&travel))
+      return;
     if(_fov)
     {
       FieldOfViewGeometry fov = *_fov;
+      _destroyTiling(); // this call will probably invalidate the _fov pointer :(  bad design
       _tiling = new StageTiling(travel, fov, _config->tilemode());
       { TListeners::iterator i;
         for(i=_listeners.begin();i!=_listeners.end();++i)

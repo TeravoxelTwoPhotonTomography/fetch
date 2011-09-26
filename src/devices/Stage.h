@@ -36,15 +36,15 @@ namespace device {
   class IStage
   {
     public:      
-      virtual void getTravel         ( StageTravel* out)                = 0;
-      virtual void getVelocity       ( float *vx, float *vy, float *vz) = 0;
+      virtual int  getTravel         ( StageTravel* out)                = 0;
+      virtual int  getVelocity       ( float *vx, float *vy, float *vz) = 0;
       virtual int  setVelocity       ( float vx, float vy, float vz)    = 0;
       inline  int  setVelocity       ( const Vector3f &r)                   {return setVelocity(r[0],r[1],r[2]);}
       inline  int  setVelocity       ( float v )                            {return setVelocity(v,v,v); }
       virtual void setVelocityNoWait ( float vx, float vy, float vz)    = 0;
       inline  void setVelocityNoWait ( const Vector3f &r)                   {setVelocityNoWait(r[0],r[1],r[2]);}
       inline  void setVelocityNoWait ( float v )                            {setVelocityNoWait(v,v,v); }
-      virtual void getPos            ( float *x, float *y, float *z)    = 0;
+      virtual int  getPos            ( float *x, float *y, float *z)    = 0;
       inline  Vector3f getPos        ()                                     {float x,y,z; getPos(&x,&y,&z); return Vector3f(x,y,z);}
       virtual int  setPos            ( float  x, float  y, float  z)    = 0;
       virtual int  setPos            ( const Vector3f &r)                   {return setPos(r[0],r[1],r[2]);}
@@ -72,11 +72,11 @@ namespace device {
       virtual unsigned int on_attach();
       virtual unsigned int on_detach();
 
-      virtual void getTravel         ( StageTravel* out);
-      virtual void getVelocity       ( float *vx, float *vy, float *vz);
+      virtual int  getTravel         ( StageTravel* out);
+      virtual int  getVelocity       ( float *vx, float *vy, float *vz);
       virtual int  setVelocity       ( float vx, float vy, float vz);
       virtual void setVelocityNoWait ( float vx, float vy, float vz)       {Config c = get_config(); /**TODO**/TODO_ERR; Guarded_Assert_WinErr(set_config_nowait(c));}
-      virtual void getPos            ( float *x, float *y, float *z);
+      virtual int  getPos            ( float *x, float *y, float *z);
       virtual int  setPos            ( float  x, float  y, float  z);
       virtual void setPosNoWait      ( float  x, float  y, float  z)       {Config c = get_config(); /**TODO**/TODO_ERR; Guarded_Assert_WinErr(set_config_nowait(c));}
     private:
@@ -96,11 +96,11 @@ namespace device {
       virtual unsigned int on_attach() {/**TODO**/TODO_WRN; return 0;}
       virtual unsigned int on_detach() {/**TODO**/TODO_WRN; return 0;}
 
-      virtual void getTravel         ( StageTravel* out);
-      virtual void getVelocity       ( float *vx, float *vy, float *vz);
+      virtual int  getTravel         ( StageTravel* out);
+      virtual int  getVelocity       ( float *vx, float *vy, float *vz);
       virtual int  setVelocity       ( float vx, float vy, float vz);
       virtual void setVelocityNoWait ( float vx, float vy, float vz)       {setVelocity(vx,vy,vz);}
-      virtual void getPos            ( float *x, float *y, float *z);
+      virtual int  getPos            ( float *x, float *y, float *z);
       virtual int  setPos            ( float  x, float  y, float  z);
       virtual void setPosNoWait      ( float  x, float  y, float  z)       {setPos(x,y,z);}
   };
@@ -135,13 +135,13 @@ namespace device {
       void _set_config( Config IN *cfg );
       void _set_config( const Config &cfg );
 
-      virtual void getTravel         ( StageTravel* out)                    {_istage->getTravel(out);}
-      virtual void getVelocity       ( float *vx, float *vy, float *vz)     {_istage->getVelocity(vx,vy,vz);}
+      virtual int  getTravel         ( StageTravel* out)                    {return _istage->getTravel(out);}
+      virtual int  getVelocity       ( float *vx, float *vy, float *vz)     {return _istage->getVelocity(vx,vy,vz);}
       virtual int  setVelocity       ( float vx, float vy, float vz)        {return _istage->setVelocity(vx,vy,vz);}      
       virtual int  setVelocity       ( float v )                            {return setVelocity(v,v,v);}
       virtual int  setVelocity       ( const cfg::device::Point3d &v)       {return setVelocity(v.x(),v.y(),v.z());}
       virtual void setVelocityNoWait ( float vx, float vy, float vz)        {_istage->setVelocityNoWait(vx,vy,vz);}
-      virtual void getPos            ( float *x, float *y, float *z)        {_istage->getPos(x,y,z);}      
+      virtual int  getPos            ( float *x, float *y, float *z)        {return _istage->getPos(x,y,z);}      
       inline  Vector3f getPos        ()                                     {float x,y,z; getPos(&x,&y,&z); return Vector3f(x,y,z);}
       virtual int  setPos            ( float  x, float  y, float  z)        {int out = _istage->setPos(x,y,z); _notifyMoved(); return out;}
       virtual int  setPos            ( const Vector3f &r)                   {return setPos(r[0],r[1],r[2]);}

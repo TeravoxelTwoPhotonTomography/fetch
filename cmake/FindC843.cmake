@@ -27,7 +27,7 @@ find_path(C843_INCLUDE_DIR C843_GCS_DLL.H
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     set( libname C843_GCS_DLL_x64 )
 else()
-    set( libname C843_GCS_DLL_x64 )
+    set( libname C843_GCS_DLL )
 endif()
   
 find_library(C843_LIBRARY ${libname}

@@ -454,6 +454,7 @@ void TilesView::init_color_tables()
 
 void TilesView::paint_lattice_attribute_image_()
 {  
+  if(!latticeImage_) return;
   QPainter painter(latticeImage_);  
   painter.setCompositionMode(QPainter::CompositionMode_Clear);
   QRectF r(latticeImage_->rect());       

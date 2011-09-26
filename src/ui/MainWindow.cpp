@@ -157,7 +157,9 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   _poller.start(50 /*ms*/);
 
   { QStatusBar *bar = statusBar();
-    { QString f = _config_watcher->files().at(0);
+    { QString f("Default");
+      if(!_config_watcher->files().isEmpty()) 
+        f = _config_watcher->files().at(0);
       ConfigFileNameDisplay *w = new ConfigFileNameDisplay(f);    
       bar->addPermanentWidget(w);
       connect(this,SIGNAL(configFileChanged(const QString&)),w,SLOT(update(const QString&)));
@@ -414,7 +416,7 @@ void
     CHKJMP(parser.ParseFromString(cfgfile.readAll().constData(),&cfg),ParseError);
 
     // commit
-    _dc->set_config_nowait(cfg);
+    _dc->set_config_nowait(cfg);  // will deadlock something if not non-blocking, but need to make sure things are attached before GUI updated... hmmm
     emit configUpdated();
   }  
 

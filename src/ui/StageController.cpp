@@ -178,7 +178,7 @@ void
   // Error handling
 ErrorArrays:
   Free_Array(attr);
-  error("%s(%d)"ENDL"Programing error.  Need attribute arrays to be the same size."ENDL);
+  error("%s(%d)"ENDL"Programing error.  Need attribute arrays to be the same size."ENDL,__FILE__,__LINE__);
   return;
 ErrorReadAttrArray:
   warning("%s(%d)"ENDL"\tCould not read attribute array at"ENDL"\t%s"ENDL,
