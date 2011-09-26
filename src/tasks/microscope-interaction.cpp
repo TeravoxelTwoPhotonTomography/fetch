@@ -35,13 +35,13 @@ namespace fetch
         static task::scanner::Video<i16> focus;
       
         //Assemble pipeline here
-	      IDevice *cur;
+        IDevice *cur;
         cur =  dc->configPipeline();
-	      cur =  dc->trash.apply(cur);
-	              
+        cur =  dc->trash.apply(cur);
+                
         dc->__scan_agent.arm(&focus,&dc->scanner);
-	      //dc->__scan_agent.arm_nowait(&focus,&dc->scanner._scanner2d,INFINITE);
-	      
+        //dc->__scan_agent.arm_nowait(&focus,&dc->scanner._scanner2d,INFINITE);
+        
         return 1; //success
       }            
 

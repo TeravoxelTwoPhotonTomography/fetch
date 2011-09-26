@@ -19,7 +19,7 @@
 
 #define thread_error(...)    do{fprintf(stderr,__VA_ARGS__);exit(-1);}while(0)
 #define thread_assert(e)     if(!(e)) thread_error("Assert failed in thread module" ENDL \
-																									 "\tFailed: %s" ENDL \
+                                                   "\tFailed: %s" ENDL \
                                                    "\tAt %s:%d" ENDL,#e,__FILE__,__LINE__ );
 
 typedef struct _closure_t 
@@ -279,8 +279,8 @@ void Condition_Notify_All(Condition* self)
 #include <pthread.h>
 #define thread_assert_pthread(e) if(!(e)) {perror("Thread(pthread)"); \
                                            thread_error("Assert failed in thread module" ENDL \
-																									      "\tFailed: %s " ENDL \
-																												"\tAt %s:%d" ENDL,#e,__FILE__,__LINE__ );} 
+                                                        "\tFailed: %s " ENDL \
+                                                        "\tAt %s:%d" ENDL,#e,__FILE__,__LINE__ );} 
 #define pthread_success(e) ((e)==0)
 #define pth_asrt_success(e) thread_assert_pthread(pthread_success(e))
 typedef struct _thread_t
@@ -300,13 +300,13 @@ Thread *Thread_Alloc(ThreadProc function, ThreadProcArg arg)
 
 void Thread_Free(Thread* self_)
 { thread_t *self = (thread_t*)self_;
-	if(self)
+  if(self)
     free(self);
 }
 
 void* Thread_Join(Thread *self_)
 { thread_t *self = (thread_t*)self_;
-	void* ret;
+  void* ret;
   pth_asrt_success(pthread_join(self->handle,&ret));
   return ret;
 }
@@ -382,7 +382,7 @@ void Mutex_Unlock(Mutex* self)
   if(!pthread_equal(caller,self->owner))
     goto ErrorStolenUnlock;
   self->is_owned=0;
-	pth_asrt_success(pthread_mutex_unlock(M_NATIVE(self)));
+  pth_asrt_success(pthread_mutex_unlock(M_NATIVE(self)));
   return;
 ErrorUnownedUnlock:
   thread_error("Detected an attempt to unlock a mutex that hasn't been locked.  This isn't allowed."ENDL);

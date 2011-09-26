@@ -68,9 +68,11 @@ namespace fetch
             acc = (f32*) fdst->data;
             memcpy(acc,fsrc->data,src_bytes);
           } else
-            continue;
+            break;
 
           // The rest
+          // - If the channel closes before the requested number of averages is acquired,
+          //   the accumulator will not be emitted.
           while(CHAN_SUCCESS( Chan_Next(reader, (void**)&fsrc, fsrc->size_bytes()) ))    //!dc->_agent->is_stopping() && 
           { buf = (f32*) fsrc->data;
 

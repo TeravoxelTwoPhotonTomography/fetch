@@ -414,7 +414,7 @@ void
     CHKJMP(parser.ParseFromString(cfgfile.readAll().constData(),&cfg),ParseError);
 
     // commit
-    _dc->set_config(cfg);
+    _dc->set_config_nowait(cfg);
     emit configUpdated();
   }  
 

@@ -18,6 +18,7 @@
 #include "config.h"
 namespace mylib {
 #include <array.h>
+#include <image.h>
 }
 
 using namespace fetch::worker;
@@ -32,6 +33,10 @@ using namespace fetch::worker;
   { warning("%s(%d)" ENDL "\tExpression evaluated as False." ENDL "\t%s" ENDL, __FILE__,__LINE__,#expr); \
     goto lbl; \
   }
+// I use REMIND to warn me in case I leave in a debugging expression.
+#define REMIND(expr) \
+  warning("%s(%d)" ENDL "\tEvaluating expression." ENDL "\t%s" ENDL, __FILE__,__LINE__,#expr); \
+  (expr)
 
 ////////////////////////////////////////////////////////////////////////////////
 //  ResonantUnwarp Task   //////////////////////////////////////////////////////
@@ -54,6 +59,11 @@ namespace task {
     dims[2] = fdst->nchan;
 
     unwarp_get_dims_ip(dims,duty);
+
+
+    fdst->width  = dims[0];
+    fdst->height = dims[1];
+    fdst->nchan  = dims[2];
     return 1; // success
   }
 
@@ -70,12 +80,15 @@ namespace task {
 
       mylib::castFetchFrameToDummyArray(&in,fsrc,idims);
       mylib::castFetchFrameToDummyArray(&out,fdst,odims);
-
+      
+      //REMIND( mylib::Write_Image("ResonantUnwarp_in.tif",&in,mylib::DONT_PRESS) );
 #ifdef HAVE_CUDA
       CHK( unwarp_gpu(&out,&in,duty),Error);
 #else
       CHK( unwarp_cpu(&out,&in,duty),Error);
 #endif
+      //REMIND( mylib::Write_Image("ResonantUnwarp_out.tif",&out,mylib::DONT_PRESS) );
+
       return 1; // success
 Error:
       return 0; // failed
