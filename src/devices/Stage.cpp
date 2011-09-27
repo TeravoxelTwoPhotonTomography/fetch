@@ -438,8 +438,9 @@ Error:
     if(_fov)
     {
       FieldOfViewGeometry fov = *_fov;
-      _destroyTiling(); // this call will probably invalidate the _fov pointer :(  bad design
+      _destroyTiling(); // this call will invalidate the _fov pointer :(  bad design
       _tiling = new StageTiling(travel, fov, _config->tilemode());
+      _fov = &_tiling->fov_;
       { TListeners::iterator i;
         for(i=_listeners.begin();i!=_listeners.end();++i)
           _tiling->addListener(*i);

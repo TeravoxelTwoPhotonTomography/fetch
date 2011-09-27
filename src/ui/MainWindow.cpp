@@ -104,7 +104,8 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,_resonant_turn_controller(NULL)
   ,_vlines_controller(NULL)
   ,_lsm_vert_range_controller(NULL)
-  ,_pockels_controller(NULL)  
+  ,_pockels_controller(NULL)
+  ,_defered_update(0)
 {  
 
   _resonant_turn_controller = new ResonantTurnController(dc,"&Turn (px)",this);
@@ -172,6 +173,8 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
 
     bar->setSizeGripEnabled(true);
   }
+
+  _defered_update = new internal::mainwindow_defered_update(this);  
 }    
 
 #define SAFE_DELETE(expr) if(expr) delete (expr)
@@ -189,6 +192,8 @@ fetch::ui::MainWindow::~MainWindow()
   SAFE_DELETE(_zpiezo_max_control);
   SAFE_DELETE(_zpiezo_min_control);
   SAFE_DELETE(_zpiezo_step_control);
+
+  SAFE_DELETE(_defered_update);
   
 }
 
@@ -416,8 +421,11 @@ void
     CHKJMP(parser.ParseFromString(cfgfile.readAll().constData(),&cfg),ParseError);
 
     // commit
-    _dc->set_config_nowait(cfg);  // will deadlock something if not non-blocking, but need to make sure things are attached before GUI updated... hmmm
-    emit configUpdated();
+    
+    if(_defered_update)
+      _defered_update->update(cfg);
+    //_dc->set_config_nowait(cfg);  // will deadlock something if not non-blocking, but need to make sure things are attached before GUI updated... hmmm
+    //emit configUpdated();
   }  
 
   update_active_config_location_(filename);

@@ -17,6 +17,8 @@ class StageDockWidget;
 class Figure;
 class IPlayerThread;
 
+namespace internal { class mainwindow_defered_update; }
+
 class MainWindow : public QMainWindow
 {
   Q_OBJECT
@@ -114,6 +116,7 @@ private:
 
   QSignalMapper _config_delayed_load_mapper;
   QTimer        _config_delayed_load_timer;
+  internal::mainwindow_defered_update *_defered_update;
 };
 
 
@@ -152,6 +155,37 @@ class FileSeriesNameDisplay : public QLabel
     FileSeriesNameListener _listener;
 
 };
+
+namespace internal
+{
+  class mainwindow_defered_update : public QThread
+  { 
+    Q_OBJECT
+
+    MainWindow *w_;
+    cfg::device::Microscope cfg_;
+
+  public:
+    mainwindow_defered_update(MainWindow *w)
+      : w_(w)
+    {
+      connect(this,SIGNAL(done()),w,SIGNAL(configUpdated()),Qt::DirectConnection);
+    }
+
+    void update(const fetch::cfg::device::Microscope& cfg)
+    { cfg_.CopyFrom(cfg);
+      start();
+    }
+  private:
+    void run()
+    { w_->_dc->set_config(cfg_);
+      emit done();
+    }
+
+  signals:
+    void done();
+  };
+}
 
 //namespace ends
 } //ui
