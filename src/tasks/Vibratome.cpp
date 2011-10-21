@@ -46,29 +46,54 @@ namespace microscope {
     return a&&b;
   }
 
+  /*
+     Motion:
+     
+     c --> a --> b --> c
+       v0    v1    v0
+
+     c is current point, typically where the imaging just stopped
+     a is the cut start (x,y) point with a(z) = c(z) - dz
+     b is the cut end
+     v0 is the currently set stage velocity
+     v1 is the cut velocity
+
+  */
+#define CHK(expr) \
+  if(!(expr))                                                                                             \
+  { warning("Task [Vibratome::Cut] - Expression failed."ENDL"\t%s(%d)"ENDL"\t%s"ENDL,__FILE__,__LINE__,#expr); \
+    goto Error;                                                                                         \
+  }
+
   unsigned int Cut::run(device::Microscope* dc)
   {     
-    float cx,cy,cz,vx,vy,vz,ax,ay,bx,by,v;
+    float cx,cy,cz,vx,vy,vz,ax,ay,bx,by,v,dz;
     // get current pos,vel
-    dc->stage()->getPos(&cx,&cy,&cz);
-    dc->stage()->getVelocity(&vx,&vy,&vz);
-    // move to position to start the cut
-    // Note: don't modify the current z
+    CHK( dc->stage()->getPos(&cx,&cy,&cz));
+    CHK( dc->stage()->getVelocity(&vx,&vy,&vz));
+    
+    // Get parameters    
     dc->vibratome()->feed_begin_pos_mm(&ax,&ay);
     dc->vibratome()->feed_end_pos_mm(&bx,&by);
-    v = dc->vibratome()->feed_vel_mm_p_s();
-    dc->stage()->setVelocity(v);
-    dc->stage()->setPos(ax,ay,cz);
-    dc->stage()->setVelocity(v);
+    CHK( dz = dc->vibratome()->verticalOffset());
+    CHK( v = dc->vibratome()->feed_vel_mm_p_s());
+    
+    // Move to the start of the cut
+    CHK( dc->stage()->setPos(ax,ay,cz-dz));
+    
     // do the cut
-    dc->vibratome()->start();
-    dc->stage()->setPos(bx,by,cz);
-    dc->vibratome()->stop();
-    // Move back, and set old velocity
-    dc->stage()->setVelocity(v);
-    dc->stage()->setPos(cx,cy,cz);
-    dc->stage()->setVelocity(vx,vy,vz);
+    CHK( dc->vibratome()->start());    // retunrs 1 on success
+    CHK( dc->stage()->setVelocity(v));
+    CHK( dc->stage()->setPos(bx,by,cz-dz));
+    CHK( dc->stage()->setVelocity(vx,vy,vz));
+    CHK( dc->vibratome()->stop());
+    
+    // Move back
+    CHK( dc->stage()->setPos(cx,cy,cz));
+    
     return 1;
+Error:
+    return 0;
   }
 
 } // end fetch::task::microscope
