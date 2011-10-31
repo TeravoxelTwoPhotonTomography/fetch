@@ -189,8 +189,11 @@ Error:
     C843JMP( C843_VEL(handle_,"123",t) );
     return 1; // success
 Error:
-    return 0;
-    
+    return 0;    
+  }
+
+  void C843Stage::setVelocityNoWait( float vx, float vy, float vz )
+  { setVelocity(vx,vy,vz); // doesn't block
   }
 
   int C843Stage::getPos( float *x, float *y, float *z )
@@ -204,15 +207,26 @@ Error:
     return 0;
   }
 
+  static BOOL all(BOOL* bs, int n)
+  { while(n--) if(!bs[n]) return 0;
+    return 1;
+  }
+
   int C843Stage::setPos( float x, float y, float z )
   { double t[3] = {x,y,z};
+    BOOL ontarget[] = {0,0,0};
   
     { float vx,vy,vz;
       getVelocity(&vx,&vy,&vz);
       debug("(%s:%d): C843 Velocity %f %f %f"ENDL,__FILE__,__LINE__,vx,vy,vz);
     }
-    C843JMP( C843_MOV(handle_,"123",t) );
-    waitForMove_();
+    C843JMP( C843_HLT(handle_,"123") );              // Stop any motion in progress
+    C843JMP( C843_MOV(handle_,"123",t) );            // Move!
+    waitForMove_();                                  // Block here until not moving
+    C843JMP( C843_qONT(handle_,"123",ontarget) );    // Ensure on-target
+    if(!all(ontarget,3))
+      goto Error;
+
     // TODO
     // o  intelligent velocity?
     // o  better error handling in case I hit limits
@@ -220,6 +234,19 @@ Error:
     return 1; // success
 Error:
     return 0;
+  }
+  
+  void C843Stage::setPosNoWait( float x, float y, float z )
+  { double t[3] = {x,y,z};
+  
+    { float vx,vy,vz;
+      getVelocity(&vx,&vy,&vz);
+      debug("(%s:%d): C843 Velocity %f %f %f"ENDL,__FILE__,__LINE__,vx,vy,vz);
+    }
+    C843JMP( C843_HLT(handle_,"123") );              // Stop any motion in progress
+    C843JMP( C843_MOV(handle_,"123",t) );            // Move!
+Error:
+    return;
   }
 
   void C843Stage::waitForController_()

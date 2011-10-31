@@ -75,10 +75,10 @@ namespace device {
       virtual int  getTravel         ( StageTravel* out);
       virtual int  getVelocity       ( float *vx, float *vy, float *vz);
       virtual int  setVelocity       ( float vx, float vy, float vz);
-      virtual void setVelocityNoWait ( float vx, float vy, float vz)       {Config c = get_config(); /**TODO**/TODO_ERR; Guarded_Assert_WinErr(set_config_nowait(c));}
+      virtual void setVelocityNoWait ( float vx, float vy, float vz);
       virtual int  getPos            ( float *x, float *y, float *z);
       virtual int  setPos            ( float  x, float  y, float  z);
-      virtual void setPosNoWait      ( float  x, float  y, float  z)       {Config c = get_config(); /**TODO**/TODO_ERR; Guarded_Assert_WinErr(set_config_nowait(c));}
+      virtual void setPosNoWait      ( float  x, float  y, float  z);
     private:
      int handle_;
      
