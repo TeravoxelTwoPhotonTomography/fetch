@@ -210,6 +210,11 @@ Error:
   static BOOL all(BOOL* bs, int n)
   { while(n--) if(!bs[n]) return 0;
     return 1;
+  }         
+  BOOL any(BOOL *bs, int n)
+  { BOOL ret = 0;
+    while(n--) ret |= bs[n];
+    return ret;
   }
 
   int C843Stage::setPos( float x, float y, float z )
@@ -249,6 +254,24 @@ Error:
     return;
   }
 
+  bool C843Stage::isMoving()
+  { BOOL b;
+    C843JMP( C843_IsMoving(handle_,"",&b) );
+    return b;
+Error:
+    return false; // if there's an error state, it's probably not moving
+  }
+
+
+  bool C843Stage::isOnTarget()
+  { BOOL b[] = {0,0,0};
+    C843JMP( C843_qONT(handle_,"123",b) );
+    if(all(b,3))
+      return true;    
+Error:
+    return false; // if there's an error state, it's probably not on target
+  }
+
   void C843Stage::waitForController_()
   { 
     long ready = 0;
@@ -256,13 +279,7 @@ Error:
     { C843ERR( C843_IsControllerReady(handle_,&ready) );
       Sleep(20); // check ~ 50x/sec
     }
-  }
-  
-  BOOL any(int n, BOOL *bs)
-  { BOOL ret = 0;
-    while(n--) ret |= bs[n];
-    return ret;
-  }
+  }    
   
   void C843Stage::waitForMove_()
   { 

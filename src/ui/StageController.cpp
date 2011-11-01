@@ -432,7 +432,7 @@ fetch::ui::PlanarStageController::PlanarStageController( device::Stage *stage, Q
   connect(
     &agent_controller_, SIGNAL(onDetach()),
     this,SLOT(invalidateTiling()) );
-
+  
   connect(
     &listener_,SIGNAL(sig_moved()),
     this,SIGNAL(moved()),

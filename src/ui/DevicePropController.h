@@ -352,7 +352,7 @@ namespace ui {
     connect(w,SIGNAL(valueChanged(double)),&doubleSpinBoxSignalMapper_,SLOT(map()));
     //connect(w,SIGNAL(valueChanged(double d)),this,SLOT(report()));
 
-    configUpdateSignalMapper_.setMapping(this,w);
+    configUpdateSignalMapper_.setMapping(this,w);    
     connect(this,SIGNAL(configUpdated()),&configUpdateSignalMapper_,SLOT(map()));    
     return w;
   }

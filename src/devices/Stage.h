@@ -51,6 +51,8 @@ namespace device {
       virtual int  setPos            ( const TilePos &r)                    {return setPos(r.x,r.y,r.z);}
       virtual void setPosNoWait      ( float  x, float  y, float  z)    = 0;
       inline  void setPosNoWait      ( const Vector3f &r)                   {setPosNoWait(r[0],r[1],r[2]);}      
+      virtual bool isMoving          () = 0;
+      virtual bool isOnTarget        () = 0;
 
       //Move Relative
   };
@@ -79,6 +81,8 @@ namespace device {
       virtual int  getPos            ( float *x, float *y, float *z);
       virtual int  setPos            ( float  x, float  y, float  z);
       virtual void setPosNoWait      ( float  x, float  y, float  z);
+      virtual bool isMoving          ();
+      virtual bool isOnTarget        ();
     private:
      int handle_;
      
@@ -103,6 +107,8 @@ namespace device {
       virtual int  getPos            ( float *x, float *y, float *z);
       virtual int  setPos            ( float  x, float  y, float  z);
       virtual void setPosNoWait      ( float  x, float  y, float  z)       {setPos(x,y,z);}
+      virtual bool isMoving          () {return 0;}
+      virtual bool isOnTarget        () {return 1;}
   };
 
   class StageListener;
@@ -147,7 +153,9 @@ namespace device {
       virtual int  setPos            ( const Vector3f &r)                   {return setPos(r[0],r[1],r[2]);}
       virtual int  setPos            ( const TilePos &r)                    {return setPos(r.x,r.y,r.z);}
       virtual int  setPos            ( const TilePosList::iterator &cursor) {return setPos(*cursor);}
-      virtual void setPosNoWait      ( float  x, float  y, float  z)        {_istage->setPosNoWait(x,y,z);}
+      virtual void setPosNoWait      ( float  x, float  y, float  z)        {_istage->setPosNoWait(x,y,z); _notifyMoved();}      
+      virtual bool isMoving          ()                                     {return _istage->isMoving();}
+      virtual bool isOnTarget        ()                                     {return _istage->isOnTarget();};
      
       unsigned int isPosValid        ( float  x, float  y, float  z);
       

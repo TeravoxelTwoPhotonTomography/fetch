@@ -133,7 +133,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   _stage_vel_x_control = new StageVelXController(dc->stage(),"Vel X (mm)",this);
   _stage_vel_y_control = new StageVelYController(dc->stage(),"Vel Y (mm)",this);
   _stage_vel_z_control = new StageVelZController(dc->stage(),"Vel Z (mm)",this);
-  
+    
   connect(_stageController,SIGNAL(moved()),          _stage_pos_x_control,SIGNAL(configUpdated()));
   connect(_stageController,SIGNAL(moved()),          _stage_pos_y_control,SIGNAL(configUpdated()));
   connect(_stageController,SIGNAL(moved()),          _stage_pos_z_control,SIGNAL(configUpdated()));
