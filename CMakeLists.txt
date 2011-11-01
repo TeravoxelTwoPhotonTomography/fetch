@@ -215,7 +215,8 @@ qt4_wrap_cpp(MOC_SRCS
   src/ui/Player.h
   src/ui/Figure.h
   src/ui/ScaleBar.h
-    src/ui/StageScene.h
+  src/ui/StageScene.h
+  src/ui/StageView.h
   src/ui/Player.h
   src/ui/TilesView.h
   src/ui/VideoAcquisitionDockWidget.h

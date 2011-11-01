@@ -6,8 +6,9 @@
 namespace fetch {
 namespace ui {
 
-class StageView: public QGraphicsItem
-{
+class StageView: public QGraphicsObject
+{ Q_OBJECT
+
 public:
   StageView(PlanarStageController *stageControl,QGraphicsItem *parent=0);
   virtual ~StageView();
@@ -19,6 +20,8 @@ public:
 
   virtual void mousePressEvent( QGraphicsSceneMouseEvent *event );
 
+protected slots:
+  void poll_stage();  // updates the view as the stage moves, stops the timer when the motion stops
 
 private:
   QRectF  bbox_meters_;
@@ -26,6 +29,8 @@ private:
 
   QPen    pen_;
   QBrush  brush_;
+
+  QTimer  stage_poll_timer_;
 
   PlanarStageController *control_;
 };

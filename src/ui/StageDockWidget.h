@@ -5,6 +5,35 @@ namespace fetch{
   namespace device{class Stage;}
   namespace ui{
 
+    class StageMovingIndicator:public QLabel
+    { Q_OBJECT
+
+    public:
+      StageMovingIndicator(device::Stage *dc,QWidget  *parent=NULL);
+
+    protected slots:
+      void poll();
+
+    private:
+      device::Stage *dc_;
+      int last_moving_;
+    };
+    
+    class StageOnTargetIndicator:public QLabel
+    { Q_OBJECT
+
+    public:
+      StageOnTargetIndicator(device::Stage *dc,QWidget  *parent=NULL);
+
+    protected slots:
+      void poll();     
+
+    private:
+      device::Stage *dc_;
+      int last_ont_;
+
+    };
+
     class StageDockWidget:public QDockWidget
     {      
       Q_OBJECT

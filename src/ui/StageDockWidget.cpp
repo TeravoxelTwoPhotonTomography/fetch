@@ -5,6 +5,62 @@
 namespace fetch {
 namespace ui {
 
+  /*
+   *    StageMovingIndicator
+   */
+
+  StageMovingIndicator::StageMovingIndicator(device::Stage *dc,QWidget  *parent)
+    : QLabel(parent),
+      dc_(dc),
+      last_moving_(-1)
+  { QTimer *t = new QTimer(this);
+    connect(t,SIGNAL(timeout()),this,SLOT(poll()));
+    t->start(100/*ms*/);
+    setText("Maybe Moving");
+  }
+
+  void StageMovingIndicator::poll()
+  { if( dc_->isMoving() )
+    { if(last_moving_!=1)
+        setText("Moving!");
+      last_moving_=1;
+    } else
+    { if(last_moving_!=0)
+        setText("Not Moving");
+      last_moving_=0;
+    }
+  }
+
+  /*
+   *    StageOnTargetIndicator
+   */
+
+  StageOnTargetIndicator::StageOnTargetIndicator(device::Stage *dc,QWidget  *parent)
+    : QLabel(parent),
+      dc_(dc),
+      last_ont_(-1)
+  { QTimer *t = new QTimer(this);
+    connect(t,SIGNAL(timeout()),this,SLOT(poll()));
+    t->start(100/*ms*/);
+    setText("Maybe on target");
+  }
+
+  void StageOnTargetIndicator::poll()
+  { if( dc_->isOnTarget() )
+    { if(last_ont_!=1)
+        setText("On Target");
+      last_ont_=1;
+    } else
+    { if(last_ont_!=0)
+        setText("Not on Target.");
+      last_ont_=0;
+    }
+  }
+
+  /*
+   *    StageDockWidget
+   */
+
   StageDockWidget::StageDockWidget(device::Stage *dc, MainWindow *parent)
     :QDockWidget("Stage",parent)
     ,dc_(dc)
@@ -50,7 +106,10 @@ namespace ui {
     s->setValue(0.1);
     vstep_=s;
 
-    form->addRow("Move",row);
+    row->addWidget(new StageMovingIndicator(dc),3,1);
+    row->addWidget(new StageOnTargetIndicator(dc),3,3);
+
+    form->addRow(row);
 
     restoreSettings();
   }

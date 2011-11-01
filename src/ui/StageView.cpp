@@ -6,8 +6,13 @@ namespace ui {
 
 using namespace units;
 
+
+
+/*
+ *    STAGE VIEW
+ */
 StageView::StageView(PlanarStageController *stageControl, QGraphicsItem *parent)
-        : QGraphicsItem(parent)
+        : QGraphicsObject(parent)
         , bbox_meters_(0,0,0.1,0.1)
         , pos_meters_(0.0,0.0)
         , pen_(Qt::white)
@@ -16,10 +21,21 @@ StageView::StageView(PlanarStageController *stageControl, QGraphicsItem *parent)
 { bbox_meters_ = cvt<M,PlanarStageController::Unit>(control_->travel());
   pos_meters_  = cvt<M,PlanarStageController::Unit>(control_->pos());
   //bbox_meters_.moveCenter(pos_meters_);
+
+  stage_poll_timer_.setInterval(100/*ms*/);
+  connect(&stage_poll_timer_,SIGNAL(timeout()),this,SLOT(poll_stage()));
+  connect(control_,SIGNAL(moved()),&stage_poll_timer_,SLOT(start()));     // Start polling when the stage starts moving
 }
 
 StageView::~StageView()
 {
+}
+
+void StageView::poll_stage()
+{ 
+  update();
+  if( !control_->stage()->isMoving() )
+    stage_poll_timer_.stop();
 }
 
 QRectF
