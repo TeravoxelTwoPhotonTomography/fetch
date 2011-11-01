@@ -282,7 +282,7 @@ QValidator* GetSetVibratomeThick::createValidator_(QObject* parent)
 void GetSetStagePosX::Set_(device::Stage *dc, float &v)
 { float x,y,z;
   dc->getPos(&x,&y,&z);
-  dc->setPos(v,y,z);
+  dc->setPosNoWait(v,y,z);
 }
 float GetSetStagePosX::Get_(device::Stage *dc)
 { float x,y,z;
@@ -296,7 +296,7 @@ QValidator* GetSetStagePosX::createValidator_(QObject* parent)
 void GetSetStagePosY::Set_(device::Stage *dc, float &v)
 { float x,y,z;
   dc->getPos(&x,&y,&z);
-  dc->setPos(x,v,z);
+  dc->setPosNoWait(x,v,z);
 }
 float GetSetStagePosY::Get_(device::Stage *dc)
 { float x,y,z;
@@ -310,7 +310,7 @@ QValidator* GetSetStagePosY::createValidator_(QObject* parent)
 void GetSetStagePosZ::Set_(device::Stage *dc, float &v)
 { float x,y,z;
   dc->getPos(&x,&y,&z);
-  dc->setPos(x,y,v);
+  dc->setPosNoWait(x,y,v);
 }
 float GetSetStagePosZ::Get_(device::Stage *dc)
 { float x,y,z;

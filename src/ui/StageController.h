@@ -136,8 +136,8 @@ namespace ui {
     public slots:
       
       void setVelocity(QPointF v)                                          { stage_->setVelocity(v.x(),v.y(),0.0); }
-      void moveTo(QPointF r)                                               { float  x, y, z; stage_->getPos(&x,&y,&z); stage_->setPos(r.x(),r.y(),z);       emit moved(r);}
-      void moveRel(QPointF dr)                                             { float  x, y, z; stage_->getPos(&x,&y,&z); stage_->setPos(x+dr.x(),y+dr.y(),z); emit moved( QPointF(x+dr.x(),y+dr.y()));} 
+      void moveTo(QPointF r)                                               { float  x, y, z; stage_->getPos(&x,&y,&z); stage_->setPosNoWait(r.x(),r.y(),z);       emit moved(r);}
+      void moveRel(QPointF dr)                                             { float  x, y, z; stage_->getPos(&x,&y,&z); stage_->setPosNoWait(x+dr.x(),y+dr.y(),z); emit moved( QPointF(x+dr.x(),y+dr.y()));} 
 
       void updateTiling()                                                  { tiling_controller_.update(stage_->tiling());}
       void invalidateTiling()                                              { tiling_controller_.update(NULL);}

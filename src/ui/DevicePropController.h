@@ -304,7 +304,9 @@ namespace ui {
     QDoubleSpinBox* w = qobject_cast<QDoubleSpinBox*>(source);
     if(w)
     { double v = interface_.Get_(dc_);
+      w->blockSignals(true);
       w->setValue(v);
+      w->blockSignals(false);
     }
   }
 
