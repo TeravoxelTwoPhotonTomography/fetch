@@ -115,6 +115,7 @@ namespace device {
 
     CHKLBL(AMP(_config->amplitude()),EAMP);
     _lastAttachedPort = c.port();
+    stop(); // In case it was turned on via another serial interface (e.g. PuTTY). Want consistent initial state.
     return 0;
 EAMP:
     _close();
@@ -133,7 +134,8 @@ ESERIAL:
   }
 
   unsigned int SerialControlVibratome::on_detach()
-  { return _close(); 
+  { stop(); 
+    return _close(); 
   }
 
   int SerialControlVibratome::setAmplitude(int val)
