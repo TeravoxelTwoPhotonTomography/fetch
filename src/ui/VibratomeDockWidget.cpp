@@ -29,9 +29,15 @@ namespace ui {
     parent->_vibratome_feed_pos_y_controller->createLineEditAndAddToLayout(form);
     parent->_vibratome_thick_controller->createLineEditAndAddToLayout(form);
 
-    { QPushButton *b = new QPushButton("Use current stage location as cut origin",this);
+    { QHBoxLayout *row = new QHBoxLayout();
+      QPushButton *b;
+      b = new QPushButton("Use current stage location as cut origin",this);
       connect(b,SIGNAL(clicked()),this,SLOT(setCutPosToCurrent()));
-      form->addRow(b);
+      row->addWidget(b);
+      b = new QPushButton("Move to cut origin",this);
+      connect(b,SIGNAL(clicked()),this,SLOT(moveToCutPos()));
+      row->addWidget(b);
+      form->addRow(row);
     }
 
 #if 0
@@ -65,6 +71,15 @@ namespace ui {
     dc_->stage()->getPos(&x,&y,&z);
     dc_->vibratome()->set_feed_begin_pos_mm(x,y);
     emit configUpdated();
+  }
+
+  void
+    VibratomeDockWidget::
+    moveToCutPos()
+  { float x,y,z;
+    dc_->stage()->getPos(&x,&y,&z);
+    dc_->vibratome()->feed_begin_pos_mm(&x,&y);
+    dc_->stage()->setPosNoWait(x,y,z);
   }
 
   //

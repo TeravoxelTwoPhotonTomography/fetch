@@ -59,10 +59,16 @@ namespace microscope {
      v1 is the cut velocity
 
   */
+#define CHECK_INTERUPTED \
+  if( dc->_agent->is_stopping() ) \
+  { warning("Task [Vibratome::Cut] - Interupted."ENDL"\t%s(%d)"ENDL,__FILE__,__LINE__); \
+    goto Error; \
+  }
 #define CHK(expr) \
-  if(!(expr))                                                                                             \
+  CHECK_INTERUPTED; \
+  if(!(expr))       \
   { warning("Task [Vibratome::Cut] - Expression failed."ENDL"\t%s(%d)"ENDL"\t%s"ENDL,__FILE__,__LINE__,#expr); \
-    goto Error;                                                                                         \
+    goto Error;     \
   }
 
   unsigned int Cut::run(device::Microscope* dc)
@@ -93,6 +99,7 @@ namespace microscope {
     
     return 1;
 Error:
+    dc->vibratome()->stop();
     return 0;
   }
 

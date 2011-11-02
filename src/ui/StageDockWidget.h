@@ -10,6 +10,7 @@ namespace fetch{
 
     public:
       StageMovingIndicator(device::Stage *dc,QWidget  *parent=NULL);
+      virtual ~StageMovingIndicator();
 
     protected slots:
       void poll();
@@ -24,6 +25,7 @@ namespace fetch{
 
     public:
       StageOnTargetIndicator(device::Stage *dc,QWidget  *parent=NULL);
+      virtual ~StageOnTargetIndicator();
 
     protected slots:
       void poll();     

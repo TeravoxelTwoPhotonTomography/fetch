@@ -28,6 +28,7 @@ private:
   QPointF pos_meters_;
 
   QPen    pen_;
+  QPen    target_pen_;
   QBrush  brush_;
 
   QTimer  stage_poll_timer_;

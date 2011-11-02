@@ -45,6 +45,7 @@ namespace device {
       inline  void setVelocityNoWait ( const Vector3f &r)                   {setVelocityNoWait(r[0],r[1],r[2]);}
       inline  void setVelocityNoWait ( float v )                            {setVelocityNoWait(v,v,v); }
       virtual int  getPos            ( float *x, float *y, float *z)    = 0;
+      virtual int  getTarget         ( float *x, float *y, float *z)    = 0;
       inline  Vector3f getPos        ()                                     {float x,y,z; getPos(&x,&y,&z); return Vector3f(x,y,z);}
       virtual int  setPos            ( float  x, float  y, float  z)    = 0;
       virtual int  setPos            ( const Vector3f &r)                   {return setPos(r[0],r[1],r[2]);}
@@ -70,6 +71,7 @@ namespace device {
     public:
       C843Stage(Agent *agent);
       C843Stage(Agent *agent, Config *cfg);
+      virtual ~C843Stage();
 
       virtual unsigned int on_attach();
       virtual unsigned int on_detach();
@@ -79,13 +81,17 @@ namespace device {
       virtual int  setVelocity       ( float vx, float vy, float vz);
       virtual void setVelocityNoWait ( float vx, float vy, float vz);
       virtual int  getPos            ( float *x, float *y, float *z);
+      virtual int  getTarget         ( float *x, float *y, float *z);
       virtual int  setPos            ( float  x, float  y, float  z);
       virtual void setPosNoWait      ( float  x, float  y, float  z);
       virtual bool isMoving          ();
       virtual bool isOnTarget        ();
     private:
-     int handle_;
+     int                handle_;
+     CRITICAL_SECTION   c843_lock_;
      
+     void lock_();
+     void unlock_();
      void waitForController_();
      void waitForMove_();
      void reference_();
@@ -105,6 +111,7 @@ namespace device {
       virtual int  setVelocity       ( float vx, float vy, float vz);
       virtual void setVelocityNoWait ( float vx, float vy, float vz)       {setVelocity(vx,vy,vz);}
       virtual int  getPos            ( float *x, float *y, float *z);
+      virtual int  getTarget         ( float *x, float *y, float *z)       {return getPos(x,y,z);}
       virtual int  setPos            ( float  x, float  y, float  z);
       virtual void setPosNoWait      ( float  x, float  y, float  z)       {setPos(x,y,z);}
       virtual bool isMoving          () {return 0;}
@@ -149,6 +156,8 @@ namespace device {
       virtual void setVelocityNoWait ( float vx, float vy, float vz)        {_istage->setVelocityNoWait(vx,vy,vz);}
       virtual int  getPos            ( float *x, float *y, float *z)        {return _istage->getPos(x,y,z);}      
       inline  Vector3f getPos        ()                                     {float x,y,z; getPos(&x,&y,&z); return Vector3f(x,y,z);}
+      virtual int  getTarget         ( float *x, float *y, float *z)        {return _istage->getTarget(x,y,z);}
+      inline  Vector3f getTarget     ()                                     {float x,y,z; getTarget(&x,&y,&z); return Vector3f(x,y,z);}
       virtual int  setPos            ( float  x, float  y, float  z)        {int out = _istage->setPos(x,y,z); _notifyMoved(); return out;}
       virtual int  setPos            ( const Vector3f &r)                   {return setPos(r[0],r[1],r[2]);}
       virtual int  setPos            ( const TilePos &r)                    {return setPos(r.x,r.y,r.z);}

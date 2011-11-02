@@ -19,6 +19,11 @@ namespace ui {
     setText("Maybe Moving");
   }
 
+  StageMovingIndicator::~StageMovingIndicator()
+  { QTimer *t = findChild<QTimer *>();
+    if(t) t->stop();
+  }
+
   void StageMovingIndicator::poll()
   { if( dc_->isMoving() )
     { if(last_moving_!=1)
@@ -43,6 +48,11 @@ namespace ui {
     connect(t,SIGNAL(timeout()),this,SLOT(poll()));
     t->start(100/*ms*/);
     setText("Maybe on target");
+  }
+
+  StageOnTargetIndicator::~StageOnTargetIndicator()
+  { QTimer *t = findChild<QTimer *>();
+    if(t) t->stop();
   }
 
   void StageOnTargetIndicator::poll()
@@ -93,7 +103,7 @@ namespace ui {
     pstep_=s;
     
     w=vs_;
-    row->addWidget(new QLabel("Pos (mm)"),2,0);
+    row->addWidget(new QLabel("Vel (mm/s)"),2,0);
     row->addWidget(w[0]=parent->_stage_vel_x_control->createDoubleSpinBox(),2,1);
     row->addWidget(w[1]=parent->_stage_vel_y_control->createDoubleSpinBox(),2,2);
     row->addWidget(w[2]=parent->_stage_vel_z_control->createDoubleSpinBox(),2,3);

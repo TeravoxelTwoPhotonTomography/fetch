@@ -22,6 +22,7 @@ namespace fetch{
       void start() {dc_->vibratome()->start();}
       void stop()  {dc_->vibratome()->stop();}
       void setCutPosToCurrent();
+      void moveToCutPos();
     };
 
 

@@ -122,6 +122,7 @@ namespace ui {
       QRectF  travel()                                                     { device::StageTravel t; stage_->getTravel(&t); return QRectF(QPointF(t.x.min,t.y.min),QPointF(t.x.max,t.y.max)); }
       QPointF velocity()                                                   { float vx,vy,vz; stage_->getVelocity(&vx,&vy,&vz); return QPointF(vx,vy); }
       QPointF pos()                                                        { float  x, y, z; stage_->getPos(&x,&y,&z); return QPointF(x,y); } 
+      QPointF target()                                                     { float  x, y, z; stage_->getTarget(&x,&y,&z); return QPointF(x,y); } 
 
       TilingController* tiling()                                           {return &tiling_controller_;}
       PlanarStageControllerListener* listener()                            {return &listener_;}

@@ -34,9 +34,9 @@ namespace device {
   // C843Stage
   //
   
-#define C843WRN( expr )  (c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, warning ))
-#define C843ERR( expr )  (c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, error   ))
-#define C843JMP( expr )  goto_if(c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, warning ), Error)
+#define C843WRN( expr )  {lock_(); (c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, warning )); unlock_();}
+#define C843ERR( expr )  {/*lock_();*/ (c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, error   )); /*unlock_();*/}
+#define C843JMP( expr )  {lock_(); if(c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, warning)) {unlock_(); goto Error;} unlock_();}
 
   // returns 0 if no error, otherwise 1
   bool c843_error_handler(long handle, BOOL ok, const char* expr, const char* file, const int line, pf_reporter report)
@@ -78,16 +78,28 @@ namespace device {
    :StageBase<cfg::device::C843StageController>(agent)
    ,handle_(-1)
   {
-
+    InitializeCriticalSection(&c843_lock_);
   }
 
   C843Stage::C843Stage( Agent *agent, Config *cfg )
    :StageBase<cfg::device::C843StageController>(agent,cfg)
    ,handle_(-1)
   {
-
+    InitializeCriticalSection(&c843_lock_);
   }
 
+  C843Stage::~C843Stage()
+  { DeleteCriticalSection(&c843_lock_);
+  }
+  
+  void C843Stage::lock_()
+  { EnterCriticalSection(&c843_lock_);
+  }
+  
+  void C843Stage::unlock_()
+  { LeaveCriticalSection(&c843_lock_);
+  }
+  
   //return 0 on success
   unsigned int C843Stage::on_attach()
   { 
@@ -122,10 +134,7 @@ namespace device {
     waitForController_();
     
     reference_();
-    
-    
-    
-
+            
     // TODO: should do some validation.  Make sure stage name is in database and 
     //       make sure initialization happens properly.
 
@@ -207,15 +216,33 @@ Error:
     return 0;
   }
 
+  int C843Stage::getTarget( float *x, float *y, float *z )
+  { double t[3];
+    C843JMP( C843_qMOV(handle_,"123",t) );
+    *x = t[0];
+    *y = t[1];
+    *z = t[2];
+    return 1;
+Error:
+    return 0;
+  }
+
   static BOOL all(BOOL* bs, int n)
   { while(n--) if(!bs[n]) return 0;
     return 1;
   }         
-  BOOL any(BOOL *bs, int n)
+  static BOOL any(BOOL *bs, int n)
   { BOOL ret = 0;
     while(n--) ret |= bs[n];
     return ret;
   }
+  static int same(double *a, double *b, int n)
+  { while(n-->0)
+      if( fabs(a[n]-b[n])>1e-4 /*mm*/ )
+        return 0;
+    return 1;
+  }
+  
 
   int C843Stage::setPos( float x, float y, float z )
   { double t[3] = {x,y,z};
@@ -227,10 +254,29 @@ Error:
     }
     C843JMP( C843_HLT(handle_,"123") );              // Stop any motion in progress
     C843JMP( C843_MOV(handle_,"123",t) );            // Move!
-    waitForMove_();                                  // Block here until not moving
-    C843JMP( C843_qONT(handle_,"123",ontarget) );    // Ensure on-target
+    waitForMove_();                                  // Block here until not moving (or error)
+    
+    C843JMP( C843_qONT(handle_,"123",ontarget) );    // Ensure controller is on-target (if there was an error before, will repeat here?)
     if(!all(ontarget,3))
       goto Error;
+      
+    { double a[3];
+      C843JMP( C843_qMOV(handle_,"123",a) );
+      if(!same(a,t,3))
+      { double b[3]={0.0,0.0,0.0};
+        C843_qPOS(handle_,"123",b);
+        warning(
+          "%s(%d): C843 Move command was interupted for a new destination."ENDL
+          "\t  Original Target: %f %f %f"ENDL
+          "\t   Current Target: %f %f %f"ENDL
+          "\t Current Position: %f %f %f"ENDL,
+          __FILE__,__LINE__,
+          t[0],t[1],t[2],
+          a[0],a[1],a[2],
+          b[0],b[1],b[2]);
+        goto Error;
+      }
+    }
 
     // TODO
     // o  intelligent velocity?
