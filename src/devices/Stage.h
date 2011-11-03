@@ -158,17 +158,18 @@ namespace device {
       inline  Vector3f getPos        ()                                     {float x,y,z; getPos(&x,&y,&z); return Vector3f(x,y,z);}
       virtual int  getTarget         ( float *x, float *y, float *z)        {return _istage->getTarget(x,y,z);}
       inline  Vector3f getTarget     ()                                     {float x,y,z; getTarget(&x,&y,&z); return Vector3f(x,y,z);}
-      virtual int  setPos            ( float  x, float  y, float  z)        {int out = _istage->setPos(x,y,z); _notifyMoved(); return out;}
+      virtual int  setPos            ( float  x, float  y, float  z);
+      virtual void setPosNoWait      ( float  x, float  y, float  z);
       virtual int  setPos            ( const Vector3f &r)                   {return setPos(r[0],r[1],r[2]);}
       virtual int  setPos            ( const TilePos &r)                    {return setPos(r.x,r.y,r.z);}
       virtual int  setPos            ( const TilePosList::iterator &cursor) {return setPos(*cursor);}
-      virtual void setPosNoWait      ( float  x, float  y, float  z)        {_istage->setPosNoWait(x,y,z); _notifyMoved();}      
       virtual bool isMoving          ()                                     {return _istage->isMoving();}
       virtual bool isOnTarget        ()                                     {return _istage->isOnTarget();};
      
       unsigned int isPosValid        ( float  x, float  y, float  z);
       
       Vector3z getPosInLattice();
+      void     getLastTarget         ( float *x, float *y, float *z)        { cfg::device::Point3d r=_config->last_target_mm(); *x=r.x();*y=r.y();*z=r.z(); }
   
               void addListener(StageListener *listener);
               void delListener(StageListener *listener);

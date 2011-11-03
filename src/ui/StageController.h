@@ -59,8 +59,8 @@ namespace ui {
 
     bool mapToIndex(const Vector3f & stage_coord, unsigned *index);        // returns false if tiling is invalid or if stage_coord is oob
 
-    QAction* saveDialogAction() {return load_action_;}
-    QAction* loadDialogAction() {return save_action_;}
+    QAction* saveDialogAction() {return save_action_;}
+    QAction* loadDialogAction() {return load_action_;}
 
   public slots:
     void update(device::StageTiling *tiling)                               {tiling_=tiling; markAddressable(); emit changed(); emit show(tiling_!=NULL);}
@@ -110,9 +110,87 @@ namespace ui {
 
   };
 
+  class PositionHistoryModel:public QAbstractListModel
+  { Q_OBJECT
+  
+  public:
+    PositionHistoryModel(QObject *parent=0) : QAbstractListModel(parent) {}
+    void push(float x, float y, float z)
+    { int n;      
+      v3 v = {x,y,z};
+      beginInsertRows(index(0).parent(),0,0);
+      history_.prepend(v);
+      endInsertRows();
+      if(n=history_.length()>10 /* MAX DEPTH*/)
+      { beginRemoveRows(index(n-1).parent(),n-1,n-1);
+        history_.removeLast();
+        endRemoveRows();
+      }
+      emit suggestIndex(0);
+    }
+    int  get(int i, float *x, float *y, float *z)
+    { if(i<0 || i>=history_.size())
+        return 0;
+      v3 v = history_.at(i);
+      *x = v.x; *y = v.y; *z = v.z;
+      return 1;
+    }
+  signals:
+    void suggestIndex(int idx);
+
+    // to do
+  protected:
+    virtual Qt::ItemFlags flags(const QModelIndex & index) const
+    { return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+    }
+    virtual QVariant data(const QModelIndex & index, int role=Qt::DisplayRole) const
+    { v3 v;
+      // Guard: prefilter roles that don't require data access
+      switch(role)
+      { case Qt::DisplayRole:
+          break;
+        case Qt::TextAlignmentRole: return Qt::AlignRight;
+        default: goto Error;
+      }
+
+      // now access the data
+      if(index.row() < rowCount(index.parent()))
+        v = history_.at(index.row());        
+      else goto Error;
+      
+      switch(role)
+      { case Qt::DisplayRole: return QString("(%1, %2, %3) mm").arg(v.x,0,'f',4).arg(v.y,0,'f',4).arg(v.z,0,'f',4);        
+        default: break;
+      }
+    Error:
+      return QVariant();
+    }
+    virtual QVariant headerData(int section, Qt::Orientation orientation, int role /*= Qt::DisplayRole*/ ) const
+    { switch(role)
+      { case Qt::DisplayRole:
+          switch(orientation)
+          { case Qt::Horizontal: return "Past Targets";            
+            case Qt::Vertical:   return QString("%1").arg(section);
+            default: break;
+          }
+          break;
+        default: 
+          break;
+      }
+      return QVariant();
+    }
+    virtual int rowCount(const QModelIndex & parent) const { return history_.length(); }
+
+  private:
+    typedef struct v3_t {double x,y,z;} v3;
+
+    QList<v3> history_;
+  };
+
   class PlanarStageController:public QObject
   { 
     Q_OBJECT    
+
     public:
 
       static const units::Length Unit = units::MM;
@@ -126,8 +204,9 @@ namespace ui {
 
       TilingController* tiling()                                           {return &tiling_controller_;}
       PlanarStageControllerListener* listener()                            {return &listener_;}
-
       device::Stage *stage()                                               {return stage_;}
+
+      QComboBox *createHistoryComboBox(QWidget *parent=0);
                                                                      
   signals:
       void moved();            // eventually updates the imitem's position      
@@ -137,8 +216,10 @@ namespace ui {
     public slots:
       
       void setVelocity(QPointF v)                                          { stage_->setVelocity(v.x(),v.y(),0.0); }
-      void moveTo(QPointF r)                                               { float  x, y, z; stage_->getPos(&x,&y,&z); stage_->setPosNoWait(r.x(),r.y(),z);       emit moved(r);}
-      void moveRel(QPointF dr)                                             { float  x, y, z; stage_->getPos(&x,&y,&z); stage_->setPosNoWait(x+dr.x(),y+dr.y(),z); emit moved( QPointF(x+dr.x(),y+dr.y()));} 
+      void moveTo3d(float x, float y, float z)                             { stage_->setPosNoWait(x,y,z); history_.push(x,y,z); emit moved(QPointF(x,y));}
+      void moveTo(QPointF r)                                               { float  x, y, z; stage_->getTarget(&x,&y,&z); moveTo3d(r.x(),r.y(),z); }
+      void moveRel(QPointF dr)                                             { float  x, y, z; stage_->getTarget(&x,&y,&z); moveTo3d(x+dr.x(),y+dr.y(),z);} 
+      void moveToHistoryItem(int i)                                        { float  x, y, z; if(history_.get(i,&x,&y,&z)) moveTo3d(x,y,z); }
 
       void updateTiling()                                                  { tiling_controller_.update(stage_->tiling());}
       void invalidateTiling()                                              { tiling_controller_.update(NULL);}
@@ -150,6 +231,8 @@ namespace ui {
       TilingController tiling_controller_; 
 
       PlanarStageControllerListener listener_;
+
+      PositionHistoryModel history_;
   };
 
 

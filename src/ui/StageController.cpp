@@ -425,6 +425,11 @@ fetch::ui::PlanarStageController::PlanarStageController( device::Stage *stage, Q
    , agent_controller_(stage->_agent)
    , tiling_controller_(stage)
 {
+  { float x,y,z;
+    stage->getLastTarget(&x,&y,&z);
+    history_.push(x,y,z);
+  }
+
   connect(
     &agent_controller_, SIGNAL(onAttach()),
     this,SLOT(updateTiling()) );
@@ -449,4 +454,15 @@ fetch::ui::PlanarStageController::PlanarStageController( device::Stage *stage, Q
   stage_->addListener(tiling_controller_.listener());
 
   agent_controller_.createPollingTimer()->start(50 /*msec*/);
+}
+
+QComboBox*
+  fetch::ui::PlanarStageController::
+  createHistoryComboBox(QWidget *parent)
+{
+  QComboBox* cb = new QComboBox(parent);  
+  cb->setModel(&history_);
+  connect(&history_,SIGNAL(suggestIndex(int)),cb,SLOT(setCurrentIndex(int)));
+  connect(cb,SIGNAL(activated(int)),this,SLOT(moveToHistoryItem(int)));
+  return cb;
 }

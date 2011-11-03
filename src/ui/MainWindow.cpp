@@ -325,8 +325,34 @@ void fetch::ui::MainWindow::createViews()
   //_player->start();
 }
 
+int fetch::ui::MainWindow::maybeSave()
+{ 
+  int ret = QMessageBox::warning(this,
+    "Fetch",
+    "Save configuration data before closing?",
+    QMessageBox::Save|QMessageBox::Discard|QMessageBox::Cancel);
+  switch(ret)
+  { 
+  case QMessageBox::Save:
+    saveToAct->trigger();
+    tilingController()->saveDialogAction()->trigger();
+    break;
+  case QMessageBox::Discard:
+    break;
+  case QMessageBox::Cancel:
+  default:
+    return 0;
+  }
+  return 1;
+}
+
 void fetch::ui::MainWindow::closeEvent( QCloseEvent *event )
 { 
+  if(!maybeSave())
+  { event->ignore(); // cancel the close
+    return;
+  }
+
   QMainWindow::closeEvent(event);   // must come before stopVideo
   stopVideo();
   _dc->stage()->delListener(_stageController->listener());

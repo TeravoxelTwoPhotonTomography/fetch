@@ -49,6 +49,8 @@ protected slots:
   void startVideo();
   void stopVideo(); 
 
+  int maybeSave();
+
 public: // semi-private
   void createStateMachines();
   void createMenus();

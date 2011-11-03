@@ -35,7 +35,7 @@ namespace microscope {
   {
     // validate
     float cx,cy,cz,ax,ay,bx,by;
-    dc->stage()->getPos(&cx,&cy,&cz);    
+    dc->stage()->getTarget(&cx,&cy,&cz);    
     dc->vibratome()->feed_begin_pos_mm(&ax,&ay);
     dc->vibratome()->feed_end_pos_mm(&bx,&by);
 
@@ -75,7 +75,7 @@ namespace microscope {
   {     
     float cx,cy,cz,vx,vy,vz,ax,ay,bx,by,v,dz;
     // get current pos,vel
-    CHK( dc->stage()->getPos(&cx,&cy,&cz));
+    CHK( dc->stage()->getTarget(&cx,&cy,&cz));
     CHK( dc->stage()->getVelocity(&vx,&vy,&vz));
     
     // Get parameters    

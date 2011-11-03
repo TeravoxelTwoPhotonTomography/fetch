@@ -68,7 +68,7 @@ namespace ui {
     VibratomeDockWidget::
     setCutPosToCurrent()
   { float x,y,z;
-    dc_->stage()->getPos(&x,&y,&z);
+    dc_->stage()->getTarget(&x,&y,&z);
     dc_->vibratome()->set_feed_begin_pos_mm(x,y);
     emit configUpdated();
   }
@@ -77,7 +77,7 @@ namespace ui {
     VibratomeDockWidget::
     moveToCutPos()
   { float x,y,z;
-    dc_->stage()->getPos(&x,&y,&z);
+    dc_->stage()->getTarget(&x,&y,&z);
     dc_->vibratome()->feed_begin_pos_mm(&x,&y);
     dc_->stage()->setPosNoWait(x,y,z);
   }
@@ -180,7 +180,7 @@ namespace ui {
     bool  
       VibratomeBoundsModel::
       insertRows( int row, int count, const QModelIndex & parent /*= QModelIndex()*/ )
-    { Eigen::Vector3f v = dc_->stage()->getPos();
+    { Eigen::Vector3f v = dc_->stage()->getTarget();
       int sz = rowCount(parent)+count;
       cfg::device::VibratomeGeometry *g = dc_->vibratome()->_config->mutable_geometry(); 
       cfg::device::Point2d *o;
@@ -342,7 +342,7 @@ namespace ui {
       VibratomeGeometryDockWidget::
       markImagePlane()
     { float x,y;
-      dc_->stage()->getPos(&x,&y,&image_plane_mm_);
+      dc_->stage()->getTarget(&x,&y,&image_plane_mm_);
       is_set__image_plane_ = 1;
       emit imagePlane(image_plane_mm_);
     }
@@ -351,7 +351,7 @@ namespace ui {
       VibratomeGeometryDockWidget::
       markCutPlane()
     { float x,y;
-      dc_->stage()->getPos(&x,&y,&cut_plane_mm_);
+      dc_->stage()->getTarget(&x,&y,&cut_plane_mm_);
       is_set__cut_plane_ = 1;
       emit cutPlane(cut_plane_mm_);
     }

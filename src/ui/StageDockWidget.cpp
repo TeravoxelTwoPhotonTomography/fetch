@@ -116,10 +116,12 @@ namespace ui {
     s->setValue(0.1);
     vstep_=s;
 
-    row->addWidget(new StageMovingIndicator(dc),3,1);
-    row->addWidget(new StageOnTargetIndicator(dc),3,3);
-
     form->addRow(row);
+
+    form->addRow(new StageMovingIndicator(dc));
+    form->addRow(new StageOnTargetIndicator(dc));
+
+    form->addRow("History", parent->_stageController->createHistoryComboBox());    
 
     restoreSettings();
   }
