@@ -25,7 +25,7 @@ StageView::StageView(PlanarStageController *stageControl, QGraphicsItem *parent)
 
   stage_poll_timer_.setInterval(100/*ms*/);
   connect(&stage_poll_timer_,SIGNAL(timeout()),this,SLOT(poll_stage()));
-  connect(control_,SIGNAL(moved()),qApp,SIGNAL(aboutQt()));
+  
   connect(control_,SIGNAL(moved()),&stage_poll_timer_,SLOT(start()));     // Start polling when the stage starts moving
 }
 

@@ -121,7 +121,7 @@ namespace ui {
       beginInsertRows(index(0).parent(),0,0);
       history_.prepend(v);
       endInsertRows();
-      if(n=history_.length()>10 /* MAX DEPTH*/)
+      if(n=history_.length()>10 /* MAX DEPTH*/)              // TODO: grab MAXDEPTH from QSettings.  Allows one to set this via prefs later (or manually edit registry).
       { beginRemoveRows(index(n-1).parent(),n-1,n-1);
         history_.removeLast();
         endRemoveRows();
@@ -137,8 +137,7 @@ namespace ui {
     }
   signals:
     void suggestIndex(int idx);
-
-    // to do
+   
   protected:
     virtual Qt::ItemFlags flags(const QModelIndex & index) const
     { return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
@@ -220,6 +219,7 @@ namespace ui {
       void moveTo(QPointF r)                                               { float  x, y, z; stage_->getTarget(&x,&y,&z); moveTo3d(r.x(),r.y(),z); }
       void moveRel(QPointF dr)                                             { float  x, y, z; stage_->getTarget(&x,&y,&z); moveTo3d(x+dr.x(),y+dr.y(),z);} 
       void moveToHistoryItem(int i)                                        { float  x, y, z; if(history_.get(i,&x,&y,&z)) moveTo3d(x,y,z); }
+      void savePosToHistory()                                              { float  x, y, z; stage_->getTarget(&x,&y,&z); history_.push(x,y,z); }
 
       void updateTiling()                                                  { tiling_controller_.update(stage_->tiling());}
       void invalidateTiling()                                              { tiling_controller_.update(NULL);}

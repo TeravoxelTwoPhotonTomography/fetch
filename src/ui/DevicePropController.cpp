@@ -404,4 +404,17 @@ QValidator* GetSetZPiezoStep::createValidator_(QObject* parent)
 { return new QDoubleValidator (0.0, 400.0, 3, parent);
 }
 
+// Field of View
+
+void GetSetOverlapZ::Set_(device::FieldOfViewGeometry *dc, float &v)
+{ dc->overlap_um_[2] = v;
+}
+float GetSetOverlapZ::Get_(device::FieldOfViewGeometry *dc)
+{ return dc->overlap_um_[2];
+}
+QValidator* GetSetOverlapZ::createValidator_(QObject* parent)
+{ return new QDoubleValidator (-400.0, 400.0, 1, parent);
+}
+
+
 }} //end fetch::ui

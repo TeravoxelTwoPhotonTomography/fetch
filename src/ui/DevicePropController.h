@@ -59,6 +59,7 @@ namespace ui {
 
     protected slots:
       virtual void report();
+      virtual void updateLabel   (QWidget *source) =0;
       virtual void setByLineEdit (QWidget *source) =0;
       virtual void updateLineEdit(QWidget *source) =0;
       virtual void setByComboBox (QWidget *source) =0;
@@ -74,15 +75,18 @@ namespace ui {
     public:
       DevicePropController(TDevice *dc, char* label, MainWindow *parent);
 
+      QLabel         *createLabel();
       QLineEdit      *createLineEdit();
       QDoubleSpinBox *createDoubleSpinBox();
       QComboBox      *createComboBox();
+      QLabel         *createLabelAndAddToLayout(QFormLayout *layout);
       QLineEdit      *createLineEditAndAddToLayout(QFormLayout *layout);
       QDoubleSpinBox *createDoubleSpinBoxAndAddToLayout(QFormLayout *layout);
       QComboBox      *createComboBoxAndAddToLayout(QFormLayout *layout);
 
     protected:
-      void setByLineEdit        (QWidget *source);      
+      void updateLabel          (QWidget *source);
+      void setByLineEdit        (QWidget *source);
       void updateLineEdit       (QWidget *source);
       void setByComboBox        (QWidget *source);
       void updateComboBox       (QWidget *source);
@@ -96,6 +100,7 @@ namespace ui {
       TDevice    *dc_;
       QString     label_;
 
+      QSignalMapper labelSignalMapper_;
       QSignalMapper lineEditSignalMapper_;
       QSignalMapper comboBoxSignalMapper_;
       QSignalMapper doubleSpinBoxSignalMapper_;
@@ -187,6 +192,10 @@ namespace ui {
   typedef DevicePropController<device::Stage,float,GetSetStageVelY> StageVelYController;
   typedef DevicePropController<device::Stage,float,GetSetStageVelZ> StageVelZController;
 
+  // FOV
+  DECL_GETSET_CLASS(GetSetOverlapZ,device::FieldOfViewGeometry,float);
+  typedef DevicePropController<device::FieldOfViewGeometry,float,GetSetOverlapZ> FOVOverlapZController;
+
 }} //end fetch::ui
 
   ////////////////////////////////////////////////////////////////////////////
@@ -221,6 +230,8 @@ namespace ui {
   : dc_(dc)
   , label_(label)
   { 
+    connect(&configUpdateSignalMapper_,SIGNAL(mapped(QWidget*)),this,SLOT(updateLabel(QWidget*)));
+
     connect(&lineEditSignalMapper_,SIGNAL(mapped(QWidget*)),this,SLOT(setByLineEdit(QWidget*)));
     connect(&configUpdateSignalMapper_,SIGNAL(mapped(QWidget*)),this,SLOT(updateLineEdit(QWidget*)));
 
@@ -231,6 +242,18 @@ namespace ui {
     connect(&configUpdateSignalMapper_,SIGNAL(mapped(QWidget*)),this,SLOT(updateByDoubleSpinBox(QWidget*)));    
 
     connect(parent,SIGNAL(configUpdated()),this,SIGNAL(configUpdated()));
+  }
+
+  template<typename TDevice, typename TConfig, class TGetSetInterface>
+  void 
+    DevicePropController<TDevice,TConfig,TGetSetInterface>::
+    updateLabel(QWidget* source)
+  {
+    QLabel* l = qobject_cast<QLabel*>(source);
+    if(l)
+    { QString s = ValueToQString(interface_.Get_(dc_));
+      l->setText(s);
+    }
   }
 
   template<typename TDevice, typename TConfig, class TGetSetInterface>
@@ -311,6 +334,21 @@ namespace ui {
   }
 
   template<typename TDevice, typename TConfig, class TGetSetInterface>
+  QLabel* 
+    DevicePropController<TDevice,TConfig,TGetSetInterface>::
+    createLabel()
+  { TConfig vv = interface_.Get_(dc_);
+    QString s = ValueToQString(vv);
+    QLabel *l = new QLabel(s);
+
+    //labelSignalMapper_.setMapping(l,l);
+    configUpdateSignalMapper_.setMapping(this,l);
+    connect(this,SIGNAL(configUpdated()),&configUpdateSignalMapper_,SLOT(map()));
+
+    return l;
+  }
+
+  template<typename TDevice, typename TConfig, class TGetSetInterface>
   QLineEdit* DevicePropController<TDevice,TConfig,TGetSetInterface>::
     createLineEdit()
   { TConfig vv = interface_.Get_(dc_);
@@ -377,6 +415,15 @@ namespace ui {
     configUpdateSignalMapper_.setMapping(this,cmb_);
     connect(this,SIGNAL(configUpdated()),&configUpdateSignalMapper_,SLOT(map()));   
     return cmb_;
+  }
+
+  template<typename TDevice, typename TConfig, class TGetSetInterface>
+  QLabel* 
+    DevicePropController<TDevice,TConfig,TGetSetInterface>::
+    createLabelAndAddToLayout( QFormLayout *layout )
+  { QLabel *l = createLabel();
+    layout->addRow(label_,l);
+    return l;
   }
 
   template<typename TDevice, typename TConfig, class TGetSetInterface>

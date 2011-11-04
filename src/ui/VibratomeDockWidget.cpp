@@ -2,6 +2,7 @@
 #include "devices\microscope.h"
 #include "AgentController.h"
 #include "google\protobuf\descriptor.h"
+#include "ui\StageDockWidget.h"
 
 namespace fetch {
 namespace ui {
@@ -16,6 +17,8 @@ namespace ui {
     ,dc_(dc)
     ,cmb_feed_axis_(NULL)
   {
+    Guarded_Assert(parent->_stageDockWidget!=NULL);
+
     QWidget *formwidget = new QWidget(this);
     QFormLayout *form = new QFormLayout;
     formwidget->setLayout(form);
@@ -28,6 +31,21 @@ namespace ui {
     parent->_vibratome_feed_pos_x_controller->createLineEditAndAddToLayout(form);
     parent->_vibratome_feed_pos_y_controller->createLineEditAndAddToLayout(form);
     parent->_vibratome_thick_controller->createLineEditAndAddToLayout(form);
+    parent->_fov_overlap_z_controller->createLabelAndAddToLayout(form);
+
+    { QHBoxLayout *row = new QHBoxLayout();
+      QPushButton *b;
+      b = new QPushButton("Update stack depth",this);
+      connect(b,SIGNAL(clicked()),this,SLOT(updateStackDepth()));
+      row->addWidget(b);
+      b = new QPushButton("Update Z Overlap",this);
+      connect(b,SIGNAL(clicked()),this,SLOT(updateZOverlap()));
+      row->addWidget(b);
+      b = new QPushButton("Set Stage Step",this);
+      connect(b,SIGNAL(clicked()),parent->_stageDockWidget,SLOT(setPosStepByThickness()));
+      row->addWidget(b);
+      form->addRow(row);      
+    } 
 
     { QHBoxLayout *row = new QHBoxLayout();
       QPushButton *b;
@@ -37,8 +55,8 @@ namespace ui {
       b = new QPushButton("Move to cut origin",this);
       connect(b,SIGNAL(clicked()),this,SLOT(moveToCutPos()));
       row->addWidget(b);
-      form->addRow(row);
-    }
+      form->addRow(row);      
+    }   
 
 #if 0
     qDebug() << dc->vibratome()->_config->VibratomeFeedAxis_descriptor()->value_count();
@@ -80,6 +98,20 @@ namespace ui {
     dc_->stage()->getTarget(&x,&y,&z);
     dc_->vibratome()->feed_begin_pos_mm(&x,&y);
     dc_->stage()->setPosNoWait(x,y,z);
+  }
+
+  void 
+    VibratomeDockWidget::
+    updateZOverlap()
+  { dc_->updateFovFromStackDepth(1);
+    emit configUpdated();
+  }
+
+  void
+    VibratomeDockWidget::
+    updateStackDepth()
+  { dc_->updateStackDepthFromFov(1);
+    emit configUpdated();
   }
 
   //

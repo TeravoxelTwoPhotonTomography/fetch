@@ -84,6 +84,7 @@ namespace fetch
       
       virtual Scanner2D* get2d() {return &_scanner2d;}
 
+      ZPiezo* zpiezo() {return &_zpiezo;}
     };
   
   }

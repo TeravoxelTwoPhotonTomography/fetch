@@ -134,6 +134,8 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   _stage_vel_x_control = new StageVelXController(dc->stage(),"Vel X (mm)",this);
   _stage_vel_y_control = new StageVelYController(dc->stage(),"Vel Y (mm)",this);
   _stage_vel_z_control = new StageVelZController(dc->stage(),"Vel Z (mm)",this);
+
+  _fov_overlap_z_controller = new FOVOverlapZController(&dc->fov_,"Overlap Z (um)", this);
     
   connect(_stageController,SIGNAL(moved()),          _stage_pos_x_control,SIGNAL(configUpdated()));
   connect(_stageController,SIGNAL(moved()),          _stage_pos_y_control,SIGNAL(configUpdated()));
@@ -296,17 +298,17 @@ void fetch::ui::MainWindow::createDockWidgets()
   _microscopesStateDockWidget = new MicroscopeStateDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_microscopesStateDockWidget);
   viewMenu->addAction(_microscopesStateDockWidget->toggleViewAction());
-  _microscopesStateDockWidget->setObjectName("_microscopesStateDockWidget");
+  _microscopesStateDockWidget->setObjectName("_microscopesStateDockWidget");   
+
+  _stageDockWidget = new StageDockWidget(_dc,this);             // has to come before the _vibratomeDockWidget
+  addDockWidget(Qt::LeftDockWidgetArea,_stageDockWidget);
+  viewMenu->addAction(_stageDockWidget->toggleViewAction());
+  _stageDockWidget->setObjectName("_stageDockWidget");
 
   _vibratomeDockWidget = new VibratomeDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_vibratomeDockWidget);
   viewMenu->addAction(_vibratomeDockWidget->toggleViewAction());
-  _vibratomeDockWidget->setObjectName("_vibratomeStateDockWidget");  
-
-  _stageDockWidget = new StageDockWidget(_dc->stage(),this);
-  addDockWidget(Qt::LeftDockWidgetArea,_stageDockWidget);
-  viewMenu->addAction(_stageDockWidget->toggleViewAction());
-  _stageDockWidget->setObjectName("_stageDockWidget");
+  _vibratomeDockWidget->setObjectName("_vibratomeStateDockWidget");
 
   _vibratomeGeometryDockWidget = new VibratomeGeometryDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_vibratomeGeometryDockWidget);
@@ -453,12 +455,9 @@ void
   
     CHKJMP(parser.ParseFromString(cfgfile.readAll().constData(),&cfg),ParseError);
 
-    // commit
-    
+    // commit    
     if(_defered_update)
-      _defered_update->update(cfg);
-    //_dc->set_config_nowait(cfg);  // will deadlock something if not non-blocking, but need to make sure things are attached before GUI updated... hmmm
-    //emit configUpdated();
+      _defered_update->update(cfg); // set_config_nowait won't work here.
   }  
 
   update_active_config_location_(filename);

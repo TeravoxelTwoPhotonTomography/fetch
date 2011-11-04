@@ -23,6 +23,8 @@ namespace fetch{
       void stop()  {dc_->vibratome()->stop();}
       void setCutPosToCurrent();
       void moveToCutPos();
+      void updateZOverlap();
+      void updateStackDepth();
     };
 
 

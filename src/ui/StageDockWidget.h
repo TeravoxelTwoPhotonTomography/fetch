@@ -40,20 +40,18 @@ namespace fetch{
     {      
       Q_OBJECT
 
-      device::Stage *dc_;
+      device::Microscope *dc_;
       QDoubleSpinBox *ps_[3],*vs_[3],*pstep_,*vstep_;
 
 
     public:
-      StageDockWidget(device::Stage *dc, MainWindow* parent);
+      StageDockWidget(device::Microscope *dc, MainWindow* parent);
       virtual ~StageDockWidget();
 
     public slots:
       void setPosStep(double v);
-      void setVelStep(double v);
-
-    protected:
-      //virtual void closeEvent(QCloseEvent *event);
+      void setPosStepByThickness();
+      void setVelStep(double v);    
 
     private:
       void restoreSettings();

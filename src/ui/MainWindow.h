@@ -108,6 +108,7 @@ public: // semi-private
   StageVelXController          *_stage_vel_x_control;
   StageVelYController          *_stage_vel_y_control;
   StageVelZController          *_stage_vel_z_control;
+  FOVOverlapZController        *_fov_overlap_z_controller;
 
   QFileSystemWatcher           *_config_watcher;
 
@@ -161,6 +162,8 @@ class FileSeriesNameDisplay : public QLabel
 
 namespace internal
 {
+  // Helper that updates the microscope config from another thread (so GUI thread won't block)
+  // then notifies the GUI when it's done.  See: MainWindow::openMicroscopeConfig
   class mainwindow_defered_update : public QThread
   { 
     Q_OBJECT

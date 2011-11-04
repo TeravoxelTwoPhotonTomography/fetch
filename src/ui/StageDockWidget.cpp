@@ -71,9 +71,11 @@ namespace ui {
    *    StageDockWidget
    */
 
-  StageDockWidget::StageDockWidget(device::Stage *dc, MainWindow *parent)
+  StageDockWidget::StageDockWidget(device::Microscope *dc, MainWindow *parent)
     :QDockWidget("Stage",parent)
     ,dc_(dc)
+    ,pstep_(0)
+    ,vstep_(0)
   { 
     QWidget *formwidget = new QWidget(this);
     QFormLayout *form = new QFormLayout;
@@ -118,10 +120,16 @@ namespace ui {
 
     form->addRow(row);
 
-    form->addRow(new StageMovingIndicator(dc));
-    form->addRow(new StageOnTargetIndicator(dc));
+    form->addRow(new StageMovingIndicator(dc->stage()));
+    form->addRow(new StageOnTargetIndicator(dc->stage()));
 
-    form->addRow("History", parent->_stageController->createHistoryComboBox());    
+    { QHBoxLayout *layout = new QHBoxLayout;
+      layout->addWidget(parent->_stageController->createHistoryComboBox());
+      QPushButton *b = new QPushButton("Add");
+      connect(b,SIGNAL(clicked()),parent->_stageController,SLOT(savePosToHistory()));
+      layout->addWidget(b);
+      form->addRow("History", layout);
+    }
 
     restoreSettings();
   }
@@ -147,6 +155,10 @@ namespace ui {
   void StageDockWidget::setPosStep(double v)
   { for(int i=0;i<3;++i)
       ps_[i]->setSingleStep(v);
+  }
+
+  void StageDockWidget::setPosStepByThickness()
+  { pstep_->setValue(1e-3*(dc_->fov_.field_size_um_[2] - dc_->fov_.overlap_um_[2])); //um->mm
   }
 
   void StageDockWidget::setVelStep(double v)
