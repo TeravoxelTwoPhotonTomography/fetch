@@ -108,15 +108,15 @@ Error:
           
           // Move stage
           Vector3f curpos = dc->stage()->getTarget(); // use current target z for tilepos z
-          tilepos[2] = curpos[2]*1000.0f;      // unit conversion here is a bit awkward
-          
+          tilepos[2] = curpos[2]*1000.0f;      // unit conversion here is a bit awkward          
           dc->stage()->setPos(0.001f*tilepos); // convert um to mm
+
           dc->write_stack_metadata();          // go ahead and write the metadata
 
           eflag |= dc->runPipeline();
           eflag |= dc->__scan_agent.run() != 1;          
 
-          {
+          { // Wait for stack to finish
             HANDLE hs[] = {
               dc->__scan_agent._thread,          
               dc->__self_agent._notify_stop};
@@ -141,14 +141,13 @@ Error:
           }  // end waiting block
 
           // Output and Increment files
-          eflag |= dc->disk.close();
-          
-          dc->file_series.inc(); // increment regardless of completion status
+          eflag |= dc->disk.close();          
+          dc->file_series.inc();       // increment regardless of completion status
 
           eflag |= dc->stopPipeline(); // wait till everything stops          
           
         } // end loop over tiles
-        eflag |= dc->stopPipeline(); // wait till the  pipeline stops
+        eflag |= dc->stopPipeline();   // wait till the  pipeline stops
         
         return eflag;
       }
