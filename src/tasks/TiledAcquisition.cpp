@@ -107,8 +107,8 @@ Error:
           }
           
           // Move stage
-          Vector3f curpos = dc->stage()->getPos(); // FIXME HACK
-          tilepos[2] = curpos[2]*1000.0f;
+          Vector3f curpos = dc->stage()->getTarget(); // use current target z for tilepos z
+          tilepos[2] = curpos[2]*1000.0f;      // unit conversion here is a bit awkward
           
           dc->stage()->setPos(0.001f*tilepos); // convert um to mm
           dc->write_stack_metadata();          // go ahead and write the metadata

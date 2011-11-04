@@ -2,6 +2,7 @@
 #include "devices\microscope.h"
 #include "AgentController.h"
 #include "google\protobuf\descriptor.h"
+#include "ui\StageDockWidget.h"
 
 namespace fetch {
 namespace ui {
@@ -16,6 +17,8 @@ namespace ui {
     ,dc_(dc)
     ,cmb_feed_axis_(NULL)
   {
+    Guarded_Assert(parent->_stageDockWidget!=NULL);
+
     QWidget *formwidget = new QWidget(this);
     QFormLayout *form = new QFormLayout;
     formwidget->setLayout(form);
@@ -28,17 +31,32 @@ namespace ui {
     parent->_vibratome_feed_pos_x_controller->createLineEditAndAddToLayout(form);
     parent->_vibratome_feed_pos_y_controller->createLineEditAndAddToLayout(form);
     parent->_vibratome_thick_controller->createLineEditAndAddToLayout(form);
+    parent->_fov_overlap_z_controller->createLabelAndAddToLayout(form);
 
     { QHBoxLayout *row = new QHBoxLayout();
       QPushButton *b;
-      b = new QPushButton("Use current stage location as cut origin",this);
+      b = new QPushButton("Update stack depth",this);
+      connect(b,SIGNAL(clicked()),this,SLOT(updateStackDepth()));
+      row->addWidget(b);
+      b = new QPushButton("Update Z Overlap",this);
+      connect(b,SIGNAL(clicked()),this,SLOT(updateZOverlap()));
+      row->addWidget(b);
+      b = new QPushButton("Set Stage Step",this);
+      connect(b,SIGNAL(clicked()),parent->_stageDockWidget,SLOT(setPosStepByThickness()));
+      row->addWidget(b);
+      form->addRow(row);      
+    } 
+
+    { QHBoxLayout *row = new QHBoxLayout();
+      QPushButton *b;
+      b = new QPushButton("Set cut origin",this);
       connect(b,SIGNAL(clicked()),this,SLOT(setCutPosToCurrent()));
       row->addWidget(b);
       b = new QPushButton("Move to cut origin",this);
       connect(b,SIGNAL(clicked()),this,SLOT(moveToCutPos()));
       row->addWidget(b);
-      form->addRow(row);
-    }
+      form->addRow(row);      
+    }   
 
 #if 0
     qDebug() << dc->vibratome()->_config->VibratomeFeedAxis_descriptor()->value_count();
@@ -58,8 +76,8 @@ namespace ui {
 
     form->addRow(row);
 
-    AgentControllerButtonPanel *btns = new AgentControllerButtonPanel(&parent->_scope_state_controller,&dc->cut_task);
-    form->addRow(btns);    
+    //AgentControllerButtonPanel *btns = new AgentControllerButtonPanel(&parent->_scope_state_controller,&dc->cut_task);
+    //form->addRow(btns);    
 
     connect(this,SIGNAL(configUpdated()),parent,SIGNAL(configUpdated()));
   }
@@ -68,7 +86,7 @@ namespace ui {
     VibratomeDockWidget::
     setCutPosToCurrent()
   { float x,y,z;
-    dc_->stage()->getPos(&x,&y,&z);
+    dc_->stage()->getTarget(&x,&y,&z);
     dc_->vibratome()->set_feed_begin_pos_mm(x,y);
     emit configUpdated();
   }
@@ -77,9 +95,23 @@ namespace ui {
     VibratomeDockWidget::
     moveToCutPos()
   { float x,y,z;
-    dc_->stage()->getPos(&x,&y,&z);
+    dc_->stage()->getTarget(&x,&y,&z);
     dc_->vibratome()->feed_begin_pos_mm(&x,&y);
     dc_->stage()->setPosNoWait(x,y,z);
+  }
+
+  void 
+    VibratomeDockWidget::
+    updateZOverlap()
+  { dc_->updateFovFromStackDepth(1);
+    emit configUpdated();
+  }
+
+  void
+    VibratomeDockWidget::
+    updateStackDepth()
+  { dc_->updateStackDepthFromFov(1);
+    emit configUpdated();
   }
 
   //
@@ -180,7 +212,7 @@ namespace ui {
     bool  
       VibratomeBoundsModel::
       insertRows( int row, int count, const QModelIndex & parent /*= QModelIndex()*/ )
-    { Eigen::Vector3f v = dc_->stage()->getPos();
+    { Eigen::Vector3f v = dc_->stage()->getTarget();
       int sz = rowCount(parent)+count;
       cfg::device::VibratomeGeometry *g = dc_->vibratome()->_config->mutable_geometry(); 
       cfg::device::Point2d *o;
@@ -342,7 +374,7 @@ namespace ui {
       VibratomeGeometryDockWidget::
       markImagePlane()
     { float x,y;
-      dc_->stage()->getPos(&x,&y,&image_plane_mm_);
+      dc_->stage()->getTarget(&x,&y,&image_plane_mm_);
       is_set__image_plane_ = 1;
       emit imagePlane(image_plane_mm_);
     }
@@ -351,7 +383,7 @@ namespace ui {
       VibratomeGeometryDockWidget::
       markCutPlane()
     { float x,y;
-      dc_->stage()->getPos(&x,&y,&cut_plane_mm_);
+      dc_->stage()->getTarget(&x,&y,&cut_plane_mm_);
       is_set__cut_plane_ = 1;
       emit cutPlane(cut_plane_mm_);
     }

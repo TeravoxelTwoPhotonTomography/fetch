@@ -4,14 +4,15 @@
 
 namespace fetch {
 namespace ui {
-
+  
   class AgentController:public QObject
   { 
     Q_OBJECT
     public:
       AgentController(Agent *agent);
 
-      QTimer *createPollingTimer();                                        // owned by the AgentController
+      QTimer *createPollingTimer(); // owned by the AgentController
+      QDockWidget *createTaskDockWidget(const QString & title, Task* task,QWidget* parent=NULL);
 
     signals:
       void onAttach();
@@ -47,7 +48,7 @@ namespace ui {
       } runlevel_;
 
       RunLevel queryRunLevel();
-      void handleTransition(RunLevel src, RunLevel dst);
+      void handleTransition(RunLevel src, RunLevel dst);      
   };
 
   class AgentControllerButtonPanel : public QWidget

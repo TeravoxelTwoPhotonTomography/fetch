@@ -96,6 +96,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,_videoAcquisitionDockWidget(0)
   ,_microscopesStateDockWidget(0)
   ,_vibratomeDockWidget(0)
+  ,_cutTaskDockWidget(0)
   ,_stageDockWidget(0)
   ,_display(0)
   ,_player(0)
@@ -133,6 +134,8 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   _stage_vel_x_control = new StageVelXController(dc->stage(),"Vel X (mm)",this);
   _stage_vel_y_control = new StageVelYController(dc->stage(),"Vel Y (mm)",this);
   _stage_vel_z_control = new StageVelZController(dc->stage(),"Vel Z (mm)",this);
+
+  _fov_overlap_z_controller = new FOVOverlapZController(&dc->fov_,"Overlap Z (um)", this);
     
   connect(_stageController,SIGNAL(moved()),          _stage_pos_x_control,SIGNAL(configUpdated()));
   connect(_stageController,SIGNAL(moved()),          _stage_pos_y_control,SIGNAL(configUpdated()));
@@ -295,22 +298,28 @@ void fetch::ui::MainWindow::createDockWidgets()
   _microscopesStateDockWidget = new MicroscopeStateDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_microscopesStateDockWidget);
   viewMenu->addAction(_microscopesStateDockWidget->toggleViewAction());
-  _microscopesStateDockWidget->setObjectName("_microscopesStateDockWidget");
+  _microscopesStateDockWidget->setObjectName("_microscopesStateDockWidget");   
+
+  _stageDockWidget = new StageDockWidget(_dc,this);             // has to come before the _vibratomeDockWidget
+  addDockWidget(Qt::LeftDockWidgetArea,_stageDockWidget);
+  viewMenu->addAction(_stageDockWidget->toggleViewAction());
+  _stageDockWidget->setObjectName("_stageDockWidget");
 
   _vibratomeDockWidget = new VibratomeDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_vibratomeDockWidget);
   viewMenu->addAction(_vibratomeDockWidget->toggleViewAction());
-  _vibratomeDockWidget->setObjectName("_vibratomeStateDockWidget");  
-
-  _stageDockWidget = new StageDockWidget(_dc->stage(),this);
-  addDockWidget(Qt::LeftDockWidgetArea,_stageDockWidget);
-  viewMenu->addAction(_stageDockWidget->toggleViewAction());
-  _stageDockWidget->setObjectName("_stageDockWidget");
+  _vibratomeDockWidget->setObjectName("_vibratomeStateDockWidget");
 
   _vibratomeGeometryDockWidget = new VibratomeGeometryDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_vibratomeGeometryDockWidget);
   viewMenu->addAction(_vibratomeGeometryDockWidget->toggleViewAction());
   _vibratomeGeometryDockWidget->setObjectName("_vibratomeGeometryDockWidget");
+
+  _cutTaskDockWidget = _scope_state_controller.createTaskDockWidget("Cut Cycle",&_dc->cut_task);
+  addDockWidget(Qt::LeftDockWidgetArea,_cutTaskDockWidget);
+  viewMenu->addAction(_cutTaskDockWidget->toggleViewAction());
+  _cutTaskDockWidget->setObjectName("_cutTaskDockWidget");
+
 }
 
 void fetch::ui::MainWindow::createViews()
@@ -325,8 +334,34 @@ void fetch::ui::MainWindow::createViews()
   //_player->start();
 }
 
+int fetch::ui::MainWindow::maybeSave()
+{ 
+  int ret = QMessageBox::warning(this,
+    "Fetch",
+    "Save configuration data before closing?",
+    QMessageBox::Save|QMessageBox::Discard|QMessageBox::Cancel);
+  switch(ret)
+  { 
+  case QMessageBox::Save:
+    saveToAct->trigger();
+    tilingController()->saveDialogAction()->trigger();
+    break;
+  case QMessageBox::Discard:
+    break;
+  case QMessageBox::Cancel:
+  default:
+    return 0;
+  }
+  return 1;
+}
+
 void fetch::ui::MainWindow::closeEvent( QCloseEvent *event )
 { 
+  if(!maybeSave())
+  { event->ignore(); // cancel the close
+    return;
+  }
+
   QMainWindow::closeEvent(event);   // must come before stopVideo
   stopVideo();
   _dc->stage()->delListener(_stageController->listener());
@@ -420,12 +455,9 @@ void
   
     CHKJMP(parser.ParseFromString(cfgfile.readAll().constData(),&cfg),ParseError);
 
-    // commit
-    
+    // commit    
     if(_defered_update)
-      _defered_update->update(cfg);
-    //_dc->set_config_nowait(cfg);  // will deadlock something if not non-blocking, but need to make sure things are attached before GUI updated... hmmm
-    //emit configUpdated();
+      _defered_update->update(cfg); // set_config_nowait won't work here.
   }  
 
   update_active_config_location_(filename);

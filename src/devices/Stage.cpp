@@ -516,7 +516,7 @@ Error:
   
   Vector3z Stage::getPosInLattice()
   { StageTiling::TTransform l2s(_tiling->latticeToStageTransform());
-    Vector3f r(getPos()*1000.0); // convert to um
+    Vector3f r(getTarget()*1000.0); // convert to um
     return Vector3z((l2s.inverse() * r).unaryExpr(std::ptr_fun<float,float>(myroundf)).cast<size_t>());    
   }
 
@@ -598,4 +598,23 @@ Error:
     return eflag;
   }
 
+  int  Stage::setPos(float  x,float  y,float  z)
+  {
+    int out = _istage->setPos(x,y,z);
+    _config->mutable_last_target_mm()->set_x(x);
+    _config->mutable_last_target_mm()->set_y(y);
+    _config->mutable_last_target_mm()->set_z(z);
+    _notifyMoved(); 
+    return out;
+  }
+
+  void Stage::setPosNoWait(float  x,float  y,float  z)
+  { Config c = get_config();
+    c.mutable_last_target_mm()->set_x(x);
+    c.mutable_last_target_mm()->set_y(y);
+    c.mutable_last_target_mm()->set_z(z);
+    set_config_nowait(c);
+    _istage->setPosNoWait(x,y,z); 
+    _notifyMoved();
+  }
 }} // end anmespace fetch::device

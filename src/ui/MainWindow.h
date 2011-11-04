@@ -49,6 +49,8 @@ protected slots:
   void startVideo();
   void stopVideo(); 
 
+  int maybeSave();
+
 public: // semi-private
   void createStateMachines();
   void createMenus();
@@ -75,6 +77,7 @@ public: // semi-private
   MicroscopeStateDockWidget    *_microscopesStateDockWidget;
   VibratomeDockWidget          *_vibratomeDockWidget;
   VibratomeGeometryDockWidget  *_vibratomeGeometryDockWidget;
+  QDockWidget                  *_cutTaskDockWidget;
   StageDockWidget              *_stageDockWidget;
   Figure                       *_display;
   IPlayerThread                *_player;
@@ -105,6 +108,7 @@ public: // semi-private
   StageVelXController          *_stage_vel_x_control;
   StageVelYController          *_stage_vel_y_control;
   StageVelZController          *_stage_vel_z_control;
+  FOVOverlapZController        *_fov_overlap_z_controller;
 
   QFileSystemWatcher           *_config_watcher;
 
@@ -158,6 +162,8 @@ class FileSeriesNameDisplay : public QLabel
 
 namespace internal
 {
+  // Helper that updates the microscope config from another thread (so GUI thread won't block)
+  // then notifies the GUI when it's done.  See: MainWindow::openMicroscopeConfig
   class mainwindow_defered_update : public QThread
   { 
     Q_OBJECT

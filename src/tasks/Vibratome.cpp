@@ -35,7 +35,7 @@ namespace microscope {
   {
     // validate
     float cx,cy,cz,ax,ay,bx,by;
-    dc->stage()->getPos(&cx,&cy,&cz);    
+    dc->stage()->getTarget(&cx,&cy,&cz);    
     dc->vibratome()->feed_begin_pos_mm(&ax,&ay);
     dc->vibratome()->feed_end_pos_mm(&bx,&by);
 
@@ -71,31 +71,41 @@ namespace microscope {
     goto Error;     \
   }
 
+  /* MOTION               
+     ======                            (c*)<-- New Image Plane -----
+     In-Plane:  (c)        Vertical:                               |
+                / ^                    (c) Old Image Plane         | dz
+               /   \                    |                          |
+              /     \                dz |(a)--------------------->(b) 
+            (a)--->(b)                  |_| thick    ___ Knife             
+                Cut
+  */
   unsigned int Cut::run(device::Microscope* dc)
   {     
-    float cx,cy,cz,vx,vy,vz,ax,ay,bx,by,v,dz;
+    float cx,cy,cz,vx,vy,vz,ax,ay,bx,by,v,dz,thick;
     // get current pos,vel
-    CHK( dc->stage()->getPos(&cx,&cy,&cz));
+    CHK( dc->stage()->getTarget(&cx,&cy,&cz));
     CHK( dc->stage()->getVelocity(&vx,&vy,&vz));
     
     // Get parameters    
     dc->vibratome()->feed_begin_pos_mm(&ax,&ay);
     dc->vibratome()->feed_end_pos_mm(&bx,&by);
-    CHK( dz = dc->vibratome()->verticalOffset());
-    CHK( v = dc->vibratome()->feed_vel_mm_p_s());
+    thick = dc->vibratome()->thickness_um()*0.001; // um->mm
+    CHK( fabs(dz = dc->vibratome()->verticalOffset())>0.0); // must be non-zero magnitude
+    CHK(     (v = dc->vibratome()->feed_vel_mm_p_s())>0.0); // must be non-zero
     
     // Move to the start of the cut
-    CHK( dc->stage()->setPos(ax,ay,cz-dz));
+    CHK( dc->stage()->setPos(ax,ay,cz-dz+thick));
     
     // do the cut
-    CHK( dc->vibratome()->start());    // retunrs 1 on success
+    CHK( dc->vibratome()->start());    // returns 1 on success
     CHK( dc->stage()->setVelocity(v));
     CHK( dc->stage()->setPos(bx,by,cz-dz));
     CHK( dc->stage()->setVelocity(vx,vy,vz));
     CHK( dc->vibratome()->stop());
     
     // Move back
-    CHK( dc->stage()->setPos(cx,cy,cz));
+    CHK( dc->stage()->setPos(cx,cy,cz+thick));
     
     return 1;
 Error:

@@ -314,6 +314,71 @@ ESCAN:
       return (sts!=1); // returns 1 on fail and 0 on success
     }
 
+#define TRY(e) \
+    if(!(e))                                         \
+    do { warning("Expression evalutated as false"ENDL \
+              "\t%s(%d)"ENDL                         \
+              "\t%s"ENDL,                            \
+              __FILE__,__LINE__,#e);                 \
+      goto Error;                                    \
+    } while(0)
+
+    int Microscope::updateFovFromStackDepth(int nowait)
+    { Config c = get_config();
+      float s,t;
+      f64 ummin,ummax,umstep;
+      scanner._zpiezo.getScanRange(&ummin,&ummax,&umstep);
+      s = scanner.zpiezo()->getMax() - scanner.zpiezo()->getMin();
+      t = vibratome()->thickness_um();
+      c.mutable_fov()->set_z_size_um( s );
+      c.mutable_fov()->set_z_overlap_um( s-t );
+      if(nowait)
+        TRY( set_config_nowait(c) );
+      else
+        set_config(c);
+
+      return (s-t)>0.0;
+Error:
+      return 0;
+    }
+
+    int Microscope::updateStackDepthFromFov(int nowait)
+    { Config c = get_config();
+      float s,t,o;      
+      o = c.fov().z_overlap_um();
+      t = vibratome()->thickness_um(); 
+      s = t+o;      
+
+      // Awkward:
+      // - Ideally, the ZPiezo class would be designed better so we wouldn't 
+      //   have to do this.  But we don't have to do this too often, so 
+      //   I'm not refactoring ZPiezo yet.
+      // - Really, I want one big atomic update of the microscope state.
+      //   and I'll get it this way.
+      cfg::device::ZPiezo *z = c.mutable_scanner3d()->mutable_zpiezo();
+      switch(z->kind())
+      { case cfg::device::ZPiezo_ZPiezoType_Simulated:
+          z->mutable_simulated()->set_um_min(0.0);
+          z->mutable_simulated()->set_um_max(s);
+          break;
+        case cfg::device::ZPiezo_ZPiezoType_NIDAQ:
+          z->mutable_nidaq()->set_um_min(0.0);
+          z->mutable_nidaq()->set_um_max(s);
+          break;
+        default:
+          UNREACHABLE;
+      }            
+      c.mutable_fov()->set_z_size_um( s );
+      if(nowait)
+        TRY( set_config_nowait(c) );
+      else
+        set_config(c);
+
+      return (s-t)>0.0;
+Error:
+      return 0;
+    }
+
     ///////////////////////////////////////////////////////////////////////
     // FileSeries
     ///////////////////////////////////////////////////////////////////////

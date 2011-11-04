@@ -147,6 +147,9 @@ namespace fetch
       inline Stage*           stage()    {return &stage_;}
       inline Vibratome*   vibratome()    {return &vibratome_;}
 
+      int updateFovFromStackDepth(int nowait=0);  // These also account for cut thickness, returns 0 if overlap is not positive.
+      int updateStackDepthFromFov(int nowait=0);
+
     public:
       FileSeries file_series;
 
