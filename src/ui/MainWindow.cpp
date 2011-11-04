@@ -96,6 +96,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,_videoAcquisitionDockWidget(0)
   ,_microscopesStateDockWidget(0)
   ,_vibratomeDockWidget(0)
+  ,_cutTaskDockWidget(0)
   ,_stageDockWidget(0)
   ,_display(0)
   ,_player(0)
@@ -311,6 +312,12 @@ void fetch::ui::MainWindow::createDockWidgets()
   addDockWidget(Qt::LeftDockWidgetArea,_vibratomeGeometryDockWidget);
   viewMenu->addAction(_vibratomeGeometryDockWidget->toggleViewAction());
   _vibratomeGeometryDockWidget->setObjectName("_vibratomeGeometryDockWidget");
+
+  _cutTaskDockWidget = _scope_state_controller.createTaskDockWidget("Cut Cycle",&_dc->cut_task);
+  addDockWidget(Qt::LeftDockWidgetArea,_cutTaskDockWidget);
+  viewMenu->addAction(_cutTaskDockWidget->toggleViewAction());
+  _cutTaskDockWidget->setObjectName("_cutTaskDockWidget");
+
 }
 
 void fetch::ui::MainWindow::createViews()

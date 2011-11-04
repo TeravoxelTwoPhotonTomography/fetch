@@ -103,8 +103,8 @@ namespace device {
       SimulatedStage(Agent *agent);
       SimulatedStage(Agent *agent, Config *cfg);  
 
-      virtual unsigned int on_attach() {/**TODO**/TODO_WRN; return 0;}
-      virtual unsigned int on_detach() {/**TODO**/TODO_WRN; return 0;}
+      virtual unsigned int on_attach() {/**TODO**/return 0;}
+      virtual unsigned int on_detach() {/**TODO**/return 0;}
 
       virtual int  getTravel         ( StageTravel* out);
       virtual int  getVelocity       ( float *vx, float *vy, float *vz);

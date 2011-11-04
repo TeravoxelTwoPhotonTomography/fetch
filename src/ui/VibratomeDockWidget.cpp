@@ -31,7 +31,7 @@ namespace ui {
 
     { QHBoxLayout *row = new QHBoxLayout();
       QPushButton *b;
-      b = new QPushButton("Use current stage location as cut origin",this);
+      b = new QPushButton("Set cut origin",this);
       connect(b,SIGNAL(clicked()),this,SLOT(setCutPosToCurrent()));
       row->addWidget(b);
       b = new QPushButton("Move to cut origin",this);
@@ -58,8 +58,8 @@ namespace ui {
 
     form->addRow(row);
 
-    AgentControllerButtonPanel *btns = new AgentControllerButtonPanel(&parent->_scope_state_controller,&dc->cut_task);
-    form->addRow(btns);    
+    //AgentControllerButtonPanel *btns = new AgentControllerButtonPanel(&parent->_scope_state_controller,&dc->cut_task);
+    //form->addRow(btns);    
 
     connect(this,SIGNAL(configUpdated()),parent,SIGNAL(configUpdated()));
   }

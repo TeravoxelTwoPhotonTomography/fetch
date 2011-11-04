@@ -77,6 +77,7 @@ public: // semi-private
   MicroscopeStateDockWidget    *_microscopesStateDockWidget;
   VibratomeDockWidget          *_vibratomeDockWidget;
   VibratomeGeometryDockWidget  *_vibratomeGeometryDockWidget;
+  QDockWidget                  *_cutTaskDockWidget;
   StageDockWidget              *_stageDockWidget;
   Figure                       *_display;
   IPlayerThread                *_player;
