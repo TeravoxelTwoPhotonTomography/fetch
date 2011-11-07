@@ -82,10 +82,16 @@ namespace task {
       mylib::castFetchFrameToDummyArray(&out,fdst,odims);
       
       //REMIND( mylib::Write_Image("ResonantUnwarp_in.tif",&in,mylib::DONT_PRESS) );
-#ifdef HAVE_CUDA
-      CHK( unwarp_gpu(&out,&in,duty),Error);
+#ifdef HAVE_CUDA 
+      { TicTocTimer t = tic();
+        CHK( unwarp_gpu(&out,&in,duty),Error);
+        debug("%s(%d):"ENDL"\tunwarp_gpu takes %f ms.",__FILE__,__LINE__,1000.0*toc(&t));
+      }
 #else
-      CHK( unwarp_cpu(&out,&in,duty),Error);
+      { TicTocTimer t = tic();
+        CHK( unwarp_cpu(&out,&in,duty),Error);
+        debug("%s(%d):"ENDL"\tunwarp_cpu takes %f ms.",__FILE__,__LINE__,1000.0*toc(&t));
+      }
 #endif
       //REMIND( mylib::Write_Image("ResonantUnwarp_out.tif",&out,mylib::DONT_PRESS) );
 

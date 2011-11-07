@@ -249,7 +249,9 @@ source_group("Source Files\\Qt Generated" FILES
 # Executable
 #
 
-cuda_compile(FETCH_ALGO_CUDA_OUT STATIC ${FETCH_ALGO_CUDA} OPTIONS -arch=sm_20)
+#cuda_compile(FETCH_ALGO_CUDA_OUT STATIC ${FETCH_ALGO_CUDA} OPTIONS -arch=sm_20)
+cuda_compile(FETCH_ALGO_CUDA_OUT STATIC ${FETCH_ALGO_CUDA})
+
 # FETCH_SRCS is used below and by testing framework
 set(FETCH_SRCS
   ${PROTO_FILES}

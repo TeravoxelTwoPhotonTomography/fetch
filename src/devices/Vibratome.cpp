@@ -202,7 +202,7 @@ Error:
   { debug("Vibratome: stop"ENDL);
     return STOP();
   }
-
+                        
   ///// SERIAL COMMANDS
 
   int SerialControlVibratome::_write(const char *buf, int n)
