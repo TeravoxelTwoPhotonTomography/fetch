@@ -91,8 +91,8 @@ namespace microscope {
     dc->vibratome()->feed_begin_pos_mm(&ax,&ay);
     dc->vibratome()->feed_end_pos_mm(&bx,&by);
     thick = dc->vibratome()->thickness_um()*0.001; // um->mm
-    CHK( fabs(dz = dc->vibratome()->verticalOffset())>0.0); // must be non-zero magnitude
-    CHK(     (v = dc->vibratome()->feed_vel_mm_p_s())>0.0); // must be non-zero
+    dz = dc->vibratome()->verticalOffset();
+    CHK( (v = dc->vibratome()->feed_vel_mm_p_s())>0.0); // must be non-zero
     
     // Move to the start of the cut
     CHK( dc->stage()->setPos(ax,ay,cz-dz+thick));
