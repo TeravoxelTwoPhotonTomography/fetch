@@ -410,21 +410,28 @@ void ImItem::_autoscale(mylib::Array *data, GLuint ichannel, float percent)
     return;
   }
   mylib::Array *t = Convert_Image(data,mylib::PLAIN_KIND,mylib::FLOAT32_TYPE,32);  
-  c = *t;
-  if(mylib::UINT64_TYPE<data->type && data->type<=mylib::INT64_TYPE)
-    mylib::Scale_Array(&c,0.5,1.0); // 0.5*(x+1.0) 
+  c = *t;    // For Get_Array_Plane 
+  if(mylib::UINT64_TYPE<data->type && data->type<=mylib::INT64_TYPE)  // if signed integer type
+    mylib::Scale_Array(&c,0.5,1.0);                                   //    x = 0.5*(x+1.0) 
   mylib::Get_Array_Plane(&c,(mylib::Dimn_Type)ichannel);
   
+
   //mylib::Write_Image("ImItem_autoscale_input.tif",data,mylib::DONT_PRESS);
   //mylib::Write_Image("ImItem_autoscale_channel_float.tif",&c,mylib::DONT_PRESS);
+
   
   float max,min,m,b;
   mylib::Range_Bundle range;
+#if 0
+  /* This here in case existing colormapping scheme
+     didn't result in enough dynamic range.
+  */
   mylib::Array_Range(&range,t);  // min max of entire array
   max = range.maxval.fval;
   min = range.minval.fval;  
   _gain = 1.0f/(max-min);
   _bias = min/(min-max);
+#endif
 
   mylib::Array_Range(&range,&c); // min max of single channel  
   mylib::Free_Array(t);

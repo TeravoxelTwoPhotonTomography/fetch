@@ -92,7 +92,8 @@ namespace task {
       mylib::castFetchFrameToDummyArray(&out,fdst,odims);
       
       //REMIND( mylib::Write_Image("ResonantUnwarp_in.tif",&in,mylib::DONT_PRESS) );
-#ifdef HAVE_CUDA 
+//#ifdef HAVE_CUDA 
+#if 0
       PROFILE(CHK( unwarp_gpu(&out,&in,duty),Error),"Unwarp GPU");
 #else
       PROFILE(CHK( unwarp_cpu(&out,&in,duty),Error),"Unwarp CPU");      

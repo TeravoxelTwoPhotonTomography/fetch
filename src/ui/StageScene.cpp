@@ -1,6 +1,7 @@
 #include <QtGui>
 #include <QtDebug>
 #include "StageScene.h"
+#include "common.h"
 
 #define _HERE_ "[STAGESCENE] At " << __FILE__ << "("<<__LINE__<<")\n"
 #define HERE qDebug() << _HERE_;
@@ -54,6 +55,8 @@ QColor SelectionRectGraphicsWidget::getBaseColor()
     return Qt::green;
   case Remove:
     return Qt::red;
+  default:
+    UNREACHABLE;
   }
 }
 
