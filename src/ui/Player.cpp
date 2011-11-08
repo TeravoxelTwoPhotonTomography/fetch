@@ -69,11 +69,14 @@ void AsynqPlayer::run()
   mylib::Array im;
   mylib::Dimn_Type dims[3];
   Chan *reader = Chan_Open(in_,CHAN_PEEK);
+  TicTocTimer t = tic();
   running_ = 1;
   // Notes: o Peek copies from current data into frame buffer.
   //        o Peek might realloc the input frame buffer.
   while(running())
-  {
+  { float wait = 1000.0/60.0 - toc(&t)*1000.0; // in ms
+    if(wait>0)
+      Sleep(wait);
     if(CHAN_SUCCESS( Chan_Peek_Timed(reader,(void**)&buf,nbytes,peek_timeout_ms_) ))
     { nbytes = buf->size_bytes();
       buf->format(buf);                                                    // resets the data pointer  - super gross and icky

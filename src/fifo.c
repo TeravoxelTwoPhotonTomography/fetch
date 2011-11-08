@@ -15,7 +15,7 @@
 
 void fifo_breakme() {}
 // warnings
-#if 1
+#if 0
 #define DEBUG_RING_FIFO_WARN_RESIZE_ON_PUSH  fifo_warning("Resized on push: *pbuf was smaller than nominal token buffer size. (%Iu < %Iu)\r\n",sz,self->buffer_size_bytes); fifo_breakme()
 #define DEBUG_RING_FIFO_WARN_RESIZE_ON_PEEK  fifo_warning("Resized on peek: *pbuf was smaller than nominal token buffer size. (%Iu < %Iu)\r\n",sz,self->buffer_size_bytes); fifo_breakme()
 #else

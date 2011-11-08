@@ -32,7 +32,9 @@ using namespace units;
 
 ImItem::ImItem()
 : _fill(1.0),
-_text("Nothing to see here :/"),
+  _gain(1.0),
+  _bias(0.0),
+  _text("Nothing to see here :/"),
   _hQuadDisplayList(0),
   _hTexture(0),
   _bbox_um(),
@@ -43,7 +45,7 @@ _text("Nothing to see here :/"),
   _selected_channel(0),
   _show_mode(0),
   _nchan(3),
-  _cmap_ctrl_count(256),
+  _cmap_ctrl_count(1<<12),
   _cmap_ctrl_last_size(0),
   _cmap_ctrl_s(NULL),
   _cmap_ctrl_t(NULL)
@@ -120,8 +122,8 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     _shader.setUniformValue("tctrl",3);
     _shader.setUniformValue("nchan",(GLfloat)_nchan);
     _shader.setUniformValue("fill",(GLfloat)_fill);
-    _shader.setUniformValue("gain",(GLfloat)1.0  );
-    _shader.setUniformValue("bias",(GLfloat)0.0  );    
+    _shader.setUniformValue("gain",(GLfloat)_gain  );
+    _shader.setUniformValue("bias",(GLfloat)_bias  );    
     _shader.setUniformValue("show_mode",(GLint)(_show_mode%4));    
     checkGLError();
     //glPushMatrix();
@@ -414,18 +416,23 @@ void ImItem::_autoscale(mylib::Array *data, GLuint ichannel, float percent)
   mylib::Get_Array_Plane(&c,(mylib::Dimn_Type)ichannel);
   
   //mylib::Write_Image("ImItem_autoscale_input.tif",data,mylib::DONT_PRESS);
-  //mylib::Write_Image("ImItem_autoscale_channel_flost.tif",&c,mylib::DONT_PRESS);
+  //mylib::Write_Image("ImItem_autoscale_channel_float.tif",&c,mylib::DONT_PRESS);
   
   float max,min,m,b;
   mylib::Range_Bundle range;
-  mylib::Array_Range(&range,&c);
-  
-  mylib::Free_Array(t);
+  mylib::Array_Range(&range,t);  // min max of entire array
   max = range.maxval.fval;
   min = range.minval.fval;  
+  _gain = 1.0f/(max-min);
+  _bias = min/(min-max);
+
+  mylib::Array_Range(&range,&c); // min max of single channel  
+  mylib::Free_Array(t);
+  max = _gain*range.maxval.fval+_bias; // adjust for gain and bias
+  min = _gain*range.minval.fval+_bias;  
   m = 1.0f/(max-min);
   b = min/(min-max);
-  
+                   
   for(GLuint i=0;i<_cmap_ctrl_count;++i)
   { float x = i/(_cmap_ctrl_count-1.0f);
     _cmap_ctrl_t[ichannel*_cmap_ctrl_count+i] = m*x+b; // upload to gpu will clamp to [0,1]

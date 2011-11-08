@@ -23,6 +23,16 @@ namespace mylib {
 
 using namespace fetch::worker;
 
+#if 0
+#define PROFILE(expr,msg) \
+      do { TicTocTimer t = tic(); \
+        expr; \
+        debug("%s(%d):"ENDL"\tProfiling %s"ENDL"\t%s takes %f ms.",__FILE__,__LINE__,#expr,msg,1000.0*toc(&t)); \
+      } while(0) 
+#else
+#define PROFILE(expr,msg) expr
+#endif
+
 #define ASRT(expr) \
   if(!(expr)) \
   { error("%s(%d)" ENDL "\tExpression evaluated as False." ENDL "\t%s" ENDL, __FILE__,__LINE__,#expr); \
@@ -83,15 +93,9 @@ namespace task {
       
       //REMIND( mylib::Write_Image("ResonantUnwarp_in.tif",&in,mylib::DONT_PRESS) );
 #ifdef HAVE_CUDA 
-      { TicTocTimer t = tic();
-        CHK( unwarp_gpu(&out,&in,duty),Error);
-        debug("%s(%d):"ENDL"\tunwarp_gpu takes %f ms.",__FILE__,__LINE__,1000.0*toc(&t));
-      }
+      PROFILE(CHK( unwarp_gpu(&out,&in,duty),Error),"Unwarp GPU");
 #else
-      { TicTocTimer t = tic();
-        CHK( unwarp_cpu(&out,&in,duty),Error);
-        debug("%s(%d):"ENDL"\tunwarp_cpu takes %f ms.",__FILE__,__LINE__,1000.0*toc(&t));
-      }
+      PROFILE(CHK( unwarp_cpu(&out,&in,duty),Error),"Unwarp CPU");      
 #endif
       //REMIND( mylib::Write_Image("ResonantUnwarp_out.tif",&out,mylib::DONT_PRESS) );
 

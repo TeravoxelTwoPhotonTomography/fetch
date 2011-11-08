@@ -42,6 +42,8 @@ protected:
   void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *e);
 
   float _fill;
+  float _gain;
+  float _bias;
   
   QGraphicsSimpleTextItem _text;
   GLuint _hQuadDisplayList;

@@ -45,7 +45,7 @@ void main(void)
     if( (nchan-1.0)<1e-2 ) // nchan==1
     { 
       vec4 v    = texture(plane,uvw);             //luma
-      v.x       = gain*v.x - bias;                //adjust instensity
+      v.x       = gain*v.x + bias;                //adjust instensity
       v.x       = texture(tctrl,vec2(v.x,0.0)).x; //use the lookup from the first channel
       
       //vec4 c  = texture(cmap,vec2(1.0,v.x));  //cmap (sample along vertical)
