@@ -34,6 +34,12 @@ void chan_breakme() {}
 #define DEBUG_REQUEST_STORAGE
 #endif
 
+#if 0
+#define DEBUG_SHOW_REFS chan_debug("%s(%d) - Refs: %d"ENDL,__FILE__,__LINE__,c->q->ref_count)
+#else
+#define DEBUG_SHOW_REFS
+#endif
+
 #define CHAN_ERR__INVALID_MODE chan_error("Error: At %s(%d)"ENDL \
                                           "\tChannel has invalid read/write mode."ENDL, \
                                           __FILE__,__LINE__)
@@ -131,7 +137,7 @@ chan_t* incref(chan_t *c)
   ++(c->q->ref_count);
   goto_if_not(n=malloc(sizeof(chan_t)),ErrorAlloc);
   memcpy(n,c,sizeof(chan_t));
-  chan_debug("Refs: %d"ENDL,c->q->ref_count);
+  DEBUG_SHOW_REFS;
   Condition_Notify_All(&c->q->changedRefCount);
   return n;
 ErrorAlloc:
@@ -149,7 +155,7 @@ void decref(chan_t **pc)
   Chan_Assert(c);
   Mutex_Lock(&c->q->lock);
   remaining = --(c->q->ref_count);
-  chan_debug("Refs: %d"ENDL,c->q->ref_count);
+  DEBUG_SHOW_REFS;
   Mutex_Unlock(&c->q->lock);
   Chan_Assert(remaining>=0);
   if(remaining==0)
@@ -196,7 +202,7 @@ int Chan_Close( Chan *self_ )
   int notify=0;
   if(!self)
   {
-    CHAN_WRN__NULL_ARG(self);
+    //CHAN_WRN__NULL_ARG(self);
     return SUCCESS;
   }
   Mutex_Lock(&self->q->lock);
@@ -284,10 +290,10 @@ inline int _pop_bypass_wait(__chan_t *q)
 }
 
 unsigned int chan_pop__locked(__chan_t *q, void **pbuf, size_t sz, unsigned timeout_ms)
-{ int starved;
+{ //int starved;
   while(Fifo_Is_Empty(q->fifo) && !_pop_bypass_wait(q))
     Condition_Wait(&q->notempty,&q->lock); // TODO: use timed wait?
-  starved = Fifo_Is_Empty(q->fifo) && q->nwriters==0;
+  //starved = Fifo_Is_Empty(q->fifo) && q->nwriters==0;
   if(FIFO_SUCCESS(Fifo_Pop(q->fifo,pbuf,sz)))
     return SUCCESS;
   return FAILURE;
@@ -299,10 +305,10 @@ inline int _peek_bypass_wait(__chan_t *q)
 }
 
 unsigned int chan_peek__locked(__chan_t *q, void **pbuf, size_t sz, unsigned timeout_ms)
-{ int starved;
+{ //int starved;
   while(Fifo_Is_Empty(q->fifo) && !_peek_bypass_wait(q))
     Condition_Wait(&q->notempty,&q->lock); // TODO:!! use timed wait
-  starved = Fifo_Is_Empty(q->fifo) && q->nwriters==0;
+  //starved = Fifo_Is_Empty(q->fifo) && q->nwriters==0;
   if(FIFO_SUCCESS(Fifo_Peek(q->fifo,pbuf,sz)))
     return SUCCESS;
   return FAILURE;
@@ -346,9 +352,9 @@ unsigned int chan_pop(chan_t *self, void **pbuf, size_t sz, int copy, unsigned t
       memcpy(*pbuf,q->workspace,sz);
     } else
       goto_if(CHAN_FAILURE(chan_pop__locked(q,pbuf,sz,timeout_ms)),NoPop);
-  }
-  Mutex_Unlock(&self->q->lock);
+  }            
   Condition_Notify(&self->q->notfull);
+  Mutex_Unlock(&self->q->lock);
   return SUCCESS;
 NoPop:
   Mutex_Unlock(&self->q->lock);
