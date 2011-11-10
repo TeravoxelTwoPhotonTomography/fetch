@@ -84,7 +84,7 @@ namespace fetch
           { 
           case 0:       // in this case, the scanner thread stopped.  Nothing left to do.
             eflag |= 0; // success
-            break; 
+            //break; 
           case 1:       // in this case, the stop event triggered and must be propagated.
             eflag |= (dc->__scan_agent.stop() != 1);
             break;
