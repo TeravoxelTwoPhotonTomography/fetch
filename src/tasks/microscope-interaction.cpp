@@ -67,7 +67,7 @@ namespace fetch
         eflag |=  dc->runPipeline();       
         eflag |= (dc->__scan_agent.run()!=1);
 
-        Chan_Wait_For_Writer_Count(dc->__scan_agent._owner->_out->contents[0],1);
+        //Chan_Wait_For_Writer_Count(dc->__scan_agent._owner->_out->contents[0],1);
 
         { 
           HANDLE hs[] = {
