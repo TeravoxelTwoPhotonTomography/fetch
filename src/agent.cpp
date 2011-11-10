@@ -196,9 +196,16 @@ namespace fetch
       return sts;
     }
 
+#define TRY(expr,lbl) \
+    if(!expr) \
+    { warning("%s(%d): %s"ENDL"\t%s"ENDL"\tExpression evaluated to false."ENDL,__FILE__,__LINE__,#lbl,#expr); \
+      goto lbl; \
+    }
+
     unsigned int Agent::arm(Task *task, IDevice *dc, DWORD timeout_ms)
     { Guarded_Assert(dc->_agent==this);
-      this->lock(); // Source state can not be "armed" or "running"
+      lock(); // Source state can not be "armed" or "running"
+      TRY(!is_running()&&!is_armed(),Error);
       if(!_request_available_unlocked(0/*is try*/, timeout_ms))// Blocks till agent is available
       {
         warning("[%s] Agent unavailable.  Perhaps another task is running?\r\n\tAborting attempt to arm.\r\n",name());
@@ -217,14 +224,14 @@ namespace fetch
         dc,                 // arguments
         CREATE_SUSPENDED,   // don't start yet
         NULL )); // don't worry about the thread id
-      this->_task = task; // save the task - this also indicates the agent is armed
-      this->unlock();
+      _task = task; // save the task - this also indicates the agent is armed
+      unlock();
       DBG_ARMED;
       return 0;
 Error:             
-      this->_is_available = 1;
-      this->_task = NULL;
-      this->unlock();
+      _is_available = 1;
+      _task = NULL;
+      unlock();
       return 1;
     }
 
