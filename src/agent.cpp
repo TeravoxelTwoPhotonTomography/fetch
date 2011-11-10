@@ -12,6 +12,22 @@
 #define LOCKDBG(...)
 #endif
 
+#if 1
+#define DBG_RUN      DBG("Run:    %20s 0x%p"ENDL                               \
+                         "        [thread %04d] (sts %d)"ENDL                  \
+                         "        in 0x%p  out 0x%p"ENDL,                      \
+                        name(),this,GetThreadId(_thread), sts,                 \
+                        (_owner->_in )?Chan_Id(_owner->_in->contents[0]):NULL, \
+                        (_owner->_out)?Chan_Id(_owner->_out->contents[0]):NULL)
+#define DBG_STOP     DBG("Stop     %20s 0x%p"ENDL,name(), this)
+#define DBG_ARMED    DBG("Armed    %20s 0x%p"ENDL,name(), this)
+#define DBG_DISARMED DBG("Disarmed %20s 0x%p"ENDL,name(), this)
+#define DBG_ATTACHED DBG("Attached %20s 0x%p"ENDL,name(), this)
+#define DBG_DETACHED DBG("Detached %20s 0x%p"ENDL,name(), this)
+#else
+#define DBG_ARMED
+#endif
+
 namespace fetch
 {
     TYPE_VECTOR_DEFINE( PCHAN );
@@ -203,7 +219,7 @@ namespace fetch
         NULL )); // don't worry about the thread id
       this->_task = task; // save the task - this also indicates the agent is armed
       this->unlock();
-      DBG("Armed %s 0x%p\r\n",name(), this);
+      DBG_ARMED;
       return 0;
 Error:             
       this->_is_available = 1;
@@ -276,7 +292,7 @@ Error:
       this->set_available();
       sts &= _owner->on_disarm();
       this->unlock();
-      DBG("Disarmed %20s 0x%p\r\n",name(), this);
+      DBG_DISARMED;      
       return sts;
     }
     
@@ -364,11 +380,8 @@ Error:
           "[%s] Attempted to run an unarmed or already running Agent.\r\n"
           "\tAborting the run attempt.\r\n",name());
       }
-      DBG("Agent Run: [thread %04d] 0x%p (sts %d) >>> %s\r\n"
-          "           in 0x%p  out 0x%p\r\n", 
-          GetThreadId(_thread), this, sts, name(),
-            (_owner->_in )?Chan_Id(_owner->_in->contents[0]):NULL,
-            (_owner->_out)?Chan_Id(_owner->_out->contents[0]):NULL);
+      DBG_RUN;
+
       this->unlock();
       return sts;
     }
@@ -436,8 +449,8 @@ Error:
           lock();
           // Handle a timeout on the wait.  
           if( !_handle_wait_for_result(res, "Agent stop: Wait for thread."))
-          { warning("[5s] Timed out waiting for task thread (%d) to stop.  Forcing termination.\r\n",name(), GetThreadId(_thread));
-            Guarded_Assert_WinErr(TerminateThread(_thread,127)); // Force the thread to stop
+          { Guarded_Assert_WinErr__NoPanic(TerminateThread(_thread,127)); // Force the thread to stop
+            error("[%s] Timed out waiting for task thread (%d) to stop.  Forcing termination.\r\n",name(), GetThreadId(_thread));            
           }  
           CloseHandle(_thread);
           _thread = INVALID_HANDLE_VALUE;
@@ -451,7 +464,7 @@ Error:
         }
       }
       unlock();
-      DBG("Agent: [x] Stopped %s 0x%p\r\n",name(), this);
+      DBG_STOP;      
       return 1;
     }
 
@@ -533,6 +546,7 @@ Error:
     else
       warning("[%s] Agent's owner did not attach properly."ENDL"\tFile: %s (%d)"ENDL,name(),__FILE__,__LINE__);
     unlock();
+    DBG_ATTACHED;
     return sts;
   }
 
@@ -548,6 +562,7 @@ Error:
     sts = _owner->on_detach();
     _is_available=0;
     unlock();
+    DBG_DETACHED;
     return sts;
   }
 

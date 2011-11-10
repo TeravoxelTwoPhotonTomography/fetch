@@ -121,6 +121,11 @@ namespace fetch
     { Guarded_Assert_WinErr__NoPanic(CloseHandle(_notify_out_of_bounds_update));      
     }
 
+    float
+    ResonantWrapAgent::turn()
+    { return get_config().turn_px();
+    }
+
     void
     ResonantWrapAgent::setTurn(float turn)
     { 

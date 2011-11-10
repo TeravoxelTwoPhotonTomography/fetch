@@ -309,7 +309,8 @@ unsigned int
 Fifo_Pop( Fifo *self_, void **pbuf, size_t sz)
 { Fifo_ *self = (Fifo_*)self_;
   fifo_debug("- head: %-5d tail: %-5d size: %-5d\r\n",self->head, self->tail, self->head - self->tail);
-  return_val_if( Fifo_Is_Empty(self), 1);
+  if( Fifo_Is_Empty(self) )
+    return 1;
   if( sz<self->buffer_size_bytes )                          //small arg - police  - resize to larger before swap
     Fifo_Assert(*pbuf = realloc(*pbuf,self->buffer_size_bytes)); //null  arg -         - also handled by this mechanism
   _swap( self, pbuf, self->tail++ );                        //big   arg - ignored

@@ -45,9 +45,9 @@ namespace fetch
 
         ~ResonantWrapAgent();
 
-
-        void setTurn(float turn);
-        int  setTurnNoWait(float turn);
+        float  turn();
+        void   setTurn(float turn);
+        int    setTurnNoWait(float turn);
 
         inline bool isInBounds(void);
         bool waitForOOBUpdate(DWORD timeout_ms); //returns true on out-of-bounds flag update.  Otherwise false (timeouts, abort, etc...)

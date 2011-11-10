@@ -132,7 +132,7 @@ namespace fetch
       { 
         d->onConfigTask();
 
-        debug("Scanner2D configured for Video<%s>\r\n",TypeStr<TPixel>());
+        DBG("Scanner2D configured for Video<%s>\r\n",TypeStr<TPixel>());
         return 1; //success
       }
 
@@ -296,7 +296,7 @@ Error:
         frm = (Frame*)Chan_Token_Buffer_Alloc(qdata);
         ref.format(frm);
 
-        debug("Simulated Video!\r\n");
+        DBG("Simulated Video!\r\n");
         while(!d->get2d()->_agent->is_stopping())
         { size_t pitch[4];
           size_t n[3];

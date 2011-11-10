@@ -20,9 +20,7 @@
  *
  * Notes
  * -----
- * Privately inherits Agent.  The idea is that state manipulation is delegated
- * to construction/destruction.  There doesn't need to be any outside access
- * to state manipulation functions.
+ * Bad name.  Inherits IDevice...should be called a WorkDevice.
  *
  *
  */

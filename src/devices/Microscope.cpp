@@ -304,7 +304,7 @@ ESCAN:
     unsigned int Microscope::stopPipeline()
     { int sts = 1;
       // These should block till channel's empty 
-      sts &= unwarp._agent->stop();
+      sts &= unwarp._agent->stop(/*10000*/);
       sts &= frame_formatter._agent->stop();
       sts &= wrap._agent->stop();
       sts &= cast_to_i16._agent->stop();

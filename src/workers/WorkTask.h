@@ -54,8 +54,14 @@
 #pragma once
 
 #include "WorkAgent.h"
-#include "../task.h"
-#include "../frame.h"
+#include "task.h"
+#include "frame.h"
+
+#define TRY(expr,lbl) \
+  if(!(expr)) \
+    { warning("%s(%d): %s"ENDL"\t%s"ENDL"\tExpression evaluated to false.",__FILE__,__LINE__,#lbl,#expr); \
+      goto lbl; \
+    }
 
 namespace fetch
 {
@@ -91,6 +97,7 @@ namespace fetch
 // Implementation
 //
 
+
     template<typename TMessage>
     unsigned int
     OneToOneWorkTask<TMessage>::run(IDevice *d)
@@ -109,27 +116,16 @@ namespace fetch
         { //debug("In  OneToOneWorkTask::run - just popped\r\n");
           nbytes_in = fsrc->size_bytes();
           fsrc->format(fdst);
-          goto_if_fail(
-            reshape(d,fdst),
-            FormatFunctionFailure);
+          TRY(reshape(d,fdst), FormatFunctionFailure);          
           nbytes_out = fdst->size_bytes();
           if(nbytes_out>Chan_Buffer_Size_Bytes(qdst))
           { Chan_Resize(writer,nbytes_out);
-            goto_if_fail(
-              fdst = (TMessage *) realloc(fdst,nbytes_out),
-              MemoryError
-              );
+            TRY(fdst = (TMessage *) realloc(fdst,nbytes_out),MemoryError);
             fsrc->format(fdst);
-            goto_if_fail(
-              reshape(d,fdst),
-              FormatFunctionFailure);
+            TRY(reshape(d,fdst),FormatFunctionFailure);
           }
-          goto_if_fail(
-            work(d,fdst,fsrc),
-            WorkFunctionFailure);
-          goto_if_fail(
-            CHAN_SUCCESS(Chan_Next(writer,(void**)&fdst, nbytes_out)),
-            OutputQueueTimeoutError);
+          TRY(work(d,fdst,fsrc),WorkFunctionFailure);
+          TRY(CHAN_SUCCESS(Chan_Next(writer,(void**)&fdst, nbytes_out)),OutputQueueTimeoutError);
         }      
 
 Finalize:
@@ -175,13 +171,9 @@ OutputQueueTimeoutError:
       while(CHAN_SUCCESS( Chan_Next(reader,(void**)&fsrc,nbytes_in) )) //!d->_agent->is_stopping() && 
         { //debug("In  OneToOneWorkTask::run - just popped\r\n");
           nbytes_in = fsrc->size_bytes();
-          goto_if_fail(
-            work(d,fsrc),
-            WorkFunctionFailure);                           
+          TRY(work(d,fsrc),WorkFunctionFailure);                           
           nbytes_in = MAX( Chan_Buffer_Size_Bytes(qdst), nbytes_in ); // XXX - awkward
-          goto_if_fail(
-            CHAN_SUCCESS(Chan_Next(writer,(void**)&fsrc, nbytes_in)),            
-            OutputQueueTimeoutError);
+          TRY(CHAN_SUCCESS(Chan_Next(writer,(void**)&fsrc, nbytes_in)),OutputQueueTimeoutError);
         }
       
 
@@ -203,3 +195,4 @@ OutputQueueTimeoutError:
     
   }
 }
+#undef TRY
