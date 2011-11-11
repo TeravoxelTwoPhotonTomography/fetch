@@ -118,13 +118,12 @@ Error:
         Guarded_Assert(dc->__scan_agent.is_runnable());
         //Guarded_Assert(dc->__io_agent.is_running());
 
-        filename = dc->stack_filename(); 
-        
+        dc->transaction_lock();
+        filename = dc->stack_filename();         
         dc->file_series.ensurePathExists();
         eflag |= dc->disk.open(filename,"w");
         if(eflag)
           return eflag;
-
         eflag |= dc->runPipeline();
         eflag |= dc->__scan_agent.run() != 1;
 
@@ -137,7 +136,9 @@ Error:
           int   t;
 
           // wait for scan to complete (or cancel)
+          dc->transaction_unlock();
           res = WaitForMultipleObjects(2,hs,FALSE,INFINITE);
+          dc->transaction_lock();
           t = _handle_wait_for_result(res,"StackAcquisition::run - Wait for scanner to finish.");
           switch(t)
           { case 0:       // in this case, the scanner thread stopped.  Nothing left to do.
@@ -148,17 +149,17 @@ Error:
               break;
             default:      // in this case, there was a timeout or abandoned wait
               eflag |= 1; //failure              
-          }
-          
-          // Output metadata and Increment file
-          eflag |= dc->disk.close();
-          dc->write_stack_metadata();
-          dc->file_series.inc();
-          
-          //dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
-          
+          }    
         }
+          
+        // Output metadata and Increment file
+        eflag |= dc->disk.close();
+        dc->write_stack_metadata();
+        dc->file_series.inc();          
+        //dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
+       
         eflag |= dc->stopPipeline(); // wait till the  pipeline stops
+        dc->transaction_unlock();
         return eflag;
       }
 
