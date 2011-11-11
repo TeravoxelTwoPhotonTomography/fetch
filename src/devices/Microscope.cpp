@@ -291,6 +291,7 @@ ESCAN:
 
     unsigned int Microscope::runPipeline()
     { int sts = 1;                        
+      transaction_lock();
       sts &= unwarp._agent->run();
       sts &= frame_formatter._agent->run();
       sts &= wrap._agent->run();
@@ -298,19 +299,22 @@ ESCAN:
       sts &= inverter._agent->run();
       sts &= frame_averager._agent->run();
       sts &= pixel_averager._agent->run();
+      transaction_unlock();
       return (sts!=1); // returns 1 on fail and 0 on success
     }
     
     unsigned int Microscope::stopPipeline()
     { int sts = 1;
+      transaction_lock();
       // These should block till channel's empty 
-      sts &= unwarp._agent->stop(/*10000*/);
+      sts &= unwarp._agent->stop(2000);
       sts &= frame_formatter._agent->stop();
       sts &= wrap._agent->stop();
       sts &= cast_to_i16._agent->stop();
       sts &= inverter._agent->stop();
       sts &= frame_averager._agent->stop();
       sts &= pixel_averager._agent->stop();      
+      transaction_unlock();
       return (sts!=1); // returns 1 on fail and 0 on success
     }
 

@@ -363,6 +363,7 @@ Error:
         if( this->_thread != INVALID_HANDLE_VALUE )
         { 
           sts = ResumeThread(this->_thread) <= 1; // Thread's already allocated so go!      
+          DBG("Agent Run: ResumeThread id:%d"ENDL,GetThreadId(this->_thread));
         }
         else
         { // Create thread for running the task
@@ -374,12 +375,7 @@ Error:
             0,                  // run immediately
             NULL ));            // don't worry about the thread id
           sts = 1;
-#if 0
-          Guarded_Assert_WinErr(
-            SetThreadPriority( this->thread,
-            THREAD_PRIORITY_TIME_CRITICAL ));
-#endif
-          DBG("Agent Run: Created thread for %s\r\n",name());
+          DBG("Agent Run: Created thread(id:%d) for %s\r\n",GetThreadId(this->_thread),name());
         }
       } else //(then not runnable)
       { 

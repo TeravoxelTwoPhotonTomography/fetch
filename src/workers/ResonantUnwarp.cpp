@@ -135,17 +135,26 @@ namespace worker{
     void
     ResonantUnwarpAgent::
       setDuty(float v)
-    { Config c = get_config();
+    { 
+/* Don't do:                      Don't use this block unless you _know_ the microscope is stopped()
+      Config c = get_config();    keeping it here as a warning
       c.set_duty(v);
       set_config(c);
+*/
+      _config->set_duty(v);       // FIXME: if I were actually changing this on the fly, risk disagreement between task's reshape() and work()
     }
 
     int
     ResonantUnwarpAgent::
       setDutyNoWait(float v)
-    { Config c = get_config();
+    {
+/* Don't do:
+      Config c = get_config();
       c.set_duty(v);
       return set_config_nowait(c);
+*/
+      _config->set_duty(v);
+      return 1; /*success*/
     }
 
 }} // end namespace fetch::worker

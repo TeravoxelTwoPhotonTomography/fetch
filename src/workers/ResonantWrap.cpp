@@ -131,7 +131,7 @@ namespace fetch
     { 
       Config c = get_config();
       c.set_turn_px(turn);
-      set_config(c);
+      set_config(c); // FIXME only ok because the microscope is stopped when this happens
     }
 
     int

@@ -81,7 +81,7 @@ namespace fetch
     class OneToOneWorkTask : public WorkTask
     { public:
                 unsigned int run(IDevice *d);
-        virtual unsigned int work(IDevice *agent, TMessage *dst, TMessage *src) = 0;
+        virtual unsigned int work(IDevice *d, TMessage *dst, TMessage *src) = 0;
         virtual unsigned int reshape(IDevice *d, TMessage *dst) {return 1;}
     };
 

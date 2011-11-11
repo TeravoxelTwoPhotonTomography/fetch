@@ -60,9 +60,10 @@ namespace fetch
       {
         unsigned int eflag = 0; // success
 
-        Guarded_Assert(dc->__scan_agent.is_runnable());
+        Guarded_Assert(dc->__scan_agent.is_runnable());        
         //Guarded_Assert(dc->__io_agent.is_running());
 
+        dc->transaction_lock();
         eflag |= (dc->trash._agent->run()!=1);
         eflag |=  dc->runPipeline();       
         eflag |= (dc->__scan_agent.run()!=1);
@@ -78,7 +79,9 @@ namespace fetch
           int   t;
 
           // wait for scan to complete (or cancel)
+          dc->transaction_unlock();
           res = WaitForMultipleObjects(2,hs,FALSE,INFINITE);
+          dc->transaction_lock();
           t = _handle_wait_for_result(2,res,"Interaction::run - Wait for scanner to finish.");
           switch(t)
           { 
@@ -93,7 +96,7 @@ namespace fetch
           }
           eflag |= dc->stopPipeline(); // wait till the end of the pipeline stops
           eflag |= (dc->trash._agent->stop()!=1);
-
+          dc->transaction_unlock();
         }
         //dc->__scan_agent.disarm();
         return eflag;

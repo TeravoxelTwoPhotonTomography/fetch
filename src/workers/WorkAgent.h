@@ -63,6 +63,9 @@ namespace fetch
     unsigned int on_attach(void);
     unsigned int on_detach(void);
 
+    //virtual void set_config(Config *cfg)        {HERE; IConfigurableDevice<TConfig>::set_config(cfg);}
+    //virtual void set_config(const Config &cfg)  {HERE; IConfigurableDevice<TConfig>::set_config(cfg);}
+
   public: //data
     TWorkTask __task_instance;
     Agent     __agent_instance;

@@ -220,9 +220,9 @@ namespace fetch {
     virtual void _get_config(Config **cfg)        {*cfg=_config;}    // get the pointer
     virtual const Config& _get_config()           {return *_config;} // get a const reference (a snapshot to copy)
 
-  protected:
     inline void transaction_lock();
     inline void transaction_unlock();
+  protected:
     virtual void update();               // This stops a running agent, calls the onUpdate() function, restarting the agent as necessary.
     
 
