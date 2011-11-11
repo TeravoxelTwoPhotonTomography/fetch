@@ -26,6 +26,12 @@ using namespace resonant_correction::wrap;
 
 namespace fetch
 {
+  bool operator==(const cfg::worker::ResonantWrap& a, const cfg::worker::ResonantWrap& b)
+  { return fabs(a.turn_px()-b.turn_px())<1e-3;
+  }
+  bool operator!=(const cfg::worker::ResonantWrap& a, const cfg::worker::ResonantWrap& b)
+  { return !(a==b);
+  }
 
   namespace task
   {

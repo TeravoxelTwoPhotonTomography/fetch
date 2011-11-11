@@ -18,6 +18,14 @@
 namespace fetch
 {
 
+  bool operator==(const cfg::device::NIDAQShutter& a, const cfg::device::NIDAQShutter& b)         {return equals(&a,&b);}
+  bool operator==(const cfg::device::SimulatedShutter& a, const cfg::device::SimulatedShutter& b) {return equals(&a,&b);}
+  bool operator==(const cfg::device::Shutter& a, const cfg::device::Shutter& b)                   {return equals(&a,&b);}
+  bool operator!=(const cfg::device::NIDAQShutter& a, const cfg::device::NIDAQShutter& b)         {return !(a==b);}
+  bool operator!=(const cfg::device::SimulatedShutter& a, const cfg::device::SimulatedShutter& b) {return !(a==b);}
+  bool operator!=(const cfg::device::Shutter& a, const cfg::device::Shutter& b)                   {return !(a==b);}
+
+
   namespace device
   {        
 

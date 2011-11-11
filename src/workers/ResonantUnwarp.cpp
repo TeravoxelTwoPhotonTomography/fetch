@@ -111,6 +111,14 @@ Error:
 //  ResonantUnwarpAgent   //////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 namespace fetch {
+
+  bool operator==(const cfg::worker::ResonantUnwarp& a, const cfg::worker::ResonantUnwarp& b)
+  { return fabs(a.duty()-b.duty())<1e-3;
+  }
+  bool operator!=(const cfg::worker::ResonantUnwarp& a, const cfg::worker::ResonantUnwarp& b)
+  { return !(a==b);
+  }
+
 namespace worker{
 
     ResonantUnwarpAgent::

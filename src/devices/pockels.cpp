@@ -20,6 +20,14 @@
 #define DAQJMP( expr )        goto_if_fail( 0==DAQWRN(expr), Error)
 
 namespace fetch  {
+
+  bool operator==(const cfg::device::NIDAQPockels& a, const cfg::device::NIDAQPockels& b)         {return equals(&a,&b);}
+  bool operator==(const cfg::device::SimulatedPockels& a, const cfg::device::SimulatedPockels& b) {return equals(&a,&b);}
+  bool operator==(const cfg::device::Pockels& a, const cfg::device::Pockels& b)                   {return equals(&a,&b);}
+  bool operator!=(const cfg::device::NIDAQPockels& a, const cfg::device::NIDAQPockels& b)         {return !(a==b);}
+  bool operator!=(const cfg::device::SimulatedPockels& a, const cfg::device::SimulatedPockels& b) {return !(a==b);}
+  bool operator!=(const cfg::device::Pockels& a, const cfg::device::Pockels& b)                   {return !(a==b);}
+
 namespace device {
 
   //

@@ -33,8 +33,11 @@ namespace fetch
 
   } // namespace task
 
-  namespace worker {
+  bool operator==(const cfg::worker::ResonantWrap& a, const cfg::worker::ResonantWrap& b);
+  bool operator!=(const cfg::worker::ResonantWrap& a, const cfg::worker::ResonantWrap& b);
 
+  namespace worker {
+    
     class ResonantWrapAgent:public WorkAgent<task::ResonantWrap,cfg::worker::ResonantWrap>
     {
       public:

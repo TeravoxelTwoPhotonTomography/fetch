@@ -45,7 +45,12 @@
 
 
 namespace fetch
-{ namespace device
+{ 
+
+  bool operator==(const cfg::device::Microscope& a, const cfg::device::Microscope& b);
+  bool operator!=(const cfg::device::Microscope& a, const cfg::device::Microscope& b);
+
+  namespace device
   {
   
 //TODO: move this into it's own header and out of namespace fetch::device (move to fetch::)

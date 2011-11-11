@@ -395,18 +395,20 @@ namespace fetch {
   void IConfigurableDevice<Tcfg>::set_config( const Config& cfg )
   {   
     int run;
-    _agent->lock(); //will generate a recursive lock :(
-    run = _agent->is_running();
-    if(run)      
-      _agent->stop(AGENT_DEFAULT_TIMEOUT); 
+    _agent->lock();
+    if( cfg != _get_config() ) // make sure an update is required - requires != defined for all Tcfg
+    { run = _agent->is_running();
+      if(run)      
+        _agent->stop(AGENT_DEFAULT_TIMEOUT); //will generate a recursive lock :(
 
-    transaction_lock();    
-    _set_config(cfg);    
-    transaction_unlock();
-    update();     
+      transaction_lock();    
+      _set_config(cfg);    
+      transaction_unlock();
+      update();     
 
-    if(run)
-      _agent->run();    
+      if(run)
+        _agent->run();
+    }
     _agent->unlock(); 
   }
 

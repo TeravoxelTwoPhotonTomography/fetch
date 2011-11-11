@@ -42,6 +42,17 @@
 
 namespace fetch
 {
+
+  bool operator==(const cfg::device::NIScopeDigitizer& a, const cfg::device::NIScopeDigitizer& b)         {return equals(&a,&b);}
+  bool operator==(const cfg::device::AlazarDigitizer& a, const cfg::device::AlazarDigitizer& b)           {return equals(&a,&b);}
+  bool operator==(const cfg::device::SimulatedDigitizer& a, const cfg::device::SimulatedDigitizer& b)     {return equals(&a,&b);}
+  bool operator==(const cfg::device::Digitizer& a, const cfg::device::Digitizer& b)                       {return equals(&a,&b);}
+
+  bool operator!=(const cfg::device::NIScopeDigitizer& a, const cfg::device::NIScopeDigitizer& b)         {return !(a==b);}
+  bool operator!=(const cfg::device::AlazarDigitizer& a, const cfg::device::AlazarDigitizer& b)           {return !(a==b);}
+  bool operator!=(const cfg::device::SimulatedDigitizer& a, const cfg::device::SimulatedDigitizer& b)     {return !(a==b);}
+  bool operator!=(const cfg::device::Digitizer& a, const cfg::device::Digitizer& b)                       {return !(a==b);}
+
   namespace device 
   {
     NIScopeDigitizer::NIScopeDigitizer(Agent *agent)

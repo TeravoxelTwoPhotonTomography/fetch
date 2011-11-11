@@ -73,6 +73,15 @@
 namespace fetch
 {
 
+
+  bool operator==(const cfg::device::NIDAQPockels& a, const cfg::device::NIDAQPockels& b)        ;
+  bool operator==(const cfg::device::SimulatedPockels& a, const cfg::device::SimulatedPockels& b);
+  bool operator==(const cfg::device::Pockels& a, const cfg::device::Pockels& b)                  ;
+  bool operator!=(const cfg::device::NIDAQPockels& a, const cfg::device::NIDAQPockels& b)        ;
+  bool operator!=(const cfg::device::SimulatedPockels& a, const cfg::device::SimulatedPockels& b);
+  bool operator!=(const cfg::device::Pockels& a, const cfg::device::Pockels& b)                  ;
+
+
   namespace device
   {
 

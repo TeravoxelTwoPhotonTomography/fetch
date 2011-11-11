@@ -35,12 +35,24 @@
 #include "digitizer.pb.h"
 #include "object.h"
 #include "types.h"
+#include "util\util-protobuf.h"
 
 #define DIGITIZER_BUFFER_NUM_FRAMES       4        // must be a power of two
 #define DIGITIZER_DEFAULT_TIMEOUT         INFINITE // ms
 
 namespace fetch
 {
+
+  bool operator==(const cfg::device::NIScopeDigitizer& a, const cfg::device::NIScopeDigitizer& b)    ;
+  bool operator==(const cfg::device::AlazarDigitizer& a, const cfg::device::AlazarDigitizer& b)      ;
+  bool operator==(const cfg::device::SimulatedDigitizer& a, const cfg::device::SimulatedDigitizer& b);
+  bool operator==(const cfg::device::Digitizer& a, const cfg::device::Digitizer& b)                  ;
+  bool operator!=(const cfg::device::NIScopeDigitizer& a, const cfg::device::NIScopeDigitizer& b)    ;
+  bool operator!=(const cfg::device::AlazarDigitizer& a, const cfg::device::AlazarDigitizer& b)      ;
+  bool operator!=(const cfg::device::SimulatedDigitizer& a, const cfg::device::SimulatedDigitizer& b);
+  bool operator!=(const cfg::device::Digitizer& a, const cfg::device::Digitizer& b)                  ;
+
+
   namespace device
   {
     // IDigitizer

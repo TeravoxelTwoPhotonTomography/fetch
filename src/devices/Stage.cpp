@@ -27,6 +27,15 @@
 #define DAQJMP( expr )        goto_if_fail( 0==DAQWRN(expr), Error)
 
 namespace fetch  {
+
+  bool operator==(const cfg::device::C843StageController& a, const cfg::device::C843StageController& b) {return equals(&a,&b);}
+  bool operator==(const cfg::device::SimulatedStage& a, const cfg::device::SimulatedStage& b)           {return equals(&a,&b);}
+  bool operator==(const cfg::device::Stage& a, const cfg::device::Stage& b)                             {return equals(&a,&b);}
+
+  bool operator!=(const cfg::device::C843StageController& a, const cfg::device::C843StageController& b) {return !(a==b);}
+  bool operator!=(const cfg::device::SimulatedStage& a, const cfg::device::SimulatedStage& b)           {return !(a==b);}
+  bool operator!=(const cfg::device::Stage& a, const cfg::device::Stage& b)                             {return !(a==b);}
+
 namespace device {
 
      

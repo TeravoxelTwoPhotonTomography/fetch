@@ -22,6 +22,13 @@
 namespace fetch
 {
 
+  bool operator==(const cfg::device::NIDAQLinearScanMirror& a, const cfg::device::NIDAQLinearScanMirror& b)        ;
+  bool operator==(const cfg::device::SimulatedLinearScanMirror& a, const cfg::device::SimulatedLinearScanMirror& b);
+  bool operator==(const cfg::device::LinearScanMirror& a, const cfg::device::LinearScanMirror& b)                  ;
+  bool operator!=(const cfg::device::NIDAQLinearScanMirror& a, const cfg::device::NIDAQLinearScanMirror& b)        ;
+  bool operator!=(const cfg::device::SimulatedLinearScanMirror& a, const cfg::device::SimulatedLinearScanMirror& b);
+  bool operator!=(const cfg::device::LinearScanMirror& a, const cfg::device::LinearScanMirror& b)                  ;
+
   namespace device
   {
 

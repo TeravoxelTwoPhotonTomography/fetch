@@ -22,6 +22,15 @@
 #define DAQRTN( expr )  return_val_if_fail(0==DAQWRN(expr),1)
 
 namespace fetch {
+
+  bool operator==(const cfg::device::NationalInstrumentsDAQ& a, const cfg::device::NationalInstrumentsDAQ& b)  {return equals(&a,&b);}
+  bool operator==(const cfg::device::SimulatedDAQ& a, const cfg::device::SimulatedDAQ& b)                      {return equals(&a,&b);}
+  bool operator==(const cfg::device::DAQ& a, const cfg::device::DAQ& b)                                        {return equals(&a,&b);}
+  bool operator!=(const cfg::device::NationalInstrumentsDAQ& a, const cfg::device::NationalInstrumentsDAQ& b)  {return !(a==b);}
+  bool operator!=(const cfg::device::SimulatedDAQ& a, const cfg::device::SimulatedDAQ& b)                      {return !(a==b);}
+  bool operator!=(const cfg::device::DAQ& a, const cfg::device::DAQ& b)                                        {return !(a==b);}
+
+
   namespace device {
 
     //

@@ -20,15 +20,21 @@
 #include "stack.pb.h"
 #include "microscope.pb.h"
 #include "google\protobuf\text_format.h"
+#include "util\util-protobuf.h"
 
 #define CHKJMP(expr,lbl) \
   if(!(expr)) \
   { warning("[MICROSCOPE] %s(%d): "ENDL"\tExpression: %s"ENDL"\tevaluated false."ENDL,__FILE__,__LINE__,#expr); \
     goto lbl; \
   }
- 
- namespace fetch
-{ namespace device {
+
+namespace fetch
+{ 
+
+  bool operator==(const cfg::device::Microscope& a, const cfg::device::Microscope& b) {return equals(&a,&b);}
+  bool operator!=(const cfg::device::Microscope& a, const cfg::device::Microscope& b) {return !(a==b);}
+
+  namespace device {
 
     Microscope::Microscope()
       :IConfigurableDevice<Config>(&__self_agent)

@@ -17,7 +17,12 @@ using namespace fetch::worker;
 
 namespace fetch
 {
-
+  bool operator==(const cfg::worker::FrameAverage& a, const cfg::worker::FrameAverage& b)
+  { return a.ntimes()==b.ntimes();
+  }
+  bool operator!=(const cfg::worker::FrameAverage& a, const cfg::worker::FrameAverage& b)
+  { return !(a==b);
+  }
   namespace task
   { 
     unsigned int

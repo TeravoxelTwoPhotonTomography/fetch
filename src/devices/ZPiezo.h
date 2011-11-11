@@ -16,7 +16,17 @@
 #include "object.h"
 
 namespace fetch 
-{ namespace device 
+{ 
+
+  bool operator==(const cfg::device::NIDAQZPiezo& a, const cfg::device::NIDAQZPiezo& b);
+  bool operator==(const cfg::device::SimulatedZPiezo& a, const cfg::device::SimulatedZPiezo& b);
+  bool operator==(const cfg::device::ZPiezo& a, const cfg::device::ZPiezo& b);
+
+  bool operator!=(const cfg::device::NIDAQZPiezo& a, const cfg::device::NIDAQZPiezo& b);
+  bool operator!=(const cfg::device::SimulatedZPiezo& a, const cfg::device::SimulatedZPiezo& b);
+  bool operator!=(const cfg::device::ZPiezo& a, const cfg::device::ZPiezo& b);
+
+  namespace device 
   {
 
     class IZPiezo

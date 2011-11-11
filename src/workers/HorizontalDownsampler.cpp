@@ -20,6 +20,13 @@ using namespace fetch::worker;
 
 namespace fetch
 {
+  bool operator==(const cfg::worker::HorizontalDownsample& a, const cfg::worker::HorizontalDownsample& b)
+  { return a.ntimes()==b.ntimes();
+  }
+  bool operator!=(const cfg::worker::HorizontalDownsample& a, const cfg::worker::HorizontalDownsample& b)
+  { return !(a==b);
+  }
+
   namespace task
   {
     template<typename Tsrc>

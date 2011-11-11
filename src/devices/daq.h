@@ -22,6 +22,13 @@ void __common_setup();
 namespace fetch
 {
 
+  bool operator==(const cfg::device::NationalInstrumentsDAQ& a, const cfg::device::NationalInstrumentsDAQ& b);
+  bool operator==(const cfg::device::SimulatedDAQ& a, const cfg::device::SimulatedDAQ& b);
+  bool operator==(const cfg::device::DAQ& a, const cfg::device::DAQ& b);
+  bool operator!=(const cfg::device::NationalInstrumentsDAQ& a, const cfg::device::NationalInstrumentsDAQ& b);
+  bool operator!=(const cfg::device::SimulatedDAQ& a, const cfg::device::SimulatedDAQ& b);
+  bool operator!=(const cfg::device::DAQ& a, const cfg::device::DAQ& b);
+
   namespace device
   {
 

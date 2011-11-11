@@ -33,6 +33,9 @@ namespace fetch
 
   } // namespace task
 
+  bool operator==(const cfg::worker::ResonantUnwarp& a, const cfg::worker::ResonantUnwarp& b);
+  bool operator!=(const cfg::worker::ResonantUnwarp& a, const cfg::worker::ResonantUnwarp& b);
+
   namespace worker {
 
     // Implementation is trivial

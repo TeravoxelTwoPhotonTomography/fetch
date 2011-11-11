@@ -53,7 +53,13 @@
 #include "scanner3d.pb.h"
 
 namespace fetch
-{ namespace device
+{ 
+
+
+  bool operator==(const cfg::device::Scanner3D& a, const cfg::device::Scanner3D& b);
+  bool operator!=(const cfg::device::Scanner3D& a, const cfg::device::Scanner3D& b);
+
+  namespace device
   {
 
     class Scanner3D:public IScanner, public IConfigurableDevice<cfg::device::Scanner3D>

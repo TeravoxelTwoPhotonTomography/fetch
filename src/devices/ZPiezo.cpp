@@ -14,7 +14,17 @@
 #include "ZPiezo.h"
 
 namespace fetch
-{ namespace device
+{ 
+
+  bool operator==(const cfg::device::NIDAQZPiezo& a, const cfg::device::NIDAQZPiezo& b)         {return equals(&a,&b);}
+  bool operator==(const cfg::device::SimulatedZPiezo& a, const cfg::device::SimulatedZPiezo& b) {return equals(&a,&b);}
+  bool operator==(const cfg::device::ZPiezo& a, const cfg::device::ZPiezo& b)                   {return equals(&a,&b);}
+
+  bool operator!=(const cfg::device::NIDAQZPiezo& a, const cfg::device::NIDAQZPiezo& b)         {return !(a==b);}
+  bool operator!=(const cfg::device::SimulatedZPiezo& a, const cfg::device::SimulatedZPiezo& b) {return !(a==b);}
+  bool operator!=(const cfg::device::ZPiezo& a, const cfg::device::ZPiezo& b)                   {return !(a==b);}
+
+  namespace device
   {
     //
     // NIDAQ ZPiezo

@@ -23,7 +23,8 @@ namespace fetch
         unsigned int run(IDevice* dc);
     };
   }
-
+  bool operator==(const cfg::worker::FrameAverage& a, const cfg::worker::FrameAverage& b);
+  bool operator!=(const cfg::worker::FrameAverage& a, const cfg::worker::FrameAverage& b);
   namespace worker
   {
     typedef WorkAgent<task::FrameAverage,cfg::worker::FrameAverage> FrameAverageAgent;

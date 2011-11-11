@@ -29,6 +29,9 @@ namespace fetch
     };    
   }
 
+  bool operator==(const cfg::worker::HorizontalDownsample& a, const cfg::worker::HorizontalDownsample& b);
+  bool operator!=(const cfg::worker::HorizontalDownsample& a, const cfg::worker::HorizontalDownsample& b);
+
   namespace worker
   {
     typedef WorkAgent<task::HorizontalDownsampler,cfg::worker::HorizontalDownsample> HorizontalDownsampleAgent;

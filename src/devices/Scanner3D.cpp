@@ -29,6 +29,10 @@
 
 namespace fetch
 {
+
+  bool operator==(const cfg::device::Scanner3D& a, const cfg::device::Scanner3D& b)         {return equals(&a,&b);}
+  bool operator!=(const cfg::device::Scanner3D& a, const cfg::device::Scanner3D& b)         {return !(a==b);}
+
   namespace device
   {
 

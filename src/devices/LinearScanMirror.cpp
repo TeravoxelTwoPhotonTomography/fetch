@@ -15,6 +15,14 @@
 #include "LinearScanMirror.h"
 
 namespace fetch {
+
+  bool operator==(const cfg::device::NIDAQLinearScanMirror& a, const cfg::device::NIDAQLinearScanMirror& b)         {return equals(&a,&b);}
+  bool operator==(const cfg::device::SimulatedLinearScanMirror& a, const cfg::device::SimulatedLinearScanMirror& b) {return equals(&a,&b);}
+  bool operator==(const cfg::device::LinearScanMirror& a, const cfg::device::LinearScanMirror& b)                   {return equals(&a,&b);}
+  bool operator!=(const cfg::device::NIDAQLinearScanMirror& a, const cfg::device::NIDAQLinearScanMirror& b)         {return !(a==b);}
+  bool operator!=(const cfg::device::SimulatedLinearScanMirror& a, const cfg::device::SimulatedLinearScanMirror& b) {return !(a==b);}
+  bool operator!=(const cfg::device::LinearScanMirror& a, const cfg::device::LinearScanMirror& b)                   {return !(a==b);}
+
   namespace device {
 
     //

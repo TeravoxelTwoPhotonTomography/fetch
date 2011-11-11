@@ -33,6 +33,9 @@
 namespace fetch
 {
 
+  bool operator==(const cfg::File& a, const cfg::File& b);
+  bool operator!=(const cfg::File& a, const cfg::File& b);
+
   namespace device
   {
     

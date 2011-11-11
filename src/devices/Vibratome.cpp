@@ -27,7 +27,16 @@
     goto Error;                                                                                         \
   }
 
-namespace fetch  {
+namespace fetch  { 
+
+  bool operator==(const cfg::device::SerialControlVibratome& a, const cfg::device::SerialControlVibratome& b)  {return equals(&a,&b);}
+  bool operator==(const cfg::device::SimulatedVibratome& a, const cfg::device::SimulatedVibratome& b)          {return equals(&a,&b);}
+  bool operator==(const cfg::device::Vibratome& a, const cfg::device::Vibratome& b)                            {return equals(&a,&b);}
+
+  bool operator!=(const cfg::device::SerialControlVibratome& a, const cfg::device::SerialControlVibratome& b)  {return !(a==b);}
+  bool operator!=(const cfg::device::SimulatedVibratome& a, const cfg::device::SimulatedVibratome& b)          {return !(a==b);}
+  bool operator!=(const cfg::device::Vibratome& a, const cfg::device::Vibratome& b)                            {return !(a==b);}
+
 namespace device {
 
   //

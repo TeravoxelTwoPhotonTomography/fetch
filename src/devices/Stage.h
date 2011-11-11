@@ -15,6 +15,15 @@ using namespace Eigen;
 #define TODO_WRN warning("%s(%d) TODO"ENDL,__FILE__,__LINE__)
 
 namespace fetch {
+
+  bool operator==(const cfg::device::C843StageController& a, const cfg::device::C843StageController& b);
+  bool operator==(const cfg::device::SimulatedStage& a, const cfg::device::SimulatedStage& b);
+  bool operator==(const cfg::device::Stage& a, const cfg::device::Stage& b);
+
+  bool operator!=(const cfg::device::C843StageController& a, const cfg::device::C843StageController& b);
+  bool operator!=(const cfg::device::SimulatedStage& a, const cfg::device::SimulatedStage& b);
+  bool operator!=(const cfg::device::Stage& a, const cfg::device::Stage& b);
+
 namespace device {
 
   class StageTiling;

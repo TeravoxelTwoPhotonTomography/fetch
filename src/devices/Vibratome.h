@@ -52,6 +52,14 @@
 namespace fetch
 {
 
+  bool operator==(const cfg::device::SerialControlVibratome& a, const cfg::device::SerialControlVibratome& b);
+  bool operator==(const cfg::device::SimulatedVibratome& a, const cfg::device::SimulatedVibratome& b);
+  bool operator==(const cfg::device::Vibratome& a, const cfg::device::Vibratome& b);
+
+  bool operator!=(const cfg::device::SerialControlVibratome& a, const cfg::device::SerialControlVibratome& b);
+  bool operator!=(const cfg::device::SimulatedVibratome& a, const cfg::device::SimulatedVibratome& b);
+  bool operator!=(const cfg::device::Vibratome& a, const cfg::device::Vibratome& b);
+
   namespace device
   {
 

@@ -35,7 +35,11 @@ namespace mylib
 using namespace mylib;
 
 namespace fetch
-{ 
+{
+
+  bool operator==(const cfg::File& a, const cfg::File& b)         {return equals(&a,&b);}
+  bool operator!=(const cfg::File& a, const cfg::File& b)         {return !(a==b);}
+
   namespace device
   {
   
