@@ -20,6 +20,7 @@ namespace mylib {
 #include <array.h>
 #include <image.h>
 }
+#include <math.h>
 
 using namespace fetch::worker;
 

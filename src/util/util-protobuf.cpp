@@ -2,6 +2,7 @@
 #include "google\protobuf\descriptor.h"
 #include "common.h"
 #include "util-protobuf.h"
+#include <math.h>
 
 void set_unset_fields(google::protobuf::Message *msg)
 { namespace GPB = google::protobuf;
