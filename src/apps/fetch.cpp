@@ -109,8 +109,8 @@ int main(int argc, char *argv[])
 
   QApplication app(argc,argv);
   Init();
-  fetch::ui::MainWindow mainwindow(gp_microscope);
-  gp_microscope->set_config_nowait(g_config); // reload so gui gets notified - have to do this mostly for stage listeners ...
+  fetch::ui::MainWindow mainwindow(gp_microscope);  
+  gp_microscope->onUpdate(); // force update so gui gets notified - have to do this mostly for stage listeners ...
   mainwindow.show();
 
   unsigned int eflag = app.exec();

@@ -58,7 +58,7 @@ namespace fetch
     Configurable();
     Configurable(T *cfg);
 
-    virtual void set_config(Config *cfg);
+    virtual void set_config(Config *cfg);      // returns 1 if updated, 0 otherwise
   private:
     Config _default_config;
   };

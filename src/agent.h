@@ -151,8 +151,9 @@ namespace fetch {
     // Queue manipulation
     static void connect(IDevice *dst, size_t dst_chan, IDevice *src, size_t src_chan);
 
-    virtual void onUpdate() {}   // Overload this to make state changes that are dependent on the configuration. See e.g.: Scanner2d::onUpdate()
-
+    virtual void onUpdate() {}   // Called when device is already stopped, just after changes are commited via _set_config (See IConfigurableDevice)
+                                 // Overload this to commit state changes that require more than a stop/run cycle.
+                                 // Can also be used to as a (potentially blocking) callback that is called just after changes are commited.
     Agent* _agent;
 
     vector_PCHAN   *_in,         // Input  pipes
@@ -377,17 +378,19 @@ namespace fetch {
   {    
     int run;
     _agent->lock(); //will generate a recursive lock :(
-    run = _agent->is_running();
-    if(run)      
-      _agent->stop(AGENT_DEFAULT_TIMEOUT); 
+    if( *cfg != _get_config() ) // make sure an commit is required - requires != defined for all Tcfg
+    { run = _agent->is_running();
+      if(run)      
+        _agent->stop(AGENT_DEFAULT_TIMEOUT); 
 
-    transaction_lock();    
-    _set_config(cfg);    
-    transaction_unlock();
-    update();     
+      transaction_lock();    
+      _set_config(cfg);    
+      transaction_unlock();
+      update();     
 
-    if(run)
-      _agent->run();    
+      if(run)
+        _agent->run();    
+    }
     _agent->unlock();    
   }
   
@@ -396,7 +399,7 @@ namespace fetch {
   {   
     int run;
     _agent->lock();
-    if( cfg != _get_config() ) // make sure an update is required - requires != defined for all Tcfg
+    if( cfg != _get_config() ) // make sure an commit is required - requires != defined for all Tcfg
     { run = _agent->is_running();
       if(run)      
         _agent->stop(AGENT_DEFAULT_TIMEOUT); //will generate a recursive lock :(
@@ -471,7 +474,7 @@ namespace fetch {
     struct T v = {0};
     Chan *reader,*q = (Chan*) lparam;
     static int lasttime=0;
-    bool updated = false;
+    //bool updated = false;
 
     //memset(&v,0,sizeof(v));
 
@@ -489,14 +492,13 @@ namespace fetch {
     { Config cfg(v.self->get_config());
       lasttime = v.time;             // Only process requests dated after the last request.      
       goto_if_fail(cfg.ParseFromArray(v.data,(int)v.size),FailedToParse);
-      v.self->set_config(cfg);
-      //goto_if_fail(v.self->_config->ParseFromArray(v.data,v.size),FailedToParse);
-      updated = true;      
+      v.self->set_config(cfg);      
+      //updated = true;      
     }
 Finalize:
     Chan_Close(reader);    
-    if(updated)
-      v.self->update();
+    //if(updated)          // Fix?: update appears to be called within set_config.
+    //  v.self->update();
     return err;
 FailedToParse:
     pb::unlock();

@@ -618,11 +618,20 @@ Error:
   }
 
   void Stage::setPosNoWait(float  x,float  y,float  z)
-  { Config c = get_config();
-    c.mutable_last_target_mm()->set_x(x);
-    c.mutable_last_target_mm()->set_y(y);
-    c.mutable_last_target_mm()->set_z(z);
-    set_config_nowait(c);
+  { 
+#if 0                                                 
+    Config c = get_config();                         // This block performs a "safe" commit
+    c.mutable_last_target_mm()->set_x(x);            // of the last position, but will try to
+    c.mutable_last_target_mm()->set_y(y);            // stop/restart runnign tasks.
+    c.mutable_last_target_mm()->set_z(z);            //
+    set_config_nowait(c);                            //
+#else                                                //
+    // directly set config                           //
+    _config->mutable_last_target_mm()->set_x(x);     // This is not thread-safe.  Multiple threads
+    _config->mutable_last_target_mm()->set_y(y);     // calling this at the same time might write 
+    _config->mutable_last_target_mm()->set_z(z);     // inconsistent values, but that's not really a risk here.
+#endif                                               // Better to avoid unneccesarily stopping a running task.
+
     _istage->setPosNoWait(x,y,z); 
     _notifyMoved();
   }

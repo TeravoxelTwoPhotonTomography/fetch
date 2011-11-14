@@ -112,14 +112,15 @@ Error:
     }
 
     void NIScopeDigitizer::onUpdate()
-    { if(_agent->is_armed())
-      { Task *last = _agent->_task;
-        CHKJMP(_agent->disarm()==0);
-        if(_config->name().compare(_lastResourceName)!=0) // resource change
-        { CHKJMP(_agent->detach()==0);
+    { if(_config->name().compare(_lastResourceName)!=0) 
+      { if(_agent->is_attached())  // resource change - need to reattach
+        { int rearm = _agent->is_armed();
+          Task *last = _agent->_task;
+          CHKJMP(_agent->detach()==0);
           CHKJMP(_agent->attach()==0);
+          if(rearm)
+            CHKJMP(_agent->arm(last,_agent->_owner)==0);
         }
-        CHKJMP(_agent->arm(last,_agent->_owner)==0);
       }
     Error:
       return;

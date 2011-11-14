@@ -259,7 +259,7 @@ ESCAN:
       vibratome_.onUpdate();
       fov_.update(_config->fov());
       stage_.setFOV(&fov_);
-      unwarp.setDuty(_config->scanner3d().scanner2d().line_duty_cycle());
+      unwarp.setDuty(_config->scanner3d().scanner2d().line_duty_cycle());  // ensure consistency
 
       file_series.updateDesc(_config->mutable_file_series());
 
