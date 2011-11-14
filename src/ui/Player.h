@@ -48,14 +48,20 @@ public:
 
   void setFigure(Figure *w); //passing NULL will disconnect imageReady from the last assigned Figure.
 
-  virtual int  running() {QMutexLocker l(&lock_); return running_;}
-  virtual void stop()    {QMutexLocker l(&lock_); running_=0;} 
+  virtual int  running(unsigned long ms=0) 
+  { bool timeout = 0;    
+    timeout = (0==is_stopping_.wait(&lock_,ms));    
+    return timeout && running_;
+  }    
+  virtual void stop()                      {running_=0; is_stopping_.wakeAll();} 
+
 signals:
   void imageReady(mylib::Array *im);
 
 protected:
   Figure *w_;
   QMutex lock_;
+  QWaitCondition is_stopping_;
   int running_;
 };
 

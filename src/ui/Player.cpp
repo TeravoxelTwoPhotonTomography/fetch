@@ -70,22 +70,28 @@ void AsynqPlayer::run()
   mylib::Dimn_Type dims[3];
   Chan *reader = Chan_Open(in_,CHAN_PEEK);
   TicTocTimer t = tic();
-  running_ = 1;
   // Notes: o Peek copies from current data into frame buffer.
   //        o Peek might realloc the input frame buffer.
-  while(running())
-  { float wait = 1000.0/60.0 - toc(&t)*1000.0; // in ms
-    if(wait>0)
-      Sleep(wait);
-    if(CHAN_SUCCESS( Chan_Peek_Timed(reader,(void**)&buf,nbytes,peek_timeout_ms_) ))
-    { nbytes = buf->size_bytes();
-      buf->format(buf);                                                    // resets the data pointer  - super gross and icky
-      castFetchFrameToDummyArray(&im,buf,dims);
-      emit imageReady(&im);                                                // blocks until receiver returns      
-    }                                                                           //...waht if there's not reciever?
+
+  { QMutexLocker locker(&lock_); 
+    running_ = 1;
+    const float fps = 60.0;
+    float ms = 1000.0/fps - toc(&t)*1000.0; // in ms;
+    while(running(ms))
+    { if(CHAN_SUCCESS( Chan_Peek_Timed(reader,(void**)&buf,nbytes,peek_timeout_ms_) ))
+      { 
+        nbytes = buf->size_bytes();
+        buf->format(buf);                                                    // resets the data pointer  - super gross and icky
+        castFetchFrameToDummyArray(&im,buf,dims);
+        emit imageReady(&im);                                                // blocks until receiver returns      //...what if there's no reciever?        
+      }       
+      ms = 1000.0/fps - toc(&t)*1000.0; // in ms
+      ms = (ms>0)?ms:0;                                                                        
+    }
   }
   Chan_Close(reader);  
-  Chan_Token_Buffer_Free(buf);  
+  Chan_Token_Buffer_Free(buf);
+  //debug("%s(%d): player out!"ENDL,__FILE__,__LINE__);
 }
 
 

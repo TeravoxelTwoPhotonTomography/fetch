@@ -561,9 +561,16 @@ void
 void
   fetch::ui::MainWindow::
   stopVideo()
-{ if(!_player) return;
+{ if(!_player) return; 
   _player->stop();
   _player->disconnect();
+  _display->disconnect(); 
+
+  _dead_players.enqueue(_player);
+  connect(_player,SIGNAL(finished()),this,SLOT(clearDeadPlayers()));
+  _player = NULL;
+
+#if 0 // Block below deadlocks occasionally
   _player->wait(); // hrmmmmmmmmmmmmmmmm...looks like trouble
   /*
   I think the problem is:
@@ -583,4 +590,12 @@ void
   */
   delete _player;
   _player = NULL;
+#endif
 }
+
+
+void 
+  fetch::ui::MainWindow::clearDeadPlayers()
+{ while(!_dead_players.isEmpty())
+    delete _dead_players.dequeue();  
+} 

@@ -51,6 +51,8 @@ protected slots:
 
   int maybeSave();
 
+  void clearDeadPlayers();
+
 public: // semi-private
   void createStateMachines();
   void createMenus();
@@ -121,6 +123,8 @@ private:
   QSignalMapper _config_delayed_load_mapper;
   QTimer        _config_delayed_load_timer;
   internal::mainwindow_defered_update *_defered_update;
+
+  QQueue<IPlayerThread*> _dead_players;
 };
 
 
