@@ -229,10 +229,10 @@ void ImItem::updateDisplayLists()
   
   glNewList(_hQuadDisplayList, GL_COMPILE);
   glBegin(GL_QUADS);
-  glTexCoord2f(0.0, 0.0); glVertex2f(l, t);//glVertex2f(r, b);
-  glTexCoord2f(0.0, 1.0); glVertex2f(l, b);//glVertex2f(r, t);				
-  glTexCoord2f(1.0, 1.0); glVertex2f(r, b);//glVertex2f(l, t);				
-  glTexCoord2f(1.0, 0.0); glVertex2f(r, t);//glVertex2f(l, b);		
+  glTexCoord2f(1.0, 1.0); glVertex2f(l, t);//glVertex2f(r, b);
+  glTexCoord2f(1.0, 0.0); glVertex2f(l, b);//glVertex2f(r, t);				
+  glTexCoord2f(0.0, 0.0); glVertex2f(r, b);//glVertex2f(l, t);				
+  glTexCoord2f(0.0, 1.0); glVertex2f(r, t);//glVertex2f(l, b);		
   glEnd();
   glEndList();
   
