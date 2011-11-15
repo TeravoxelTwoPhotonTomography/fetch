@@ -351,6 +351,11 @@ Error:
   {
     C843ERR( C843_FRF(handle_,"123") );
     waitForController_();
+    { BOOL isrefd[3] ={0,0,0};
+      C843ERR(C843_IsReferenceOK(handle_,"123",isrefd));
+      if(!all(isrefd,3))
+        warning("%s(%d)"ENDL "\tReferencing failed for one or more axes."ENDL,__FILE__,__LINE__);
+    }
   }   
 #pragma warning(pop) 
      
