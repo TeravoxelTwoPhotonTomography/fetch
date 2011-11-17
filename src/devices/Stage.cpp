@@ -44,7 +44,7 @@ namespace device {
   //
   
 #define C843WRN( expr )  {lock_(); (c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, warning )); unlock_();}
-#define C843ERR( expr )  {/*lock_();*/ (c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, error   )); /*unlock_();*/}
+#define C843ERR( expr )  {BOOL v; lock_(); v=(expr); unlock_(); (c843_error_handler( handle_, v, #expr, __FILE__, __LINE__, error   ));}
 #define C843JMP( expr )  {lock_(); if(c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, warning)) {unlock_(); goto Error;} unlock_();}
 
   // returns 0 if no error, otherwise 1
@@ -160,7 +160,9 @@ Error:
     int ecode = 0;
     C843JMP( C843_STP(handle_) );  // all stop - HLT is more gentle
 Finalize:    
+    lock_();
     C843_CloseConnection(handle_); // always succeeds
+    unlock_();
     handle_=-1;
     return ecode;
 Error:
@@ -273,7 +275,9 @@ Error:
       C843JMP( C843_qMOV(handle_,"123",a) );
       if(!same(a,t,3))
       { double b[3]={0.0,0.0,0.0};
+        lock_();
         C843_qPOS(handle_,"123",b);
+        unlock_();
         warning(
           "%s(%d): C843 Move command was interupted for a new destination."ENDL
           "\t  Original Target: %f %f %f"ENDL
@@ -349,6 +353,12 @@ Error:
   
   void C843Stage::reference_()
   {
+    // Only reference if necessary
+    { BOOL isrefd[3] ={0,0,0};
+      C843ERR(C843_IsReferenceOK(handle_,"123",isrefd));
+      if(all(isrefd,3))
+        return;        
+    }
     C843ERR( C843_FRF(handle_,"123") );
     waitForController_();
     { BOOL isrefd[3] ={0,0,0};
