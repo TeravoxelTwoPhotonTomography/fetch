@@ -562,12 +562,13 @@ void
   fetch::ui::MainWindow::
   stopVideo()
 { if(!_player) return; 
-  _player->stop();
+  _dead_players.enqueue(_player);
   _player->disconnect();
   _display->disconnect(); 
-
-  _dead_players.enqueue(_player);
-  connect(_player,SIGNAL(finished()),this,SLOT(clearDeadPlayers()));
+  connect(_player,SIGNAL(finished()),this,SLOT(clearDeadPlayers()));//,Qt::DirectConnection);
+  //connect(_player,SIGNAL(terminated()),this,SLOT(clearDeadPlayers())); //,Qt::DirectConnection);
+  _player->stop();
+  
   _player = NULL;
 
 #if 0 // Block below deadlocks occasionally
@@ -597,5 +598,7 @@ void
 void 
   fetch::ui::MainWindow::clearDeadPlayers()
 { while(!_dead_players.isEmpty())
-    delete _dead_players.dequeue();  
+  { IPlayerThread* p = _dead_players.dequeue();
+    delete p;
+  } 
 } 
