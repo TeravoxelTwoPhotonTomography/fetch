@@ -538,13 +538,13 @@ Error:
   void Stage::_createTiling()
   { device::StageTravel travel;    
     if(!getTravel(&travel))
-      return;
-    if(_fov)
-    {
-      FieldOfViewGeometry fov = *_fov;
-      _destroyTiling(); // this call will invalidate the _fov pointer :(  bad design
+      return;       
+    if(_fov)                                                      // A FOV object is stored by the microscope and in the tiling.  The microscope's should be the reference
+    {                                                             // not sure why I made this two distinct objects...
+      FieldOfViewGeometry fov = *_fov;                            // this should always point to the microscope's FOV object (not the tiling's)
+      _destroyTiling();                                           // this call will invalidate the _fov pointer :(  bad design [??? 2011-11 this comment seems questionable]
       _tiling = new StageTiling(travel, fov, _config->tilemode());
-      _fov = &_tiling->fov_;
+      //_fov = &_tiling->fov_;                                    // commented out 2011-11 - not sure why I had this there in the first place...
       { TListeners::iterator i;
         for(i=_listeners.begin();i!=_listeners.end();++i)
           _tiling->addListener(*i);

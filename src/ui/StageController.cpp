@@ -409,6 +409,7 @@ bool fetch::ui::TilingController::markAddressable()
     mark(path,device::StageTiling::Addressable,QPainter::RasterOp_SourceOrDestination);
   } else 
   { // Mark the whole thing as unaddressable
+    warning("%s(%d): Stage Travel looks crazy.  Marking whole space as unaddressable."ENDL,__FILE__,__LINE__);
     mark_all(device::StageTiling::Addressable,QPainter::RasterOp_NotSourceAndDestination);
   }
 
