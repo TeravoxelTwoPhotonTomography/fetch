@@ -31,7 +31,14 @@ scanner3d {
         nchannels: 1								   # this should correspond to the number of data channels acquired.  Used to guess memory requirements.  If it's wrong that's ok.
         line_trigger_src: 1
         channel { name: "0" range: 0.2 enabled: true }
-        channel { name: "1" range: 2.0 enabled: true }
+        channel { name: "1" range: 2.0 enabled: true 
+                  trigger { 
+                    level_volts     : 0.0;
+                    slope           : RISING;
+                    holdoff_seconds : 0.0;
+                    delay_seconds   : 0.0;
+                  }
+                }
         channel { name: "2" range: 2.0 enabled: true }
         channel { name: "2" range: 2.0 enabled: true }
       }

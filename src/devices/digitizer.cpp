@@ -174,7 +174,7 @@ Error:
       DIGERR( niScope_ConfigureVertical(vi,
         line_trigger_cfg.name().c_str(),  // channelName
         line_trigger_cfg.range(),
-        0.0,
+        0.0,                              // offset - must be 0.0 for PCI-5105
         line_trigger_cfg.coupling(),
         probeAttenuation,
         NISCOPE_VAL_TRUE));               // enabled
@@ -205,27 +205,23 @@ Error:
         enforceRealtime));
 
       // Analog trigger for bidirectional scans
+      
+      const Config::Trigger& trig = line_trigger_cfg.trigger();
+      ViInt32 triggerSlope = (trig.slope()==Config::Trigger::RISING) ? NISCOPE_VAL_POSITIVE:NISCOPE_VAL_NEGATIVE;
       DIGERR( niScope_ConfigureTriggerEdge (vi,
         line_trigger_cfg.name().c_str(), // channelName
-        0.0,                          // triggerLevel
-        NISCOPE_VAL_POSITIVE,         // triggerSlope
-        line_trigger_cfg.coupling(),  // triggerCoupling
-        0.0,                          // triggerHoldoff
-        0.0 ));                       // triggerDelay
+        trig.level_volts(),
+        triggerSlope,
+        line_trigger_cfg.coupling(),
+        trig.holdoff_seconds(),          // time before reenable (sec)
+        trig.delay_seconds() ));         // time before effect (sec) - not super sure how this will interact with the daq's frametrigger
       // Wait for start trigger (frame sync) on PFI1
       DIGERR( niScope_SetAttributeViString( vi,
         "",
         NISCOPE_ATTR_ACQ_ARM_SOURCE,
         NISCOPE_VAL_PFI_1 ));
 
-      //// Update the config to reflect the setup
-      //// Is this necessary? It causes an infinite loop via the update callback.
-      
-      //Config c = get_config();
-      //c.set_record_size(recsz);
-      //c.set_num_records(nrecords);      
-      //set_config(c);
-      //return;
+      //// ALL DONE
     }
 
     size_t NIScopeDigitizer::record_size( double record_frequency_Hz, double duty )

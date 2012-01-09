@@ -11,6 +11,18 @@ package fetch.cfg.device;
 // * rename channel to channels
 message NIScopeDigitizer 
 {
+  message Trigger
+  { enum Slope 
+    {
+      RISING  = 0; // default
+      FALLING = 1;
+    }
+    optional double level_volts     = 1  [default=0.0];
+    optional Slope  slope           = 2;
+    optional double holdoff_seconds = 3  [default=0.0];   // length of time before re-enable
+    optional double delay_seconds   = 4  [default=0.0];   // length of time before start acquire
+  }
+
   message Channel
   { 
     enum Coupling {                                       // NISCOPE_ATTR_VERTICAL_COUPLING. ENUM values conform to NIScope
@@ -22,6 +34,7 @@ message NIScopeDigitizer
     optional double   range    = 2 [default = 1.0];       // Volts peak to peak.  (NI-5105) Can be 0.05, 0.2, 1, or 6 V for 50 Ohm.  Resolution is 0.1% dB.                         
     optional Coupling coupling = 3 [default = DC];        // Specifies how to couple the input signal. Refer to NISCOPE_ATTR_VERTICAL_COUPLING for more information.                
     optional bool     enabled  = 4 [default = false];     // Specifies whether the channel is enabled for acquisition. Refer to NISCOPE_ATTR_CHANNEL_ENABLED for more information.  
+    optional Trigger  trigger  = 5;                       // if channel is used for triggering, these are the settings to use
   }
 
   optional string   name        = 1 [default = "Dev3"];   // NI device name: e.g. "Dev6"                                                                 

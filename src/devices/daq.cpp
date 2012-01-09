@@ -282,7 +282,7 @@ namespace fetch {
       DAQERR( DAQmxCfgAnlgEdgeStartTrig(cur_task,
         _config->trigger().c_str(),        
         DAQmx_Val_Rising,
-        0.0));
+        _config->level_volts() ));
 
       DAQERR( DAQmxCfgSampClkTiming(cur_task,
         _config->clock().c_str(),// eg. "Ctr1InternalOutput"        
