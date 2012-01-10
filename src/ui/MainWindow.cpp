@@ -2,6 +2,7 @@
 #include <assert.h>
 #include "common.h"
 #include "devices/Microscope.h"
+#include "ColormapDockWidget.h"
 #include "VideoAcquisitionDockWidget.h"
 #include "Figure.h"
 #include "Player.h"
@@ -93,6 +94,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,fullscreenAct(0)
   ,fullscreenStateOff(0)
   ,fullscreenStateOn(0)
+  ,_cmapDockWidget(0)
   ,_videoAcquisitionDockWidget(0)
   ,_microscopesStateDockWidget(0)
   ,_vibratomeDockWidget(0)
@@ -285,6 +287,11 @@ void fetch::ui::MainWindow::createStateMachines()
 
 void fetch::ui::MainWindow::createDockWidgets()
 {
+  _cmapDockWidget = new ColormapDockWidget(this);
+  addDockWidget(Qt::LeftDockWidgetArea,_cmapDockWidget);
+  viewMenu->addAction(_cmapDockWidget->toggleViewAction());
+  _cmapDockWidget->setObjectName("cmapDockWidget");
+
   _videoAcquisitionDockWidget = new VideoAcquisitionDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_videoAcquisitionDockWidget);
   viewMenu->addAction(_videoAcquisitionDockWidget->toggleViewAction());

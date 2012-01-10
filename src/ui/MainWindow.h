@@ -8,6 +8,7 @@ namespace fetch {
 namespace device {class Microscope;}
 namespace ui {
 
+class ColormapDockWidget;
 class VideoAcquisitionDockWidget;
 class StackAcquisitionDockWidget;
 class MicroscopeStateDockWidget;
@@ -74,6 +75,7 @@ public: // semi-private
   QState  *fullscreenStateOn;
   QState  *fullscreenStateOff;
 
+  ColormapDockWidget           *_cmapDockWidget;
   VideoAcquisitionDockWidget   *_videoAcquisitionDockWidget;
   StackAcquisitionDockWidget   *_stackAcquisitionDockWidget;
   MicroscopeStateDockWidget    *_microscopesStateDockWidget;
