@@ -55,6 +55,8 @@ public slots:
   inline void resetscale1()                                                {_item->resetscale(1);}
   inline void resetscale2()                                                {_item->resetscale(2);}
   inline void fovGeometryChanged(float w_um,float h_um, float radians)     {_item->setFOVGeometry(w_um,h_um,radians);}
+  inline void setColormap(const QString& filename)                         {_item->loadColormap(filename);}
+  inline void setGamma(float gamma)                                        {_item->setGamma(gamma);}
 
   //inline void setPixelSizeMicrons(double w, double h)                      {_item->setPixelSizeMicrons(w,h);}
   //inline void setPixelGeometry(double w, double h, double angle)           {_item->setPixelGeometry(w,h,angle);}

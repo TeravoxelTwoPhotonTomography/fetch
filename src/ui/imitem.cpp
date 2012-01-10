@@ -34,6 +34,7 @@ ImItem::ImItem()
 : _fill(1.0),
   _gain(1.0),
   _bias(0.0),
+  _gamma(1.0),
   _text("Nothing to see here :/"),
   _hQuadDisplayList(0),
   _hTexture(0),
@@ -121,9 +122,10 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     _shader.setUniformValue("sctrl",2);
     _shader.setUniformValue("tctrl",3);
     _shader.setUniformValue("nchan",(GLfloat)_nchan);
-    _shader.setUniformValue("fill",(GLfloat)_fill);
-    _shader.setUniformValue("gain",(GLfloat)_gain  );
-    _shader.setUniformValue("bias",(GLfloat)_bias  );    
+    _shader.setUniformValue("fill" ,(GLfloat)_fill);
+    _shader.setUniformValue("gain" ,(GLfloat)_gain);
+    _shader.setUniformValue("bias" ,(GLfloat)_bias);
+    _shader.setUniformValue("gamma",(GLfloat)_gamma);
     _shader.setUniformValue("show_mode",(GLint)(_show_mode%4));    
     checkGLError();
     //glPushMatrix();
@@ -331,32 +333,37 @@ void ImItem::_setupShader()
   _hShaderCmap  = _shader.uniformLocation("cmap");
   _shader.setUniformValue("nchan",(GLfloat)_nchan);
   _shader.release();
-
-  // Colormap
-  QImage cmap;
-  glActiveTexture(GL_TEXTURE1);	
-  {
-    assert(cmap.load(":/cmap/2","JPG"));
-    //qDebug()<<cmap.format();
-    glGenTextures(1, &_hTexCmap);
-    glBindTexture(GL_TEXTURE_2D, _hTexCmap);
-    {
-      glTexImage2D(GL_TEXTURE_2D, 
-                   0, 
-                   GL_RGBA, 
-                   cmap.width(), cmap.height(), 0, 
-                   GL_BGRA, GL_UNSIGNED_BYTE,
-                   cmap.constBits());
-    }
-    glBindTexture(GL_TEXTURE_2D,0);
-  }
-
-  glActiveTexture(GL_TEXTURE0);
-  checkGLError();
+  
+  loadColormap(":/cmap/2");    
 }
 
+void ImItem::loadColormap(const QString& filename)
+{ QImage cmap;
+  CHKJMP(cmap.load(filename),Error);
+  //qDebug()<<cmap.format();
+  glActiveTexture(GL_TEXTURE1);	
+  {        
+    glGenTextures(1, &_hTexCmap);
+    glBindTexture(GL_TEXTURE_2D, _hTexCmap);    
+    glTexImage2D(GL_TEXTURE_2D,
+                 0, 
+                 GL_RGBA, 
+                 cmap.width(), cmap.height(), 0, 
+                 GL_BGRA, GL_UNSIGNED_BYTE,
+                 cmap.constBits());    
+    glBindTexture(GL_TEXTURE_2D,0);
+  }  
+  glActiveTexture(GL_TEXTURE0);
+  checkGLError();
+Error:
+  return;
+}
+
+// Control points for colormapping
+// - support different lookup on each channel
+// - lookup is into a 2d colormap indexed by s and t (each go 0 to 1).
 void ImItem::_updateCmapCtrlPoints()
-{
+{ 
   //if(_nchan<=1) return;
   assert(_cmap_ctrl_count>=2);
 
@@ -473,7 +480,7 @@ void ImItem::_common_setup()
 {
   _hQuadDisplayList = glGenLists(1);
   if(!_hQuadDisplayList)
-    qDebug("glGenLists failed?  You probably forgot to setup an active opngl context.");
+    qDebug("glGenLists failed?  You probably forgot to setup an active opengl context.");
   _setupShader();
   glGenTextures(1, &_hTexture);
   glGenTextures(1, &_hTexCmapCtrlS);

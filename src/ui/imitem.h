@@ -26,14 +26,17 @@ public:
   void autoscale(int chan)                                                {_selected_channel=chan; _autoscale_next=true;}
   void resetscale(int chan)                                               {_selected_channel=chan; _resetscale_next=true;}
 
-         void   setRotation(double radians);
-         void   setFOVGeometry(float w_um, float h_um, float rotation_radians);
+  void setRotation(double radians);
+  void setFOVGeometry(float w_um, float h_um, float rotation_radians);
+
+  void loadColormap(const QString& filename);
+  void setGamma(float gamma)                                              {_gamma=gamma; update();}
 
   inline double rotationRadians()                                         {return _rotation_radians;}  
 protected:
   void updateDisplayLists();
   void _common_setup();
-  void _loadTex(mylib::Array *im);
+  void _loadTex(mylib::Array *im);  
   void _setupShader();
   void _updateCmapCtrlPoints();
   void _autoscale(mylib::Array *data, GLuint ichannel, float percent);
@@ -44,6 +47,7 @@ protected:
   float _fill;
   float _gain;
   float _bias;
+  float _gamma;
   
   QGraphicsSimpleTextItem _text;
   GLuint _hQuadDisplayList;

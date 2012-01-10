@@ -15,6 +15,9 @@
 #include <google/protobuf/io/tokenizer.h>
 #include <QtGui>
 
+#define ENDL "\r\n"
+#define TRY(e) if (!(e)) qFatal("%s(%d): "ENDL "\tExpression evaluated as false."ENDL "\t%s",__FILE__,__LINE__,#e)
+
 const char fetch::ui::MainWindow::defaultConfigPathKey[] = "Microscope/Config/DefaultFilename";
 
 //////////////////////////////////////////////////////////////////////////////
@@ -334,10 +337,16 @@ void fetch::ui::MainWindow::createViews()
   _display = new Figure(_stageController);
   
   setCentralWidget(_display);
-  connect(_videoAcquisitionDockWidget,SIGNAL(onRun()),
-          _display,                   SLOT(fitNext()));
-  connect(_stackAcquisitionDockWidget,SIGNAL(onRun()),
-          _display,                   SLOT(fitNext()));
+  TRY(connect(_videoAcquisitionDockWidget,SIGNAL(onRun()),
+              _display,                   SLOT(fitNext())));
+  TRY(connect(_stackAcquisitionDockWidget,SIGNAL(onRun()),
+              _display,                   SLOT(fitNext())));
+
+  TRY(connect(_cmapDockWidget,SIGNAL(colormapSelectionChanged(const QString&)),
+              _display,       SLOT(setColormap(const QString&))));
+  TRY(connect(_cmapDockWidget,SIGNAL(gammaChanged(float)),
+              _display,       SLOT(setGamma(float))));
+  _display->setColormap(_cmapDockWidget->cmap());
   //_player->start();
 }
 

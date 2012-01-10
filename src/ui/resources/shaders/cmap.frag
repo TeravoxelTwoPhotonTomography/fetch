@@ -8,6 +8,7 @@ uniform float nchan;     // number of channels to colormap
 uniform float fill;      // fraction that a channel's color contributes to a pixel
 uniform float gain;      // applied to all channels - modifies indexing between ctrl pts
 uniform float bias;      // applied to all channels 
+uniform float gamma;     // applied to all channels
 
 uniform int   show_mode; // bypasses mixing and shows one of the other textures instead; for debugging
 
@@ -38,6 +39,7 @@ void main(void)
     return;
   case 3:
     { vec4 c = texture(tctrl,uvw.st);
+      c.x = pow(c.x,gamma);                      //gamma
       FragColor = vec4(c.x,c.x,c.x,1.0);
     }
     return;
@@ -46,10 +48,10 @@ void main(void)
     { 
       vec4 v    = texture(plane,uvw);             //luma
       v.x       = gain*v.x + bias;                //adjust instensity
-      v.x       = texture(tctrl,vec2(v.x,0.0)).x; //use the lookup from the first channel
-      
-      //vec4 c  = texture(cmap,vec2(1.0,v.x));  //cmap (sample along vertical)
-      vec4 c    = vec4(v.x,v.x,v.x,1.0);          //cmap black and white
+      v.x       = texture(tctrl,vec2(v.x,0.0)).x; //use the lookup from the first channel      
+      v.x       = pow(v.x,gamma);                 //gamma
+      vec4 c    = texture(cmap,vec2(1.0,v.x));    //cmap (sample along vertical)      
+      //vec4 c    = vec4(v.x,v.x,v.x,1.0);          //cmap black and white (no texture)
       FragColor = vec4(c.r,c.g,c.b,1.0);
       return;
     } else
@@ -60,7 +62,8 @@ void main(void)
       { vec4 v,s,t;
         vec2 p;
         uvw.z = a*i;              // addresses the channel
-        v = texture(plane,uvw); // luma
+        v = texture(plane,uvw);   // luma
+        v.x = pow(v.x,gamma);     // gamma adjust
         { vec2 mu = vec2(v.x,uvw.z);
           p.x = texture(sctrl,mu).x;
           p.y = texture(tctrl,mu).x;

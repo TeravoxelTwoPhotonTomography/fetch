@@ -1,8 +1,7 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource prefix="cmap/">
-  <file alias="1">resources/cmap/cmap1.jpg</file>
-  <file alias="2">resources/cmap/cmap2.jpg</file>
-	<file alias="3">resources/cmap/cmap3.jpg</file>
-	<file alias="4">resources/cmap/cmap4.jpg</file>
+  <file alias="1.RGB"       >resources/cmap/bwRGB.png</file>
+  <file alias="0.RGBSat"    >resources/cmap/bwRGBsat.png</file>
+  <file alias="2.Continuous">resources/cmap/cmap2.jpg</file>
 </qresource>
 </RCC>

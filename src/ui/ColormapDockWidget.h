@@ -14,9 +14,12 @@ namespace ui{
       static const char defaultSettingsRoot[];
     public:
       ColormapDockWidget(MainWindow* parent);
+      
+      QString cmap();
 
     protected slots:     
       void loadColormapFromFile(const QString& filename);
+      void updateLabel();
       void updateLabel(const QString &name);
       void loadCmapFromFileDialog();
       void gammaEditingFinshed();

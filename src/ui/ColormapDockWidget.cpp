@@ -20,11 +20,12 @@ namespace ui {
     TRY( connect(this,SIGNAL(setCmap(const QPixmap&)),_display,SLOT(setPixmap(const QPixmap&))) );
     layout->addWidget(_display);
   
+    ///// ComboBox - Select colormap
     QHBoxLayout* row = new QHBoxLayout;    
     _selector = new QComboBox;
     _selector->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Fixed);
-    // Add the built-in colormap resources
-    QDir dir(":/cmap");
+    
+    QDir dir(":/cmap"); // Add the built-in colormap resources
     QFileInfoList cmaps = dir.entryInfoList(QDir::Files);
     foreach(const QFileInfo& info,cmaps)
     { const QString name = info.absoluteFilePath();
@@ -38,28 +39,37 @@ namespace ui {
                 this,    SLOT(updateLabel(const QString&))));
     row->addWidget(_selector);
 
-    QPushButton* btnLoad = new QPushButton("Open");
-    btnLoad->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Fixed);
-    row->addWidget(btnLoad); //,0,Qt::AlignRight);
+    ///// Button - Open New Colormap
+    QPushButton* btnLoad = new QPushButton("&Open...");
+    btnLoad->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
+    row->addWidget(btnLoad);
     TRY(connect(btnLoad,SIGNAL(clicked()),
                 this,   SLOT(loadCmapFromFileDialog())));
     layout->addRow("Colormap: ",row);
 
-    //QFormLayout *form = new QFormLayout;
-    _gamma = new QLineEdit("1.0");
-    _gamma->setValidator(new QDoubleValidator(0.0,1.0,2,_gamma));       // Add validated input
+    ///// Line Edit Control - Gamma
+    _gamma = new QLineEdit("1.0");    
     QCompleter *c = new QCompleter(new QStringListModel(_gamma),_gamma);// Add completion based on history
     c->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
     c->setModelSorting(QCompleter::UnsortedModel);
     _gamma->setCompleter(c);
+    _gamma->setValidator(new QDoubleValidator(0.01,10.0,2,_gamma));      // Add validated input
     TRY(connect(_gamma,SIGNAL(editingFinished()),
                 this,  SLOT(gammaEditingFinshed())));
     layout->addRow("Gamma: ",_gamma);
 
-    //layout->addItem(form);
-          
+    ///// Finalize
+    updateLabel();          
     w->setLayout(layout);
     setWidget(w);
+  }
+
+  QString ColormapDockWidget::cmap()
+  { return _selector->currentText();
+  }
+
+  void ColormapDockWidget::updateLabel()
+  { updateLabel(_selector->currentText());
   }
 
   void ColormapDockWidget::updateLabel(const QString& name)
@@ -76,8 +86,7 @@ namespace ui {
     foreach(QByteArray fmt,fmts)
     { filter += QString("*.%1 ").arg(QString(fmt));
     }
-    filter += ");;All files (*.*)";
-    qDebug() << filter;
+    filter += ");;All files (*.*)";    
     QString filename = QFileDialog::getOpenFileName(this,
       tr("Load Colormap"),
       settings.value(key,QDir::currentPath()).toString(),
