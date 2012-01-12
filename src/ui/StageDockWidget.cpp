@@ -84,6 +84,7 @@ namespace ui {
 
     QGridLayout *row;
     QDoubleSpinBox *s,**w;
+    ///// Position
     w=ps_;
     row = new QGridLayout();
     row->addWidget(new QLabel("X")   ,0,1,Qt::AlignCenter);
@@ -95,7 +96,12 @@ namespace ui {
     row->addWidget(w[0]=parent->_stage_pos_x_control->createDoubleSpinBox(),1,1);
     row->addWidget(w[1]=parent->_stage_pos_y_control->createDoubleSpinBox(),1,2);
     row->addWidget(w[2]=parent->_stage_pos_z_control->createDoubleSpinBox(),1,3);    
-    row->addWidget(   s=new QDoubleSpinBox(),1,4);
+    w[0]->setRange(0.5,100.0); // set safe ranges
+    w[1]->setRange(0.5,100.0); // - normally this should be handled by DevicePropController
+    w[2]->setRange(0.5,11.0);  //   but API's not right...validator doesn't accomidate non-lineedit controls well
+                               //   need to explicitly set min-max or something
+    
+    row->addWidget(   s=new QDoubleSpinBox(),1,4); // step size 
     for(int i=0;i<3;++i) w[i]->setDecimals(4);
     s->setRange(0.0001,10.0);    
     s->setDecimals(4);
@@ -103,7 +109,27 @@ namespace ui {
     s->setSingleStep(0.1);
     s->setValue(0.1);
     pstep_=s;
-    
+
+    ///// Lock Controls
+    QCheckBox *b = new QCheckBox();        
+    QStateMachine *lockmachine = new QStateMachine(this);
+    QState *locked = new QState(),
+         *unlocked = new QState();
+    locked->addTransition(b,SIGNAL(stateChanged(int)),unlocked);
+    unlocked->addTransition(b,SIGNAL(stateChanged(int)),locked);
+    locked->assignProperty(b  ,"text","Locked");
+    unlocked->assignProperty(b,"text","Unlocked");
+    for(int i=0;i<3;++i)
+    { locked->assignProperty(w[i]  ,"readOnly",true);
+      unlocked->assignProperty(w[i],"readOnly",false);
+    }
+    lockmachine->addState(locked);
+    lockmachine->addState(unlocked);
+    b->setCheckState(Qt::Checked);
+    lockmachine->setInitialState(locked);   
+    lockmachine->start();
+
+    ///// Velocity
     w=vs_;
     row->addWidget(new QLabel("Vel (mm/s)"),2,0);
     row->addWidget(w[0]=parent->_stage_vel_x_control->createDoubleSpinBox(),2,1);
@@ -117,12 +143,14 @@ namespace ui {
     s->setSingleStep(0.1);
     s->setValue(0.1);
     vstep_=s;
-
     form->addRow(row);
+    form->addRow("Lock controls",b);
 
+    ///// Indicators
     form->addRow(new StageMovingIndicator(dc->stage()));
     form->addRow(new StageOnTargetIndicator(dc->stage()));
 
+    ///// History
     { QHBoxLayout *layout = new QHBoxLayout;
       layout->addWidget(parent->_stageController->createHistoryComboBox());
       QPushButton *b = new QPushButton("Add");
@@ -130,6 +158,8 @@ namespace ui {
       layout->addWidget(b);
       form->addRow("History", layout);
     }
+
+
 
     restoreSettings();
   }
