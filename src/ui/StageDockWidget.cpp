@@ -2,6 +2,8 @@
 #include "devices\microscope.h"
 #include "ui\DevicePropController.h"
 
+#define TRY(e) if(!(e)) qFatal("%s(%d):"ENDL "\tExpression evaluated as false"ENDL "\t%s",__FILE__,__LINE__,#e)
+
 namespace fetch {
 namespace ui {
 
@@ -68,6 +70,45 @@ namespace ui {
   }
 
   /*
+   *    StageBoundsButton
+   */
+
+  ///// Two state button
+  // 1. (cleared) press to set target bound, goto (bound)
+  // 2. (bound)   press to clear target bound, goto (cleared)
+  //
+  // NOTE: outer bounds (biggest max and smallest min) should be set on the target QDouble
+  
+  // e.g StageBoundsButton(ps_[0],"maximum",this)
+  StageBoundsButton::StageBoundsButton(QDoubleSpinBox *target, const char* targetprop, QWidget *parent)
+      : QPushButton(parent)
+      , target_(target)
+      , targetprop_(targetprop)
+  { 
+    setCheckable(true);
+    setChecked(false);
+    TRY(connect(this,SIGNAL(toggled(bool)),this,SLOT(handleToggled(bool))));
+    
+    bool ok;
+    original_ = target_->property(targetprop_).toDouble(&ok);
+    TRY(ok);
+    setText(QString::number(original_,'f',4));
+  }
+
+  void StageBoundsButton::handleToggled(bool state)
+  { // state: false is cleared, true is bound
+    if(state) // set to bound
+    { double pos = target_->value();         
+      target_->setProperty(targetprop_,pos);                  // set targetprop ("maximum" or "minimum") to current pos
+      setText(QString::number(pos,'f',4));                    // button text reflects set point
+    } else    // set to cleared
+    { setText(QString::number(original_,'f',4));
+      target_->setProperty(targetprop_,original_);            // set targetprop ("maximum" or "minimum") to original_
+    }
+  }
+  
+
+  /*
    *    StageDockWidget
    */
 
@@ -83,25 +124,47 @@ namespace ui {
     setWidget(formwidget);
 
     QGridLayout *row;
+    int irow = 0;
     QDoubleSpinBox *s,**w;
     ///// Position
     w=ps_;
-    row = new QGridLayout();
-    row->addWidget(new QLabel("X")   ,0,1,Qt::AlignCenter);
-    row->addWidget(new QLabel("Y")   ,0,2,Qt::AlignCenter);
-    row->addWidget(new QLabel("Z")   ,0,3,Qt::AlignCenter);
-    row->addWidget(new QLabel("Step"),0,4,Qt::AlignCenter);
-
-    row->addWidget(new QLabel("Pos (mm)"),1,0);
-    row->addWidget(w[0]=parent->_stage_pos_x_control->createDoubleSpinBox(),1,1);
-    row->addWidget(w[1]=parent->_stage_pos_y_control->createDoubleSpinBox(),1,2);
-    row->addWidget(w[2]=parent->_stage_pos_z_control->createDoubleSpinBox(),1,3);    
+    w[0]=parent->_stage_pos_x_control->createDoubleSpinBox();
+    w[1]=parent->_stage_pos_y_control->createDoubleSpinBox();
+    w[2]=parent->_stage_pos_z_control->createDoubleSpinBox();
     w[0]->setRange(0.5,100.0); // set safe ranges
     w[1]->setRange(0.5,100.0); // - normally this should be handled by DevicePropController
     w[2]->setRange(0.5,11.0);  //   but API's not right...validator doesn't accomidate non-lineedit controls well
-                               //   need to explicitly set min-max or something
-    
-    row->addWidget(   s=new QDoubleSpinBox(),1,4); // step size 
+                               //   need to explicitly set min-max or something    
+
+    row = new QGridLayout();
+    row->addWidget(new QLabel("X")   ,irow,1,Qt::AlignCenter);
+    row->addWidget(new QLabel("Y")   ,irow,2,Qt::AlignCenter);
+    row->addWidget(new QLabel("Z")   ,irow,3,Qt::AlignCenter);
+    row->addWidget(new QLabel("Step"),irow,4,Qt::AlignCenter);
+    irow++;
+
+    ///// Max bounds
+    row->addWidget(new QLabel("Max"),irow,0,Qt::AlignRight);
+    row->addWidget(new StageBoundsButton(w[0],"maximum",this),irow,1);
+    row->addWidget(new StageBoundsButton(w[1],"maximum",this),irow,2);
+    row->addWidget(new StageBoundsButton(w[2],"maximum",this),irow,3);
+    irow++;
+
+    ///// Position spin boxes
+    row->addWidget(new QLabel("Pos (mm)"),irow,0);
+    row->addWidget(w[0],irow,1);
+    row->addWidget(w[1],irow,2);
+    row->addWidget(w[2],irow,3);    
+    row->addWidget(   s=new QDoubleSpinBox(),irow,4); // step size 
+    irow++;
+
+    ///// Min bounds
+    row->addWidget(new QLabel("Min"),irow,0,Qt::AlignRight);
+    row->addWidget(new StageBoundsButton(w[0],"minimum",this),irow,1);
+    row->addWidget(new StageBoundsButton(w[1],"minimum",this),irow,2);
+    row->addWidget(new StageBoundsButton(w[2],"minimum",this),irow,3);
+    irow++;
+
     for(int i=0;i<3;++i) w[i]->setDecimals(4);
     s->setRange(0.0001,10.0);    
     s->setDecimals(4);
@@ -131,16 +194,17 @@ namespace ui {
 
     ///// Velocity
     w=vs_;
-    row->addWidget(new QLabel("Vel (mm/s)"),2,0);
-    row->addWidget(w[0]=parent->_stage_vel_x_control->createDoubleSpinBox(),2,1);
-    row->addWidget(w[1]=parent->_stage_vel_y_control->createDoubleSpinBox(),2,2);
-    row->addWidget(w[2]=parent->_stage_vel_z_control->createDoubleSpinBox(),2,3);
+    row->addWidget(new QLabel("Vel (mm/s)"),irow,0);
+    row->addWidget(w[0]=parent->_stage_vel_x_control->createDoubleSpinBox(),irow,1);
+    row->addWidget(w[1]=parent->_stage_vel_y_control->createDoubleSpinBox(),irow,2);
+    row->addWidget(w[2]=parent->_stage_vel_z_control->createDoubleSpinBox(),irow,3);
     w[0]->setRange(0.1,10.0);  // set safe ranges
     w[1]->setRange(0.1,10.0);  // - normally this should be handled by DevicePropController
     w[2]->setRange(0.1,1.0);   //   but API's not right...validator doesn't accomidate non-lineedit controls well
                                //   need to explicitly set min-max or something
     
-    row->addWidget(   s=new QDoubleSpinBox(),2,4);    
+    row->addWidget(   s=new QDoubleSpinBox(),irow,4);
+    irow++;
     for(int i=0;i<3;++i) w[i]->setDecimals(4);
     s->setRange(0.0001,10.0);    
     s->setDecimals(4);
