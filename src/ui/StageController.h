@@ -61,6 +61,7 @@ namespace ui {
 
     QAction* saveDialogAction() {return save_action_;}
     QAction* loadDialogAction() {return load_action_;}
+    QAction*   autosaveAction() {return autosave_action_;}
 
   public slots:
     void update(device::StageTiling *tiling)                               {tiling_=tiling; markAddressable(); emit changed(); emit show(tiling_!=NULL);}
@@ -71,7 +72,10 @@ namespace ui {
     void saveViaFileDialog();
     void loadViaFileDialog();
     void saveToFile(const QString& filename);
+    void saveToLast();
     void loadFromFile(const QString& filename);
+    
+    void setAutosave(bool on);    
 
   signals:
     void show(bool tf);
@@ -88,7 +92,10 @@ namespace ui {
     device::StageTiling *tiling_;
     TilingControllerListener listener_;
     QAction             *load_action_,
-                        *save_action_;
+                        *save_action_,
+                        *autosave_action_;
+                        
+    QTimer              autosave_timer_;
 
     bool mark(     const QPainterPath& path,                               // path should be in scene coords (um)
                    device::StageTiling::Flags attr, 

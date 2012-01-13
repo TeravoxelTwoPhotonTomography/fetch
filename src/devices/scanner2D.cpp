@@ -64,6 +64,7 @@ namespace fetch
 
     unsigned int Scanner2D::on_attach()
     {      
+
       CHKJMP(_shutter.on_attach()==0   ,ESHUTTER);
       CHKJMP(_digitizer.on_attach()==0 ,EDIGITIZER);
       CHKJMP(_daq.on_attach()==0       ,EDAQ);

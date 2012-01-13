@@ -135,6 +135,11 @@ namespace ui {
     row->addWidget(w[0]=parent->_stage_vel_x_control->createDoubleSpinBox(),2,1);
     row->addWidget(w[1]=parent->_stage_vel_y_control->createDoubleSpinBox(),2,2);
     row->addWidget(w[2]=parent->_stage_vel_z_control->createDoubleSpinBox(),2,3);
+    w[0]->setRange(0.1,10.0);  // set safe ranges
+    w[1]->setRange(0.1,10.0);  // - normally this should be handled by DevicePropController
+    w[2]->setRange(0.1,1.0);   //   but API's not right...validator doesn't accomidate non-lineedit controls well
+                               //   need to explicitly set min-max or something
+    
     row->addWidget(   s=new QDoubleSpinBox(),2,4);    
     for(int i=0;i<3;++i) w[i]->setDecimals(4);
     s->setRange(0.0001,10.0);    

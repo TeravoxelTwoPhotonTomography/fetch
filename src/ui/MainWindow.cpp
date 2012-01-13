@@ -267,6 +267,7 @@ void fetch::ui::MainWindow::createMenus()
   QMenu *t = menuBar()->addMenu("&Tiling");
   t->addAction(tilingController()->loadDialogAction());
   t->addAction(tilingController()->saveDialogAction());
+  t->addAction(tilingController()->autosaveAction());
 }
 
 void fetch::ui::MainWindow::createStateMachines()

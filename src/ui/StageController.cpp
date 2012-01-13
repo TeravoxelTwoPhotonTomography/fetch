@@ -38,7 +38,7 @@ using namespace Eigen;
 fetch::ui::TilingController::TilingController( device::Stage *stage, device::StageTiling *tiling, QObject* parent/*=0*/ )
   : QObject(parent)
   , stage_(stage)
-  , tiling_(tiling)
+  , tiling_(tiling)  
 { 
   connect(
     &listener_,SIGNAL(sig_tile_done(unsigned,unsigned int)),
@@ -74,8 +74,31 @@ fetch::ui::TilingController::TilingController( device::Stage *stage, device::Sta
     save_action_->setStatusTip("Save tiling data.");
     connect(save_action_,SIGNAL(triggered()),this,SLOT(saveViaFileDialog()));
   }
+  {
+    autosave_action_ = new QAction("&Autosave",this);
+    autosave_action_->setCheckable(true);
+    autosave_action_->setChecked(false);
+    autosave_action_->setStatusTip("Automatically save tiling data.");
+    connect(autosave_action_,SIGNAL(toggled(bool)),this,SLOT(setAutosave(bool)));
+  }
+  
+  ///// Autosave timer
+  connect(&autosave_timer_,SIGNAL(timeout()),
+          this,SLOT(saveToLast()));
+  autosave_timer_.stop();
 }
 
+void fetch::ui::TilingController::
+  setAutosave(bool on)
+  { if(!on)
+    { autosave_timer_.stop();
+      return;
+    }
+    autosave_timer_.setSingleShot(false);
+    autosave_timer_.setInterval(30*1000); // interval msec   
+    autosave_timer_.start();
+  }
+  
 void 
   fetch::ui::TilingController::
   saveToFile(const QString& filename)
@@ -95,22 +118,31 @@ void
     if( buf.length() != metafile.write(buf.c_str()) )   goto ErrorWriteMetafile;
     if(mylib::Write_Image(arrayFileName.toLocal8Bit().data(),tiling_->attributeArray(),mylib::DONT_PRESS))
       goto ErrorWriteAttrImage;
+    debug("%s(%d)"ENDL "\tTiling saved to %s.",__FILE__,__LINE__,filename.toLocal8Bit().data());
     return;
 ErrorWriteAttrImage:
-    warning("%s(%d)"ENDL"\tSomething went wrong writing tiling attribute data to the file at"ENDL"\t%s"ENDL,
+    warning("%s(%d)"ENDL "\tSomething went wrong writing tiling attribute data to the file at"ENDL"\t%s"ENDL,
       __FILE__,__LINE__,arrayFileName.toLocal8Bit().data());
     metafile.remove();
     return;
 ErrorWriteMetafile:
-    warning("%s(%d)"ENDL"\tSomething went wrong with writing tiling metadata to the file at"ENDL"\t%s"ENDL,
+    warning("%s(%d)"ENDL "\tSomething went wrong with writing tiling metadata to the file at"ENDL"\t%s"ENDL,
       __FILE__,__LINE__,metafile.fileName().toLocal8Bit().data());
     metafile.remove();
     return;
 ErrorOpenMetafile:
-    warning("%s(%d)"ENDL"\tCould not open file at %s"ENDL,
+    warning("%s(%d)"ENDL "\tCould not open file at %s"ENDL,
       __FILE__,__LINE__,metafile.fileName().toLocal8Bit().data());
     return;
   }
+}
+
+void 
+  fetch::ui::TilingController::
+  saveToLast()
+{ QSettings settings;
+  QString filename = settings.value(defaultTilingConfigPathKey).toString();
+  saveToFile(filename);
 }
 
 void
