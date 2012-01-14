@@ -141,10 +141,10 @@ QValidator* GetSetLSMVerticalRange::createValidator_(QObject* parent)
 }
 
 void GetSetPockels::Set_(device::Pockels *dc, u32 &v)
-{ dc->setOpenVoltsNoWait(v/1000.0);
+{ dc->setOpenVoltsNoWait(v/1000.0); // convert mV to V
 }
 u32 GetSetPockels::Get_(device::Pockels *dc)
-{ return dc->getOpenVolts();
+{ return dc->getOpenVolts()*1000.0; // Convert V to mV
 }           
 QValidator* GetSetPockels::createValidator_(QObject* parent)
 { return new QIntValidator(0,2000,parent);
