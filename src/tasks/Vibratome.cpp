@@ -95,7 +95,9 @@ namespace microscope {
     CHK( (v = dc->vibratome()->feed_vel_mm_p_s())>0.0); // must be non-zero
     
     // Move to the start of the cut
-    CHK( dc->stage()->setPos(ax,ay,cz-dz+thick));
+    CHK( dc->stage()->setPos(cx,cy,1.0));           // Drop to safe z first
+    CHK( dc->stage()->setPos(ax,ay,1.0));           // Move on safe z plane
+    CHK( dc->stage()->setPos(ax,ay,cz-dz+thick));   // Move to final plane
     
     // do the cut
     CHK( dc->vibratome()->start());    // returns 1 on success
@@ -105,6 +107,8 @@ namespace microscope {
     CHK( dc->vibratome()->stop());
     
     // Move back
+    CHK( dc->stage()->setPos(bx,by,1.0));           // Drop to safe z first
+    CHK( dc->stage()->setPos(cx,cy,1.0));           // Move on safe z plane
     CHK( dc->stage()->setPos(cx,cy,cz+thick));
     
     return 1;
