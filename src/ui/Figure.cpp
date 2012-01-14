@@ -110,6 +110,11 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
               _tv,SLOT(     addSelection(const QPainterPath&)));
   connect(&_scene,SIGNAL(removeSelectedArea(const QPainterPath&)),
               _tv,SLOT(  removeSelection(const QPainterPath&)));
+  
+  connect(&_scene,SIGNAL(   markSelectedAreaAsDone(const QPainterPath&)),
+              _tv,SLOT(     markSelectedAreaAsDone(const QPainterPath&)));
+  connect(&_scene,SIGNAL(markSelectedAreaAsNotDone(const QPainterPath&)),
+              _tv,SLOT(  markSelectedAreaAsNotDone(const QPainterPath&)));
 
   QGridLayout *layout = new QGridLayout;
   layout->setContentsMargins(0,0,0,0);

@@ -225,17 +225,30 @@ void TilesView::addSelection( const QPainterPath& path )
   paint_lattice_attribute_image_();
   updateCBO();
   update();
-  //paint_lattice_(path,c,c);
 }
 
 void TilesView::removeSelection( const QPainterPath& path )
-{
-  QColor c(0,255,255,255);
+{  
   tc_->markInactive(path);
   paint_lattice_attribute_image_();
   updateCBO();
   update();
-  //paint_lattice_(path,c,c);   
+}
+  
+void TilesView::markSelectedAreaAsDone(const QPainterPath& path)
+{
+  tc_->markDone(path);
+  paint_lattice_attribute_image_();
+  updateCBO();
+  update();
+}
+
+void TilesView::markSelectedAreaAsNotDone(const QPainterPath& path)
+{
+  tc_->markNotDone(path);
+  paint_lattice_attribute_image_();
+  updateCBO();
+  update();
 }
 
 void TilesView::initIBO()

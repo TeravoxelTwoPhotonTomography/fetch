@@ -3,6 +3,7 @@
 #include "StageScene.h"
 #include "common.h"
 
+#undef HERE
 #define _HERE_ "[STAGESCENE] At " << __FILE__ << "("<<__LINE__<<")\n"
 #define HERE qDebug() << _HERE_;
 #define DBG(e) if(!(e)) qDebug() << HERE << "(!)\tCheck failed for Expression "#e << "\n" 
@@ -55,6 +56,10 @@ QColor SelectionRectGraphicsWidget::getBaseColor()
     return Qt::green;
   case Remove:
     return Qt::red;
+  case Done:
+    return Qt::blue;
+  case UnDone:
+    return Qt::magenta; 
   default:
     UNREACHABLE;
   }
@@ -64,8 +69,10 @@ void SelectionRectGraphicsWidget::commit()
 {  
   switch(op_)
   {
-  case Add:    emit addSelectedArea(mapToScene(shape()));   break;
-  case Remove: emit removeSelectedArea(mapToScene(shape()));break;
+  case Add:    emit addSelectedArea(mapToScene(shape()));           break;
+  case Remove: emit removeSelectedArea(mapToScene(shape()));        break;
+  case Done:   emit markSelectedAreaAsDone(mapToScene(shape()));    break;
+  case UnDone: emit markSelectedAreaAsNotDone(mapToScene(shape())); break;
   }
   scene()->removeItem(this);
   deleteLater();
@@ -112,6 +119,16 @@ void SelectionRectGraphicsWidget::createActions()
     c->setShortcut(Qt::Key_Minus);
     c->setShortcutContext(Qt::WidgetShortcut);
     connect(c,SIGNAL(triggered()),this,SLOT(setOpRemove()));
+    addAction(c);
+  }
+  {
+    c = new QAction(tr("Mark Done"),this);        
+    connect(c,SIGNAL(triggered()),this,SLOT(setOpDone()));
+    addAction(c);
+  }  
+  {
+    c = new QAction(tr("Mark Not Done"),this);        
+    connect(c,SIGNAL(triggered()),this,SLOT(setOpUnDone()));
     addAction(c);
   }
 }
@@ -165,7 +182,7 @@ void StageScene::mousePressEvent( QGraphicsSceneMouseEvent *event )
       SelectionRectGraphicsWidget *pick = dynamic_cast<SelectionRectGraphicsWidget*>(itemAt(event->scenePos()));
       if(pick)
       {
-        HERE;
+        //HERE;
         /** TODO **/
         /*
         * [ ] Distinguish between pick (to move) and dragging the edge to resize
@@ -180,7 +197,11 @@ void StageScene::mousePressEvent( QGraphicsSceneMouseEvent *event )
       connect(w,SIGNAL(   addSelectedArea(const QPainterPath&)),
            this,SIGNAL(   addSelectedArea(const QPainterPath&)));
       connect(w,SIGNAL(removeSelectedArea(const QPainterPath&)),
-           this,SIGNAL(removeSelectedArea(const QPainterPath&)));
+           this,SIGNAL(removeSelectedArea(const QPainterPath&)));  
+      connect(w,SIGNAL(   markSelectedAreaAsDone(const QPainterPath&)),
+           this,SIGNAL(   markSelectedAreaAsDone(const QPainterPath&)));
+      connect(w,SIGNAL(markSelectedAreaAsNotDone(const QPainterPath&)),
+           this,SIGNAL(markSelectedAreaAsNotDone(const QPainterPath&)));
 
       w->setPos(event->scenePos());
       addItem(w);

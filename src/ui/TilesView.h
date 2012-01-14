@@ -33,7 +33,9 @@ public:
 
 public slots:
   void addSelection(const QPainterPath& path);
-  void removeSelection(const QPainterPath& path);
+  void removeSelection(const QPainterPath& path);   
+  void markSelectedAreaAsDone(const QPainterPath& path);
+  void markSelectedAreaAsNotDone(const QPainterPath& path);  
 
   void update_tiling();
   void show(bool tf);

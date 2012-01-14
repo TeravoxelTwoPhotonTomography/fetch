@@ -6,13 +6,16 @@ class SelectionRectGraphicsWidget : public QGraphicsWidget
   Q_OBJECT
 
 public:
-  enum RectOp {Add,Remove};
+  enum RectOp {Add,Remove,Done,UnDone};
 
   SelectionRectGraphicsWidget(QGraphicsItem *parent=0);
 
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0 );
 
 public slots:
+
+  void setOpDone()    {lastop_=op_=Done; update();}
+  void setOpUnDone()    {lastop_=op_=UnDone; update();}
   void setOpAdd()     {lastop_=op_=Add; update();}
   void setOpRemove()  {lastop_=op_=Remove; update();}
   void commit();
@@ -21,6 +24,8 @@ public slots:
 signals:
   void addSelectedArea(const QPainterPath& path);
   void removeSelectedArea(const QPainterPath& path);
+  void markSelectedAreaAsDone(const QPainterPath& path);
+  void markSelectedAreaAsNotDone(const QPainterPath& path);
 
 protected:
   virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event);
@@ -57,7 +62,9 @@ public slots:
 
 signals:    
   void addSelectedArea(const QPainterPath& path);
-  void removeSelectedArea(const QPainterPath& path);
+  void removeSelectedArea(const QPainterPath& path);  
+  void markSelectedAreaAsDone(const QPainterPath& path);
+  void markSelectedAreaAsNotDone(const QPainterPath& path);
 
 private:
   QGraphicsWidget *current_item_;

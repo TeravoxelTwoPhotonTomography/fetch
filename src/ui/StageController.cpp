@@ -399,6 +399,22 @@ bool fetch::ui::TilingController::markInactive( const QPainterPath& path )
     QPainter::RasterOp_NotSourceAndDestination);
 }
 
+bool fetch::ui::TilingController::markDone(const QPainterPath& path)
+{  
+  return mark(
+    path,
+    device::StageTiling::Done,
+    QPainter::RasterOp_SourceOrDestination);
+}
+
+bool fetch::ui::TilingController::markNotDone(const QPainterPath& path)
+{  
+  return mark(
+    path,
+    device::StageTiling::Done,
+    QPainter::RasterOp_NotSourceAndDestination);
+}
+
 // returns false if tiling is invalid or if stage_coord is oob
 float roundf(float x) {return floor(0.5f+x);}
 bool fetch::ui::TilingController::mapToIndex(const Vector3f & stage_coord, unsigned *index)

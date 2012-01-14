@@ -56,6 +56,8 @@ namespace ui {
     bool markAddressable();                                                // returns false if tiling is invalid
     bool markActive(const QPainterPath& path);                             // returns false if tiling is invalid
     bool markInactive(const QPainterPath& path);                           // returns false if tiling is invalid
+    bool markDone(const QPainterPath& path);                               // returns false if tiling is invalid
+    bool markNotDone(const QPainterPath& path);                            // returns false if tiling is invalid
 
     bool mapToIndex(const Vector3f & stage_coord, unsigned *index);        // returns false if tiling is invalid or if stage_coord is oob
 
