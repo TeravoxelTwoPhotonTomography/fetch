@@ -87,6 +87,7 @@ endif(NIDAQMX_FOUND)
 
 #niscope
 find_package(NIScope)
+show(NISCOPE_FOUND)
 if(NISCOPE_FOUND)
         set(OPTIONAL_LIBS ${OPTIONAL_LIBS} ${NISCOPE_LIBRARIES})
         include_directories(${NISCOPE_INCLUDE_DIR})

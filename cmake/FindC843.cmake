@@ -51,4 +51,5 @@ find_package_handle_standard_args(C843
 if(C843_FOUND)
   include_directories(${C843_INCLUDE_DIR})
   FILE(COPY ${C843_DLL_LIBRARY} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  set(HAVE_C843 1)
 endif(C843_FOUND)

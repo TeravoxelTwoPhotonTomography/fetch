@@ -37,9 +37,11 @@ find_library(ALAZAR_LIBRARY ATSApi.lib
   )
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(MYLIB
+find_package_handle_standard_args(ALAZAR
         REQUIRED_VARS
           ALAZAR_INCLUDE_DIR
           ALAZAR_LIBRARY
           )
-
+if(ALAZAR_FOUND)
+  set(HAVE_ALAZAR 1)
+endif()
