@@ -41,8 +41,6 @@ find_package_handle_standard_args(NIDAQMX
           NIDAQMX_INCLUDE_DIR
           NIDAQMX_LIBRARY
           )
-set(NIDAQMX_FOUND TRUE)
-set(HAVE_NIDAQMX  TRUE)
-
-# message("NIDAQMX_INCLUDE_DIR is ${NIDAQMX_INCLUDE_DIR}")
-# message("NIDAQMX_LIBRARY is ${NIDAQMX_LIBRARY}")
+if(NIDAQMX_FOUND)
+  set(HAVE_NIDAQMX 1)
+endif()

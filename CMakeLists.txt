@@ -23,6 +23,10 @@ project(fetch)
 #  
 ######################################################################
 
+macro(show v)
+message(${v} is ${${v}})
+endmacro()
+
 ######################################################################
 #  Useful options 
 ######################################################################
@@ -111,6 +115,7 @@ if(ALAZAR_FOUND)
         set(OPTIONAL_LIBS ${OPTIONAL_LIBS} ${ALAZAR_LIBRARY})
         include_directories(${ALAZAR_INCLUDE_DIR})
 endif(ALAZAR_FOUND)
+
 
 #PI C-843 Stage controller
 find_package(C843)

@@ -29,17 +29,17 @@ find_path(ALAZAR_INCLUDE_DIR AlazarApi.h
     ${CMAKE_SOURCE_DIR}/3rdParty/AlazarTech/ATS-SDK/5.8.2
     PATH_SUFFIXES Include
 )
-_ALAZAR_ASSERT(ALAZAR_INCLUDE_DIR "Could not find AlazarApi.h")
 
 find_library(ALAZAR_LIBRARY ATSApi.lib
   HINTS
   ${CMAKE_SOURCE_DIR}/3rdParty/AlazarTech/ATS-SDK/5.8.2
   PATH_SUFFIXES Library/Win32 Library/x64
   )
-_ALAZAR_ASSERT(ALAZAR_LIBRARY "Could not find ATSApi.lib")
 
-set(ALAZAR_FOUND "YES")
-set(HAVE_ALAZAR 1)
-# message("ALAZAR_INCLUDE_DIR is ${ALAZAR_INCLUDE_DIR}")
-# message("ALAZAR_LIBRARY is ${ALAZAR_LIBRARY}")
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(MYLIB
+        REQUIRED_VARS
+          ALAZAR_INCLUDE_DIR
+          ALAZAR_LIBRARY
+          )
 
