@@ -334,5 +334,22 @@ endif(C843_FOUND)
 ###############################################################################
 #  Test  
 ###############################################################################
-enable_testing(true)
-add_subdirectory(tests)
+#enable_testing(true)
+#add_subdirectory(tests)
+
+###############################################################################
+#  Documentation
+###############################################################################
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
+                 ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+                 @ONLY
+                 )
+  add_custom_target(doc 
+    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT           "Generating API Docs"
+    VERBATIM
+    )
+endif()

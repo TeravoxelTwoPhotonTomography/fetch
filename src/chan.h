@@ -28,6 +28,7 @@ void     Chan_Wait_For_Writer_Count ( Chan* self,size_t n);
 void     Chan_Wait_For_Have_Reader( Chan* self);
 void     Chan_Set_Expand_On_Full ( Chan* self, int  expand_on_full);                           // default: no expand
 
+//
 // ----
 // Next
 // ----
@@ -45,12 +46,13 @@ void     Chan_Set_Expand_On_Full ( Chan* self, int  expand_on_full);            
 // Copy   Waits or expands.              Fails if no sources, otherwise waits.
 // Try    Fails immediately              Fails immediately.
 // Timed  Waits.  Fails after timeout.   Fails immediately if no sources, otherwise waits till timeout.
+//
 
-unsigned int Chan_Next         ( Chan *self,  void **pbuf, size_t sz);
-unsigned int Chan_Next_Copy    ( Chan *self,  void  *buf,  size_t sz);
-unsigned int Chan_Next_Try     ( Chan *self,  void **pbuf, size_t sz);
-unsigned int Chan_Next_Copy_Try( Chan *self_, void  *buf,  size_t sz);
-unsigned int Chan_Next_Timed   ( Chan *self,  void **pbuf, size_t sz,   unsigned timeout_ms );
+unsigned int Chan_Next         ( Chan *self,  void **pbuf, size_t sz); ///< Pops next item. Returns failure if there are no writers, otherwise waits.
+unsigned int Chan_Next_Copy    ( Chan *self,  void  *buf,  size_t sz); ///< Pops a copy of the next item.  Returns failure if there are no writers, otherwise waits.
+unsigned int Chan_Next_Try     ( Chan *self,  void **pbuf, size_t sz); ///< If no item's are on the queue, return failure.  Otherwise, pop the next item.
+unsigned int Chan_Next_Copy_Try( Chan *self_, void  *buf,  size_t sz); ///< If no item's are on the queue, return failure.  Otherwise, pop a copy of the next item. 
+unsigned int Chan_Next_Timed   ( Chan *self,  void **pbuf, size_t sz,   unsigned timeout_ms ); ///< Just like Chan_Next(), but any waiting is limited by the timeout.
 
 // ----
 // Peek
