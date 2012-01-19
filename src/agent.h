@@ -10,6 +10,7 @@
  * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
+
 #pragma once
 
 #include "common.h"
@@ -17,104 +18,91 @@
 #include "object.h"
 #include "util\util-protobuf.h"
 
-//
-// Class Agent
-// -----------
-//
-// This object is thread safe and requires no explicit locking.
-//
-// This models a stateful asynchronous producer and/or consumer associated with
-// some resource.  An Agent is a collection of:
-//
-//      1. an abstract context.  For example, a handle to a hardware resource.
-//      2. a dedicated thread
-//      3. a Task (see class Task)
-//      4. communication channels (see Chan)
-//
-// Switching between tasks is performed by transitioning through a series of
-// states, as follows:
-//
-//      Agent()        Attach        Arm        Run
-//  NULL <==> Instanced <==> Holding <==> Armed <==> Running
-//      ~Agent()       Detach       Disarm      Stop
-//
-//       States      Context  Task Available Running flag set 
-//       ------      -------  ---- --------- ---------------- 
-//       Instanced   No       No     No            No         
-//       Holding     Yes      No     Yes           No         
-//       Armed       Yes      Yes    Yes           No         
-//       Running     Yes      Yes    No            Yes
-//
-// Agents must undergo a two-stage initialization.  After an agent object is
-// initially constructed, a context must be assigned via the Attach() method.
-// Once a context is assigned, the Agent is "available" meaning it may be
-// assigned a task via the Arm() method.  Once armed, the Run() method can be
-// used to start the assigned task.
-//
-// As indicated by the model, an Agent should be disarmed and detached before
-// being deallocated.  The destructor will attempt to properly shutdown from
-// any state, but it might not do so gracefully.
-//
-// The "Back" transition methods (~Agent(), Detach, Disarm, and Stop) accept
-// any upstream state.  That is, Detach() will attempt to Stop() and then
-// Disarm() a running Agent.  Additionally, Disarm() can be called from any
-// state.
-//
-// OTHER METHODS
-// =============
-//
-// static method
-// <connect>
-//      Destination channel inherits the existing channel's properties.
-//      If both channels exist, the source properties are inherited.
-//      One channel must exist.
-//
-// RULES
-// =====
-// 0. Children must maintain the behaviors outlined above.
-//
-// 1. Children must implement:
-//
-//      unsigned int attach()
-//      unsigned int detach()
-//
-//    <detach> Should attempt to disarm, if possible, and warn when disarm() fails.
-//             Should return 0 on success, non-zero otherwise.
-//             Should explicitly lock()/unlock() when necessary.
-//
-//    <attach> Should return 0 on success, non-zero otherwise.
-//             Should explicitly lock()/unlock() when necessary.
-//
-// 2. Children must allocate the required input and output channels on 
-//    instatiation.  Preferably with the provided Agent::_alloc_qs functions.
-//
-//    The buffer sizes for the queue may be approximate.  The important thing
-//    is that the device specify the number of queues and the number of buffers
-//    on each queue.
-//
-// 3. Children must impliment destructors that call detach() and handle any errors.
-//
-// TODO
-// ====
-// - Rename Agent to something like Context or RunLevel or something
-// - remove operations on queues to IDevice.  Tasks should be responsible for 
-//   flushing queues on shutdown and that way the number of queues can be device
-//   dependent and supported by the particular device implementation.
-// - update documentation
-//
-
-/*
-IDevice
-=======
-
-Interface class defining two methods:
-
-  - on_attach()
-  - on_detach()
-
-These functions are called by the Agent class during 
-transitions to/from different run-states.
-*/
+/// \file
+/// Class Agent
+/// -----------
+///
+/// This object is thread safe and requires no explicit locking.
+///
+/// This models a stateful asynchronous producer and/or consumer associated with
+/// some resource.  An Agent is a collection of:
+///
+///      1. an abstract context.  For example, a handle to a hardware resource.
+///      2. a dedicated thread
+///      3. a Task (see class Task)
+///      4. communication channels (see Chan)
+///
+/// Switching between tasks is performed by transitioning through a series of
+/// states, as follows:
+///
+///      Agent()        Attach        Arm        Run
+///  NULL <==> Instanced <==> Holding <==> Armed <==> Running
+///      ~Agent()       Detach       Disarm      Stop
+///
+///       States      Context  Task Available Running flag set 
+///       ------      -------  ---- --------- ---------------- 
+///       Instanced   No       No     No            No         
+///       Holding     Yes      No     Yes           No         
+///       Armed       Yes      Yes    Yes           No         
+///       Running     Yes      Yes    No            Yes
+///
+/// Agents must undergo a two-stage initialization.  After an agent object is
+/// initially constructed, a context must be assigned via the Attach() method.
+/// Once a context is assigned, the Agent is "available" meaning it may be
+/// assigned a task via the Arm() method.  Once armed, the Run() method can be
+/// used to start the assigned task.
+///
+/// As indicated by the model, an Agent should be disarmed and detached before
+/// being deallocated.  The destructor will attempt to properly shutdown from
+/// any state, but it might not do so gracefully.
+///
+/// The "Back" transition methods (~Agent(), Detach, Disarm, and Stop) accept
+/// any upstream state.  That is, Detach() will attempt to Stop() and then
+/// Disarm() a running Agent.  Additionally, Disarm() can be called from any
+/// state.
+///
+/// OTHER METHODS
+/// =============
+///
+/// static method
+/// <connect>
+///      Destination channel inherits the existing channel's properties.
+///      If both channels exist, the source properties are inherited.
+///      One channel must exist.
+///
+/// RULES
+/// =====
+/// 0. Children must maintain the behaviors outlined above.
+///
+/// 1. Children must implement:
+///
+///      unsigned int attach()
+///      unsigned int detach()
+///
+///    <detach> Should attempt to disarm, if possible, and warn when disarm() fails.
+///             Should return 0 on success, non-zero otherwise.
+///             Should explicitly lock()/unlock() when necessary.
+///
+///    <attach> Should return 0 on success, non-zero otherwise.
+///             Should explicitly lock()/unlock() when necessary.
+///
+/// 2. Children must allocate the required input and output channels on 
+///    instatiation.  Preferably with the provided Agent::_alloc_qs functions.
+///
+///    The buffer sizes for the queue may be approximate.  The important thing
+///    is that the device specify the number of queues and the number of buffers
+///    on each queue.
+///
+/// 3. Children must impliment destructors that call detach() and handle any errors.
+///
+/// TODO
+/// ====
+/// - Rename Agent to something like Context or RunLevel or something
+/// - remove operations on queues to IDevice.  Tasks should be responsible for 
+///   flushing queues on shutdown and that way the number of queues can be device
+///   dependent and supported by the particular device implementation.
+/// - update documentation
+///
 
 #define AGENT_DEFAULT_TIMEOUT INFINITE
 
@@ -127,9 +115,17 @@ namespace fetch {
   class Task;
   class Agent;
 
-  //
-  // IDevice
-  //
+  ///
+  /// IDevice
+  ///
+  /// Interface class defining two methods:
+  /// 
+  ///   - on_attach()
+  ///   - on_detach()
+  /// 
+  /// These functions are called by the Agent class during 
+  /// transitions to/from different run-states.
+  
   class IDevice
   {
   public:

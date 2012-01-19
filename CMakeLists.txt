@@ -11,6 +11,9 @@ cmake_minimum_required(VERSION 2.6)
 #[ ] "algo" subdirectory needs better name?
 #
 project(fetch)
+set(FETCH_MAJOR_VERSION 0)
+set(FETCH_MINOR_VERSION 0)
+set(FETCH_PATCH_VERSION develop)
 
 ######################################################################
 #  Table of contents (for assisted text searching)
@@ -87,7 +90,6 @@ endif(NIDAQMX_FOUND)
 
 #niscope
 find_package(NIScope)
-show(NISCOPE_FOUND)
 if(NISCOPE_FOUND)
         set(OPTIONAL_LIBS ${OPTIONAL_LIBS} ${NISCOPE_LIBRARIES})
         include_directories(${NISCOPE_INCLUDE_DIR})
@@ -341,16 +343,35 @@ endif(C843_FOUND)
 ###############################################################################
 #  Documentation
 ###############################################################################
+
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
-                 ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in
+                 ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile
                  @ONLY
                  )
-  add_custom_target(doc 
-    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+  add_custom_target(apidocs
+    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/doc/Doxyfile
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT           "Generating API Docs"
     VERBATIM
+    )
+endif()
+
+find_package(sphinx)
+if(SPHINX_FOUND)
+  set(SPHINX_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/doc/source) 
+  set(SPHINX_CONFPY_DIR ${CMAKE_CURRENT_BINARY_DIR}/doc/)
+  set(SPHINX_CACHE_DIR  ${CMAKE_CURRENT_BINARY_DIR}/doc/doctrees)
+  set(SPHINX_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/doc/html)
+  configure_file(${SPHINX_SOURCE_DIR}/conf.py.in
+                 ${SPHINX_CONFPY_DIR}/conf.py
+                 @ONLY                 
+                 )
+  add_custom_target(sphinxdocs
+    ${SPHINX_EXECUTABLE} -b html -d ${SPHINX_CACHE_DIR} -c ${SPHINX_CONFPY_DIR} ${SPHINX_SOURCE_DIR} ${SPHINX_OUTPUT_DIR} 
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS apidocs
+    COMMENT "Generating Sphinx Docs"
     )
 endif()
