@@ -1,3 +1,48 @@
+/** \file
+    \ref Chan is a zero-copy multi-producer mutli-consumer asynchronous queue
+    for passing messages between threads.
+
+    Reading and writing to the queue are both performed via Chan_Next().
+    Whether a "read" or a "write" happens depends on the \a mode passed to
+    Chan_Open(), which returns a reference-counted "reader" or "writer"
+    reference to the queue.
+    
+    Note that "opening" a channel is different than "allocating" it.  A \ref
+    Chan is typically allocated once, but may be opened and closed many times.
+    Chan_Alloc() initializes and reserves memory for the queue.  Internally,
+    Chan_Open() does little more than some bookkeeping.
+    
+    \ref Chan was designed so that Chan_Next() operations block the calling
+    thread under some circumstances.  A read will wait for data if as long as a
+    writer has been opened for that \ref Chan elsewhere.  When data becomes
+    available, the read will return successfully returning a message from the
+    queue.  If the last writer is closed (Chan_Close()), the read returns an
+    error.  Writes work similarly by blocking until space is available on the
+    queue as long as readers are available.
+
+    With proper use, this design garauntees that certain networks of threads
+    (namely, directed acyclic graphs) connected by \ref Chan instances will
+    deliver every message emited from a producer to a consumer in that network.
+    Once the network is assembled, messages will be recieved in topological
+    order.
+
+    An example producer thread might look something like this:
+    \code
+    void producer(Chan *q)
+    { void  *data = Chan_Token_Buffer_Alloc(q);
+      size_t nbytes;
+      Chan  *output = Chan_Open(q,CHAN_WRITE);
+      while( data=getdata(&nbytes) )
+        if( CHAN_FAILURE( Chan_Next(output,&data,&nbytes)))
+          break;
+      Chan_Close(output);
+      Chan_Token_Buffer_Free(data);
+    }
+    \endcode
+
+    \author Nathan Clack <clackn@janelia.hhmi.org>
+    \date   Feb. 2011
+  */
 #pragma once
 #include <stdlib.h>
 #include "config.h"
