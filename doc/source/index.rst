@@ -66,7 +66,7 @@ Programming and API's
 ..  toctree::
     :maxdepth: 2
 
-    programming/index
+    api/index
 
 **API Reference**. The `API Reference`_ is generated from the source.
 
@@ -76,12 +76,6 @@ Programming and API's
     The API reference must be built with `Doxygen`_.
 
     .. _`Doxygen`: http://www.doxygen.org
-
-Some starting points:
-
- .. doxygenclass:: fetch::Agent
-    :project: fetch
-    :members:
 
 Management
 ==========
