@@ -69,17 +69,21 @@ namespace ui {
     }
   }
 
-  /*
-   *    StageBoundsButton
+  /**
+       \class StageBoundsButton
+       
+       Two state button:       
+          -# (cleared) press to set target bound, goto (bound)
+          -# (bound)   press to clear target bound, goto (cleared)
+       
+       \note outer bounds (biggest max and smallest min) should be set on the target \ref QDouble.
+       
+       Example:
+       \code
+          StageBoundsButton(ps_[0],"maximum",this)
+       \endcode
+       
    */
-
-  ///// Two state button
-  // 1. (cleared) press to set target bound, goto (bound)
-  // 2. (bound)   press to clear target bound, goto (cleared)
-  //
-  // NOTE: outer bounds (biggest max and smallest min) should be set on the target QDouble
-  
-  // e.g StageBoundsButton(ps_[0],"maximum",this)
   StageBoundsButton::StageBoundsButton(QDoubleSpinBox *target, const char* targetprop, QWidget *parent)
       : QPushButton(parent)
       , target_(target)
@@ -108,10 +112,17 @@ namespace ui {
   }
   
 
-  /*
-   *    StageDockWidget
-   */
-
+  //////////////////////////////////////////////////////////////////////////
+  ///  \class  StageDockWidget
+  ///
+  ///   A QDockWidget for controlling the 3D stage sytem responsible 
+  ///   for positioning the sample.
+  //////////////////////////////////////////////////////////////////////////
+  
+  /** \param[in] dc     Microscope device context.
+      \param[in] parent Must have the MainWindow type because the MainWindow
+                        has the stage controller instance.
+  */
   StageDockWidget::StageDockWidget(device::Microscope *dc, MainWindow *parent)
     :QDockWidget("Stage",parent)
     ,dc_(dc)
@@ -228,7 +239,36 @@ namespace ui {
       form->addRow("History", layout);
     }
 
-
+    ///// Reference
+    { 
+      QPushButton *doit   = new QPushButton("Locked"),
+                  *safety = new QPushButton("Unlock");
+      QStateMachine    *s = new QStateMachine(this);
+      QState      *locked = new QState(),
+                *unlocked = new QState();
+      locked->addTransition(  safety,SIGNAL(clicked()),unlocked);
+      unlocked->addTransition(safety,SIGNAL(clicked()),locked);
+      unlocked->addTransition(  doit,SIGNAL(clicked()),locked);    // re-lock after reference
+      s->addState(locked);
+      s->addState(unlocked);
+      s->setInitialState(locked);
+      s->start();
+      
+      locked->assignProperty(  doit,"text"   ,"Locked");
+      locked->assignProperty(  doit,"enabled",false);
+      unlocked->assignProperty(doit,"text"   ,"DO IT");
+      unlocked->assignProperty(doit,"enabled",true);
+      
+      locked->assignProperty(  safety,"text" ,"Unlock");      
+      unlocked->assignProperty(safety,"text" ,"Lock");
+      
+      QHBoxLayout *layout = new QHBoxLayout;
+      layout->addWidget(safety);
+      layout->addWidget(doit);
+                
+      connect(doit,SIGNAL(clicked()),parent->_stageController,SLOT(reference()));
+      form->addRow("Reference:",layout);
+    }
 
     restoreSettings();
   }

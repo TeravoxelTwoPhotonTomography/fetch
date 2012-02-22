@@ -1,14 +1,53 @@
-/*
-* Stage.cpp
-*
-*  Created on: Apr 19, 2010
-*      Author: Nathan Clack <clackn@janelia.hhmi.org>
+/**
+  \file Stage.cpp
+  
+  \section Stage implementations.
+  
+  Right now this is just the C843 controller from physic instruments (http://www.pi-usa.us/index.php)
+  and a mock stage.
+  
+  Might want to add Thor Labs Cube controller eventually.
+  
+  I make a lot of assumptions about having a 3d stage system in the design here which limits some
+  generalizability.
+  
+  \section err-macros Error handling macros
+  
+  There are a few different error handling macros here.  The CHK versions are the same as what I use elsewhere.
+  Most often they are used something like this:
+  \code
+  int f()
+  { 
+    CHKJMP( dosomething() );
+    return 1; // handle success
+  Error:
+    return 0; // handle an error
+  }
+  \endcode
+  If dosomething() evaluates as false, a warning message will be logged and execution will move to the "Error" label
+  so that the error can be handled.
+  
+  The WRN and ERR versions don't jump to an Error label.  Instead they use the applications warning() and error() functions
+  to log a messge.  Since error() handles fatal errors, it will cause the microscope to shutdown.
+  
+  The C843 versions have essentially the same behavior but they use a C843 API error handler to interpret return codes from 
+  C843 API functions.  These macros also help with thread safely.  Every C843 call needs to be called from within the C843 mutex.
+  Since most C843 API calls need to have error checking, these macros also handle locking and unlocking the mutex, even in the 
+  case of an exception.
+  
+  There are two versions of the C843 macros.  One set is for calling inside a C843Stage member function.  The other set is for calling
+  in non-member functions.  See the macro's documentation for more info.  
+
+ 
+  \date   Apr 19, 2010
+  \author Nathan Clack <clackn@janelia.hhmi.org>
 */
-/*
-* Copyright 2010 Howard Hughes Medical Institute.
-* All rights reserved.
-* Use is subject to Janelia Farm Research Campus Software Copyright 1.1
-* license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
+/**
+  \copyright
+  Copyright 2010 Howard Hughes Medical Institute.
+  All rights reserved.
+  Use is subject to Janelia Farm Research Campus Software Copyright 1.1
+  license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
 */
 
 
@@ -40,15 +79,37 @@ namespace device {
   //
   // C843Stage
   //
-  
+/**
+  \def C843WRN(expr)  
+  Evaluates expr from within the C843 mutex and interprets C843 API errors.  If there's a problem, a warning message is logged.  
+  \def C843ERR(expr)  
+  Evaluates expr from within the C843 mutex and interprets C843 API errors.  If there's a problem, an error message is logged.  Will cause a shutdown on error.  
+  \def C843JMP(expr) 
+  Evaluates expr from within the C843 mutex and interprets C843 API errors.  If there's a problem, a warning message is logged, and execution jumps to an Error label.
+  which must be defined somewhere in the calling function's scope.
+                
+  \def C843WRN2(expr)
+  Same as \ref C843WRN but for use outside of a C843Stage member function.  A valid C843Stage *self must be in scope.
+  \def C843ERR2(expr) 
+  Same as \ref C843ERR but for use outside of a C843Stage member function.  A valid C843Stage *self must be in scope.
+  \def C843JMP2(expr) 
+  Same as \ref C843JMP but for use outside of a C843Stage member function.  A valid C843Stage *self must be in scope.
+*/
 #define C843WRN( expr )  {lock_(); (c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, warning )); unlock_();}
 #define C843ERR( expr )  {BOOL v; lock_(); v=(expr); unlock_(); (c843_error_handler( handle_, v, #expr, __FILE__, __LINE__, error   ));}
 #define C843JMP( expr )  {lock_(); if(c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, warning)) {unlock_(); goto Error;} unlock_();}
-#define  CHKWRN( expr )  do {if(!(expr)) warning("[WARNING] C843:"ENDL "%s(%d): %s"ENDL "Expression evaluated as false"ENDL "%s"ENDL,__FILE__,__LINE__,#expr);} while(0)
-#define  CHKERR( expr )  do {if(!(expr)) warning("[ERROR  ] C843:"ENDL "%s(%d): %s"ENDL "Expression evaluated as false"ENDL "%s"ENDL,__FILE__,__LINE__,#expr); goto Error;} while(0)
+
+#define C843WRN2( expr )  {self->lock_(); (c843_error_handler( self->handle_, expr, #expr, __FILE__, __LINE__, warning )); self->unlock_();}
+#define C843ERR2( expr )  {BOOL v; self->lock_(); v=(expr); self->unlock_(); (c843_error_handler( self->handle_, v, #expr, __FILE__, __LINE__, error   ));}
+#define C843JMP2( expr )  {self->lock_(); if(c843_error_handler( self->handle_, expr, #expr, __FILE__, __LINE__, warning)) {self->unlock_(); goto Error;} self->unlock_();}
+
+#define  CHKJMP( expr )  if(!(expr)) {warning("C843:"ENDL "%s(%d): %s"ENDL "Expression evaluated as false"ENDL "%s"ENDL,__FILE__,__LINE__,#expr); goto Error;}
+#define  CHKERR( expr )  if(!(expr)) {error  ("C843:"ENDL "%s(%d): %s"ENDL "Expression evaluated as false"ENDL "%s"ENDL,__FILE__,__LINE__,#expr); goto Error;}
 
 
-  // returns 0 if no error, otherwise 1
+  /// Interprets return codes from C843 API calls.
+  /// \returns 0 if no error, otherwise 1
+  static 
   bool c843_error_handler(long handle, BOOL ok, const char* expr, const char* file, const int line, pf_reporter report)
   {
     char buf[1024];
@@ -84,26 +145,51 @@ namespace device {
 #pragma warning(push)
 #pragma warning(disable:4244) // lots of float <-- double conversions
 
+  static const char c843_stage_position_log_file[] =  "stage_position.f64";  ///< The polled stage position gets cached here.
+  
   /** Writes current position and velocity to a cache file with a time since last log.
       
       The velocity and time can be used to estimate an upper bound to the logged stage position.
       \returns 1 on success, 0 otherwise
   */
+  static
   int log_(double r[3], double v[3], double dt)
   { FILE *fp = NULL;
-    CHKERR( fp=fopen("stage_position.f64"));
-    fwrite(r ,sizeof(double),3,fp);
-    fwrite(v ,sizeof(double),3,fp);
-    fwrite(dt,sizeof(double),1,fp);
+    CHKJMP( fp=fopen(c843_stage_position_log_file,"wb"));
+    fwrite(r  ,sizeof(double),3,fp);
+    fwrite(v  ,sizeof(double),3,fp);
+    fwrite(&dt,sizeof(double),1,fp);
     fclose(fp);
     return 1;
 Error:
     return 0;  
   }
+  
+  /** Tries to read position from log file.  
+      \param[out] r   Last recorded stage position
+      \param[in]  tol Tolerance for uncertainty of last recorded position.
+                      This is used to determine whether the recorded position is trustworthy.                    
+      \returns 1 on success (valid position), 0 otherwise (error or position not trusted)
+  */
+  static
+  int maybe_read_position_from_log(double r[3], double tol)
+  { 
+    FILE *fp = NULL;
+    double v[3],dt;
+    CHKJMP(fp=fopen(c843_stage_position_log_file,"rb"));
+    fread(r  ,sizeof(double),3,fp);
+    fread(v  ,sizeof(double),3,fp);
+    fread(&dt,sizeof(double),1,fp);
+    return (fabs(v[0]*dt)<tol)
+         &&(fabs(v[1]*dt)<tol)
+         &&(fabs(v[2]*dt)<tol);
+  Error:
+    return 0;
+  }
 
   /** Stage position polling/logging thread.
       
-      \param [in] A pointer to a C843Stage instance.
+      \param[in] self_ A pointer to a C843Stage instance.
       
       The thread should be started after the stage is attached.
       The thread will stop when the position query fails, presumably because the stage's handle
@@ -111,26 +197,28 @@ Error:
       
       The cached file gets written in the working directory.
       It records a time between position queries,the stage velocity and the current position.
-            
-      \todo actually start the thread
-      \todo use the cached position to initialize the stage position
   */
   static 
   void *poll_and_cache_stage_position(void* self_)
-  { C843Stage *self = (C843Stage*)self_;
+  { C843Stage *self = (C843Stage*)self_;    
     double r[3]={0},v[3]={0},dt=0.0;
     TicTocTimer clock = tic();
     while(1)
-    { Sleep(10);
-      C843JMP(C843_qPOS(self->handle_,"123",r);      
-      C843JMP(C843_qVEL(self->handle_,"123",r);
-      t = toc(&clock);
-      if(!log_(r,v,dt))
-      { warning("%s(%d): C843 Failed to write to position log."ENDL,__FILE__,__LINE__);
-        goto Error;
+    { long ready;
+      Sleep(10);      
+      C843JMP2(C843_IsControllerReady(self->handle_,&ready));
+      if(ready)
+      { C843JMP2(C843_qPOS(self->handle_,"123",r));      
+        C843JMP2(C843_qVEL(self->handle_,"123",v));      
+        dt = toc(&clock);
+        if(!log_(r,v,dt))
+        { warning("%s(%d): C843 Failed to write to position log."ENDL,__FILE__,__LINE__);
+          goto Error;
+        }        
       }
     }
 Error:
+    debug("%s(%d): "ENDL "\t!!!! STAGE POSITION POLLING THREAD GOING DOWN !!!!"ENDL,__FILE__,__LINE__);
     return NULL;    
   }
 
@@ -181,7 +269,12 @@ Error:
     C843JMP( C843_INI(handle_,""));          //init all configured axes    
     waitForController_();
     
-    reference_();
+    { double r[3];
+      if(maybe_read_position_from_log(r,0.2/*mm*/))
+        setKnownReference(r[0],r[1],r[2]);
+//    else reference();        
+    }
+    CHKJMP(logger_=Thread_Alloc(poll_and_cache_stage_position,this));
     return 0; // ok
 Error:
     return 1; // fail
@@ -192,11 +285,13 @@ Error:
   {
     int ecode = 0;
     C843JMP( C843_STP(handle_) );  // all stop - HLT is more gentle
+    handle_ = -1; //invalid
+    Thread_Free(logger_);
 Finalize:    
     lock_();
     C843_CloseConnection(handle_); // always succeeds
     unlock_();
-    handle_=-1;
+    handle_=-1;                    // set to invalid value.  Required for position logging thread to exit.
     return ecode;
 Error:
     ecode = 1;
@@ -392,21 +487,18 @@ Error:
   }
   
   bool C843Stage::isReferenced(bool *isok/*=NULL*/)
-  { BOOL isrefd[3] ={0,0,0};
+  { BOOL isrefd[3] ={0,0,0};    
     if(isok) *isok=1;
     C843JMP(C843_IsReferenceOK(handle_,"123",isrefd));
-    return all(iusrefd,3);
+    return all(isrefd,3);
 Error:
     if(isok) *isok=0;
     return false;
   }
   
   bool C843Stage::reference()
-  { bool isok=1;
-    // Only reference if necessary
-    if(isReferenced(&isok))  return true;
-    if(!isok)                goto Error;    
-    if(setRefMode_(1))       goto Error;
+  { bool isok=1;    
+    CHKJMP(setRefMode_(1));
     C843JMP( C843_FRF(handle_,"123") );  //fast reference
     waitForController_();
     if(isReferenced(&isok) && isok)
@@ -416,16 +508,27 @@ Error:
     return false;
   }
   
+  void C843Stage::referenceNoWait()
+  { bool isok=1;    
+    CHKJMP(setRefMode_(1));
+    C843JMP( C843_FRF(handle_,"123") );  //fast reference    
+    return;    
+Error:
+    warning("%s(%d)"ENDL "\tReferencing failed for one or more axes."ENDL,__FILE__,__LINE__);
+    return;
+  }
+  
   bool C843Stage::setKnownReference(float x, float y, float z)
   { double r[3] = {x,y,z};
+    bool isok;
     if(isReferenced(&isok))  return true;  // ignore if referenced
-    if(!isok)                goto Error;
-    if(setRefMode_(0))       goto Error;
+    CHKJMP(isok);
+    CHKJMP(setRefMode_(0));
     C843JMP(C843_POS(handle_,"123",r));
     if(isReferenced(&isok) && isok)
       return true;
 Error:
-    warning("%s(%d)"ENDL "\setKnownReference failed for one or more axes."ENDL,__FILE__,__LINE__);
+    warning("%s(%d)"ENDL "setKnownReference failed for one or more axes."ENDL,__FILE__,__LINE__);
     return false;    
   }
 #pragma warning(pop) 
@@ -653,6 +756,12 @@ Error:
   { TListeners::iterator i;
     for(i=_listeners.begin();i!=_listeners.end();++i)
       (*i)->moved();
+  }
+  
+  void Stage::_notifyReferenced()
+  { TListeners::iterator i;
+    for(i=_listeners.begin();i!=_listeners.end();++i)
+      (*i)->referenced();
   }
   
   void Stage::_notiveVelocityChanged()
