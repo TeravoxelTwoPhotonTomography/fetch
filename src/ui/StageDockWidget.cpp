@@ -8,66 +8,74 @@ namespace fetch {
 namespace ui {
 
   /*
-   *    StageMovingIndicator
+   *    StageIndicator
    */
-
-  StageMovingIndicator::StageMovingIndicator(device::Stage *dc,QWidget  *parent)
+  
+  StageIndicator::StageIndicator(device::Stage *dc,const QString& ontext, const QString& offtext, QWidget  *parent/*=NULL*/)
     : QLabel(parent),
+      ontext_(ontext),
+      offtext_(offtext),
       dc_(dc),
-      last_moving_(-1)
+      last_(-1)
   { QTimer *t = new QTimer(this);
     connect(t,SIGNAL(timeout()),this,SLOT(poll()));
     t->start(100/*ms*/);
-    setText("Maybe Moving");
+    setText("Unknown");
   }
 
-  StageMovingIndicator::~StageMovingIndicator()
+  StageIndicator::~StageIndicator()
   { QTimer *t = findChild<QTimer *>();
     if(t) t->stop();
   }
 
-  void StageMovingIndicator::poll()
-  { if( dc_->isMoving() )
-    { if(last_moving_!=1)
-        setText("Moving!");
-      last_moving_=1;
+  void StageIndicator::poll()
+  { if( state() )
+    { if(last_!=1)
+        setText(ontext_);
+      last_=1;
     } else
-    { if(last_moving_!=0)
-        setText("Not Moving");
-      last_moving_=0;
+    { if(last_!=0)
+        setText(offtext_);
+      last_=0;
     }
   }
+
+
+  /*
+   *    StageMovingIndicator
+   */
+  struct StageMovingIndicator:public StageIndicator
+  { StageMovingIndicator(device::Stage *dc,QWidget  *parent=NULL) : StageIndicator(dc,"Moving","Not Moving",parent) {}
+    protected:
+      bool state() {return dc_->isMoving();}
+  };
 
   /*
    *    StageOnTargetIndicator
    */
-
-  StageOnTargetIndicator::StageOnTargetIndicator(device::Stage *dc,QWidget  *parent)
-    : QLabel(parent),
-      dc_(dc),
-      last_ont_(-1)
-  { QTimer *t = new QTimer(this);
-    connect(t,SIGNAL(timeout()),this,SLOT(poll()));
-    t->start(100/*ms*/);
-    setText("Maybe on target");
-  }
-
-  StageOnTargetIndicator::~StageOnTargetIndicator()
-  { QTimer *t = findChild<QTimer *>();
-    if(t) t->stop();
-  }
-
-  void StageOnTargetIndicator::poll()
-  { if( dc_->isOnTarget() )
-    { if(last_ont_!=1)
-        setText("On Target");
-      last_ont_=1;
-    } else
-    { if(last_ont_!=0)
-        setText("Not on Target.");
-      last_ont_=0;
-    }
-  }
+  struct StageOnTargetIndicator:public StageIndicator
+  { StageOnTargetIndicator(device::Stage *dc,QWidget  *parent=NULL) : StageIndicator(dc,"On Target","Off Target",parent) {}
+    protected:
+      bool state() {return dc_->isOnTarget();}
+  };  
+  
+  /*
+   *    StageServoStatusIndicator
+   */
+  struct StageServoStatusIndicator:public StageIndicator
+  { StageServoStatusIndicator(device::Stage *dc,QWidget  *parent=NULL) : StageIndicator(dc,"Servo On","Servo Off",parent) {}
+    protected:
+      bool state() {return dc_->isServoOn();}
+  };  
+  
+  /*
+   *    StageReferencedIndicator
+   */
+  struct StageReferencedIndicator:public StageIndicator
+  { StageReferencedIndicator(device::Stage *dc,QWidget  *parent=NULL) : StageIndicator(dc,"Ref OK","UNREF'D",parent) {}
+    protected:
+      bool state() {return dc_->isReferenced();}
+  };
 
   /**
        \class StageBoundsButton
@@ -227,9 +235,14 @@ namespace ui {
     form->addRow("Lock controls",b);
 
     ///// Indicators
-    form->addRow(new StageMovingIndicator(dc->stage()));
-    form->addRow(new StageOnTargetIndicator(dc->stage()));
-
+    { QGridLayout *layout = new QGridLayout();
+      layout->addWidget(new StageMovingIndicator(dc->stage())     ,0,0);
+      layout->addWidget(new StageOnTargetIndicator(dc->stage())   ,0,1);
+      layout->addWidget(new StageServoStatusIndicator(dc->stage()),0,2);
+      layout->addWidget(new StageReferencedIndicator(dc->stage()) ,1,0);
+      form->addRow("Indicators",layout);
+    }    
+    
     ///// History
     { QHBoxLayout *layout = new QHBoxLayout;
       layout->addWidget(parent->_stageController->createHistoryComboBox());
@@ -268,6 +281,12 @@ namespace ui {
                 
       connect(doit,SIGNAL(clicked()),parent->_stageController,SLOT(reference()));
       form->addRow("Reference:",layout);
+    }
+    
+    ///// Error status
+    { QPushButton *b = new QPushButton("Clear");
+      connect(b,SIGNAL(clicked()),parent->_stageController,SLOT(clear()));
+      form->addRow("Error status:",b);
     }
 
     restoreSettings();

@@ -66,6 +66,9 @@ namespace device {
       inline  void setPosNoWait      ( const Vector3f &r)                   {setPosNoWait(r[0],r[1],r[2]);}      
       virtual bool isMoving          () = 0;
       virtual bool isOnTarget        () = 0;
+      virtual bool isServoOn         () = 0;
+      
+      virtual bool clear             () = 0;                                ///< Clear error status. \returns 1 on success, 0 otherwise
 
       virtual bool isReferenced      (bool *isok=NULL) = 0;                 ///< Indicates whether the stage thinks it knows it's absolute position. \param[out] isok is 0 if there's an error, otherwise 1.
       virtual bool reference         () = 0;                                ///< Call the stages referencing procedure - usually moves to a reference switch.  \returns 1 on success, 0 otherwise.
@@ -101,13 +104,14 @@ namespace device {
       virtual void setPosNoWait      ( float  x, float  y, float  z);
       virtual bool isMoving          ();
       virtual bool isOnTarget        ();
+      virtual bool isServoOn         ();
       
       virtual bool isReferenced      (bool *isok=NULL);                                   ///< Indicates whether the stage thinks it knows it's absolute position. \param[out] isok is 0 if there's an error, otherwise 1.
       virtual bool reference         ();                                                  ///< Call the stages referencing procedure.  Moves to a reference switch.  \returns 1 on success, 0 otherwise.
       virtual void referenceNoWait   ();
       virtual bool setKnownReference ( float x, float y, float z);                        ///< Tell the stages they are at a known position given by (x,y,z). \returns 1 on success, 0 otherwise.
    
-      
+      virtual bool clear();
       
     public: //pseudo-private
      int                handle_;          ///< handle to the controller board.
@@ -141,9 +145,11 @@ namespace device {
       virtual bool isMoving          () {return 0;}
       virtual bool isOnTarget        () {return 1;}
       virtual bool isReferenced      (bool *isok=NULL)                     {if(isok) *isok=true; return 1;}   ///< Indicates whether the stage thinks it knows it's absolute position.  \param[out] isok is 0 if there's an error, otherwise 1.
+      virtual bool isServoOn         ()                                    {return true;}
       virtual bool reference         ()                                    {return 1;}                        ///< Call the stages referencing procedure - usually moves to a reference switch.  \returns 1 on success, 0 otherwise.
       virtual void referenceNoWait   ()                                    {reference();}
       virtual bool setKnownReference ( float x, float y, float z)          {return setPos(x,y,z);}            ///< Tell the stages they are at a known position given by (x,y,z)            
+      virtual bool clear             ()                                    {return 1;}
   };
 
   class StageListener;
@@ -201,10 +207,11 @@ namespace device {
       virtual bool isOnTarget        ()                                     {return _istage->isOnTarget();};     
       unsigned int isPosValid        ( float  x, float  y, float  z);
       virtual bool isReferenced      (bool *isok=NULL)                      {return _istage->isReferenced(isok);}                                               ///< Indicates whether the stage thinks it knows it's absolute position. \param[out] isok is 0 if there's an error, otherwise 1.
+      virtual bool isServoOn         ()                                     {return _istage->isServoOn();}
       virtual bool reference         ()                                     {bool ok=_istage->reference(); if(ok) _notifyReferenced(); return ok;}              ///< Call the stages referencing procedure - usually moves to a reference switch.  \returns 1 on success, 0 otherwise.
       virtual void referenceNoWait   ()                                     {_istage->referenceNoWait();}
       virtual bool setKnownReference ( float x, float y, float z)           {bool ok=_istage->setKnownReference(x,y,z); if(ok) _notifyReferenced(); return ok;} ///< Tell the stages they are at a known position given by (x,y,z)            
-
+      virtual bool clear             ()                                     {return _istage->clear();}
       
       Vector3z getPosInLattice();
       void     getLastTarget         ( float *x, float *y, float *z)        { cfg::device::Point3d r=_config->last_target_mm(); *x=r.x();*y=r.y();*z=r.z(); }

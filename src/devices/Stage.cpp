@@ -1,7 +1,7 @@
 /**
   \file Stage.cpp
   
-  \section Stage implementations.
+  \section impl Stage Implementations
   
   Right now this is just the C843 controller from physic instruments (http://www.pi-usa.us/index.php)
   and a mock stage.
@@ -11,6 +11,25 @@
   I make a lot of assumptions about having a 3d stage system in the design here which limits some
   generalizability.
   
+  
+  
+  \section runstate Run State Model
+  
+  There's two design questions here:  How does this work right now?  And, how should it work?
+  
+  Right now, attach() opens the controller for a stage system.  The stage system is assumed to have three axes.
+  The axes are initialized on attach, but they may not be fully initialized properly.  There's nothing to
+  check if axes are properly initialized on arm, but there probably should be.
+  
+  The way it should work is that each axis should be treated as an individual device.  A stage system should be 
+  an aggregate device.  Each axis should be "attached" when a 
+  
+  \todo Add an isReady? check or an on_arm call that queries the stage system for whether it is able to respond to 
+        commands.
+  \todo Add stage polling threads that change the device state based on status.
+        e.g. If a stage axis goes into an error state it should disarm the associated agent.
+  
+  
   \section err-macros Error handling macros
   
   There are a few different error handling macros here.  The CHK versions are the same as what I use elsewhere.
@@ -18,13 +37,15 @@
   \code
   int f()
   { 
-    CHKJMP( dosomething() );
+    CHKJMP( step1() );
+    CHKJMP( step2() );
+    CHKJMP( step3() );
     return 1; // handle success
   Error:
     return 0; // handle an error
   }
   \endcode
-  If dosomething() evaluates as false, a warning message will be logged and execution will move to the "Error" label
+  If one of the steps() evaluates as false, a warning message will be logged and execution will move to the "Error" label
   so that the error can be handled.
   
   The WRN and ERR versions don't jump to an Error label.  Instead they use the applications warning() and error() functions
@@ -43,8 +64,7 @@
   \author Nathan Clack <clackn@janelia.hhmi.org>
 */
 /**
-  \copyright
-  Copyright 2010 Howard Hughes Medical Institute.
+  \copyright 2010 Howard Hughes Medical Institute.
   All rights reserved.
   Use is subject to Janelia Farm Research Campus Software Copyright 1.1
   license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
@@ -98,16 +118,25 @@ namespace device {
 #define C843WRN( expr )  {lock_(); (c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, warning )); unlock_();}
 #define C843ERR( expr )  {BOOL v; lock_(); v=(expr); unlock_(); (c843_error_handler( handle_, v, #expr, __FILE__, __LINE__, error   ));}
 #define C843JMP( expr )  {lock_(); if(c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, warning)) {unlock_(); goto Error;} unlock_();}
+#define C843JMPSILENT( expr )  {lock_(); if(c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, NULL)) {unlock_(); goto Error;} unlock_();}
 
 #define C843WRN2( expr )  {self->lock_(); (c843_error_handler( self->handle_, expr, #expr, __FILE__, __LINE__, warning )); self->unlock_();}
 #define C843ERR2( expr )  {BOOL v; self->lock_(); v=(expr); self->unlock_(); (c843_error_handler( self->handle_, v, #expr, __FILE__, __LINE__, error   ));}
 #define C843JMP2( expr )  {self->lock_(); if(c843_error_handler( self->handle_, expr, #expr, __FILE__, __LINE__, warning)) {self->unlock_(); goto Error;} self->unlock_();}
 
-#define  CHKJMP( expr )  if(!(expr)) {warning("C843:"ENDL "%s(%d): %s"ENDL "Expression evaluated as false"ENDL "%s"ENDL,__FILE__,__LINE__,#expr); goto Error;}
-#define  CHKERR( expr )  if(!(expr)) {error  ("C843:"ENDL "%s(%d): %s"ENDL "Expression evaluated as false"ENDL "%s"ENDL,__FILE__,__LINE__,#expr); goto Error;}
+#define  CHKJMP( expr )  if(!(expr)) {warning("C843:"ENDL "%s(%d): %s"ENDL "Expression evaluated as false"ENDL,__FILE__,__LINE__,#expr); goto Error;}
+#define  CHKWRN( expr )  if(!(expr)) {warning("C843:"ENDL "%s(%d): %s"ENDL "Expression evaluated as false"ENDL,__FILE__,__LINE__,#expr); }
+#define  CHKERR( expr )  if(!(expr)) {error  ("C843:"ENDL "%s(%d): %s"ENDL "Expression evaluated as false"ENDL,__FILE__,__LINE__,#expr); goto Error;}
 
 
   /// Interprets return codes from C843 API calls.
+  /// Usually called from a macro.  See, for example, \ref C843JMP.
+  /// \param[in] handle The board id returned by the C843 API when the board was opened.
+  /// \param[in] ok     The value of a test expression.  False (or 0) indicates a problem.
+  /// \param[in] expr   A string reflecting the test expression.
+  /// \param[in] file   Name of the source file where the error was generated.
+  /// \param[in] line   The line number where the error was generated.
+  /// \param[in] report The reporter function to use e.g. debug(), warning(), or error().  May be NULL, in which case no message will be output.
   /// \returns 0 if no error, otherwise 1
   static 
   bool c843_error_handler(long handle, BOOL ok, const char* expr, const char* file, const int line, pf_reporter report)
@@ -115,7 +144,7 @@ namespace device {
     char buf[1024];
     long e;
     if(handle<0)
-    { report(
+    { if(report) report(
         "(%s:%d) C843 Error:"ENDL
         "\t%s"ENDL
         "\tInvalid device id (Got %d)."ENDL,
@@ -127,7 +156,7 @@ namespace device {
 
       if(C843_TranslateError(e,buf,sizeof(buf)))
       {
-        report(
+        if(report) report(
           "(%s:%d) C843 Error %d:"ENDL
           "\t%s"ENDL
           "\t%s"ENDL,
@@ -180,6 +209,7 @@ Error:
     fread(r  ,sizeof(double),3,fp);
     fread(v  ,sizeof(double),3,fp);
     fread(&dt,sizeof(double),1,fp);
+    fclose(fp);
     return (fabs(v[0]*dt)<tol)
          &&(fabs(v[1]*dt)<tol)
          &&(fabs(v[2]*dt)<tol);
@@ -261,7 +291,7 @@ Error:
     
     for(int i=0;i<_config->axis_size();++i)
     { char id[10];
-      const char *name;// = _config->axis(i).id().c_str(),
+      const char *name;
       itoa(_config->axis(i).id(),id,10);
       name = _config->axis(i).stage().c_str();
       C843JMP( C843_CST(handle_,id,name) );  //configure selected axes       
@@ -271,8 +301,7 @@ Error:
     
     { double r[3];
       if(maybe_read_position_from_log(r,0.2/*mm*/))
-        setKnownReference(r[0],r[1],r[2]);
-//    else reference();        
+        CHKWRN(setKnownReference(r[0],r[1],r[2]));
     }
     CHKJMP(logger_=Thread_Alloc(poll_and_cache_stage_position,this));
     return 0; // ok
@@ -346,7 +375,7 @@ Error:
 
   int C843Stage::getPos( float *x, float *y, float *z )
   { double t[3];
-    C843JMP( C843_qPOS(handle_,"123",t) );
+    C843JMPSILENT( C843_qPOS(handle_,"123",t) );
     *x = t[0];
     *y = t[1];
     *z = t[2];
@@ -357,7 +386,7 @@ Error:
 
   int C843Stage::getTarget( float *x, float *y, float *z )
   { double t[3];
-    C843JMP( C843_qMOV(handle_,"123",t) );
+    C843JMPSILENT( C843_qMOV(handle_,"123",t) );
     *x = t[0];
     *y = t[1];
     *z = t[2];
@@ -442,7 +471,7 @@ Error:
 
   bool C843Stage::isMoving()
   { BOOL b;
-    C843JMP( C843_IsMoving(handle_,"",&b) );
+    C843JMPSILENT( C843_IsMoving(handle_,"",&b) );
     return b;
 Error:
     return false; // if there's an error state, it's probably not moving
@@ -451,11 +480,27 @@ Error:
 
   bool C843Stage::isOnTarget()
   { BOOL b[] = {0,0,0};
-    C843JMP( C843_qONT(handle_,"123",b) );
+    C843JMPSILENT( C843_qONT(handle_,"123",b) );
     if(all(b,3))
       return true;    
 Error:
     return false; // if there's an error state, it's probably not on target
+  }
+  
+  bool C843Stage::isServoOn()
+  { BOOL b[] = {0,0,0};
+    C843JMPSILENT( C843_qSVO(handle_,"123",b) );
+    if(all(b,3))
+      return true;    
+Error:
+    return false; // if there's an error state, it's probably not on
+  }
+
+  bool C843Stage::clear()
+  { C843JMP( C843_CLR(handle_,"123") );    
+    return true;    
+Error:
+    return false; // if there's an error state, it's probably not on
   }
 
   void C843Stage::waitForController_()

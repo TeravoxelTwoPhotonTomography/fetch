@@ -233,6 +233,7 @@ namespace ui {
       void moveToHistoryItem(int i)                                        { float  x, y, z; if(history_.get(i,&x,&y,&z)) moveTo3d(x,y,z); }
       void savePosToHistory()                                              { float  x, y, z; stage_->getTarget(&x,&y,&z); history_.push(x,y,z); }
       void reference()                                                     { stage_->referenceNoWait(); }
+      void clear()                                                         { stage_->clear(); } ///< Clears teh stage's error state, if any
 
       void updateTiling()                                                  { tiling_controller_.update(stage_->tiling());}
       void invalidateTiling()                                              { tiling_controller_.update(NULL);}
