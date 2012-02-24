@@ -21,6 +21,11 @@
 #define DBG
 #endif
 
+// I use REMIND to warn me in case I leave in a debugging expression.
+#define REMIND(expr) \
+  warning("%s(%d)" ENDL "\tEvaluating expression." ENDL "\t%s" ENDL, __FILE__,__LINE__,#expr); \
+  (expr)
+
 using namespace fetch::worker;
 using namespace resonant_correction::wrap;
 
@@ -72,16 +77,15 @@ namespace fetch
 
       turn = dc->get_config().turn_px();
       iw = fsrc->width;
-      ih = fsrc->height;
+      ih = fsrc->height * fsrc->nchan;   // assumes channels are not interleaved pixel-wise
 
-      if(!dc->isInBounds())// turn parameter out-of-bounds
-      { 
-        Frame::copy_data(fdst,fsrc);     // just pass the data through - if fsrc and fdst were pointers to pointers we could avoid this copy
-        return 1; //return success - [ ] what happens if I return fail here?
+      if(!dc->isInBounds())              // is turn parameter out-of-bounds?
+      { Frame::copy_data(fdst,fsrc);     // then just pass the data through - if fsrc and fdst were pointers to pointers we could avoid this copy
+        return 1; //return success
       } 
       DBG("In ResonantWrap::work.\r\n");
 
-      //fsrc->dump("ResonantWrap-src.%s",TypeStrFromID(fsrc->rtti));
+      //REMIND(fsrc->totif("ResonantWrap-src-%s.tif",TypeStrFromID(fsrc->rtti)));
       switch(fsrc->rtti)
       {
         case id_u8 : transform<u8 >((u8 *)fdst->data,(u8 *)fsrc->data,iw,ih,turn); break;
@@ -96,7 +100,7 @@ namespace fetch
         default:
           error("Unrecognized source type (id=%d).\r\n",fsrc->rtti);
       }
-      //fdst->dump("ResonantWrap-dst.%s",TypeStrFromID(fdst->rtti));
+      //REMIND(fdst->totif("ResonantWrap-dst-%s.tif",TypeStrFromID(fdst->rtti)));
       return 1; // success
 
     }

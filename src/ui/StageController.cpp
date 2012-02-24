@@ -466,7 +466,7 @@ bool fetch::ui::TilingController::markAddressable()
 }
 
 //////////////////////////////////////////////////////////////////////////
-//  PlanarStageController   //////////////////////////////////////////////
+///  PlanarStageController
 //////////////////////////////////////////////////////////////////////////
 fetch::ui::PlanarStageController::PlanarStageController( device::Stage *stage, QObject *parent/*=0*/ )
    : QObject(parent)
@@ -490,14 +490,20 @@ fetch::ui::PlanarStageController::PlanarStageController( device::Stage *stage, Q
   connect(
     &listener_,SIGNAL(sig_moved()),
     this,SIGNAL(moved()),
-    Qt::QueuedConnection);
+    Qt::QueuedConnection);   
 
   connect(
     &listener_,SIGNAL(sig_velocityChanged()),
     this,SIGNAL(velocityChanged()),
-    Qt::QueuedConnection);
+    Qt::QueuedConnection);    
+    
+  connect(
+    &listener_,SIGNAL(sig_referenced()),
+    this,SIGNAL(referenced()),
+    Qt::QueuedConnection); 
 
   connect(this,SIGNAL(moved()),tiling(),SIGNAL(planeChanged()));
+  connect(this,SIGNAL(referenced()),this,SIGNAL(moved()));
 
   stage_->addListener(&listener_);
   stage_->addListener(tiling_controller_.listener());

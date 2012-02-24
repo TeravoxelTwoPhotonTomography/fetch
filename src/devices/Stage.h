@@ -10,7 +10,10 @@
 #include <Eigen/Core>
 using namespace Eigen;
 
+// Forward declarations
+typedef void Thread;
 
+// The real deal
 #define TODO_ERR   error("%s(%d) TODO"ENDL,__FILE__,__LINE__)
 #define TODO_WRN warning("%s(%d) TODO"ENDL,__FILE__,__LINE__)
 
@@ -36,7 +39,7 @@ namespace device {
 
 
   //////////////////////////////////////////////////////////////////////
-  //  Stage  ///////////////////////////////////////////////////////////
+  ///  Stage
   //////////////////////////////////////////////////////////////////////
   struct TilePos
   { float x,y,z;
@@ -63,8 +66,14 @@ namespace device {
       inline  void setPosNoWait      ( const Vector3f &r)                   {setPosNoWait(r[0],r[1],r[2]);}      
       virtual bool isMoving          () = 0;
       virtual bool isOnTarget        () = 0;
+      virtual bool isServoOn         () = 0;
+      
+      virtual bool clear             () = 0;                                ///< Clear error status. \returns 1 on success, 0 otherwise
 
-      //Move Relative
+      virtual bool isReferenced      (bool *isok=NULL) = 0;                 ///< Indicates whether the stage thinks it knows it's absolute position. \param[out] isok is 0 if there's an error, otherwise 1.
+      virtual bool reference         () = 0;                                ///< Call the stages referencing procedure - usually moves to a reference switch.  \returns 1 on success, 0 otherwise.
+      virtual void referenceNoWait   () = 0;
+      virtual bool setKnownReference ( float x, float y, float z)       = 0;///< Tell the stages they are at a known position given by (x,y,z)
   };
 
   template<class T>
@@ -95,15 +104,25 @@ namespace device {
       virtual void setPosNoWait      ( float  x, float  y, float  z);
       virtual bool isMoving          ();
       virtual bool isOnTarget        ();
-    private:
-     int                handle_;
-     CRITICAL_SECTION   c843_lock_;
+      virtual bool isServoOn         ();
+      
+      virtual bool isReferenced      (bool *isok=NULL);                                   ///< Indicates whether the stage thinks it knows it's absolute position. \param[out] isok is 0 if there's an error, otherwise 1.
+      virtual bool reference         ();                                                  ///< Call the stages referencing procedure.  Moves to a reference switch.  \returns 1 on success, 0 otherwise.
+      virtual void referenceNoWait   ();
+      virtual bool setKnownReference ( float x, float y, float z);                        ///< Tell the stages they are at a known position given by (x,y,z). \returns 1 on success, 0 otherwise.
+   
+      virtual bool clear();
+      
+    public: //pseudo-private
+     int                handle_;          ///< handle to the controller board.
+     CRITICAL_SECTION   c843_lock_;       ///< The C843 library isn't thread safe.  This mutex is needed to keep things from crashing.
+     Thread            *logger_;          ///< thread responsible for saving the latest stage position to disk
      
-     void lock_();
-     void unlock_();
-     void waitForController_();
-     void waitForMove_();
-     void reference_();
+     void lock_();                        ///< locks the mutex for making stage access thread-safe
+     void unlock_();                      ///< unlocks the mutex 
+     void waitForController_();           ///< polls controller to see if it's ready.  Returns when it's ready.
+     void waitForMove_();                 ///< polls stage while it's moving.  Returns when not moving.
+     bool setRefMode_(bool ison);         ///< Sets reference mode for all axes. \returns 1 on success, 0 otherwise
   };
 
   class SimulatedStage:public StageBase<cfg::device::SimulatedStage>
@@ -125,9 +144,21 @@ namespace device {
       virtual void setPosNoWait      ( float  x, float  y, float  z)       {setPos(x,y,z);}
       virtual bool isMoving          () {return 0;}
       virtual bool isOnTarget        () {return 1;}
+      virtual bool isReferenced      (bool *isok=NULL)                     {if(isok) *isok=true; return 1;}   ///< Indicates whether the stage thinks it knows it's absolute position.  \param[out] isok is 0 if there's an error, otherwise 1.
+      virtual bool isServoOn         ()                                    {return true;}
+      virtual bool reference         ()                                    {return 1;}                        ///< Call the stages referencing procedure - usually moves to a reference switch.  \returns 1 on success, 0 otherwise.
+      virtual void referenceNoWait   ()                                    {reference();}
+      virtual bool setKnownReference ( float x, float y, float z)          {return setPos(x,y,z);}            ///< Tell the stages they are at a known position given by (x,y,z)            
+      virtual bool clear             ()                                    {return 1;}
   };
 
   class StageListener;
+  
+  /** Polymorphic stage class
+  
+      Wraps an implementation of IStage.  This class provides the device interface that other components should use.
+      The implementation is chosen based on the "kind" parameter specified by the Config.  
+  */
   class Stage:public StageBase<cfg::device::Stage>
   {
   public:
@@ -173,9 +204,14 @@ namespace device {
       virtual int  setPos            ( const TilePos &r)                    {return setPos(r.x,r.y,r.z);}
       virtual int  setPos            ( const TilePosList::iterator &cursor) {return setPos(*cursor);}
       virtual bool isMoving          ()                                     {return _istage->isMoving();}
-      virtual bool isOnTarget        ()                                     {return _istage->isOnTarget();};
-     
+      virtual bool isOnTarget        ()                                     {return _istage->isOnTarget();};     
       unsigned int isPosValid        ( float  x, float  y, float  z);
+      virtual bool isReferenced      (bool *isok=NULL)                      {return _istage->isReferenced(isok);}                                               ///< Indicates whether the stage thinks it knows it's absolute position. \param[out] isok is 0 if there's an error, otherwise 1.
+      virtual bool isServoOn         ()                                     {return _istage->isServoOn();}
+      virtual bool reference         ()                                     {bool ok=_istage->reference(); if(ok) _notifyReferenced(); return ok;}              ///< Call the stages referencing procedure - usually moves to a reference switch.  \returns 1 on success, 0 otherwise.
+      virtual void referenceNoWait   ()                                     {_istage->referenceNoWait();}
+      virtual bool setKnownReference ( float x, float y, float z)           {bool ok=_istage->setKnownReference(x,y,z); if(ok) _notifyReferenced(); return ok;} ///< Tell the stages they are at a known position given by (x,y,z)            
+      virtual bool clear             ()                                     {return _istage->clear();}
       
       Vector3z getPosInLattice();
       void     getLastTarget         ( float *x, float *y, float *z)        { cfg::device::Point3d r=_config->last_target_mm(); *x=r.x();*y=r.y();*z=r.z(); }
@@ -184,51 +220,51 @@ namespace device {
               void delListener(StageListener *listener);
       inline  StageTiling* tiling()                                         {return _tiling;}
   protected:
-      void    _createTiling();       //only call when disarmed
-      void    _destroyTiling();      //only call when disarmed
+      void    _createTiling();       ///< only call when disarmed
+      void    _destroyTiling();      ///< only call when disarmed
       void    _notifyTilingChanged();
       void    _notifyMoved();
+      void    _notifyReferenced();
       void    _notiveVelocityChanged();
       void    _notifyFOVGeometryChanged();
   };
 
   //////////////////////////////////////////////////////////////////////
-  //  StageListener ////////////////////////////////////////////////////
+  /// StageListener 
   //////////////////////////////////////////////////////////////////////
-  //
-  // Allows other objects to respond to stage events
-  // o  Defines a set of callbacks that will be called for certain events.
-  // o  By default, callbacks do nothing so derived listeners only need
-  //    to overload the callbacks they want to listen to.
-  //
-  // When implementing remember that these are usually called from 
-  // a thread running the acquisition process.
-  // 
-  // o  don't block!
-  // 
-  // NOTES:
-  // maybe I should use an APC to launch the callback from another thread 
-  // so that the acquisition loop is guaranteed not to block
-  // 
-  // Not worrying about this right now since stage motion doesn't occur
-  // during super time sensitive parts of the loop.  Still though...
-  // 
-  // Actually, Qt supports both non-blocking and blocking queued connections
-  // (I'm primarily worried about signal/slot communication with the GUI
-  // frontend here).  Using the QueuedConncection, which is non-blocking,
-  // means the callback shouldn't be blocked.  I can leave the blocking
-  // responsibility up to the callback.
+  ///
+  /// Allows other objects to respond to stage events
+  /// -  Defines a set of callbacks that will be called for certain events.
+  /// -  By default, callbacks do nothing so derived listeners only need
+  ///    to overload the callbacks they want to listen to.
+  ///
+  /// When implementing remember that these are usually called from 
+  /// a thread running the acquisition process.
+  ///
+  /// -  don't block!
+  ///
+  /// \note
+  /// Maybe I should use an APC to launch the callback from another thread 
+  /// so that the acquisition loop is guaranteed not to block.
+  /// Not worrying about this right now since stage motion doesn't occur
+  /// during super time sensitive parts of the loop.  Still though...  
+  /// Actually, Qt supports both non-blocking and blocking queued connections
+  /// (I'm primarily worried about signal/slot communication with the GUI
+  /// frontend here).  Using the QueuedConncection, which is non-blocking,
+  /// means the callback shouldn't be blocked.  I can leave the blocking
+  /// responsibility up to the callback.
 
   class StageListener
   {
   public:
-    virtual void tiling_changed(StageTiling *tiling) {}                      // a new tiling was created.
-    virtual void tile_done(size_t index, const Vector3f& pos,uint32_t sts) {}// the specified tile was marked as done                                                      
-    virtual void tile_next(size_t index, const Vector3f& pos) {}             // the next tile was requested (stage not necessarily moved yet)
+    virtual void tiling_changed(StageTiling *tiling) {}                      ///< a new tiling was created.
+    virtual void tile_done(size_t index, const Vector3f& pos,uint32_t sts) {}///< the specified tile was marked as done                                                      
+    virtual void tile_next(size_t index, const Vector3f& pos) {}             ///< the next tile was requested (stage not necessarily moved yet)
 
-    virtual void fov_changed(const FieldOfViewGeometry *fov) {}
-    virtual void moved() {}
-    virtual void velocityChanged() {}
+    virtual void fov_changed(const FieldOfViewGeometry *fov) {}              ///< the field of view size changed
+    virtual void moved() {}                                                  ///< the stage position changed
+    virtual void referenced() {}                                             ///< the stage was referenced
+    virtual void velocityChanged() {}                                        ///< the velocity set for an axis changed
   };
 
   // end namespace fetch::Device

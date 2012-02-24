@@ -8,78 +8,90 @@ namespace fetch {
 namespace ui {
 
   /*
-   *    StageMovingIndicator
+   *    StageIndicator
    */
-
-  StageMovingIndicator::StageMovingIndicator(device::Stage *dc,QWidget  *parent)
+  
+  StageIndicator::StageIndicator(device::Stage *dc,const QString& ontext, const QString& offtext, QWidget  *parent/*=NULL*/)
     : QLabel(parent),
+      ontext_(ontext),
+      offtext_(offtext),
       dc_(dc),
-      last_moving_(-1)
+      last_(-1)
   { QTimer *t = new QTimer(this);
     connect(t,SIGNAL(timeout()),this,SLOT(poll()));
     t->start(100/*ms*/);
-    setText("Maybe Moving");
+    setText("Unknown");
   }
 
-  StageMovingIndicator::~StageMovingIndicator()
+  StageIndicator::~StageIndicator()
   { QTimer *t = findChild<QTimer *>();
     if(t) t->stop();
   }
 
-  void StageMovingIndicator::poll()
-  { if( dc_->isMoving() )
-    { if(last_moving_!=1)
-        setText("Moving!");
-      last_moving_=1;
+  void StageIndicator::poll()
+  { if( state() )
+    { if(last_!=1)
+        setText(ontext_);
+      last_=1;
     } else
-    { if(last_moving_!=0)
-        setText("Not Moving");
-      last_moving_=0;
+    { if(last_!=0)
+        setText(offtext_);
+      last_=0;
     }
   }
+
+
+  /*
+   *    StageMovingIndicator
+   */
+  struct StageMovingIndicator:public StageIndicator
+  { StageMovingIndicator(device::Stage *dc,QWidget  *parent=NULL) : StageIndicator(dc,"Moving","Not Moving",parent) {}
+    protected:
+      bool state() {return dc_->isMoving();}
+  };
 
   /*
    *    StageOnTargetIndicator
    */
-
-  StageOnTargetIndicator::StageOnTargetIndicator(device::Stage *dc,QWidget  *parent)
-    : QLabel(parent),
-      dc_(dc),
-      last_ont_(-1)
-  { QTimer *t = new QTimer(this);
-    connect(t,SIGNAL(timeout()),this,SLOT(poll()));
-    t->start(100/*ms*/);
-    setText("Maybe on target");
-  }
-
-  StageOnTargetIndicator::~StageOnTargetIndicator()
-  { QTimer *t = findChild<QTimer *>();
-    if(t) t->stop();
-  }
-
-  void StageOnTargetIndicator::poll()
-  { if( dc_->isOnTarget() )
-    { if(last_ont_!=1)
-        setText("On Target");
-      last_ont_=1;
-    } else
-    { if(last_ont_!=0)
-        setText("Not on Target.");
-      last_ont_=0;
-    }
-  }
-
-  /*
-   *    StageBoundsButton
-   */
-
-  ///// Two state button
-  // 1. (cleared) press to set target bound, goto (bound)
-  // 2. (bound)   press to clear target bound, goto (cleared)
-  //
-  // NOTE: outer bounds (biggest max and smallest min) should be set on the target QDouble
+  struct StageOnTargetIndicator:public StageIndicator
+  { StageOnTargetIndicator(device::Stage *dc,QWidget  *parent=NULL) : StageIndicator(dc,"On Target","Off Target",parent) {}
+    protected:
+      bool state() {return dc_->isOnTarget();}
+  };  
   
-  // e.g StageBoundsButton(ps_[0],"maximum",this)
+  /*
+   *    StageServoStatusIndicator
+   */
+  struct StageServoStatusIndicator:public StageIndicator
+  { StageServoStatusIndicator(device::Stage *dc,QWidget  *parent=NULL) : StageIndicator(dc,"Servo On","Servo Off",parent) {}
+    protected:
+      bool state() {return dc_->isServoOn();}
+  };  
+  
+  /*
+   *    StageReferencedIndicator
+   */
+  struct StageReferencedIndicator:public StageIndicator
+  { StageReferencedIndicator(device::Stage *dc,QWidget  *parent=NULL) : StageIndicator(dc,"Ref OK","UNREF'D",parent) {}
+    protected:
+      bool state() {return dc_->isReferenced();}
+  };
+
+  /**
+       \class StageBoundsButton
+       
+       Two state button:       
+          -# (cleared) press to set target bound, goto (bound)
+          -# (bound)   press to clear target bound, goto (cleared)
+       
+       \note outer bounds (biggest max and smallest min) should be set on the target \ref QDouble.
+       
+       Example:
+       \code
+          StageBoundsButton(ps_[0],"maximum",this)
+       \endcode
+       
+   */
   StageBoundsButton::StageBoundsButton(QDoubleSpinBox *target, const char* targetprop, QWidget *parent)
       : QPushButton(parent)
       , target_(target)
@@ -108,10 +120,17 @@ namespace ui {
   }
   
 
-  /*
-   *    StageDockWidget
-   */
-
+  //////////////////////////////////////////////////////////////////////////
+  ///  \class  StageDockWidget
+  ///
+  ///   A QDockWidget for controlling the 3D stage sytem responsible 
+  ///   for positioning the sample.
+  //////////////////////////////////////////////////////////////////////////
+  
+  /** \param[in] dc     Microscope device context.
+      \param[in] parent Must have the MainWindow type because the MainWindow
+                        has the stage controller instance.
+  */
   StageDockWidget::StageDockWidget(device::Microscope *dc, MainWindow *parent)
     :QDockWidget("Stage",parent)
     ,dc_(dc)
@@ -216,9 +235,14 @@ namespace ui {
     form->addRow("Lock controls",b);
 
     ///// Indicators
-    form->addRow(new StageMovingIndicator(dc->stage()));
-    form->addRow(new StageOnTargetIndicator(dc->stage()));
-
+    { QGridLayout *layout = new QGridLayout();
+      layout->addWidget(new StageMovingIndicator(dc->stage())     ,0,0);
+      layout->addWidget(new StageOnTargetIndicator(dc->stage())   ,0,1);
+      layout->addWidget(new StageServoStatusIndicator(dc->stage()),0,2);
+      layout->addWidget(new StageReferencedIndicator(dc->stage()) ,1,0);
+      form->addRow("Indicators",layout);
+    }    
+    
     ///// History
     { QHBoxLayout *layout = new QHBoxLayout;
       layout->addWidget(parent->_stageController->createHistoryComboBox());
@@ -228,7 +252,42 @@ namespace ui {
       form->addRow("History", layout);
     }
 
-
+    ///// Reference
+    { 
+      QPushButton *doit   = new QPushButton("Locked"),
+                  *safety = new QPushButton("Unlock");
+      QStateMachine    *s = new QStateMachine(this);
+      QState      *locked = new QState(),
+                *unlocked = new QState();
+      locked->addTransition(  safety,SIGNAL(clicked()),unlocked);
+      unlocked->addTransition(safety,SIGNAL(clicked()),locked);
+      unlocked->addTransition(  doit,SIGNAL(clicked()),locked);    // re-lock after reference
+      s->addState(locked);
+      s->addState(unlocked);
+      s->setInitialState(locked);
+      s->start();
+      
+      locked->assignProperty(  doit,"text"   ,"Locked");
+      locked->assignProperty(  doit,"enabled",false);
+      unlocked->assignProperty(doit,"text"   ,"DO IT");
+      unlocked->assignProperty(doit,"enabled",true);
+      
+      locked->assignProperty(  safety,"text" ,"Unlock");      
+      unlocked->assignProperty(safety,"text" ,"Lock");
+      
+      QHBoxLayout *layout = new QHBoxLayout;
+      layout->addWidget(safety);
+      layout->addWidget(doit);
+                
+      connect(doit,SIGNAL(clicked()),parent->_stageController,SLOT(reference()));
+      form->addRow("Reference:",layout);
+    }
+    
+    ///// Error status
+    { QPushButton *b = new QPushButton("Clear");
+      connect(b,SIGNAL(clicked()),parent->_stageController,SLOT(clear()));
+      form->addRow("Error status:",b);
+    }
 
     restoreSettings();
   }

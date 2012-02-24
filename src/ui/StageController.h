@@ -13,7 +13,7 @@ using namespace Eigen;
 namespace fetch {
 namespace ui {
 
-  class TilingControllerListener:public QObject, public device::StageListener //forwards callbacks through qt signals
+  class TilingControllerListener:public QObject, public device::StageListener ///< forwards callbacks through qt signals
   {      
     Q_OBJECT
   public:
@@ -45,21 +45,21 @@ namespace ui {
 
     inline bool is_valid()                                                 {return tiling_!=NULL;}
 
-    bool fovGeometry      (TRectVerts *out);                               // returns false if tiling is invalid
-    bool latticeTransform (TTransform *out);                               // returns false if tiling is invalid
-    bool latticeTransform (QTransform *out);                               // returns false if tiling is invalid - QtVersion
-    bool latticeShape     (unsigned *width, unsigned *height);             // returns false if tiling is invalid
-    bool latticeShape     (QRectF *out);                                   // returns false if tiling is invalid
-    bool latticeAttrImage (QImage *out);                                   // returns false if tiling is invalid
-    bool stageAlignedBBox (QRectF *out);                                   // returns false if tiling is invalid
+    bool fovGeometry      (TRectVerts *out);                               /// \returns false if tiling is invalid
+    bool latticeTransform (TTransform *out);                               /// \returns false if tiling is invalid
+    bool latticeTransform (QTransform *out);                               /// \returns false if tiling is invalid - QtVersion
+    bool latticeShape     (unsigned *width, unsigned *height);             /// \returns false if tiling is invalid
+    bool latticeShape     (QRectF *out);                                   /// \returns false if tiling is invalid
+    bool latticeAttrImage (QImage *out);                                   /// \returns false if tiling is invalid
+    bool stageAlignedBBox (QRectF *out);                                   /// \returns false if tiling is invalid
 
-    bool markAddressable();                                                // returns false if tiling is invalid
-    bool markActive(const QPainterPath& path);                             // returns false if tiling is invalid
-    bool markInactive(const QPainterPath& path);                           // returns false if tiling is invalid
-    bool markDone(const QPainterPath& path);                               // returns false if tiling is invalid
-    bool markNotDone(const QPainterPath& path);                            // returns false if tiling is invalid
+    bool markAddressable();                                                /// \returns false if tiling is invalid
+    bool markActive(const QPainterPath& path);                             /// \returns false if tiling is invalid
+    bool markInactive(const QPainterPath& path);                           /// \returns false if tiling is invalid
+    bool markDone(const QPainterPath& path);                               /// \returns false if tiling is invalid
+    bool markNotDone(const QPainterPath& path);                            /// \returns false if tiling is invalid
 
-    bool mapToIndex(const Vector3f & stage_coord, unsigned *index);        // returns false if tiling is invalid or if stage_coord is oob
+    bool mapToIndex(const Vector3f & stage_coord, unsigned *index);        /// \returns false if tiling is invalid or if stage_coord is oob
 
     QAction* saveDialogAction() {return save_action_;}
     QAction* loadDialogAction() {return load_action_;}
@@ -84,7 +84,7 @@ namespace ui {
     void changed();
     void planeChanged();
     void tileDone(unsigned itile,unsigned int attr);
-    void nextTileRequest(unsigned itile);                                  // really should be nextTileRequested
+    void nextTileRequest(unsigned itile);                                  ///< really should be nextTileRequested
     void fovGeometryChanged(float w_um, float h_um, float rotation_radians);
     // other ideas: imaging started, move start, move end
 
@@ -99,10 +99,10 @@ namespace ui {
                         
     QTimer              autosave_timer_;
 
-    bool mark(     const QPainterPath& path,                               // path should be in scene coords (um)
+    bool mark(     const QPainterPath& path,                               ///< path should be in scene coords (um)
                    device::StageTiling::Flags attr, 
                    QPainter::CompositionMode mode );
-    bool mark_all( device::StageTiling::Flags attr,                        // marks the whole plane with the attribute
+    bool mark_all( device::StageTiling::Flags attr,                        ///< marks the whole plane with the attribute
                    QPainter::CompositionMode mode );
   };
   
@@ -111,11 +111,13 @@ namespace ui {
   {
     Q_OBJECT
   public:
-    virtual void moved(void) {emit sig_moved();}
+    virtual void moved(void)           {emit sig_moved();}
     virtual void velocityChanged(void) {emit sig_velocityChanged();}
+    virtual void referenced(void)      {emit sig_referenced();}
   signals:
     void sig_moved();
     void sig_velocityChanged();
+    void sig_referenced();
 
   };
 
@@ -130,7 +132,7 @@ namespace ui {
       beginInsertRows(index(0).parent(),0,0);
       history_.prepend(v);
       endInsertRows();
-      if(n=history_.length()>10 /* MAX DEPTH*/)              // TODO: grab MAXDEPTH from QSettings.  Allows one to set this via prefs later (or manually edit registry).
+      if(n=history_.length()>10 /* MAX DEPTH*/)              /// \todo grab MAXDEPTH from QSettings.  Allows one to set this via prefs later (or manually edit registry).
       { beginRemoveRows(index(n-1).parent(),n-1,n-1);
         history_.removeLast();
         endRemoveRows();
@@ -203,7 +205,7 @@ namespace ui {
 
       static const units::Length Unit = units::MM;
 
-      PlanarStageController(device::Stage *stage, QObject *parent=0);// : QObject(parent), stage_(stage), agent_controller_(stage->_agent) {}
+      PlanarStageController(device::Stage *stage, QObject *parent=0);
 
       QRectF  travel()                                                     { device::StageTravel t; stage_->getTravel(&t); return QRectF(QPointF(t.x.min,t.y.min),QPointF(t.x.max,t.y.max)); }
       QPointF velocity()                                                   { float vx,vy,vz; stage_->getVelocity(&vx,&vy,&vz); return QPointF(vx,vy); }
@@ -216,10 +218,11 @@ namespace ui {
 
       QComboBox *createHistoryComboBox(QWidget *parent=0);
                                                                      
-  signals:
-      void moved();            // eventually updates the imitem's position      
-      void moved(QPointF pos); // eventually updates the imitem's position
+   signals:
+      void moved();            ///< eventually updates the imitem's position
+      void moved(QPointF pos); ///< eventually updates the imitem's position
       void velocityChanged();
+      void referenced();       ///< eventually updates the imitem's position
 
     public slots:
       
@@ -229,6 +232,8 @@ namespace ui {
       void moveRel(QPointF dr)                                             { float  x, y, z; stage_->getTarget(&x,&y,&z); moveTo3d(x+dr.x(),y+dr.y(),z);} 
       void moveToHistoryItem(int i)                                        { float  x, y, z; if(history_.get(i,&x,&y,&z)) moveTo3d(x,y,z); }
       void savePosToHistory()                                              { float  x, y, z; stage_->getTarget(&x,&y,&z); history_.push(x,y,z); }
+      void reference()                                                     { stage_->referenceNoWait(); }
+      void clear()                                                         { stage_->clear(); } ///< Clears teh stage's error state, if any
 
       void updateTiling()                                                  { tiling_controller_.update(stage_->tiling());}
       void invalidateTiling()                                              { tiling_controller_.update(NULL);}
