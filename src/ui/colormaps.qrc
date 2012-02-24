@@ -1,5 +1,6 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource prefix="cmap/">
+  <file alias="3.GRSat"     >resources/cmap/bwGRsat.png</file>
   <file alias="1.RGB"       >resources/cmap/bwRGB.png</file>
   <file alias="0.RGBSat"    >resources/cmap/bwRGBsat.png</file>
   <file alias="2.Continuous">resources/cmap/cmap2.jpg</file>
