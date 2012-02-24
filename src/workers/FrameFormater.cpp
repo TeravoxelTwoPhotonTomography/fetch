@@ -16,6 +16,11 @@
 #define DBG
 #endif
 
+// I use REMIND to warn me in case I leave in a debugging expression.
+#define REMIND(expr) \
+  warning("%s(%d)" ENDL "\tEvaluating expression." ENDL "\t%s" ENDL, __FILE__,__LINE__,#expr); \
+  (expr)
+
 using namespace fetch::worker;
 
 namespace fetch
@@ -26,9 +31,9 @@ namespace fetch
     FrameFormatter::
     work(IDevice *idc, Frame *fdst, Frame *fsrc)
     {
-      //fsrc->dump("FrameFormatter-src.%s",TypeStrFromID(fsrc->rtti));
+      //REMIND( fsrc->totif("FrameFormatter-src-%s.tif",TypeStrFromID(fsrc->rtti)));
       Frame_With_Interleaved_Planes::translate(fdst,fsrc);
-      //fdst->dump("FrameFormatter-dst.%s",TypeStrFromID(fdst->rtti));
+      //REMIND( fdst->totif("FrameFormatter-dst-%s.tif",TypeStrFromID(fdst->rtti)));
       return 1; // success
     }
 

@@ -56,14 +56,14 @@ void main(void)
       return;
     } else
     {
-      float a = 1.0/(nchan-1.0);
+      float a = 1.0/(nchan-1.0);  // e.g. 2 channels -> a=1.0; 3 channels -> a=0.5
       vec4 c = vec4(0.0,0.0,0.0,1.0);
       for(float i=0.0;i<nchan;++i)
       { vec4 v,s,t;
         vec2 p;
-        uvw.z = a*i;              // addresses the channel
-        v = texture(plane,uvw);   // luma
-        v.x = pow(v.x,gamma);     // gamma adjust
+        uvw.z = a*i;                              // addresses the channel ( 2ch->(0,1); 3ch->(0,0.5,1) ) 
+        v = texture(plane,uvw);                   // luma                                                 
+        v.x = pow(v.x,gamma);                     // gamma adjust                                         
         { vec2 mu = vec2(v.x,uvw.z);
           p.x = texture(sctrl,mu).x;
           p.y = texture(tctrl,mu).x;

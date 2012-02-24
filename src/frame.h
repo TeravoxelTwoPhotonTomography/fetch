@@ -194,7 +194,7 @@ namespace fetch{
 	    FrmFmt(u32 width, u32 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size);
 	
 	    unsigned int   is_equivalent( FrmFmt *ref );
-	    void           dump( const char *filename,... );                    // performs printf-style string formating on filename.  Thread-safe.
+	    void           dump( const char *filename,... );                    ///< performs printf-style string formating on filename.  Thread-safe.
 	
 	            size_t size_bytes      ( void );
 	            void   format          ( Message *unformatted );
@@ -210,6 +210,8 @@ namespace fetch{
 	    virtual void   copy_channel    ( void *dst, size_t rowpitch, size_t ichan ) = 0;
 	    virtual void   compute_pitches ( size_t pitch[4] )                          = 0;
 	    virtual void   get_shape       ( size_t n[3] )                              = 0;
+	    
+	    void           totif           ( const char *filename, ... );       ///< performs printf-style string formating on filename.  Thread-safe.
 	    // Children also need to impliment (left over from Message):
 	    //             translate()
 	    //             format()    - but only if formatting data is added

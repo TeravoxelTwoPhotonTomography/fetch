@@ -285,7 +285,13 @@ void ImItem::push(mylib::Array *plane)
     _resetscale_next = false;
   }
   
-  //Guess the opacity of different planes
+  //Guess the "fill" for mixing different channels
+  // - this is needed for when there are a ton of channels
+  //   Typically, there are just a handful but in general there
+  //   may be a bunch.
+  // - this is not really relevant for the microscope, but
+  //   the code is used in other projects of mine so I'm leaving
+  //   it.
   _fill = 10.0/_nchan;
   _fill = (_fill>1.0)?1.0:_fill;
   
@@ -381,7 +387,7 @@ void ImItem::_updateCmapCtrlPoints()
       {
         ir = i/_cmap_ctrl_count;
         ic = i%_cmap_ctrl_count;
-        _cmap_ctrl_s[i] = ir/(_nchan-1.0f);
+        _cmap_ctrl_s[i] = 1.0/(_nchan+1.0) + ir/(_nchan-1.0f);
         _cmap_ctrl_t[i] = ic/(_cmap_ctrl_count-1.0f);
       }      
     }

@@ -4,6 +4,12 @@
 #include "util/util-file.h"
 #include "util/util-image.h"
 
+#include "util/util-mylib.h"
+namespace mylib {
+#include <array.h>
+#include <image.h>
+}
+
 #define FRAME_WARN_ON_DUMP
 
 namespace fetch
@@ -145,7 +151,7 @@ static LPCRITICAL_SECTION _get_frmfmtdump_critical_section(void)
   return g_p_frmfmtdump_critical_section;
 }    
 
-#include <stdarg.h>    
+#include <stdarg.h>
 void
 FrmFmt::dump( const char *fmt,...)
 { EnterCriticalSection( _get_frmfmtdump_critical_section() );
@@ -170,8 +176,10 @@ FrmFmt::dump( const char *fmt,...)
     va_end( argList );  
     
 #ifdef FRAME_WARN_ON_DUMP
-    warning("Frame::Dump() - Writing %s\r\n", vbuf.contents);
+    warning("FrmFmt::Dump() - Writing %s\r\n", vbuf.contents);
 #endif
+
+    // Write
     FILE *fp = fopen(vbuf.contents,"wb");
     fwrite(this->data, this->Bpp, n, fp );
     fclose(fp);
@@ -193,6 +201,43 @@ FrmFmt::format(Message* unformatted)
   unformatted->data = (u8*)unformatted + this->self_size; // Set the data section
 }
 
+
+void
+Frame::totif( const char *fmt,...)
+{ EnterCriticalSection( _get_frmfmtdump_critical_section() );
+  {
+    size_t  n = this->width * 
+                this->height*
+                this->nchan;
+    size_t len;    
+    va_list     argList;
+    static      vector_char vbuf = VECTOR_EMPTY;
+
+    // render formated string
+    va_start( argList, fmt );
+      len = _vscprintf(fmt,argList) + 1;
+      vector_char_request( &vbuf, len );
+      memset  ( vbuf.contents, 0, len );
+  #pragma warning( push )
+  #pragma warning( disable:4996 )
+  #pragma warning( disable:4995 )
+      vsprintf( vbuf.contents, fmt, argList);
+  #pragma warning( pop )
+    va_end( argList );  
+    
+#ifdef FRAME_WARN_ON_DUMP
+    warning("Frame::totif() - Writing %s\r\n", vbuf.contents);
+#endif
+
+    // Write
+    { mylib::Array     a;
+      mylib::Dimn_Type dims[3];
+      mylib::castFetchFrameToDummyArray(&a,this,dims);
+      mylib::Write_Image(vbuf.contents,&a,mylib::DONT_PRESS);
+    }
+  }
+  LeaveCriticalSection( _get_frmfmtdump_critical_section() );
+}
 
 /*
  * Frame_With_Interleaved_Pixels
