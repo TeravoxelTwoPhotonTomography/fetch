@@ -1,8 +1,10 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource prefix="cmap/">
-  <file alias="3.GRSat"     >resources/cmap/bwGRsat.png</file>
-  <file alias="1.RGB"       >resources/cmap/bwRGB.png</file>
-  <file alias="0.RGBSat"    >resources/cmap/bwRGBsat.png</file>
-  <file alias="2.Continuous">resources/cmap/cmap2.jpg</file>
+  <file alias="0.GRSat"     >resources/cmap/bwGRsat.png</file>
+  <file alias="1.1-of-2"    >resources/cmap/bw2chSatOnly1.png</file>
+  <file alias="2.2-of-2"    >resources/cmap/bw2chSatOnly2.png</file>
+  <file alias="3.RGB"       >resources/cmap/bwRGB.png</file>
+  <file alias="4.RGBSat"    >resources/cmap/bwRGBsat.png</file>
+  <file alias="5.Continuous">resources/cmap/cmap2.jpg</file>
 </qresource>
 </RCC>
