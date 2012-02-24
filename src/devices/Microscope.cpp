@@ -278,8 +278,8 @@ ESCAN:
       cur =  frame_averager.apply(cur);
       cur =  inverter.apply(cur);
       cur =  cast_to_i16.apply(cur);
-      cur =  wrap.apply(cur);      
       cur =  frame_formatter.apply(cur);
+      cur =  wrap.apply(cur);
       cur =  unwarp.apply(cur);
       return cur;
     }
