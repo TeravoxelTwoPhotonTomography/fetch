@@ -166,6 +166,10 @@ void decref(chan_t **pc)
   free(c);
 }
 
+/** \returns NULL on error, otherwise a valid Chan* 
+    
+    Errors usually cause a panic.
+*/
 Chan* Chan_Open( Chan *self, ChanMode mode)
 { chan_t *n,*c;
   c = (chan_t*)self;
