@@ -138,7 +138,7 @@ namespace fetch
       worker::FrameFormatterAgent        frame_formatter;
 
       worker::TerminalAgent		           trash;
-      device::TiffStream                 disk;
+      device::TiffGroupStream            disk;
                                                        
       task::microscope::Interaction      interaction_task;
       task::microscope::StackAcquisition stack_task;      

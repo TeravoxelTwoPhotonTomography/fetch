@@ -11,6 +11,9 @@
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
 
+
+#include <string>
+#include <sstream>
 #include "devices/DiskStream.h"
 #include "frame.h"
 #include "File.h"
@@ -48,18 +51,23 @@ namespace file {
   unsigned int WriteMessageAsRaw::config (IDevice *d) {return config(dynamic_cast<device::HFILEDiskStreamBase*>(d));}
   unsigned int WriteMessageAsRaw::run    (IDevice *d) {return run   (dynamic_cast<device::HFILEDiskStreamBase*>(d));}  
 
-  unsigned int TiffStreamReadTask::config (IDevice *d) {return config(dynamic_cast<device::HFILEDiskStreamBase*>(d));}
-  unsigned int TiffStreamReadTask::run    (IDevice *d) {return run   (dynamic_cast<device::HFILEDiskStreamBase*>(d));}
+  unsigned int TiffStreamReadTask::config (IDevice *d) {return config(dynamic_cast<device::TiffStream*>(d));}
+  unsigned int TiffStreamReadTask::run    (IDevice *d) {return run   (dynamic_cast<device::TiffStream*>(d));}
 
   unsigned int TiffStreamWriteTask::config (IDevice *d) {return config(dynamic_cast<device::TiffStream*>(d));}
   unsigned int TiffStreamWriteTask::run    (IDevice *d) {return run   (dynamic_cast<device::TiffStream*>(d));}
 
- 
+  unsigned int TiffGroupStreamReadTask::config (IDevice *d) {return config(dynamic_cast<device::TiffGroupStream*>(d));}
+  unsigned int TiffGroupStreamReadTask::run    (IDevice *d) {return run   (dynamic_cast<device::TiffGroupStream*>(d));}
 
+  unsigned int TiffGroupStreamWriteTask::config (IDevice *d) {return config(dynamic_cast<device::TiffGroupStream*>(d));}
+  unsigned int TiffGroupStreamWriteTask::run    (IDevice *d) {return run   (dynamic_cast<device::TiffGroupStream*>(d));}
+
+ 
   //
   // Implementation
   //
-  // 
+
   namespace internal
   {
     template<typename T>
@@ -68,7 +76,9 @@ namespace file {
     inline T max(const T& a, const T& b) {return (a<b)?b:a;}
   }
 
-  
+  /////////////////////////////////////////////////////////////////////////////
+  //  READRAW  ////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
   unsigned int
   ReadRaw::config(device::HFILEDiskStreamBase *dc)
   {return 1;}
@@ -98,13 +108,13 @@ namespace file {
     return 0; // success
   }
 
-
+  /////////////////////////////////////////////////////////////////////////////
+  //  WRITERAW  ///////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
 
   unsigned int
   WriteRaw::config(device::HFILEDiskStreamBase *dc)
   {return 1;}
-
-
 
   unsigned int
   WriteRaw::run(device::HFILEDiskStreamBase *dc)
@@ -129,6 +139,9 @@ namespace file {
     return 0; // success
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  //  READMESSAGE  ////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
 /*
  * [ ] rewrite read to use message to/from file
  * [ ] rewrite write to use message to/from file
@@ -189,6 +202,9 @@ namespace file {
     return 0; // success
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  //  WRITEMESSAGE  ///////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
   unsigned int
   WriteMessage::config(device::HFILEDiskStreamBase *dc)
   {return 1;}
@@ -238,9 +254,9 @@ namespace file {
     return 0; // success
   }
 
-  //
-  // Tiff Reader/Writer
-  //
+  /////////////////////////////////////////////////////////////////////////////
+  // TIFF STREAM READER  //////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
 
   unsigned int TiffStreamReadTask::config( device::TiffStream *dc )
   {
@@ -326,17 +342,16 @@ FailedIFDRead:
     if(planes) free(planes);   
     eflag=3;
     goto Finalize;
-  }
+  }  
 
-  //#undef  goto_if_fail
-  //#define goto_if_fail( cond, lbl )       { if(!(cond)) {breakme();goto lbl;} }
-  //void breakme() 
-  //{ HERE;
-  //}
+  /////////////////////////////////////////////////////////////////////////////
+  //  TIFF STREAM WRITER  /////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
   unsigned int TiffStreamWriteTask::config( device::TiffStream *dc )
   {
     return 1;
   }
+
   unsigned int TiffStreamWriteTask::run( device::TiffStream *dc )
   {
     Chan *q  = Chan_Open(dc->_in->contents[0],CHAN_READ);
@@ -353,7 +368,8 @@ FailedIFDRead:
       nbytes = buf->size_bytes();
 
       //buf->dump("TiffStreamWriteTask-src.%s",TypeStrFromID(buf->rtti));          
-      
+      buf->totif("TiffStreamWriteTask-src.tif");
+
       {
         goto_if_fail(tim=Create_Tiff_Image(buf->width,buf->height),FailedCreateTIFFImage);
 
@@ -370,7 +386,7 @@ FailedIFDRead:
         u8 *data = (u8*) buf->data;
         for(int i=0;i<buf->nchan;++i)
           goto_if(Add_Tiff_Image_Channel(tim,CHAN_BLACK,scale,type,data+i*pp),FailedAddChannel);
-        goto_if_fail(ifd=Make_IFD_For_Image(tim,DONT_COMPRESS,buf->width,buf->height),FailedMakeIFD);
+        goto_if_fail(ifd=Make_IFD_For_Image(tim,DONT_COMPRESS,0,0),FailedMakeIFD);
         goto_if_fail(Write_Tiff_IFD(tif,ifd)==0,FailedWriteIFD);
       }
       
@@ -408,6 +424,108 @@ FailedWriteIFD:
     
     eflag=5;
     goto Finalize;
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  //  TIFF GROUP STREAM READER  ///////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  unsigned int TiffGroupStreamReadTask::config(device::TiffGroupStream *dc)
+  { return 1; }
+
+  unsigned int TiffGroupStreamReadTask::run( device::TiffGroupStream *dc )
+  { warning("%s(%d): Not Implemented\r\n",__FILE__,__LINE__);
+    return 0;
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  //  TIFF GROUP STREAM WRITER  ///////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  /** \class TiffGroupStreamWriteTask
+      Appends the colors from each image to corresponding tiff stacks.
+
+      One stack per color.
+
+      The number of channels is required to know exactly how many tiff writers
+      to open, so the writers aren't opened till the task is started.
+      
+      That means:
+      1. Don't implicitly have validation of path before run().
+      2. Pausing and restarting an acquisition to disk will cause the files to get 
+         overwritten rather than appended to.
+
+         Could address this.
+         a. Resize as necessary in the run thread.
+            Do not clean up writers on thread exit ("stop").
+         b. Clean up writers on detach()
+         c. When re-running, just append to old writers.
+
+      What to do when number of channels or image size changes?
+      - I think the behavior of the TiffStreamWriteTask is to append images of different size
+      - This behavior doesn't occur during normal operation
+
+      \todo what if the number of channels changes
+  */
+  unsigned int TiffGroupStreamWriteTask::config(device::TiffGroupStream *dc)
+  { return 1; }
+
+#define ENDL "\r\n"
+#define TRY(e)     if(!(e)) {warning("%s(%d):"ENDL "\t%s"ENDL "\tExpression evaluated to false."ENDL,__FILE__,__LINE__,#e); goto Error;}
+#define TIFFTRY(e) if(!(e)) {warning("%s(%d):"ENDL "\t%s"ENDL "\t[TIFF] Expression evaluated to false."ENDL "%s",__FILE__,__LINE__,#e,(const char*)Image_Error()); Image_Error_Release(); goto Error;}
+#define TODO   error("%s(%d): [TODO] Not Implemented\r\n",__FILE__,__LINE__)
+
+  /** \todo Find out (and fix) what happens when the root name lacks an extension */
+  static ::std::string gen_name(const ::std::string & root, int i)
+  { ::std::ostringstream os;
+    size_t idot = root.rfind('.');
+    std::string firstpart  = root.substr(0,idot),
+                secondpart = root.substr(idot,std::string::npos);
+    os << firstpart << "." << i << secondpart;
+    return os.str();
+  }
+
+  unsigned int TiffGroupStreamWriteTask::run(device::TiffGroupStream *dc)
+  { int                            isok;
+    Chan                          *q  =0;
+    Frame_With_Interleaved_Planes *buf=0;
+    size_t                         nbytes;
+
+    TRY(q=Chan_Open(dc->_in->contents[0],CHAN_READ));
+    TRY(buf=(Frame_With_Interleaved_Planes*)Chan_Token_Buffer_Alloc(q));
+    nbytes=Chan_Buffer_Size_Bytes(q);    
+
+    while(CHAN_SUCCESS(Chan_Next(q,(void**)&buf,nbytes)))
+    { Array     dummy;
+      Dimn_Type dims[3];
+      int       i;
+      TRY(buf->id==FRAME_INTERLEAVED_PLANES);
+      mylib::castFetchFrameToDummyArray(&dummy,buf,dims);
+      
+      for(i=0;i<dims[2];++i)
+      { // maybe append writer
+        if(i>=dc->_writers.size())
+        { device::TiffGroupStream::Config c = dc->get_config();          
+          ::std::string fname = gen_name(c.path(),i);
+          mylib::Tiff* tif=0;
+          TIFFTRY(tif=Open_Tiff((mylib::string)fname.c_str(),"w"));
+          dc->_writers.push_back(tif);
+        }
+
+        // Write out channel
+        { mylib::Tiff* w = dc->_writers[i];
+          Array_Bundle tmp = dummy;
+          TIFFTRY(0==Add_IFD_Channel(w,Get_Array_Plane(&tmp,i),PLAIN_CHAN));
+          Update_Tiff(w,DONT_PRESS);
+        }
+      }      
+    }
+    isok=1;
+Finalize:
+    if(q)   Chan_Close(q);
+    if(buf) Chan_Token_Buffer_Free(buf);
+    return isok;
+Error:
+    isok = 0;
+    goto Finalize;    
   }
 
 }  // namespace file

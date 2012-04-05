@@ -15,13 +15,12 @@
 #include "devices/DiskStream.h"
 #include "task.h"
 
-
-
 namespace fetch
 {
   namespace device { 
     class HFILEDiskStreamBase; 
     class TiffStream;
+    class TiffGroupStream;
   }
 
   namespace task
@@ -31,13 +30,13 @@ namespace fetch
       //typedef UpcastTask<device::HFILEDiskStreamBase> DiskStreamTask;
       typedef Task DiskStreamTask;
 
-      /*
-      WriteRaw
+      /**
+      \class WriteRaw
         Writes all the bytes popped from the queue to disk.
         The buffer size of the input queue determines the 
         size of the chunk written to disk in a single call.
         
-      ReadRaw
+      \class ReadRaw
         Reads raw data to disk and pushes it onto an output
         queue.  The amount of data requested on each read
         is determined by the output queue size.
@@ -106,6 +105,26 @@ namespace fetch
 
         unsigned int config(device::TiffStream *dc);
         unsigned int run   (device::TiffStream *dc);
+      };
+     
+      class TiffGroupStreamReadTask:public DiskStreamTask
+      {
+      public:
+        unsigned int config(IDevice *d);
+        unsigned int run   (IDevice *d);
+
+        unsigned int config(device::TiffGroupStream *dc);
+        unsigned int run   (device::TiffGroupStream *dc);
+      };
+
+      class TiffGroupStreamWriteTask:public DiskStreamTask
+      {
+      public:
+        unsigned int config(IDevice *d);
+        unsigned int run   (IDevice *d);
+
+        unsigned int config(device::TiffGroupStream *dc);
+        unsigned int run   (device::TiffGroupStream *dc);
       };
 
     }  // namespace disk

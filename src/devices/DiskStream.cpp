@@ -59,7 +59,6 @@ namespace fetch
       ,_reader(NULL)
       ,_writer(NULL)
     {
-
     }
 
   
@@ -72,7 +71,7 @@ namespace fetch
 
     void IDiskStream::flush()
     {
-      warning("IDiskStream::flsuh() called.  Need to be sure this is necessary.  Could lose data.\r\n");
+      warning("IDiskStream::flus h() called.  Need to be sure this is necessary.  Could lose data.\r\n");
       if(_in)
       { 
         Chan **beg =       _in->contents,
@@ -288,7 +287,7 @@ Error:
     {
       if(_tiff_writer)
       {
-        Free_Tiff_Writer(_tiff_writer);
+        ::Close_Tiff(_tiff_writer);
         _tiff_writer = NULL;
       }
       if(_tiff_reader)
@@ -363,5 +362,98 @@ FailedOpen:
     }
 #pragma warning(pop)
 
+///////////////////////////////////////////////////////////////////////////////
+//  TiffGroupStream  //////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+#define ENDL "\r\n"
+#define TRY(e) if(!(e)) {warning("%s(%d):"ENDL "\t%s"ENDL "\tExpression evaluated to false."ENDL,__FILE__,__LINE__,#e); goto Error;}
+
+    // Constructor  ///////////////////////////////////////////////////////////
+    TiffGroupStream::TiffGroupStream( Agent *agent )
+      :IDiskStream(agent)
+    {
+      _writer = &_write_task;
+      _reader = &_read_task;
+    }
+
+    // Constructor  ///////////////////////////////////////////////////////////
+    /** \param[in] config specifies the path and mode of a file */
+    TiffGroupStream::TiffGroupStream( Agent *agent, Config *config )
+      :IDiskStream(agent,config)
+    {
+      _writer = &_write_task;
+      _reader = &_read_task;
+    }
+
+    // on_attach  /////////////////////////////////////////////////////////////
+    /** called (indirectly) by IDiskStream::open() */
+    unsigned int TiffGroupStream::on_attach()
+    {
+      unsigned int eflag = 0; //success
+      char *mode,*filename;
+      Config c = get_config();
+      mode = const_cast<char*>(c.mode().c_str());
+      filename = const_cast<char*>(c.path().c_str());
+
+      switch(mode[0])
+      {
+      case 'r':
+        eflag |= _attach_reader(filename);
+        break;
+      case 'w':
+        eflag |= _attach_writer(filename);
+        break;
+      default:
+        error("Could not recognize mode.  Expected r or w.\r\n");
+      }
+
+      return eflag;
+    }
+
+    // on_detach  /////////////////////////////////////////////////////////////
+    /** called (indirectly) by IDiskStream::open() */
+    unsigned int TiffGroupStream::on_detach()
+    { int i;
+
+      for(i=0;i<_readers.size();++i)
+         if(_readers[i]) mylib::Close_Tiff(_readers[i]);
+      _readers.clear();
+
+      for(i=0;i<_writers.size();++i)
+         if(_writers[i]) mylib::Close_Tiff(_writers[i]);
+      _writers.clear();
+      return 0; //success
+    }
+
+    // _attach_reader /////////////////////////////////////////////////////////
+    unsigned int TiffGroupStream::_attach_reader(char *filename)
+    { int eflag=0;
+      TRY(_readers.empty()==true);  // open() should call on_detach() before on_attach().  on_detach() should close all open handles and clear this vector
+      error("%s(%d): "ENDL "\tNot implemented."ENDL,__FILE__,__LINE__);
+Finalize:
+      return eflag;
+Error:
+      eflag=1;
+      goto Finalize;
+    }
+
+    // _attach_writer /////////////////////////////////////////////////////////
+    unsigned int TiffGroupStream::_attach_writer(char *filename)
+    { int eflag=0;
+      TRY(_writers.empty()==true);  // open() should call on_detach() before on_attach().  on_detach() should close all open handles and clear this vector
+
+      warning("%s(%d): "ENDL "\tNot tested.  Should test for destination writeable."ENDL,__FILE__,__LINE__);
+
+      Frame_With_Interleaved_Planes fmt(1024,1024,3,id_u16);
+      if(_in==NULL)
+        _alloc_qs_easy(&_in,1,4,fmt.size_bytes());
+    
+Finalize:
+      return eflag;
+Error:
+      eflag=1;
+      goto Finalize;
+    }
+    
   }
 }
