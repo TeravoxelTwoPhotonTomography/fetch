@@ -82,7 +82,7 @@ namespace microscope {
   */
   unsigned int Cut::run(device::Microscope* dc)
   {     
-    float cx,cy,cz,vx,vy,vz,ax,ay,bx,by,v,dz,thick;
+    float cx,cy,cz,vx,vy,vz,ax,ay,bx,by,bz,v,dz,thick;
     // get current pos,vel
     CHK( dc->stage()->getTarget(&cx,&cy,&cz));
     CHK( dc->stage()->getVelocity(&vx,&vy,&vz));
@@ -90,20 +90,21 @@ namespace microscope {
     // Get parameters    
     dc->vibratome()->feed_begin_pos_mm(&ax,&ay);
     dc->vibratome()->feed_end_pos_mm(&bx,&by);
-    thick = dc->vibratome()->thickness_um()*0.001; // um->mm
-    dz = dc->vibratome()->verticalOffset();
+    thick = dc->vibratome()->thickness_um()*0.001;      // um->mm
+    dz = dc->vibratome()->verticalOffset();             // when image plan is lower than cutting plane, dz should be negative
     CHK( (v = dc->vibratome()->feed_vel_mm_p_s())>0.0); // must be non-zero
     
     // Move to the start of the cut
+    bz = cz-dz+thick;
     CHK( dc->stage()->setPos(cx,cy,1.0));           // Drop to safe z first
     CHK( dc->stage()->setPos(ax,ay,1.0));           // Move on safe z plane
-    CHK( dc->stage()->setPos(ax,ay,cz-dz+thick));   // Move to final plane
+    CHK( dc->stage()->setPos(ax,ay,bz));            // Move to final plane
     
     // do the cut
-    CHK( dc->vibratome()->start());    // returns 1 on success
-    CHK( dc->stage()->setVelocity(v));
-    CHK( dc->stage()->setPos(bx,by,cz-dz));
-    CHK( dc->stage()->setVelocity(vx,vy,vz));
+    CHK( dc->vibratome()->start());
+    CHK( dc->stage()->setVelocity(v));              // set feed velocity
+    CHK( dc->stage()->setPos(bx,by,bz));            // feed
+    CHK( dc->stage()->setVelocity(vx,vy,vz));       // set back to default velocity
     CHK( dc->vibratome()->stop());
     
     // Move back
