@@ -193,6 +193,33 @@ namespace device {
     }
   }
 
+  //  nextInPlaneExplorablePosition  /////////////////////////////////////////////
+  //                           
+
+  /** Return the next tile-position to explore in the current tile-plane.
+      
+      Exclude tiles that are not Addressable, or that have already been 
+      marked Active or Done.
+  */
+
+  bool StageTiling::nextInPlaneExplorablePosition(Vector3f &pos)
+  { uint32_t* mask = AUINT32(attr_);
+    uint32_t attrmask = Explorable | Addressable | Active | Done,
+             attr     = Explorable | Addressable;
+
+    do{++cursor_;}
+    while( (mask[cursor_] & attrmask) != attr
+        && ON_PLANE(cursor_) );
+
+    if(ON_PLANE(cursor_) &&  (mask[cursor_] & attrmask) == attr)
+    { pos = computeCursorPos();
+      notifyNext(cursor_,pos);
+      return true;
+    } else
+    { return false;
+    }
+  }
+
   //  nextPosition  ////////////////////////////////////////////////////
   //
   bool StageTiling::nextPosition(Vector3f &pos)
@@ -218,6 +245,16 @@ namespace device {
   void StageTiling::markDone(bool success)
   { uint32_t *m = AUINT32(attr_) + cursor_;
     *m |= Done;
+    if(!success)
+      *m |= TileError;
+    notifyDone(cursor_,computeCursorPos(),*m);
+  } 
+
+  //  markActive  ////////////////////////////////////////////////////////
+  //
+  void StageTiling::markActive()
+  { uint32_t *m = AUINT32(attr_) + cursor_;
+    *m |= Active;
     if(!success)
       *m |= TileError;
     notifyDone(cursor_,computeCursorPos(),*m);

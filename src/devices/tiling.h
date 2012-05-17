@@ -28,24 +28,25 @@ namespace device {
     typedef std::set<StageListener*>             TListeners;  
   
   public: // pseudo-private
-    mylib::Array              *attr_;                                      // tile attribute database
-    mylib::Indx_Type           leftmostAddressable_;                       // marks the first tile
-    mylib::Indx_Type           cursor_;                                    // marks the current tile
-    mylib::Indx_Type           current_plane_offest_;                      // marks the current plane
-    mylib::Indx_Type           sz_plane_nelem_;                            // the size of a plane in the tile database
-    TTransform                 latticeToStage_;                            // Transforms lattice coordinates to the tiles anchor point on the stage
-    TListeners                 listeners_;                                 // set of objects to be notified of tiling events
-    FieldOfViewGeometry        fov_;                                       // the geometry used to generate the tiling
-    device::StageTravel        travel_;                                    // the travel used to generate the tiling
+    mylib::Array              *attr_;                                      ///< tile attribute database
+    mylib::Indx_Type           leftmostAddressable_;                       ///< marks the first tile
+    mylib::Indx_Type           cursor_;                                    ///< marks the current tile
+    mylib::Indx_Type           current_plane_offest_;                      ///< marks the current plane
+    mylib::Indx_Type           sz_plane_nelem_;                            ///< the size of a plane in the tile database
+    TTransform                 latticeToStage_;                            ///< Transforms lattice coordinates to the tiles anchor point on the stage
+    TListeners                 listeners_;                                 ///< set of objects to be notified of tiling events
+    FieldOfViewGeometry        fov_;                                       ///< the geometry used to generate the tiling
+    device::StageTravel        travel_;                                    ///< the travel used to generate the tiling
 
   public: 
 
     enum Flags
     { 
-      Addressable = 1,                                                     // indicates the stage should be allowed to move to this tile
-      Active      = 2,                                                     // indicates this tile is in the region of interest
-      Done        = 4,                                                     // indicates the tile has been imaged
-      TileError   = 8                                                      // indicates there was some error moving to or imaging this tile
+      Addressable = 1,                                                     ///< indicates the stage should be allowed to move to this tile
+      Active      = 2,                                                     ///< indicates this tile is in the region of interest
+      Done        = 4,                                                     ///< indicates the tile has been imaged
+      Explorable  = 8,                                                     ///< indicates the tile should be expored for auto-tiling
+      TileError   = 16                                                     ///< indicates there was some error moving to or imaging this tile
     };
 
              StageTiling(const device::StageTravel& travel,
@@ -55,9 +56,11 @@ namespace device {
 
     void     resetCursor();
     bool     nextInPlanePosition(Vector3f& pos);
+    bool     nextInPlaneExplorablePosition(Vector3f &pos);
     bool     nextPosition(Vector3f& pos);
 
     void     markDone(bool success);
+    void     markActive();
     
     inline mylib::Array*     attributeArray()                              {return attr_;}
     inline const TTransform& latticeToStageTransform()                     {return latticeToStage_; }
@@ -74,8 +77,8 @@ namespace device {
     void computeLatticeToStageTransform_
                         (const FieldOfViewGeometry& fov,
                          const Mode                 alignment);
-    mylib::Coordinate* computeLatticeExtents_(const device::StageTravel& travel); // returned pointer needs to be freed (w Free_Array).
-    void initAttr_(mylib::Coordinate *shape);                                     // Free's shape
+    mylib::Coordinate* computeLatticeExtents_(const device::StageTravel& travel); ///< returned pointer needs to be freed (w Free_Array).
+    void initAttr_(mylib::Coordinate *shape);                                     ///< Free's shape
 
     //void markAddressable_(device::StageTravel *travel);
     

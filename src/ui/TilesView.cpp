@@ -456,13 +456,21 @@ void TilesView::init_color_tables()
     color_table_idx2rgb_[i] = (QRgb)0xffff00ff; // purple
 
   // Blue and Red get switched between OpenGL and Qt
-  color_table_idx2rgb_[0 ] = qRgba(155,155,155,  0);     // 0000 not addressable
-  color_table_idx2rgb_[1 ] = qRgba(127,127,127,127);     // 0001 addressable
-  color_table_idx2rgb_[3 ] = qRgba( 55,255,255,200);     // 0011 active,addressable
-  color_table_idx2rgb_[5 ] = qRgba(255, 55, 55,200);     // 0101 done,addressable
-  color_table_idx2rgb_[7 ] = qRgba(  0,255,  0,200);     // 0111 done,active,addressable
-  color_table_idx2rgb_[13] = qRgba(127,127,255,200);     // 1101 error,done,addressable
-  color_table_idx2rgb_[15] = qRgba(  0,  0,255,200);     // 1111 error,done,active,addressable
+  color_table_idx2rgb_[0x0 ] = qRgba(155,155,155,  0);     //00000 not addressable
+  color_table_idx2rgb_[0x1 ] = qRgba(127,127,127,127);     //00001 addressable
+  color_table_idx2rgb_[0x3 ] = qRgba( 55,155,155,200);     //00011 active,addressable
+  color_table_idx2rgb_[0x5 ] = qRgba(155, 55, 55,200);     //00101 done,addressable
+  color_table_idx2rgb_[0x7 ] = qRgba(155,255,155,200);     //00111 done,active,addressable
+  
+  color_table_idx2rgb_[0x9 ] = qRgba(255,255,255,200);     //01001 explorable,addressable
+  color_table_idx2rgb_[0xb ] = qRgba( 55,255,255,200);     //01011 explorable,active,addressable
+  color_table_idx2rgb_[0xd ] = qRgba(255, 55, 55,200);     //01101 explorable,done,addressable
+  color_table_idx2rgb_[0xf ] = qRgba(  0,255,  0,200);     //01111 explorable,done,active,addressable
+  
+  color_table_idx2rgb_[0x15] = qRgba(127,127,255,200);     //10101 error,done,addressable
+  color_table_idx2rgb_[0x17] = qRgba(  0,  0,255,200);     //10111 error,done,active,addressable
+  color_table_idx2rgb_[0x1d] = qRgba(127,127,255,200);     //11101 error,explorable,done,addressable
+  color_table_idx2rgb_[0x1f] = qRgba(  0,  0,255,200);     //11111 error,explorable,done,active,addressable
 }
 
 void TilesView::paint_lattice_attribute_image_()

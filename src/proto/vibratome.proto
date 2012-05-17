@@ -20,7 +20,7 @@ message Point2d
 message VibratomeGeometry
 { optional Point2d cut_pos_mm = 1;                         // The sample should be positioned here before cutting
   optional double  dz_mm      = 2 [default=0.0];           // The vertical distance between the imaging and cutting planes.
-  repeated Point2d bounds_mm  = 3;                         // During normal operation the stage should not move into this region (for all z).  Minkowsky sum of vibratome perimeter and sample.
+  repeated Point2d bounds_mm  = 3;                         // During normal operation the stage should not move into this region (for all z).
 }
 
 message Vibratome
