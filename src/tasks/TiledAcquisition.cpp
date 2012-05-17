@@ -111,7 +111,7 @@ Error:
           tilepos[2] = curpos[2]*1000.0f;      // unit conversion here is a bit awkward          
           dc->stage()->setPos(0.001f*tilepos); // convert um to mm
 
-          dc->write_stack_metadata();          // go ahead and write the metadata
+          //dc->write_stack_metadata();          // go ahead and write the metadata
 
           eflag |= dc->runPipeline();
           eflag |= dc->__scan_agent.run() != 1;          
@@ -139,6 +139,7 @@ Error:
               eflag |= 1; //failure              
             }
           }  // end waiting block
+          dc->write_stack_metadata();          // write the metadata
 
           // Output and Increment files
           eflag |= dc->disk.close();          
