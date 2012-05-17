@@ -261,14 +261,30 @@ Error:
           ref.format(frm);
 
           d->_zpiezo.getScanRange(&ummin,&ummax,&umstep);
-          d->_zpiezo.moveTo(ummin); // reset to starting position
+          //d->_zpiezo.moveTo(ummin); // reset to starting position
           
-          d->generateAORampZ((float)ummin);
-          d->writeAO();
           d->_scanner2d._shutter.Open();
-          CHKJMP(d->_scanner2d._daq.startAO());          
-          for(z_um=ummin+umstep;z_um<=ummax && !d->_agent->is_stopping();z_um+=umstep)
-          { 
+          // One dead cycle to reset stack position
+          {
+            d->generateAOConstZ(ummin);  // Note CONST waveform
+            d->writeAO();
+            CHKJMP(d->_scanner2d._daq.startAO());
+            CHKJMP(d->_scanner2d._daq.startCLK());            
+            DIGJMP(niScope_InitiateAcquisition(vi)); // have to do an acquisition (for my triggers), though the data will get thrown away
+#if 1
+            DIGJMP(Fetch<TPixel> (vi, chan, SCANNER_STACKACQ_TASK_FETCH_TIMEOUT,//10.0, //(-1=infinite) (0.0=immediate) // seconds
+                                  width,
+                                  (TPixel*) frm->data,
+                                  wfm));
+#endif
+            CHKJMP(d->_scanner2d._daq.waitForDone(SCANNER2D_DEFAULT_TIMEOUT));
+            d->_scanner2d._daq.stopCLK();
+          }        
+          //The real thing  
+          for(z_um=ummin;z_um<=ummax && !d->_agent->is_stopping();z_um+=umstep)
+          { debug("Generating AO for z = %f."ENDL,z_um);
+            d->generateAORampZ((float)z_um);
+            d->writeAO();
             CHKJMP(d->_scanner2d._daq.startCLK());            
             DIGJMP(niScope_InitiateAcquisition(vi));
 
@@ -294,17 +310,28 @@ Error:
             toc(&outer_clock);
             CHKJMP(d->_scanner2d._daq.waitForDone(SCANNER2D_DEFAULT_TIMEOUT));
             d->_scanner2d._daq.stopCLK();
-            debug("Generating AO for z = %f."ENDL,z_um);
-            d->generateAORampZ((float)z_um);
-            d->writeAO();
             ++i;
           }
-
           status = 0;
           DBG("Scanner - Stack Acquisition task completed normally."ENDL);
+          // One last cycle to reset stack position
+          {
+            d->generateAOConstZ(ummin);  // Note CONST waveform
+            d->writeAO();
+            CHKJMP(d->_scanner2d._daq.startCLK());            
+            DIGJMP(niScope_InitiateAcquisition(vi)); // have to do an acquisition (for my triggers), though the data will get thrown away
+#if 1
+            DIGJMP(Fetch<TPixel> (vi, chan, SCANNER_STACKACQ_TASK_FETCH_TIMEOUT,//10.0, //(-1=infinite) (0.0=immediate) // seconds
+                                  width,
+                                  (TPixel*) frm->data,
+                                  wfm));
+#endif
+            CHKJMP(d->_scanner2d._daq.waitForDone(SCANNER2D_DEFAULT_TIMEOUT));
+            d->_scanner2d._daq.stopCLK();
+          }
 Finalize: 
-          d->_scanner2d._shutter.Shut();          
-          d->_zpiezo.moveTo(ummin); // reset to starting position
+          d->_scanner2d._shutter.Shut();
+          
           free(frm);
           free(wfm);
           Chan_Close(qdata);
