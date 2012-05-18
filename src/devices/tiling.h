@@ -46,7 +46,8 @@ namespace device {
       Active      = 2,                                                     ///< indicates this tile is in the region of interest
       Done        = 4,                                                     ///< indicates the tile has been imaged
       Explorable  = 8,                                                     ///< indicates the tile should be expored for auto-tiling
-      TileError   = 16                                                     ///< indicates there was some error moving to or imaging this tile
+      TileError   = 16,                                                    ///< indicates there was some error moving to or imaging this tile
+      Reserved    = 128                                                    ///< used internally to temporarily mark tiles
     };
 
              StageTiling(const device::StageTravel& travel,
@@ -61,6 +62,9 @@ namespace device {
 
     void     markDone(bool success);
     void     markActive();
+    
+    void     fillHolesInActive();                                          //   2d
+    void     dilateActive();                                               //   2d
     
     inline mylib::Array*     attributeArray()                              {return attr_;}
     inline const TTransform& latticeToStageTransform()                     {return latticeToStage_; }

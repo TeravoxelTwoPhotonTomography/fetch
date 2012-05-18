@@ -166,10 +166,11 @@ Error:
         tiling->resetCursor();
         while(  !dc->_agent->is_stopping() 
               && tiling->nextInPlaneExplorablePosition(&tilepos))
-        { /// \todo turn this fantasy into reality
-          if(classify(dc->snapshot(),ichan,intensity_threshold,area_threshold))
+        { if(classify(dc->snapshot(),ichan,intensity_threshold,area_threshold))
             tiling->markActive();
         }
+        tiling->fillHolesInActive();
+        tiling->dilateActive();
         return 1;
       Error:
         return 0;

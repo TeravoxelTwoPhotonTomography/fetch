@@ -258,6 +258,115 @@ namespace device {
     if(!success)
       *m |= TileError;
     notifyDone(cursor_,computeCursorPos(),*m);
+  } 
+
+  //  fillHolesInActive  /////////////////////////////////////////////////
+  //
+  
+  /// Private stack implementation for non-recursive flood fill.
+  typedef struct _stack_t
+  { size_t     n,cap;
+    uint32_t **data;
+  } stack_t;
+  void grow(stack_t *s)
+  { if(s.n==s.capacity-1)
+    { size_t newsize = n.capacity*1.2+50;
+      Guarded_Realloc(s.data,newsize,"grow stack");
+      memset(s.data+s.capacity,0,(newsize-n.capacity)*sizeof(uint32_t*));
+    }
+  }  
+  void push(stack_t *s, uint32_t* v)
+  { grow(s);
+    s.data[s.n++] = v;
+  }  
+  uint32_t* pop(stack_t *s)
+  { s.data[--s.n];
+  }    
+  stack_t make_stack(size_t reserve)
+  { stack_t s;
+    s.n=0;
+    s.data=Guarded_Calloc(s.cap=reserve,sizeof(uint32_t*),"make stack");    
+    return s.data;    
+  }
+  void destroy_stack(stack_t *s)
+  { if(s.data) free(s.data);
+  }
+    
+  
+  /** Fill holes in regions marked as active 
+  
+    Filled regions are 4-connected.
+  */
+  void StageTiling::fillHolesInActive()
+  { uint32_t *c,
+             *beg = AUINT32(attr_)+current_plane_offset_,
+             *end = c+sz_plane_nelem_;
+    int is_open=0;
+    const unsigned w=attr_->dims[0],
+                   h=attr_->dims[1];    
+    stack_t stack = make_stack(sz_plane_nelem_);
+  
+    for(c=beg;c<end;)
+    { uint32 *n,next;
+      uint32 mask = Active | Reserved;
+      // mark connected and do bounds test for region
+      is_open=0;
+      push(&s,0); // push 0 to detect underflow when the fill is done
+      push(&stack,c);
+      while(n=pop(&stack))
+      {   unsigned x = (n-beg)%w,
+                   y = (n-beg)/h;
+          *n |= Reserved;
+          is_open |= ((x==0)||(x==w-1)||(y==0)||(y=h-1)); // is the region connected to the plane bounds?       
+      } // end first fill
+                        
+      if(!is_open)     // second fill to mark interior as Active
+      { mask = Active; // edges and self are labeled Active
+        push(&stack,0);
+        push(&stack,c);
+        while(n=pop(&stack))
+        {   unsigned x = (n-beg)%w,
+                     y = (n-beg)/h;
+            *n |= Active; 
+            if(!(y==(h-1) || *(next=(n+w))&mask)) {push(&stack,next);}  // down
+            if(!(y==0     || *(next=(n-w))&mask)) {push(&stack,next);}  // up
+            if(!(x==0     || *(next=(n-1))&mask)) {push(&stack,next);}  // left
+            if(!(x==(w-1) || *(next=(n+1))&mask)) {push(&stack,next);}  // right
+        } // end second fill
+      }
+           
+      while(c++<end && *c&Reserved);      // move to next unreserved
+    } // done searching for regions
+    destroy_stack(&stack);
+    for(c=beg;c<end;++c) // mark all unreserved
+      *c |= c[0]&~Reserved;    
+  }
+
+  //  dilateActive  //////////////////////////////////////////////////////
+  //                      
+  #define countof(e) (sizeof(e)/sizeof(*e))
+  /** Mark tiles as Active if they are 8-connected to an Active tile. */
+  void StageTiling::dilateActive()
+  { uint32_t *c,
+             *beg = AUINT32(attr_)+current_plane_offset_;
+    const unsigned w=attr_->dims[0],
+                   h=attr_->dims[1];
+    unsigned       x,y,j;
+    
+    const unsigned offsets[] = {-h-1,-h,-h+1,-1,1,h-1,h,h+1};
+    const unsigned top=1,left=2,bot=4,right=8; // bit flags
+    const unsigned masks[]   = {top|left,top,top|right,left,right,bot|left,bot,bot|right};      
+    for(y=0;y<h;++y)
+    { unsigned colmask = ((y==0)&top)|((y==h-1)&bot);
+      for(x=0;x<w;++w)
+      { const unsigned rowmask = ((x==0)&left)|((y==0)&right),
+                          mask = rowmask|colmask;
+        c=beg+y*w+x;
+        for(j=0;j<countof(offsets);++j)
+          if(mask!=masks[j] && c[offsets[j]]&Active)
+          { *c|=Active; break; }
+      }
+    }
   }
 
   void StageTiling::notifyDone(size_t index, const Vector3f& pos, uint32_t sts)
@@ -278,7 +387,7 @@ namespace device {
   {          
     mylib::Coordinate *c = mylib::Idx2CoordA(attr_,cursor_);     
     mylib::Dimn_Type *d = (mylib::Dimn_Type*)ADIMN(c);
-    Vector3z r; 
+    Vector3z r;
     r << d[0],d[1],d[2];
     Vector3f pos = latticeToStage_ * r.transpose().cast<float>();
     Free_Array(c);	
