@@ -33,21 +33,9 @@ namespace fetch
     {
     public:
       virtual void computeConstWaveform(float64 z_um, float64 *data, int n) = 0;
-      virtual void computeRampWaveform(float64 z_um, float64 *data, int n)  = 0;
+      virtual void computeRampWaveform(float64 z_um, float64 step_um, float64 *data, int n)  = 0;
       virtual IDAQPhysicalChannel* physicalChannel() = 0;
-
-      //getters
-      virtual void getScanRange(f64 *min_um,f64 *max_um, f64 *step_um)=0;
-      virtual f64  getMin() = 0;
-      virtual f64  getMax() = 0;
-      virtual f64  getStep() = 0;
-
-      //setters      
-      virtual void setMin(f64 v) = 0;
-      virtual void setMax(f64 v) = 0;
-      virtual void setStep(f64 v) = 0;
-
-      //
+      
       virtual int moveTo(f64 z_um) = 0; // should return 1 on success, and 0 on error
     };
 
@@ -74,18 +62,9 @@ namespace fetch
       virtual void _set_config(const Config& cfg)   {*_config=cfg; _set_config(_config); }
 
       virtual void computeConstWaveform(float64 z_um, float64 *data, int n);
-      virtual void computeRampWaveform(float64 z_um, float64 *data, int n);
+      virtual void computeRampWaveform(float64 z_um, float64 step_um, float64 *data, int n);
       
       virtual IDAQPhysicalChannel* physicalChannel() {return &_ao;}
-
-      void getScanRange(f64 *min_um,f64 *max_um, f64 *step_um);
-
-      virtual f64  getMin()       {return get_config().um_min();}
-      virtual f64  getMax()       {return get_config().um_max();}
-      virtual f64  getStep()      {return get_config().um_step();}
-      virtual void setMin(f64 v)  {Config c = get_config(); c.set_um_min(v);  set_config_nowait(c);}
-      virtual void setMax(f64 v)  {Config c = get_config(); c.set_um_max(v);  set_config_nowait(c);}
-      virtual void setStep(f64 v) {Config c = get_config(); c.set_um_step(v); set_config_nowait(c);}
 
       virtual int moveTo(f64 z_um);  // should return 1 on success, and 0 on error
     };
@@ -102,18 +81,11 @@ namespace fetch
       unsigned int on_detach() {return 0;}
 
       virtual void computeConstWaveform(float64 z_um, float64 *data, int n);
-      virtual void computeRampWaveform(float64 z_um, float64 *data, int n);
+      virtual void computeRampWaveform(float64 z_um, float64 step_um, float64 *data, int n);
 
       virtual IDAQPhysicalChannel* physicalChannel() {return &_ao;}
 
-      void getScanRange(f64 *min_um,f64 *max_um, f64 *step_um);
-
-      virtual f64  getMin()       {return get_config().um_min();}
-      virtual f64  getMax()       {return get_config().um_max();}
-      virtual f64  getStep()      {return get_config().um_step();}
-      virtual void setMin(f64 v)  {Config c = get_config(); c.set_um_min(v);  set_config_nowait(c);}
-      virtual void setMax(f64 v)  {Config c = get_config(); c.set_um_max(v);  set_config_nowait(c);}
-      virtual void setStep(f64 v) {Config c = get_config(); c.set_um_step(v); set_config_nowait(c);}
+      void getScanRange(f64 *min_um,f64 *max_um, f64 *step_um);      
 
       virtual int moveTo(f64 z_um) {return 1; /* success */}
     };
@@ -137,18 +109,19 @@ namespace fetch
       void setKind(Config::ZPiezoType kind);
 
       virtual void computeConstWaveform(float64 z_um, float64 *data, int n) {_izpiezo->computeConstWaveform(z_um,data,n);}
-      virtual void computeRampWaveform(float64 z_um, float64 *data, int n)  {_izpiezo->computeRampWaveform(z_um,data,n);}
+      virtual void computeRampWaveform(float64 z_um, float64 step_um, float64 *data, int n)  {_izpiezo->computeRampWaveform(z_um,step_um,data,n);}
+      virtual void computeRampWaveform(float64 z_um, float64 *data, int n)  {_izpiezo->computeRampWaveform(z_um,_config->um_step(),data,n);}
 
       virtual IDAQPhysicalChannel* physicalChannel() {return _izpiezo->physicalChannel();}
-      
-      void getScanRange(f64 *min_um,f64 *max_um, f64 *step_um) {_izpiezo->getScanRange(min_um,max_um,step_um);}
 
-      virtual f64  getMin()       {return _izpiezo->getMin();}
-      virtual f64  getMax()       {return _izpiezo->getMax();}
-      virtual f64  getStep()      {return _izpiezo->getStep();}
-      virtual void setMin(f64 v)  { _izpiezo->setMin(v); }
-      virtual void setMax(f64 v)  { _izpiezo->setMax(v); }
-      virtual void setStep(f64 v) { _izpiezo->setStep(v);}
+      void getScanRange(f64 *min_um,f64 *max_um, f64 *step_um);
+
+      virtual f64  getMin()       {return get_config().um_min();}
+      virtual f64  getMax()       {return get_config().um_max();}
+      virtual f64  getStep()      {return get_config().um_step();}
+      virtual void setMin(f64 v)  {Config c = get_config(); c.set_um_min(v);  set_config_nowait(c);}
+      virtual void setMax(f64 v)  {Config c = get_config(); c.set_um_max(v);  set_config_nowait(c);}
+      virtual void setStep(f64 v) {Config c = get_config(); c.set_um_step(v); set_config_nowait(c);}
 
       virtual int moveTo(f64 z_um) {return _izpiezo->moveTo(z_um);}
     };

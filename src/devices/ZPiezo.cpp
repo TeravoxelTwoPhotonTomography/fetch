@@ -83,22 +83,14 @@ namespace fetch
      *
      *  Notice that N-1 is equiv. to z_step - z_step/N
      */
-    void NIDAQZPiezo::computeRampWaveform(float64 z_um,  float64 *data, int n )
+    void NIDAQZPiezo::computeRampWaveform(float64 z_um, float64 step_um,  float64 *data, int n )
     {
-      f64   A = _config->um_step() * _config->um2v(),
+      f64   A = step_um * _config->um2v(),
           off = z_um * _config->um2v(),
             N = n;
 
       for(int i=0;i<n;++i)
         data[i] = A*(i/(N-1))+off; // linear ramp from off to off+A
-    }
-
-    void NIDAQZPiezo::getScanRange( f64 *min_um,f64 *max_um, f64 *step_um )
-    {
-      Config c = get_config();
-      *min_um = c.um_min();
-      *max_um = c.um_max();
-      *step_um = c.um_step();
     }
 
 #define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, warning))
@@ -166,17 +158,9 @@ Error:
       memset(data,0,sizeof(float64)*n);
     }
 
-    void SimulatedZPiezo::computeRampWaveform( float64 z_um, float64 *data, int n )
+    void SimulatedZPiezo::computeRampWaveform( float64 z_um, float64 step_um, float64 *data, int n )
     {
       memset(data,0,sizeof(float64)*n);
-    }
-
-    void SimulatedZPiezo::getScanRange( f64 *min_um,f64 *max_um, f64 *step_um )
-    {
-      Config c = get_config();
-      *min_um = c.um_min();
-      *max_um = c.um_max();
-      *step_um = c.um_step();
     }
 
     //
@@ -255,6 +239,14 @@ Error:
       default:
         error("Unrecognized kind() for ZPiezo.  Got: %u\r\n",(unsigned)kind);
       }
+    }
+    
+    void ZPiezo::getScanRange( f64 *min_um,f64 *max_um, f64 *step_um )
+    {
+      Config c = get_config();
+      *min_um = c.um_min();
+      *max_um = c.um_max();
+      *step_um = c.um_step();
     }
 
   }

@@ -31,7 +31,7 @@ namespace device {
     mylib::Array              *attr_;                                      ///< tile attribute database
     mylib::Indx_Type           leftmostAddressable_;                       ///< marks the first tile
     mylib::Indx_Type           cursor_;                                    ///< marks the current tile
-    mylib::Indx_Type           current_plane_offest_;                      ///< marks the current plane
+    mylib::Indx_Type           current_plane_offset_;                      ///< marks the current plane
     mylib::Indx_Type           sz_plane_nelem_;                            ///< the size of a plane in the tile database
     TTransform                 latticeToStage_;                            ///< Transforms lattice coordinates to the tiles anchor point on the stage
     TListeners                 listeners_;                                 ///< set of objects to be notified of tiling events
@@ -70,7 +70,7 @@ namespace device {
     inline const TTransform& latticeToStageTransform()                     {return latticeToStage_; }
     inline const FieldOfViewGeometry& fov()                                {return fov_;}
     inline const device::StageTravel& travel()                             {return travel_;}
-    inline size_t plane()                                                  {return (size_t)(current_plane_offest_/sz_plane_nelem_); }
+    inline size_t plane()                                                  {return (size_t)(current_plane_offset_/sz_plane_nelem_); }
            size_t plane_mm();
 
     const TListeners *listeners()                                          {return &listeners_;}    

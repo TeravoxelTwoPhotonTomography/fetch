@@ -41,7 +41,7 @@ namespace device {
       attr_(NULL),
       leftmostAddressable_(0),
       cursor_(0),
-      current_plane_offest_(0),
+      current_plane_offset_(0),
       sz_plane_nelem_(0),
       latticeToStage_(),
       fov_(fov),
@@ -148,7 +148,7 @@ namespace device {
   //  resetCursor  /////////////////////////////////////////////////////
   //  
   
-#define ON_PLANE(e)    ((e) < (current_plane_offest_ + sz_plane_nelem_))
+#define ON_PLANE(e)    ((e) < (current_plane_offset_ + sz_plane_nelem_))
 #define ON_LATTICE(e)  ((e) < (attr_->size))
 
   typedef mylib::Dimn_Type Dimn_Type;
@@ -165,7 +165,7 @@ namespace device {
 
     if(ON_LATTICE(cursor_) &&  (mask[cursor_] & attrmask) == attr)
     { mylib::Coordinate *c = mylib::Idx2CoordA(attr_,cursor_);
-      current_plane_offest_ = ADIMN(c)[2] * sz_plane_nelem_;
+      current_plane_offset_ = ADIMN(c)[2] * sz_plane_nelem_;
       mylib::Free_Array(c);
       cursor_ -= 1; // so next*Cursor will be the first tile
     } else
@@ -255,8 +255,6 @@ namespace device {
   void StageTiling::markActive()
   { uint32_t *m = AUINT32(attr_) + cursor_;
     *m |= Active;
-    if(!success)
-      *m |= TileError;
     notifyDone(cursor_,computeCursorPos(),*m);
   } 
 
@@ -269,27 +267,28 @@ namespace device {
     uint32_t **data;
   } stack_t;
   void grow(stack_t *s)
-  { if(s.n==s.capacity-1)
-    { size_t newsize = n.capacity*1.2+50;
-      Guarded_Realloc(s.data,newsize,"grow stack");
-      memset(s.data+s.capacity,0,(newsize-n.capacity)*sizeof(uint32_t*));
+  { if(s->n==s->cap-1)
+    { size_t newsize = s->cap*1.2+50;
+      Guarded_Realloc((void**)s->data,newsize,"grow stack");
+      memset(s->data+s->cap,0,(newsize-s->cap)*sizeof(uint32_t*));
+      s->cap=newsize;
     }
   }  
   void push(stack_t *s, uint32_t* v)
   { grow(s);
-    s.data[s.n++] = v;
+    s->data[s->n++] = v;
   }  
   uint32_t* pop(stack_t *s)
-  { s.data[--s.n];
+  { return s->data[--s->n];
   }    
   stack_t make_stack(size_t reserve)
   { stack_t s;
     s.n=0;
-    s.data=Guarded_Calloc(s.cap=reserve,sizeof(uint32_t*),"make stack");    
-    return s.data;    
+    s.data=(uint32_t**)Guarded_Calloc(s.cap=reserve,sizeof(uint32_t*),"make stack");    
+    return s;    
   }
   void destroy_stack(stack_t *s)
-  { if(s.data) free(s.data);
+  { if(s && s->data) free(s->data);
   }
     
   
@@ -307,11 +306,11 @@ namespace device {
     stack_t stack = make_stack(sz_plane_nelem_);
   
     for(c=beg;c<end;)
-    { uint32 *n,next;
+    { uint32 *n,*next;
       uint32 mask = Active | Reserved;
       // mark connected and do bounds test for region
       is_open=0;
-      push(&s,0); // push 0 to detect underflow when the fill is done
+      push(&stack,0); // push 0 to detect underflow when the fill is done
       push(&stack,c);
       while(n=pop(&stack))
       {   unsigned x = (n-beg)%w,
@@ -358,7 +357,7 @@ namespace device {
     const unsigned masks[]   = {top|left,top,top|right,left,right,bot|left,bot,bot|right};      
     for(y=0;y<h;++y)
     { unsigned colmask = ((y==0)&top)|((y==h-1)&bot);
-      for(x=0;x<w;++w)
+      for(x=0;x<w;++x)
       { const unsigned rowmask = ((x==0)&left)|((y==0)&right),
                           mask = rowmask|colmask;
         c=beg+y*w+x;

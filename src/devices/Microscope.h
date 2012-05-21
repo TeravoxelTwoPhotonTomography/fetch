@@ -88,7 +88,7 @@ namespace fetch
       cfg::FileSeries *_desc;
       cfg::FileSeries  _prev;      
       TListeners _listeners;
-    };    
+    };
 
     class Microscope : public IConfigurableDevice<cfg::device::Microscope>
     { 
@@ -144,6 +144,8 @@ namespace fetch
       task::microscope::StackAcquisition stack_task;      
       task::microscope::TiledAcquisition tiling_task;
       task::microscope::Cut              cut_task;
+      
+      mylib::Array* snapshot(float dz_um,unsigned timeout_ms);
 
       inline Chan*  getVideoChannel()    {if(unwarp._out) return unwarp._out->contents[0]; else return NULL;}
       inline LinearScanMirror*  LSM()    {return &scanner._scanner2d._LSM;}

@@ -1,0 +1,11 @@
+package fetch.cfg.tasks;
+
+message AutoTile
+{ 
+  optional double z_um                = 1 [default = 100.0];  
+  optional double maxz_mm             = 2 [default = 10.0];
+  optional uint32 timeout_ms          = 3 [default = 5000];
+  optional uint32 ichan               = 4 [default = 0];
+  optional double intensity_threshold = 5 [default = 1000];
+  optional double area_threshold      = 6 [default = 0.1];
+}

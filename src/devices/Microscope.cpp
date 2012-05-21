@@ -21,6 +21,7 @@
 #include "microscope.pb.h"
 #include "google\protobuf\text_format.h"
 #include "util\util-protobuf.h"
+#include "util\util-mylib.h"
 
 #define CHKJMP(expr,lbl) \
   if(!(expr)) \
@@ -333,6 +334,69 @@ ESCAN:
       goto Error;                                    \
     } while(0)
 
+    /**
+    Configures the microscope to take a single snapshot at a depth specified by \a dz_um.
+    Uses the the fetch::task::scanner:ScanStack task that is reconfigured to acquire
+    just enough frames so that one frame is emitted from the end of the pipeline.
+
+    The machine state is restored after calling this function so that temporary changes to the
+    config and scanner task are transparent.
+
+    This synchronously executes.  It should not be called from the GUI thread.  It is most 
+    appropriate to use the Microscope agent's thread.
+    
+    This ends up allocating a frame for each snapshot and using a copy to form the returned 
+    mylib::Array.    
+
+    \returns NULL on failure, otherwise a Mylib::Array*.  The caller is responsible for
+             freeing the array.
+    */
+    mylib::Array* Microscope::snapshot(float dz_um, unsigned timeout_ms)
+    { Config cfg(get_config());
+      const Config original(get_config());
+      Chan* c=0;
+      Frame *frm=0;
+      mylib::Array *ret=0;
+      Task* oldtask;
+      
+      // 1. Set up the stack acquisition
+      { int nframe = cfg.frame_average().ntimes();
+        cfg.mutable_scanner3d()->mutable_zpiezo()->set_um_min(dz_um);
+        cfg.mutable_scanner3d()->mutable_zpiezo()->set_um_max(dz_um+0.1);
+        cfg.mutable_scanner3d()->mutable_zpiezo()->set_um_step(0.1/(float)nframe);
+      }
+      scanner.set_config(cfg.scanner3d()); // apply
+            
+      // 2. Start the acquisition
+      static task::scanner::ScanStack<i16> scan;
+      oldtask = __scan_agent._task;
+      TRY(0==__scan_agent.arm(&scan,&scanner));
+      TRY(__scan_agent.is_runnable()); // should never fail
+      TRY(0==runPipeline());
+      TRY(__scan_agent.run());
+      
+      // 3. Wait for result
+      TRY(c=Chan_Open(getVideoChannel(),CHAN_READ));
+      TRY(frm=(Frame*) Chan_Token_Buffer_Alloc(c));
+      TRY(CHAN_SUCCESS(Chan_Next_Timed(c,(void**)&frm,frm->size_bytes(),timeout_ms)));
+      { mylib::Array dummy;
+        mylib::Dimn_Type dims[3];
+        mylib::castFetchFrameToDummyArray(&dummy,frm,dims);
+        ret=mylib::Copy_Array(&dummy);
+      }
+
+Finalize:    
+      stopPipeline();
+      if(frm) Chan_Token_Buffer_Free(frm);
+      if(c) Chan_Close(c);
+      set_config(original);
+      __scan_agent._task=oldtask;
+      return ret;
+Error:
+      ret=NULL;
+      goto Finalize;
+    }
+    
     int Microscope::updateFovFromStackDepth(int nowait)
     { Config c = get_config();
       float s,t;
@@ -358,26 +422,12 @@ Error:
       o = c.fov().z_overlap_um();
       t = vibratome()->thickness_um(); 
       s = t+o;      
-
-      // Awkward:
-      // - Ideally, the ZPiezo class would be designed better so we wouldn't 
-      //   have to do this.  But we don't have to do this too often, so 
-      //   I'm not refactoring ZPiezo yet.
+            
       // - Really, I want one big atomic update of the microscope state.
       //   and I'll get it this way.
       cfg::device::ZPiezo *z = c.mutable_scanner3d()->mutable_zpiezo();
-      switch(z->kind())
-      { case cfg::device::ZPiezo_ZPiezoType_Simulated:
-          z->mutable_simulated()->set_um_min(0.0);
-          z->mutable_simulated()->set_um_max(s);
-          break;
-        case cfg::device::ZPiezo_ZPiezoType_NIDAQ:
-          z->mutable_nidaq()->set_um_min(0.0);
-          z->mutable_nidaq()->set_um_max(s);
-          break;
-        default:
-          UNREACHABLE;
-      }            
+      z->set_um_min(0.0);
+      z->set_um_max(s);      
       c.mutable_fov()->set_z_size_um( s );
       if(nowait)
         TRY( set_config_nowait(c) );

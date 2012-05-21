@@ -105,8 +105,8 @@ Error:
         size_t i,count=0;
         if(!image->size) return 0;
         for(i=0;i<image->size;++i)
-          count+=(a[i]>intensity_thresh);
-        return (count/((double)a->size))>area_thresh;            
+          count+=(data[i]>intensity_thresh);
+        return (count/((double)image->size))>area_thresh;            
       }
       #define CLASSIFY(type_id,type) case type_id: return _classify<type>(image,ichan,intensity_thresh,area_thresh); break
       /** 
@@ -124,49 +124,75 @@ Error:
           
         switch(image->type)
         {
-          CLASSIFY( UINT8_TYPE   ,uint8_t );
-          CLASSIFY( UINT16_TYPE  ,uint16_t);
-          CLASSIFY( UINT32_TYPE  ,uint32_t);
-          CLASSIFY( UINT64_TYPE  ,uint64_t);
-          CLASSIFY( INT8_TYPE    ,uint8_t );
-          CLASSIFY( INT16_TYPE   ,uint16_t);
-          CLASSIFY( INT32_TYPE   ,uint32_t);
-          CLASSIFY( INT64_TYPE   ,uint64_t);
-          CLASSIFY( FLOAT32_TYPE ,float   );
-          CLASSIFY( FLOAT64_TYPE ,double  );
-          default;
+          CLASSIFY( mylib::UINT8_TYPE   ,uint8_t );
+          CLASSIFY( mylib::UINT16_TYPE  ,uint16_t);
+          CLASSIFY( mylib::UINT32_TYPE  ,uint32_t);
+          CLASSIFY( mylib::UINT64_TYPE  ,uint64_t);
+          CLASSIFY( mylib::INT8_TYPE    ,uint8_t );
+          CLASSIFY( mylib::INT16_TYPE   ,uint16_t);
+          CLASSIFY( mylib::INT32_TYPE   ,uint32_t);
+          CLASSIFY( mylib::INT64_TYPE   ,uint64_t);
+          CLASSIFY( mylib::FLOAT32_TYPE ,float   );
+          CLASSIFY( mylib::FLOAT64_TYPE ,double  );
+          default:
             return 0;
         }
       }
       #undef CLASSIFY
 
       ///// EXPLORE  //////////////////////////////////////////////////
+      
+      /** Tests to make sure the cut/image cycle stays in z bounds.
+      
+      Only need to test max since stage only moves up as cuts progress.
+      
+      */
+      static int PlaneInBounds(device::Microscope *dc,float maxz)
+      { float x,y,z;
+        dc->stage()->getPos(&x,&y,&z);
+        return z<maxz;
+      }
+      
       /**
       Preconditions:
       - tiles to explore have been labelled as such
       
       Parameters to get:
       - dz_um:               zpiezo offset
+      - maxz                 stage units(mm)?
+      - timeout_ms
       - ichan:               channel to use for classification, -1 uses all channels
       - intensity_threshold: use the expected pixel units
       - area_threshold:      0 to 1. The fraction of pixels that must be brighter than intensity threshold.
       
       Functions to implement:
-      - dc->setZPiezo(dz_um)
-      - dc->snapshot() -> mylib::Array() -- or equiv      
+      - dc->snapshot(dz_um) -> mylib::Array() -- or equiv      
+        - this will just be a stack acquisition configured to take exactly the right number
+          of images so that one frame is emitted from the end of the pipeline.  Acquisition will
+          be at a ZPiezo offset of dz_um
+        - returns a mylib::Array
+      - PlaneInBounds(Microscope*)
+        
+      Other todos:
+        - GUI - add fill/dilate ops to ui
+        - GUI - add mark explorable (all planes?)
+        - GUI - define box for painting explorable
+        - add parameters
+        - GUI - add DockWidget for parameters
+       [x]check configurePipeline()/other setup for task
+          - taken care of inside snapshot
+        - termination condition for run loop
       */
       static int explore(device::Microscope *dc)
       { Vector3f tilepos;        
         Guarded_Assert(dc->__scan_agent.is_runnable());
-
-        /// \todo implement Microscope::setZPiezo(dz_um)
-        dc->setZPiezo(dz_um);
+        const cfg::tasks::AutoTile& cfg=dc->get_config().autotile();        
 
         device::StageTiling* tiling = dc->stage()->tiling();
         tiling->resetCursor();
         while(  !dc->_agent->is_stopping() 
-              && tiling->nextInPlaneExplorablePosition(&tilepos))
-        { if(classify(dc->snapshot(),ichan,intensity_threshold,area_threshold))
+              && tiling->nextInPlaneExplorablePosition(tilepos))
+        { if(classify(dc->snapshot(cfg.z_um(),cfg.timeout_ms()),cfg.ichan(),cfg.intensity_threshold(),cfg.area_threshold()))
             tiling->markActive();
         }
         tiling->fillHolesInActive();
@@ -178,15 +204,16 @@ Error:
 
       unsigned int AutoTileAcquisition::run(device::Microscope *dc)
       { unsigned eflag=0; //success
-        CHKJMP(explore(dc));
+        const cfg::tasks::AutoTile& cfg=dc->get_config().autotile();
+        TiledAcquisition tiling;
+        Cut cut;
         
-        { TiledAcquisition t;
-          CHKJMP(0==t.run(dc));
+        while(!dc->_agent->is_stopping() && PlaneInBounds(dc,cfg.maxz_mm()))
+        { CHKJMP(explore(dc));
+          CHKJMP(0==tiling.run(dc));
+          CHKJMP(0==cut.run(dc));
         }
-        
-        { Cut c;
-          CHKJMP(0==c.run(dc));
-        }
+
 Finalize:
         return eflag;
 Error:

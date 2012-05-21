@@ -2,9 +2,6 @@ package fetch.cfg.device;
 
 message NIDAQZPiezo
 { optional double um2v      = 1 [default=0.025];        // V/um - approximate micron to volts converstion (for control output). e.g. 1 um = 0.025 V = 25 mV
-  optional double um_max    = 2 [default=5.0];          // um   - end of travel for a scan
-  optional double um_min    = 3 [default=0.0];          // um   - beg of travel for a scan
-  optional double um_step   = 4 [default=0.0050];       // um   - step to take during a vertical scan
   optional double v_lim_max = 5 [default=12.0];         // V    - Maximum permissible value
   optional double v_lim_min = 6 [default=-3.0];         // V    - Minimum permissible value
   optional double v_offset  = 7 [default=0.0];          // V    - Voltage corresponding to the spatial zero point
@@ -12,10 +9,7 @@ message NIDAQZPiezo
 }
 
 message SimulatedZPiezo
-{
-  optional double um_max    = 2 [default=100.0];        // um   - end of travel for a scan
-  optional double um_min    = 3 [default=0.0];          // um   - beg of travel for a scan
-  optional double um_step   = 4 [default=1.00];         // um   - step to take during a vertical scan
+{ optional double dummy = 1 [default=0];
 }
 
 message ZPiezo
@@ -24,8 +18,12 @@ message ZPiezo
   {
     Simulated = 0;
     NIDAQ     = 1;
-  }
-  optional ZPiezoType      kind = 1 [default=NIDAQ];
-  optional NIDAQZPiezo     nidaq = 2;
+  }  
+  optional ZPiezoType      kind      = 1 [default=NIDAQ];
+  optional NIDAQZPiezo     nidaq     = 2;  
   optional SimulatedZPiezo simulated = 3;
+  
+  optional double um_max    = 4 [default=100.0];        // um   - end of travel for a scan
+  optional double um_min    = 5 [default=0.0];          // um   - beg of travel for a scan
+  optional double um_step   = 6 [default=1.00];         // um   - step to take during a vertical scan
 }
