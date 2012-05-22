@@ -322,6 +322,24 @@ bool fetch::ui::TilingController::latticeAttrImage(QImage *out)
   return true;
 }
 
+/** Returns false if iplane is out-of-bounds, otherwise returns true.
+*/
+bool fetch::ui::TilingController::latticeAttrImageAtPlane(QImage *out, int iplane)
+{ if(!tiling_)
+    return false;  
+  unsigned w,h;
+  latticeShape(&w,&h);
+  mylib::Array 
+    *lattice = tiling_->attributeArray(),
+     plane   = *lattice;
+  if(!(0<=iplane && iplane<lattice->dims[2]))
+    return false;
+  mylib::Get_Array_Plane(&plane,iplane);
+  *out = QImage(AUINT8(&plane),w,h,QImage::Format_RGB32); //QImage requires a uchar* for the data
+  //out->save("TilingController_latticeAttrImage.tif");
+  return true;
+}
+
 bool fetch::ui::TilingController::stageAlignedBBox(QRectF *out)
 { QTransform l2s;
   if(!latticeShape(out))
@@ -363,6 +381,40 @@ bool fetch::ui::TilingController::mark( const QPainterPath& path, device::StageT
     im.save("TilingController_mark__after.tif");
     warning("Dumping Tiling mark data"ENDL);
 #endif
+    return true;
+  }
+  return false;
+}
+
+bool fetch::ui::TilingController::mark_all_planes( const QPainterPath& path, device::StageTiling::Flags attr, QPainter::CompositionMode mode )
+{ if(tiling_)
+  {      
+    // 1. Path is in scene coords.  transform to lattice coords
+    //    Getting the transform is a bit of a pain bc we have to go from 
+    //    Eigen to Qt :(
+    QTransform l2s, s2l;
+    latticeTransform(&l2s);
+    s2l = l2s.inverted();
+    QPainterPath lpath = s2l.map(path);
+                                  
+    // 2. Get access to the attribute data
+    int iplane=0;
+    QImage im;
+    while(latticeAttrImageAtPlane(&im,iplane++))
+    { QPainter painter(&im);
+
+      // 3. Fill in the path
+#if DEBUG_DUMP_TILING_MARK_DATA
+      im.save("TilingController_mark__before.tif");
+#endif
+      painter.setCompositionMode(mode);
+      painter.fillPath(lpath,QColor((QRgb)attr)); // (QRgb) cast is a uint32 cast
+      //SHOW(lpath);
+#if DEBUG_DUMP_TILING_MARK_DATA
+      im.save("TilingController_mark__after.tif");
+      warning("Dumping Tiling mark data"ENDL);
+#endif
+    }
     return true;
   }
   return false;
@@ -415,6 +467,38 @@ bool fetch::ui::TilingController::markNotDone(const QPainterPath& path)
     QPainter::RasterOp_NotSourceAndDestination);
 }
 
+bool fetch::ui::TilingController::markExplorable(const QPainterPath& path)
+{  
+  return mark(
+    path,
+    device::StageTiling::Explorable,
+    QPainter::RasterOp_SourceOrDestination);
+}
+
+bool fetch::ui::TilingController::markNotExplorable(const QPainterPath& path)
+{  
+  return mark(
+    path,
+    device::StageTiling::Explorable,
+    QPainter::RasterOp_NotSourceAndDestination);
+}
+
+bool fetch::ui::TilingController::markAllPlanesExplorable(const QPainterPath& path)
+{  
+  return mark_all_planes(
+    path,
+    device::StageTiling::Explorable,
+    QPainter::RasterOp_SourceOrDestination);
+}
+
+bool fetch::ui::TilingController::markAllPlanesNotExplorable(const QPainterPath& path)
+{  
+  return mark_all_planes(
+    path,
+    device::StageTiling::Explorable,
+    QPainter::RasterOp_NotSourceAndDestination);
+}
+
 // returns false if tiling is invalid or if stage_coord is oob
 float roundf(float x) {return floor(0.5f+x);}
 bool fetch::ui::TilingController::mapToIndex(const Vector3f & stage_coord, unsigned *index)
@@ -460,9 +544,17 @@ bool fetch::ui::TilingController::markAddressable()
     warning("%s(%d): Stage Travel looks crazy.  Marking whole space as unaddressable."ENDL,__FILE__,__LINE__);
     mark_all(device::StageTiling::Addressable,QPainter::RasterOp_NotSourceAndDestination);
   }
-
-
   return true;
+}
+
+void fetch::ui::TilingController::fillActive()
+{ if(tiling_)
+    tiling_->fillHolesInActive();
+}
+
+void fetch::ui::TilingController::dilateActive()
+{ if(tiling_)
+    tiling_->dilateActive();
 }
 
 //////////////////////////////////////////////////////////////////////////

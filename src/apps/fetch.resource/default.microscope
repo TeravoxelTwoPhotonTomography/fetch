@@ -97,16 +97,16 @@ scanner3d {
     kind: NIDAQ  #NIDAQ #Simulated
     nidaq {
       um2v:       0.025    #V/um: 400um*0.025 = 10.0V
-      um_max:     5
-      um_min:     0
-      um_step:    0.005
       v_lim_max:  12
       v_lim_min: -3
       v_offset:   0
       channel:   "/Dev1/ao1"
     }
     simulated {
-    }
+    }   
+    um_max:     5
+    um_min:     0
+    um_step:    0.005
   }
   zref_um: 0
 }
@@ -151,4 +151,4 @@ file_series {
 file_prefix:      "derp"
 stack_extension:  ".tif"
 config_extension: ".microscope"
-
+autotile {}

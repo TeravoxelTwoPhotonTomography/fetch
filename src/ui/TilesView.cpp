@@ -250,6 +250,36 @@ void TilesView::markSelectedAreaAsNotDone(const QPainterPath& path)
   updateCBO();
   update();
 }
+  
+void TilesView::markSelectedAreaAsExplorable(const QPainterPath& path)
+{
+  tc_->markAllPlanesExplorable(path);
+  paint_lattice_attribute_image_();
+  updateCBO();
+  update();
+}
+
+void TilesView::markSelectedAreaAsNotExplorable(const QPainterPath& path)
+{
+  tc_->markAllPlanesNotExplorable(path);
+  paint_lattice_attribute_image_();
+  updateCBO();
+  update();
+}
+
+void TilesView::fillActive()
+{ tc_->fillActive();
+  paint_lattice_attribute_image_();
+  updateCBO();
+  update();
+}
+
+void TilesView::dilateActive()
+{ tc_->dilateActive();
+  paint_lattice_attribute_image_();
+  updateCBO();
+  update();
+}
 
 void TilesView::initIBO()
 {
@@ -460,9 +490,9 @@ void TilesView::init_color_tables()
   color_table_idx2rgb_[0x1 ] = qRgba(127,127,127,127);     //00001 addressable
   color_table_idx2rgb_[0x3 ] = qRgba( 55,155,155,200);     //00011 active,addressable
   color_table_idx2rgb_[0x5 ] = qRgba(155, 55, 55,200);     //00101 done,addressable
-  color_table_idx2rgb_[0x7 ] = qRgba(155,255,155,200);     //00111 done,active,addressable
+  color_table_idx2rgb_[0x7 ] = qRgba(  0,155,  0,200);     //00111 done,active,addressable
   
-  color_table_idx2rgb_[0x9 ] = qRgba(255,255,255,200);     //01001 explorable,addressable
+  color_table_idx2rgb_[0x9 ] = qRgba(155,155,155,200);     //01001 explorable,addressable
   color_table_idx2rgb_[0xb ] = qRgba( 55,255,255,200);     //01011 explorable,active,addressable
   color_table_idx2rgb_[0xd ] = qRgba(255, 55, 55,200);     //01101 explorable,done,addressable
   color_table_idx2rgb_[0xf ] = qRgba(  0,255,  0,200);     //01111 explorable,done,active,addressable

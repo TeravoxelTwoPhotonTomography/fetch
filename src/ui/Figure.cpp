@@ -115,6 +115,11 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
               _tv,SLOT(     markSelectedAreaAsDone(const QPainterPath&)));
   connect(&_scene,SIGNAL(markSelectedAreaAsNotDone(const QPainterPath&)),
               _tv,SLOT(  markSelectedAreaAsNotDone(const QPainterPath&)));
+  
+  connect(&_scene,SIGNAL(   markSelectedAreaAsExplorable(const QPainterPath&)),
+              _tv,SLOT(     markSelectedAreaAsExplorable(const QPainterPath&)));
+  connect(&_scene,SIGNAL(markSelectedAreaAsNotExplorable(const QPainterPath&)),
+              _tv,SLOT(  markSelectedAreaAsNotExplorable(const QPainterPath&)));
 
   QGridLayout *layout = new QGridLayout;
   layout->setContentsMargins(0,0,0,0);
@@ -130,6 +135,18 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
 
 void Figure::createActions()
 { QAction *c;      
+
+  c = new QAction(tr("&Fill Active"),this);
+  c->setShortcut(QKeySequence(tr("f","Mark|Fill")));
+  c->setStatusTip(tr("Fill holes in tile regions marked as active."));
+  connect(c,SIGNAL(triggered()),this,SLOT(fillActive()));
+  addAction(c);    
+
+  c = new QAction(tr("&Dilate Active"),this);
+  c->setShortcut(QKeySequence(tr("d","Mark|Dilate")));
+  c->setStatusTip(tr("Dilate tile regions marked as active."));
+  connect(c,SIGNAL(triggered()),this,SLOT(dilateActive()));
+  addAction(c);
 
   c = new QAction(tr("&Clear Drag Mode"),this);
   c->setShortcut(QKeySequence(tr("c","DragMode|Clear")));

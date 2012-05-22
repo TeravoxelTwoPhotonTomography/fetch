@@ -60,6 +60,10 @@ QColor SelectionRectGraphicsWidget::getBaseColor()
     return Qt::blue;
   case UnDone:
     return Qt::magenta; 
+  case Explorable:
+    return Qt::cyan;
+  case UnExplorable:
+    return Qt::yellow;
   default:
     UNREACHABLE;
   }
@@ -73,6 +77,8 @@ void SelectionRectGraphicsWidget::commit()
   case Remove: emit removeSelectedArea(mapToScene(shape()));        break;
   case Done:   emit markSelectedAreaAsDone(mapToScene(shape()));    break;
   case UnDone: emit markSelectedAreaAsNotDone(mapToScene(shape())); break;
+  case Explorable:   emit markSelectedAreaAsExplorable(mapToScene(shape()));    break;
+  case UnExplorable: emit markSelectedAreaAsNotExplorable(mapToScene(shape())); break;
   }
   scene()->removeItem(this);
   deleteLater();
@@ -129,6 +135,14 @@ void SelectionRectGraphicsWidget::createActions()
   {
     c = new QAction(tr("Mark Not Done"),this);        
     connect(c,SIGNAL(triggered()),this,SLOT(setOpUnDone()));
+    addAction(c);
+  }
+  { c = new QAction(tr("Mark Explorable"),this);
+    connect(c,SIGNAL(triggered()),this,SLOT(setOpExplorable()));
+    addAction(c);
+  }
+  { c = new QAction(tr("Mark Not Explorable"),this);
+    connect(c,SIGNAL(triggered()),this,SLOT(setOpUnExplorable()));
     addAction(c);
   }
 }
@@ -201,7 +215,11 @@ void StageScene::mousePressEvent( QGraphicsSceneMouseEvent *event )
       connect(w,SIGNAL(   markSelectedAreaAsDone(const QPainterPath&)),
            this,SIGNAL(   markSelectedAreaAsDone(const QPainterPath&)));
       connect(w,SIGNAL(markSelectedAreaAsNotDone(const QPainterPath&)),
-           this,SIGNAL(markSelectedAreaAsNotDone(const QPainterPath&)));
+           this,SIGNAL(markSelectedAreaAsNotDone(const QPainterPath&)));             
+      connect(w,SIGNAL(   markSelectedAreaAsExplorable(const QPainterPath&)),
+           this,SIGNAL(   markSelectedAreaAsExplorable(const QPainterPath&)));
+      connect(w,SIGNAL(markSelectedAreaAsNotExplorable(const QPainterPath&)),
+           this,SIGNAL(markSelectedAreaAsNotExplorable(const QPainterPath&)));
 
       w->setPos(event->scenePos());
       addItem(w);

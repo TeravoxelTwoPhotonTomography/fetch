@@ -416,5 +416,77 @@ QValidator* GetSetOverlapZ::createValidator_(QObject* parent)
 { return new QDoubleValidator (-400.0, 400.0, 1, parent);
 }
 
+// AutoTile
+void GetSetAutoTileZOff::Set_(device::Microscope *dc, float &v)
+{ device::Microscope::Config c = dc->get_config();
+  c.mutable_autotile()->set_z_um(v);
+  dc->set_config(c);
+}
+float GetSetAutoTileZOff::Get_(device::Microscope *dc)
+{ return dc->get_config().autotile().z_um();
+}
+QValidator* GetSetAutoTileZOff::createValidator_(QObject* parent)
+{ return new QDoubleValidator (0.0, 400.0, 1, parent);
+}
+
+void GetSetAutoTileZMax::Set_(device::Microscope *dc, float &v)
+{ device::Microscope::Config c = dc->get_config();
+  c.mutable_autotile()->set_maxz_mm(v);
+  dc->set_config(c);
+}
+float GetSetAutoTileZMax::Get_(device::Microscope *dc)
+{ return dc->get_config().autotile().maxz_mm();
+}
+QValidator* GetSetAutoTileZMax::createValidator_(QObject* parent)
+{ return new QDoubleValidator (0.0, 12.5, 1, parent);
+}
+
+void GetSetAutoTileTimeoutMs::Set_(device::Microscope *dc, unsigned &v)
+{ device::Microscope::Config c = dc->get_config();
+  c.mutable_autotile()->set_timeout_ms(v);
+  dc->set_config(c);
+}
+unsigned GetSetAutoTileTimeoutMs::Get_(device::Microscope *dc)
+{ return dc->get_config().autotile().timeout_ms();
+}
+QValidator* GetSetAutoTileTimeoutMs::createValidator_(QObject* parent)
+{ return new QIntValidator (0, 3600000, parent);
+}   
+
+void GetSetAutoTileChan::Set_(device::Microscope *dc, unsigned &v)
+{ device::Microscope::Config c = dc->get_config();
+  c.mutable_autotile()->set_ichan(v);
+  dc->set_config(c);
+}
+unsigned GetSetAutoTileChan::Get_(device::Microscope *dc)
+{ return dc->get_config().autotile().ichan();
+}
+QValidator* GetSetAutoTileChan::createValidator_(QObject* parent)
+{ return new QIntValidator (0, 3, parent);
+}
+
+void GetSetAutoTileIntesityThreshold::Set_(device::Microscope *dc, float &v)
+{ device::Microscope::Config c = dc->get_config();
+  c.mutable_autotile()->set_intensity_threshold(v);
+  dc->set_config(c);
+}
+float GetSetAutoTileIntesityThreshold::Get_(device::Microscope *dc)
+{ return dc->get_config().autotile().intensity_threshold();
+}
+QValidator* GetSetAutoTileIntesityThreshold::createValidator_(QObject* parent)
+{ return new QDoubleValidator(-5e9,5e9,1,parent);
+}
+
+void GetSetAutoTileAreaThreshold::Set_(device::Microscope *dc, float &v)
+{ device::Microscope::Config c = dc->get_config();
+  c.mutable_autotile()->set_area_threshold(v);
+  dc->set_config(c);
+}
+float GetSetAutoTileAreaThreshold::Get_(device::Microscope *dc)
+{ return dc->get_config().autotile().area_threshold();
+}
+QValidator* GetSetAutoTileAreaThreshold::createValidator_(QObject* parent)
+{ return new QDoubleValidator(0.0, 1.0, 3, parent);
+}
 
 }} //end fetch::ui

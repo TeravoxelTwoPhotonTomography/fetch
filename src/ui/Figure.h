@@ -58,6 +58,9 @@ public slots:
   inline void setColormap(const QString& filename)                         {_item->loadColormap(filename);}
   inline void setGamma(float gamma)                                        {_item->setGamma(gamma);}
 
+  inline void fillActive()                                                 {_tv->fillActive();}
+  inline void dilateActive()                                               {_tv->dilateActive();}
+
   //inline void setPixelSizeMicrons(double w, double h)                      {_item->setPixelSizeMicrons(w,h);}
   //inline void setPixelGeometry(double w, double h, double angle)           {_item->setPixelGeometry(w,h,angle);}
          void setDragModeToNoDrag();

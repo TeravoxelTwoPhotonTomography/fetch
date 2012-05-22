@@ -51,6 +51,7 @@ namespace ui {
     bool latticeShape     (unsigned *width, unsigned *height);             /// \returns false if tiling is invalid
     bool latticeShape     (QRectF *out);                                   /// \returns false if tiling is invalid
     bool latticeAttrImage (QImage *out);                                   /// \returns false if tiling is invalid
+    bool latticeAttrImageAtPlane(QImage *out, int iplane);
     bool stageAlignedBBox (QRectF *out);                                   /// \returns false if tiling is invalid
 
     bool markAddressable();                                                /// \returns false if tiling is invalid
@@ -58,6 +59,11 @@ namespace ui {
     bool markInactive(const QPainterPath& path);                           /// \returns false if tiling is invalid
     bool markDone(const QPainterPath& path);                               /// \returns false if tiling is invalid
     bool markNotDone(const QPainterPath& path);                            /// \returns false if tiling is invalid
+    bool markExplorable(const QPainterPath& path);                         /// \returns false if tiling is invalid
+    bool markNotExplorable(const QPainterPath& path);                      /// \returns false if tiling is invalid
+    
+    bool markAllPlanesExplorable(const QPainterPath& path);                /// \returns false if tiling is invalid
+    bool markAllPlanesNotExplorable(const QPainterPath& path);             /// \returns false if tiling is invalid
 
     bool mapToIndex(const Vector3f & stage_coord, unsigned *index);        /// \returns false if tiling is invalid or if stage_coord is oob
 
@@ -78,6 +84,9 @@ namespace ui {
     void loadFromFile(const QString& filename);
     
     void setAutosave(bool on);    
+    
+    void fillActive();
+    void dilateActive();
 
   signals:
     void show(bool tf);
@@ -99,10 +108,13 @@ namespace ui {
                         
     QTimer              autosave_timer_;
 
-    bool mark(     const QPainterPath& path,                               ///< path should be in scene coords (um)
-                   device::StageTiling::Flags attr, 
-                   QPainter::CompositionMode mode );
-    bool mark_all( device::StageTiling::Flags attr,                        ///< marks the whole plane with the attribute
+    bool mark(            const QPainterPath& path,                               ///< path should be in scene coords (um)
+                          device::StageTiling::Flags attr, 
+                          QPainter::CompositionMode mode );
+    bool mark_all_planes( const QPainterPath& path,                               ///< path should be in scene coords (um)
+                          device::StageTiling::Flags attr, 
+                          QPainter::CompositionMode mode );
+    bool mark_all( device::StageTiling::Flags attr,                               ///< marks the whole plane with the attribute
                    QPainter::CompositionMode mode );
   };
   
