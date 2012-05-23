@@ -18,8 +18,8 @@ namespace fetch{
     signals:
       void onRun();
 
-    private:      
-      void createForm();
+    //private:      
+    //  void createForm();
     };
 
     //end namespace fetch::ui

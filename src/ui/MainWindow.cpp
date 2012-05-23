@@ -10,6 +10,7 @@
 #include "MicroscopeStateDockWidget.h"
 #include "VibratomeDockWidget.h"
 #include "StageDockWidget.h"
+#include "AutoTileDockWidget.h"
 #include "StageController.h"
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/io/tokenizer.h>
@@ -103,6 +104,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,_vibratomeDockWidget(0)
   ,_cutTaskDockWidget(0)
   ,_stageDockWidget(0)
+  ,_autoTileDockWidget(0)
   ,_display(0)
   ,_player(0)
   ,_scope_state_controller(&dc->__self_agent)
@@ -140,7 +142,14 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   _stage_vel_y_control = new StageVelYController(dc->stage(),"Vel Y (mm)",this);
   _stage_vel_z_control = new StageVelZController(dc->stage(),"Vel Z (mm)",this);
 
-  _fov_overlap_z_controller = new FOVOverlapZController(&dc->fov_,"Overlap Z (um)", this);
+  _fov_overlap_z_controller = new FOVOverlapZController(&dc->fov_,"Overlap Z (µm)", this);
+
+  _autotile_zoffum_control           = new AutoTileZOffController(dc,"Z Offset (µm)",this);
+  _autotile_zmaxmm_control           = new AutoTileZMaxController(dc,"Cut to Max Z (mm)",this);
+  _autotile_timeoutms_control        = new AutoTileTimeoutMsController(dc,"Timeout (ms)",this);
+  _autotile_chan_control             = new AutoTileChanController(dc,"Channel to threshold",this);
+  _autotile_intensity_thresh_control = new AutoTileIntensityThresholdController(dc,"Intensity threshold",this);
+  _autotile_area_thresh_control      = new AutoTileAreaThresholdController(dc,"Area threshold (0-1)",this);
     
   connect(_stageController,SIGNAL(moved()),          _stage_pos_x_control,SIGNAL(configUpdated()));
   connect(_stageController,SIGNAL(moved()),          _stage_pos_y_control,SIGNAL(configUpdated()));
@@ -331,6 +340,10 @@ void fetch::ui::MainWindow::createDockWidgets()
   viewMenu->addAction(_cutTaskDockWidget->toggleViewAction());
   _cutTaskDockWidget->setObjectName("_cutTaskDockWidget");
 
+  _autoTileDockWidget = new AutoTileDockWidget(_dc,this);
+  addDockWidget(Qt::LeftDockWidgetArea,_autoTileDockWidget);
+  viewMenu->addAction(_autoTileDockWidget->toggleViewAction());
+  _autoTileDockWidget->setObjectName("_autoTileDockWidget");
 }
 
 void fetch::ui::MainWindow::createViews()

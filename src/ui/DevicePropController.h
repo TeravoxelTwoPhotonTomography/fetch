@@ -203,12 +203,12 @@ namespace ui {
   DECL_GETSET_CLASS(GetSetAutoTileChan             ,device::Microscope,unsigned);
   DECL_GETSET_CLASS(GetSetAutoTileIntesityThreshold,device::Microscope,float);
   DECL_GETSET_CLASS(GetSetAutoTileAreaThreshold    ,device::Microscope,float);
-  typedef DevicePropController<device::Microscope,float   ,GetSetAutoTileZOff>              AutoTileZOff;
-  typedef DevicePropController<device::Microscope,float   ,GetSetAutoTileZMax>              AutoTileZMax;
+  typedef DevicePropController<device::Microscope,float   ,GetSetAutoTileZOff>              AutoTileZOffController;
+  typedef DevicePropController<device::Microscope,float   ,GetSetAutoTileZMax>              AutoTileZMaxController;
   typedef DevicePropController<device::Microscope,unsigned,GetSetAutoTileTimeoutMs>         AutoTileTimeoutMsController;
-  typedef DevicePropController<device::Microscope,unsigned,GetSetAutoTileChan>              AutoTileChan;
-  typedef DevicePropController<device::Microscope,float   ,GetSetAutoTileIntesityThreshold> AutoTileIntensityThreshold;
-  typedef DevicePropController<device::Microscope,float   ,GetSetAutoTileAreaThreshold>     AutoTileAreaThreshold;
+  typedef DevicePropController<device::Microscope,unsigned,GetSetAutoTileChan>              AutoTileChanController;
+  typedef DevicePropController<device::Microscope,float   ,GetSetAutoTileIntesityThreshold> AutoTileIntensityThresholdController;
+  typedef DevicePropController<device::Microscope,float   ,GetSetAutoTileAreaThreshold>     AutoTileAreaThresholdController;
 }} //end fetch::ui
 
   ////////////////////////////////////////////////////////////////////////////

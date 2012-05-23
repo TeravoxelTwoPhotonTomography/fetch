@@ -14,6 +14,7 @@ class StackAcquisitionDockWidget;
 class MicroscopeStateDockWidget;
 class VibratomeDockWidget;
 class VibratomeGeometryDockWidget;
+class AutoTileDockWidget;
 class StageDockWidget;
 class Figure;
 class IPlayerThread;
@@ -83,6 +84,7 @@ public: // semi-private
   VibratomeGeometryDockWidget  *_vibratomeGeometryDockWidget;
   QDockWidget                  *_cutTaskDockWidget;
   StageDockWidget              *_stageDockWidget;
+  AutoTileDockWidget           *_autoTileDockWidget;
   Figure                       *_display;
   IPlayerThread                *_player;
                                                              
@@ -113,6 +115,13 @@ public: // semi-private
   StageVelYController          *_stage_vel_y_control;
   StageVelZController          *_stage_vel_z_control;
   FOVOverlapZController        *_fov_overlap_z_controller;
+  
+  AutoTileZOffController               *_autotile_zoffum_control;
+  AutoTileZMaxController               *_autotile_zmaxmm_control;
+  AutoTileTimeoutMsController          *_autotile_timeoutms_control;
+  AutoTileChanController               *_autotile_chan_control;
+  AutoTileIntensityThresholdController *_autotile_intensity_thresh_control;
+  AutoTileAreaThresholdController      *_autotile_area_thresh_control;
 
   QFileSystemWatcher           *_config_watcher;
 
