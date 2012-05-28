@@ -317,7 +317,7 @@ bool fetch::ui::TilingController::latticeAttrImage(QImage *out)
      plane   = *lattice;
   Vector3z ir = stage_->getPosInLattice();
   mylib::Get_Array_Plane(&plane,ir[2]);  
-  *out = QImage(AUINT8(&plane),w,h,QImage::Format_RGB32); //QImage requires a uchar* for the data
+  *out = QImage(AUINT8(&plane),w,h,QImage::Format_ARGB32_Premultiplied); //QImage requires a uchar* for the data
   //out->save("TilingController_latticeAttrImage.tif");
   return true;
 }
@@ -335,7 +335,7 @@ bool fetch::ui::TilingController::latticeAttrImageAtPlane(QImage *out, int iplan
   if(!(0<=iplane && iplane<lattice->dims[2]))
     return false;
   mylib::Get_Array_Plane(&plane,iplane);
-  *out = QImage(AUINT8(&plane),w,h,QImage::Format_RGB32); //QImage requires a uchar* for the data
+  *out = QImage(AUINT8(&plane),w,h,QImage::Format_ARGB32_Premultiplied); //QImage requires a uchar* for the data
   //out->save("TilingController_latticeAttrImage.tif");
   return true;
 }
@@ -352,11 +352,17 @@ bool fetch::ui::TilingController::stageAlignedBBox(QRectF *out)
   return true;
 }
 
+static void zero_alpha(QImage &im)
+{ uint8_t *d=(uint8_t*)im.constBits()+3; // use constBits() to prevent a copy, then cast away the const
+  for(unsigned i=0;i<(im.byteCount()/4);++i)
+    d[4*i]=0;                            // zero out the alpha component
+}
+
 bool fetch::ui::TilingController::mark( const QPainterPath& path, device::StageTiling::Flags attr, QPainter::CompositionMode mode )
 {    
   if(tiling_)
   {      
-
+    QColor color((QRgb)attr);
     // 1. Path is in scene coords.  transform to lattice coords
     //    Getting the transform is a bit of a pain bc we have to go from 
     //    Eigen to Qt :(
@@ -375,7 +381,8 @@ bool fetch::ui::TilingController::mark( const QPainterPath& path, device::StageT
     im.save("TilingController_mark__before.tif");
 #endif
     painter.setCompositionMode(mode);
-    painter.fillPath(lpath,QColor((QRgb)attr)); // (QRgb) cast is a uint32 cast
+    painter.fillPath(lpath,color);
+    zero_alpha(im);
     //SHOW(lpath);
 #if DEBUG_DUMP_TILING_MARK_DATA
     im.save("TilingController_mark__after.tif");
@@ -389,6 +396,7 @@ bool fetch::ui::TilingController::mark( const QPainterPath& path, device::StageT
 bool fetch::ui::TilingController::mark_all_planes( const QPainterPath& path, device::StageTiling::Flags attr, QPainter::CompositionMode mode )
 { if(tiling_)
   {      
+    QColor color((QRgb)attr);
     // 1. Path is in scene coords.  transform to lattice coords
     //    Getting the transform is a bit of a pain bc we have to go from 
     //    Eigen to Qt :(
@@ -408,7 +416,8 @@ bool fetch::ui::TilingController::mark_all_planes( const QPainterPath& path, dev
       im.save("TilingController_mark__before.tif");
 #endif
       painter.setCompositionMode(mode);
-      painter.fillPath(lpath,QColor((QRgb)attr)); // (QRgb) cast is a uint32 cast
+      painter.fillPath(lpath,color);           // sets top byte to 0xff, lower bytes to attr
+      zero_alpha(im);
       //SHOW(lpath);
 #if DEBUG_DUMP_TILING_MARK_DATA
       im.save("TilingController_mark__after.tif");
@@ -423,6 +432,8 @@ bool fetch::ui::TilingController::mark_all_planes( const QPainterPath& path, dev
 bool fetch::ui::TilingController::mark_all( device::StageTiling::Flags attr, QPainter::CompositionMode mode )
 {
   if(!is_valid()) return false;
+       
+  QColor color((QRgb)attr);
   // 1. Get access to the attribute data
   QImage im;
   latticeAttrImage(&im);
@@ -430,7 +441,8 @@ bool fetch::ui::TilingController::mark_all( device::StageTiling::Flags attr, QPa
   // 2. fill   
   //im.save("TilingController_mark_all__before.tif");
   painter.setCompositionMode(mode);
-  painter.fillRect(im.rect(),QColor((QRgb)attr));
+  painter.fillRect(im.rect(),color);
+  zero_alpha(im);
   //im.save("TilingController_mark_all__after.tif");
   return true;
 }
@@ -530,7 +542,7 @@ bool fetch::ui::TilingController::markAddressable()
     return false;
   
   const device::StageTravel& travel = tiling_->travel();
-  size_t z = tiling_->plane_mm();
+  float z = stage_->getTarget().z(); //tiling_->plane_mm();
   if( (travel.z.min <= z) && (z <= travel.z.max) )
   { 
     QRectF r(

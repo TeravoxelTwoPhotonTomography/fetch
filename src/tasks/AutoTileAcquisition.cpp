@@ -184,17 +184,19 @@ Error:
         - termination condition for run loop
       */
       static int explore(device::Microscope *dc)
-      { Vector3f tilepos;        
-        Guarded_Assert(dc->__scan_agent.is_runnable());
+      { Vector3f tilepos;
+        unsigned any=0; // indicates an "explorable" tile was found        
         const cfg::tasks::AutoTile& cfg=dc->get_config().autotile();        
 
         device::StageTiling* tiling = dc->stage()->tiling();
-        tiling->resetCursor();
+        tiling->setCursorToPlane(dc->stage()->getPosInLattice().z());
         while(  !dc->_agent->is_stopping() 
               && tiling->nextInPlaneExplorablePosition(tilepos))
-        { if(classify(dc->snapshot(cfg.z_um(),cfg.timeout_ms()),cfg.ichan(),cfg.intensity_threshold(),cfg.area_threshold()))
+        { any=1;
+          if(classify(dc->snapshot(cfg.z_um(),cfg.timeout_ms()),cfg.ichan(),cfg.intensity_threshold(),cfg.area_threshold()))
             tiling->markActive();
         }
+        if(!any) goto Error;
         tiling->fillHolesInActive();
         tiling->dilateActive();
         return 1;
@@ -204,12 +206,12 @@ Error:
 
       unsigned int AutoTileAcquisition::run(device::Microscope *dc)
       { unsigned eflag=0; //success
-        const cfg::tasks::AutoTile& cfg=dc->get_config().autotile();
+        cfg::tasks::AutoTile cfg=dc->get_config().autotile();
         TiledAcquisition tiling;
         Cut cut;
         
         while(!dc->_agent->is_stopping() && PlaneInBounds(dc,cfg.maxz_mm()))
-        { CHKJMP(explore(dc));
+        { CHKJMP(explore(dc));       // will return an error if no explorable tiles found on the plane
           CHKJMP(0==tiling.run(dc));
           CHKJMP(0==cut.run(dc));
         }

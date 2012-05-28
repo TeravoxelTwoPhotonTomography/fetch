@@ -745,7 +745,7 @@ Error:
       _config->CopyFrom(cfg);
   }
 
-  float myroundf(float x) {return floorf(x+0.5f);}
+  float myroundf(float x) {return floorf(x/*+0.5f*/);}
   
   Vector3z Stage::getPosInLattice()
   { StageTiling::TTransform l2s(_tiling->latticeToStageTransform());
@@ -763,7 +763,6 @@ Error:
       FieldOfViewGeometry fov = *_fov;                            // this should always point to the microscope's FOV object (not the tiling's)
       _destroyTiling();                                           // this call will invalidate the _fov pointer :(  bad design [??? 2011-11 this comment seems questionable]
       _tiling = new StageTiling(travel, fov, _config->tilemode());
-      //_fov = &_tiling->fov_;                                    // commented out 2011-11 - not sure why I had this there in the first place...
       { TListeners::iterator i;
         for(i=_listeners.begin();i!=_listeners.end();++i)
           _tiling->addListener(*i);

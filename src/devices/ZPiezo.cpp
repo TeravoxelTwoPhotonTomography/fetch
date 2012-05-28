@@ -226,19 +226,11 @@ Error:
     void ZPiezo::_set_config( const Config &cfg )
     {
       cfg::device::ZPiezo_ZPiezoType kind = cfg.kind();
-      _config->set_kind(kind);
-      setKind(kind);
-      switch(kind)
-      {    
-      case cfg::device::ZPiezo_ZPiezoType_NIDAQ:
-        _nidaq->_set_config(cfg.nidaq());
-        break;
-      case cfg::device::ZPiezo_ZPiezoType_Simulated:    
-        _simulated->_set_config(cfg.simulated());
-        break;
-      default:
-        error("Unrecognized kind() for ZPiezo.  Got: %u\r\n",(unsigned)kind);
-      }
+      //_config->set_kind(kind);
+      _config->CopyFrom(cfg);
+      Guarded_Assert(_nidaq||_simulated); // at least one device was instanced
+      if(_nidaq)     _nidaq->_set_config(_config->mutable_nidaq());
+      if(_simulated) _simulated->_set_config(_config->mutable_simulated());
     }
     
     void ZPiezo::getScanRange( f64 *min_um,f64 *max_um, f64 *step_um )

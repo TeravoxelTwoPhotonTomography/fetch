@@ -56,6 +56,7 @@ namespace device {
     virtual ~StageTiling();
 
     void     resetCursor();
+    void     setCursorToPlane(size_t iplane);
     bool     nextInPlanePosition(Vector3f& pos);
     bool     nextInPlaneExplorablePosition(Vector3f &pos);
     bool     nextPosition(Vector3f& pos);
@@ -71,8 +72,7 @@ namespace device {
     inline const FieldOfViewGeometry& fov()                                {return fov_;}
     inline const device::StageTravel& travel()                             {return travel_;}
     inline size_t plane()                                                  {return (size_t)(current_plane_offset_/sz_plane_nelem_); }
-           size_t plane_mm();
-
+           float  plane_mm();
     const TListeners *listeners()                                          {return &listeners_;}    
     inline void addListener(StageListener *listener)                       {listeners_.insert(listener);}
     inline void delListener(StageListener *listener)                       {listeners_.erase(listener);}

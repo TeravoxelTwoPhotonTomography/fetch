@@ -172,6 +172,14 @@ namespace device {
       cursor_=0;
   }
 
+  //  setCursorToPlane  ////////////////////////////////////////////////
+  //  
+
+  /// \todo bounds checking
+  void StageTiling::setCursorToPlane(size_t iplane)
+  { cursor_=current_plane_offset_=iplane*sz_plane_nelem_;
+  }
+
   //  nextInPlanePosition  /////////////////////////////////////////////
   //                           
 
@@ -420,11 +428,11 @@ namespace device {
     return pos;
   }
 
-  size_t StageTiling::plane_mm()
+  float StageTiling::plane_mm()
   {
     Vector3f r(0,0,(float)plane());
     r = latticeToStageTransform() * r * 0.001;
-    return (size_t)r(2);
+    return r(2);
   }
 
 }} // end namespace fetch::device

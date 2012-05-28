@@ -129,11 +129,12 @@ namespace fetch
 
 class SimulatedVibratome:public VibratomeBase<cfg::device::SimulatedVibratome>
     {
+      int    _is_running;
       int    _amp;
       double _unit2mm;
     public:
-      SimulatedVibratome(Agent *agent)              : VibratomeBase<cfg::device::SimulatedVibratome>(agent),    _amp(0), _unit2mm(1.0/255.0) {}
-      SimulatedVibratome(Agent *agent, Config *cfg) : VibratomeBase<cfg::device::SimulatedVibratome>(agent,cfg), _amp(0), _unit2mm(1.0/255.0) {}
+      SimulatedVibratome(Agent *agent)              : VibratomeBase<cfg::device::SimulatedVibratome>(agent),     _is_running(0), _amp(0), _unit2mm(1.0/255.0) {}
+      SimulatedVibratome(Agent *agent, Config *cfg) : VibratomeBase<cfg::device::SimulatedVibratome>(agent,cfg), _is_running(0), _amp(0), _unit2mm(1.0/255.0) {}
 
       virtual unsigned int on_attach() {return 0;}
       virtual unsigned int on_detach() {return 0;}
@@ -144,8 +145,8 @@ class SimulatedVibratome:public VibratomeBase<cfg::device::SimulatedVibratome>
       virtual int getAmplitude_ControllerUnits() {return _amp;}      
       virtual double getAmplitude_mm()           {return _amp*_unit2mm;}
 
-      virtual int start()                        {return 0;} 
-      virtual int stop()                         {return 0;} 
+      virtual int start()                        {_is_running=!_is_running; return  _is_running;}
+      virtual int stop()                         {_is_running=!_is_running; return !_is_running;}
     };
     
     class Vibratome:public VibratomeBase<cfg::device::Vibratome>
