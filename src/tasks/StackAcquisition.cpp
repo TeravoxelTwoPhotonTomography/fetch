@@ -19,7 +19,7 @@
 #include "devices\digitizer.h"
 #include "devices\Microscope.h"
 
-#if 0
+#if 1
 #define DBG(...) debug(__VA_ARGS__);
 #else
 #define DBG(...)
@@ -32,8 +32,8 @@
 #define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, error  ))
 #define DAQJMP( expr )  goto_if_fail( 0==DAQWRN(expr), Error)
 
-#define CHKERR( expr )  if(expr) {error("%s(%d)"ENDL"\tExpression indicated failure:"ENDL"\t%s"ENDL,__FILE__,__LINE__,#expr);} //( (expr), #expr, error  ))
-#define CHKJMP( expr )  goto_if((expr),Error)
+#define CHKERR( expr )  if(expr) {error("%s(%d)"ENDL"\tExpression indicated failure:"ENDL"\t%s"ENDL,__FILE__,__LINE__,#expr);}
+#define CHKJMP( expr )  do{if(expr) {warning("%s(%d)"ENDL"\tExpression evaluated to an error code (non-zero)."ENDL"\t%s"ENDL,__FILE__,__LINE__,#expr); goto Error;}} while(0)
 
 #if 0
 #define SCANNER_DEBUG_FAIL_WHEN_FULL
@@ -98,12 +98,12 @@ Error:
           return_val_if( result == WAIT_OBJECT_0+1, 1 );
           Guarded_Assert_WinErr( result != WAIT_FAILED );
           if(result == WAIT_ABANDONED_0)
-              warning("StackAcquisition: Wait 0 abandoned"ENDL"\t%s"ENDL, msg);
+              warning("%s(%d)"ENDL "StackAcquisition: Wait 0 abandoned"ENDL"\t%s"ENDL, __FILE__,__LINE__,msg);
           if(result == WAIT_ABANDONED_0+1)
-              warning("StackAcquisition: Wait 1 abandoned"ENDL"\t%s"ENDL, msg);
+              warning("%s(%d)"ENDL "StackAcquisition: Wait 1 abandoned"ENDL"\t%s"ENDL, __FILE__,__LINE__,msg);
 
           if(result == WAIT_TIMEOUT)
-              warning("StackAcquisition: Wait timeout"ENDL"\t%s"ENDL, msg);
+              warning("%s(%d)"ENDL "StackAcquisition: Wait timeout"ENDL"\t%s"ENDL, __FILE__,__LINE__,msg);
 
           Guarded_Assert_WinErr( result != WAIT_FAILED );
 
@@ -195,7 +195,7 @@ Error:
           return run_simulated(s);
           break;
         default:
-          warning("ScanStack<>::run() - Got invalid kind() for Digitizer.get_config"ENDL);          
+          warning("%s(%d)"ENDL "\tScanStack<>::run() - Got invalid kind() for Digitizer.get_config"ENDL,__FILE__,__LINE__);          
         }
         return 0; //failure
       }
@@ -206,7 +206,7 @@ Error:
         config(device::Scanner3D *d)
         {
           d->onConfigTask();
-          debug("Scanner3D configured for StackAcquisition<%s>"ENDL, TypeStr<TPixel> ());
+          debug("%s(%d)"ENDL "\tScanner3D configured for StackAcquisition<%s>"ENDL,__FILE__,__LINE__, TypeStr<TPixel> ());
           return 1; //success
         }
 
@@ -240,6 +240,8 @@ Error:
           device::NIScopeDigitizer *dig = d->_scanner2d._digitizer._niscope;
           device::NIScopeDigitizer::Config digcfg = dig->get_config();
 
+          d->onConfigTask();
+
           ViSession vi = dig->_vi;
           ViChar *chan = const_cast<ViChar*>(digcfg.chan_names().c_str());                   
           
@@ -262,45 +264,49 @@ Error:
 
           d->_zpiezo.getScanRange(&ummin,&ummax,&umstep);
           //d->_zpiezo.moveTo(ummin); // reset to starting position
-          
-          d->_scanner2d._shutter.Open();
+                    
           // One dead cycle to reset stack position
           {
             d->generateAOConstZ(ummin);  // Note CONST waveform
-            d->writeAO();
+            CHKJMP(d->writeAO());
             CHKJMP(d->_scanner2d._daq.startAO());
             CHKJMP(d->_scanner2d._daq.startCLK());            
             DIGJMP(niScope_InitiateAcquisition(vi)); // have to do an acquisition (for my triggers), though the data will get thrown away
 #if 1
+            //debug("%s(%d)"ENDL "\tFetch start -- dummy to set stack position."ENDL,__FILE__,__LINE__);
             DIGJMP(Fetch<TPixel> (vi, chan, SCANNER_STACKACQ_TASK_FETCH_TIMEOUT,//10.0, //(-1=infinite) (0.0=immediate) // seconds
                                   width,
                                   (TPixel*) frm->data,
                                   wfm));
+            //debug("\tFetch end -- dummy to set stack position."ENDL);
 #endif
             CHKJMP(d->_scanner2d._daq.waitForDone(SCANNER2D_DEFAULT_TIMEOUT));
             d->_scanner2d._daq.stopCLK();
           }        
-          //The real thing  
+          //The real thing
+          d->_scanner2d._shutter.Open();
           for(z_um=ummin;z_um<=ummax && !d->_agent->is_stopping();z_um+=umstep)
-          { debug("Generating AO for z = %f."ENDL,z_um);
+          { debug("%s(%d)"ENDL "\tGenerating AO for z = %f."ENDL,__FILE__,__LINE__,z_um);
             d->generateAORampZ((float)z_um);
-            d->writeAO();
+            CHKJMP(d->writeAO());
             CHKJMP(d->_scanner2d._daq.startCLK());            
             DIGJMP(niScope_InitiateAcquisition(vi));
 
             dt_out = toc(&outer_clock);            
             toc(&inner_clock);
 #if 1
+            //debug("%s(%d)"ENDL "\tFetch start."ENDL,__FILE__,__LINE__);
             DIGJMP(Fetch<TPixel> (vi, chan, SCANNER_STACKACQ_TASK_FETCH_TIMEOUT,//10.0, //(-1=infinite) (0.0=immediate) // seconds
                                   width,
                                   (TPixel*) frm->data,
                                   wfm));
+            //debug("\tFetch end."ENDL);
 #endif
 
             // Push the acquired data down the output pipes
-            DBG("Task: StackAcquisition<%s>: pushing wfm"ENDL, TypeStr<TPixel> ());
+            DBG("%s(%d)"ENDL "\tTask: StackAcquisition<%s>: pushing wfm"ENDL,__FILE__,__LINE__, TypeStr<TPixel> ());
             Chan_Next_Try(qwfm,(void**)&wfm,nbytes_info);
-            DBG("Task: StackAcquisition<%s>: pushing frame"ENDL, TypeStr<TPixel> ());
+            DBG("%s(%d)"ENDL "\tTask: StackAcquisition<%s>: pushing frame"ENDL,__FILE__,__LINE__, TypeStr<TPixel> ());
             if(CHAN_FAILURE( SCANNER_PUSH(qdata,(void**)&frm,nbytes) ))
             { warning("(%s:%d) Scanner output frame queue overflowed."ENDL"\tAborting stack acquisition task."ENDL,__FILE__,__LINE__);
               goto Error;
@@ -312,19 +318,22 @@ Error:
             d->_scanner2d._daq.stopCLK();
             ++i;
           }
+          d->_scanner2d._shutter.Shut();
           status = 0;
-          DBG("Scanner - Stack Acquisition task completed normally."ENDL);
+          DBG("%s(%d)"ENDL "\tScanner - Stack Acquisition task completed normally."ENDL,__FILE__,__LINE__);
           // One last cycle to reset stack position
           {
             d->generateAOConstZ(ummin);  // Note CONST waveform
-            d->writeAO();
+            CHKJMP(d->writeAO());
             CHKJMP(d->_scanner2d._daq.startCLK());            
             DIGJMP(niScope_InitiateAcquisition(vi)); // have to do an acquisition (for my triggers), though the data will get thrown away
 #if 1
+            //debug("%s(%d)"ENDL "\tFetch start -- dummy to reset stack position."ENDL,__FILE__,__LINE__);
             DIGJMP(Fetch<TPixel> (vi, chan, SCANNER_STACKACQ_TASK_FETCH_TIMEOUT,//10.0, //(-1=infinite) (0.0=immediate) // seconds
                                   width,
                                   (TPixel*) frm->data,
                                   wfm));
+            //debug("\tFetch end -- dummy to reset stack position."ENDL);
 #endif
             CHKJMP(d->_scanner2d._daq.waitForDone(SCANNER2D_DEFAULT_TIMEOUT));
             d->_scanner2d._daq.stopCLK();
@@ -336,13 +345,13 @@ Finalize:
           free(wfm);
           Chan_Close(qdata);
           Chan_Close(qwfm);
-          niscope_debug_print_status(vi);          
+          //niscope_debug_print_status(vi);          
           CHKERR(d->_scanner2d._daq.stopAO());
           CHKERR(d->_scanner2d._daq.stopCLK());
           DIGERR(niScope_Abort(vi));
           return status;
 Error: 
-          warning("Error occurred during ScanStack<%s> task."ENDL,TypeStr<TPixel>());
+          warning("%s(%d)"ENDL "\tError occurred during ScanStack<%s> task."ENDL,__FILE__,__LINE__,TypeStr<TPixel>());
           d->_scanner2d._daq.stopAO();
           d->_scanner2d._daq.stopCLK();
           goto Finalize;

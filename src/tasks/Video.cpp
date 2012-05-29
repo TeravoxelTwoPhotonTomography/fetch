@@ -263,7 +263,7 @@ Finalize:
         free( wfm );
         Chan_Close(qdata);
         Chan_Close(qwfm);
-        niscope_debug_print_status(vi);
+        //niscope_debug_print_status(vi);
 
         CHKERR(d->get2d()->_daq.stopAO());
         CHKERR(d->get2d()->_daq.stopCLK());

@@ -112,10 +112,10 @@ namespace microscope {
     CHK( dc->stage()->setPos(cx,cy,1.0));           // Move on safe z plane
     CHK( dc->stage()->setPos(cx,cy,cz+thick));
     
-    return 1;
+    return 0;
 Error:
     dc->vibratome()->stop();
-    return 0;
+    return 1;
   }
 
 } // end fetch::task::microscope

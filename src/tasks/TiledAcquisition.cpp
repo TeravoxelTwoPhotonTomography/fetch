@@ -70,13 +70,9 @@ Error:
           return_val_if( result == WAIT_OBJECT_0  , 0 );
           return_val_if( result == WAIT_OBJECT_0+1, 1 );
           Guarded_Assert_WinErr( result != WAIT_FAILED );
-          if(result == WAIT_ABANDONED_0)
-              warning("TiledAcquisition: Wait 0 abandoned\r\n\t%s\r\n", msg);
-          if(result == WAIT_ABANDONED_0+1)
-              warning("TiledAcquisition: Wait 1 abandoned\r\n\t%s\r\n", msg);
-
-          if(result == WAIT_TIMEOUT)
-              warning("TiledAcquisition: Wait timeout\r\n\t%s\r\n", msg);
+          if(result == WAIT_ABANDONED_0)   warning("%s(%d)"ENDL "\tTiledAcquisition: Wait 0 abandoned"ENDL "\t%s"ENDL, __FILE__, __LINE__, msg);
+          if(result == WAIT_ABANDONED_0+1) warning("%s(%d)"ENDL "\tTiledAcquisition: Wait 1 abandoned"ENDL "\t%s"ENDL, __FILE__, __LINE__, msg);
+          if(result == WAIT_TIMEOUT)       warning("%s(%d)"ENDL "\tTiledAcquisition: Wait timeout"ENDL     "\t%s"ENDL, __FILE__, __LINE__, msg);
 
           Guarded_Assert_WinErr( result != WAIT_FAILED );
 
@@ -89,29 +85,26 @@ Error:
         unsigned int eflag = 0; // success
         Vector3f tilepos;
         
-        Guarded_Assert(dc->__scan_agent.is_runnable());
+        CHKJMP(dc->__scan_agent.is_runnable());
 
         device::StageTiling* tiling = dc->stage()->tiling();
         tiling->resetCursor();
         while(!dc->_agent->is_stopping() && tiling->nextInPlanePosition(tilepos))
         {
-          debug("[Tiling Task] tilepos: %5.1f %5.1f %5.1f"ENDL,tilepos[0],tilepos[1],tilepos[2]);
+          debug("%s(%d)"ENDL "\t[Tiling Task] tilepos: %5.1f %5.1f %5.1f"ENDL,__FILE__,__LINE__,tilepos[0],tilepos[1],tilepos[2]);
           filename = dc->stack_filename(); 
           dc->file_series.ensurePathExists();
           eflag |= dc->disk.open(filename,"w");
           if(eflag)
           { 
             warning("Couldn't open file: %s"ENDL, filename.c_str());
-            //tiling->markDone(eflag==0);
             return eflag;
           }
           
           // Move stage
           Vector3f curpos = dc->stage()->getTarget(); // use current target z for tilepos z
-          tilepos[2] = curpos[2]*1000.0f;      // unit conversion here is a bit awkward          
-          dc->stage()->setPos(0.001f*tilepos); // convert um to mm
-
-          //dc->write_stack_metadata();          // go ahead and write the metadata
+          tilepos[2] = curpos[2]*1000.0f;             // unit conversion here is a bit awkward          
+          dc->stage()->setPos(0.001f*tilepos);        // convert um to mm
 
           eflag |= dc->runPipeline();
           eflag |= dc->__scan_agent.run() != 1;          
@@ -128,29 +121,28 @@ Error:
             t = _handle_wait_for_result(res,"TiledAcquisition::run - Wait for scanner to finish.");
             switch(t)
             { 
-            case 0:       // in this case, the scanner thread stopped.  Nothing left to do.
-              eflag |= 0; // success
-              tiling->markDone(eflag==0); // only mark the tile done if the scanner task completed
-              //break; 
-            case 1:       // in this case, the stop event triggered and must be propagated.
+            case 0:                            // in this case, the scanner thread stopped.  Nothing left to do.
+              eflag |= 0;                      // success
+              tiling->markDone(eflag==0);      // only mark the tile done if the scanner task completed              
+            case 1:                            // in this case, the stop event triggered and must be propagated.
               eflag |= dc->__scan_agent.stop(SCANNER2D_DEFAULT_TIMEOUT) != 1;
               break;
-            default:      // in this case, there was a timeout or abandoned wait
-              eflag |= 1; //failure              
+            default:                           // in this case, there was a timeout or abandoned wait
+              eflag |= 1;                      // failure
             }
-          }  // end waiting block
-          dc->write_stack_metadata();          // write the metadata
-
-          // Output and Increment files
-          eflag |= dc->disk.close();          
-          dc->file_series.inc();       // increment regardless of completion status
-
-          eflag |= dc->stopPipeline(); // wait till everything stops          
+          } // end waiting block
           
-        } // end loop over tiles
-        eflag |= dc->stopPipeline();   // wait till the  pipeline stops
-        
+          // Output and Increment files
+          dc->write_stack_metadata();          // write the metadata
+          eflag |= dc->disk.close();          
+          dc->file_series.inc();               // increment regardless of completion status
+          eflag |= dc->stopPipeline();         // wait till everything stops          
+        } // end loop over tiles                          
+        eflag |= dc->stopPipeline();           // wait till the  pipeline stops
         return eflag;
+
+Error:
+        return 1;
       }
 
     } // namespace microscope

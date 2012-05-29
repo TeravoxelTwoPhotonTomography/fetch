@@ -64,8 +64,9 @@ namespace device {
     void     markDone(bool success);
     void     markActive();
     
-    void     fillHolesInActive();                                          //   2d
-    void     dilateActive();                                               //   2d
+    int      anyExplored(int iplane);                                      //   2d
+    void     fillHolesInActive(size_t iplane);                             //   2d
+    void     dilateActive(size_t iplane);                                  //   2d
     
     inline mylib::Array*     attributeArray()                              {return attr_;}
     inline const TTransform& latticeToStageTransform()                     {return latticeToStage_; }

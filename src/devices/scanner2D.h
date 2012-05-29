@@ -83,9 +83,9 @@ namespace fetch
     public:
       IScanner() : _ao_workspace(NULL) {}
 
-      virtual void onConfigTask()   = 0; // called in a 2d scanning task's config function
+      virtual void onConfigTask()   = 0;  ///< called in a 2d scanning task's config function
       virtual void generateAO() = 0;
-      virtual void writeAO()    = 0;
+      virtual int  writeAO()    = 0;      ///< \returns 0 on success, 1 on failure
       
       virtual Scanner2D* get2d() = 0;
 
@@ -106,8 +106,8 @@ namespace fetch
       Scanner2D(Agent *agent);
       Scanner2D(Agent *agent, Config *cfg);
 
-      virtual unsigned int on_attach(); // returns 0 on success, 1 on failure
-      virtual unsigned int on_detach(); // returns 0 on success, 1 on failure
+      virtual unsigned int on_attach(); ///< \returns 0 on success, 1 on failure
+      virtual unsigned int on_detach(); ///< \returns 0 on success, 1 on failure
 
       virtual void _set_config(Config IN *cfg);
       virtual void _set_config(const Config& cfg);
@@ -115,7 +115,7 @@ namespace fetch
       virtual void onConfigTask();
       virtual void onUpdate() {_digitizer.onUpdate(); generateAO();}
       virtual void generateAO();
-      virtual void writeAO();
+      virtual int writeAO();            ///< \returns 0 on success, 1 on failure
       
       virtual Scanner2D* get2d() {return this;}
           

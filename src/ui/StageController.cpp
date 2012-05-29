@@ -560,13 +560,17 @@ bool fetch::ui::TilingController::markAddressable()
 }
 
 void fetch::ui::TilingController::fillActive()
-{ if(tiling_)
-    tiling_->fillHolesInActive();
+{ if(!stage_) return;
+  size_t iplane = stage_->getPosInLattice().z();
+  if(stage_->tiling())
+    stage_->tiling()->fillHolesInActive(iplane);
 }
 
 void fetch::ui::TilingController::dilateActive()
-{ if(tiling_)
-    tiling_->dilateActive();
+{ if(!stage_) return;
+  size_t iplane = stage_->getPosInLattice().z();
+  if(stage_->tiling())
+    stage_->tiling()->dilateActive(iplane);
 }
 
 //////////////////////////////////////////////////////////////////////////

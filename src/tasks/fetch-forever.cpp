@@ -196,7 +196,7 @@ namespace fetch
           debug("Digitizer: nfetches: %u nframes: %u\r\n"
                 "\tDelay - max: %g (on fetch %d) mean:%g\r\n"
                 "\tTotal acquired samples %f MS\r\n",nfetches, nframes,maxdelay, last_max_fetch,accdelay/nfetches,ttl2/1024.0/1024.0);
-          niscope_debug_print_status(vi);
+          //niscope_debug_print_status(vi);
           CheckPanic( niScope_Abort(vi) );
           return ret;
         }

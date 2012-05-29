@@ -115,9 +115,9 @@ ESCAN2D:
       _scanner2d._digitizer.setup((int)nscans,scan_freq_Hz,_scanner2d._config->line_duty_cycle());
     }
 
-    void Scanner3D::writeAO()
+    int Scanner3D::writeAO()
     {
-      _scanner2d._daq.writeAO(_ao_workspace->contents);
+      return _scanner2d._daq.writeAO(_ao_workspace->contents);
 //      _scanner2d.writeAO(); // !! don't do this!  It'll write the scanner2d's ao buffer which is the wrong one.
     }
 

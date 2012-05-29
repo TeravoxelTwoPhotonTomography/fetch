@@ -128,6 +128,7 @@ namespace device {
 #define  CHKWRN( expr )  if(!(expr)) {warning("C843:"ENDL "%s(%d): %s"ENDL "Expression evaluated as false"ENDL,__FILE__,__LINE__,#expr); }
 #define  CHKERR( expr )  if(!(expr)) {error  ("C843:"ENDL "%s(%d): %s"ENDL "Expression evaluated as false"ENDL,__FILE__,__LINE__,#expr); goto Error;}
 
+#define WARN(msg) warning("Stage:"ENDL "\t%s(%d)"ENDL "\t%s"ENDL,__FILE__,__LINE__,msg)
 
   /// Interprets return codes from C843 API calls.
   /// Usually called from a macro.  See, for example, \ref C843JMP.
@@ -327,6 +328,11 @@ Error:
     goto Finalize;
   }
 
+  static int is_in_bounds(StageTravel *t, float x, float y, float z)
+  { return((t->x.min<=x) && (x<=t->x.max)
+         &&(t->y.min<=y) && (y<=t->y.max)
+         &&(t->z.min<=z) && (z<=t->z.max));
+  }
   int C843Stage::getTravel(StageTravel* out)
   { 
     /* NOTES:
@@ -419,6 +425,10 @@ Error:
   int C843Stage::setPos( float x, float y, float z )
   { double t[3] = {x,y,z};
     BOOL ontarget[] = {0,0,0};
+    { StageTravel t;
+      CHKJMP(getTravel(&t));
+      CHKJMP(is_in_bounds(&t,x,y,z));
+    }
   
     { float vx,vy,vz;
       getVelocity(&vx,&vy,&vz);
@@ -639,8 +649,20 @@ Error:
     return 1;
   }
 
+  static int is_in_bounds(const SimulatedStage::Config& cfg, int iaxis, float v)
+  { return (cfg.axis(iaxis).min_mm()<=v) && (v<=cfg.axis(iaxis).max_mm());
+  }
+
   int SimulatedStage::setPos( float x, float y, float z )
-  { x_=x;y_=y;z_=z;
+  { 
+    if( is_in_bounds(*_config,0,x)
+      &&is_in_bounds(*_config,1,y)
+      &&is_in_bounds(*_config,2,z))
+    { x_=x;y_=y;z_=z;
+    } else
+    { WARN("Position out of bounds.");
+      return 0;
+    }
     return 1;
   }
 

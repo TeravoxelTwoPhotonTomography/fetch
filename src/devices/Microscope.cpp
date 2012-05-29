@@ -358,27 +358,31 @@ ESCAN:
       Frame *frm=0;
       mylib::Array *ret=0;
       Task* oldtask;
-      
+      transaction_lock();
       // 1. Set up the stack acquisition
       { int nframe = cfg.frame_average().ntimes();
+        float step = 0.1/(float)nframe;
+        // z-scan range is inclusive
         cfg.mutable_scanner3d()->mutable_zpiezo()->set_um_min(dz_um);
-        cfg.mutable_scanner3d()->mutable_zpiezo()->set_um_max(dz_um+0.1);
-        cfg.mutable_scanner3d()->mutable_zpiezo()->set_um_step(0.1/(float)nframe);
+        cfg.mutable_scanner3d()->mutable_zpiezo()->set_um_max(dz_um+(nframe-1)*step); //ensure n frames are aquired
+        cfg.mutable_scanner3d()->mutable_zpiezo()->set_um_step(step);
       }
-      scanner.set_config(cfg.scanner3d()); // apply
+      scanner.set_config(cfg.scanner3d());              // commit config
+      Chan *out = configPipeline()->_out->contents[0];  // pipeline - don't connect end to anything, as we'll read produced data here.
             
       // 2. Start the acquisition
       static task::scanner::ScanStack<i16> scan;
       oldtask = __scan_agent._task;
       TRY(0==__scan_agent.arm(&scan,&scanner));
-      TRY(__scan_agent.is_runnable()); // should never fail
+      TRY(__scan_agent.is_runnable()); // should never fail      
       TRY(0==runPipeline());
       TRY(__scan_agent.run());
+      Chan_Wait_For_Writer_Count(out,1);
       
       // 3. Wait for result
-      TRY(c=Chan_Open(getVideoChannel(),CHAN_READ));
+      TRY(c=Chan_Open(out,CHAN_READ));
       TRY(frm=(Frame*) Chan_Token_Buffer_Alloc(c));
-      TRY(CHAN_SUCCESS(Chan_Next_Timed(c,(void**)&frm,frm->size_bytes(),timeout_ms)));
+      TRY(CHAN_SUCCESS(Chan_Next_Timed(c,(void**)&frm,Chan_Buffer_Size_Bytes(c),timeout_ms)));
       { mylib::Array dummy;
         mylib::Dimn_Type dims[3];
         mylib::castFetchFrameToDummyArray(&dummy,frm,dims);
@@ -386,11 +390,13 @@ ESCAN:
       }
 
 Finalize:    
-      stopPipeline();
+      TRY(__scan_agent.stop());
       if(frm) Chan_Token_Buffer_Free(frm);
       if(c) Chan_Close(c);
-      set_config(original);
+      stopPipeline(); //- redundant?
+      scanner.set_config(original.scanner3d()); 
       __scan_agent._task=oldtask;
+      transaction_unlock();
       return ret;
 Error:
       ret=NULL;

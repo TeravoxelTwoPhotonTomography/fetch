@@ -266,6 +266,20 @@ namespace device {
     notifyDone(cursor_,computeCursorPos(),*m);
   } 
 
+  //  anyExplored  ///////////////////////////////////////////////////////////////
+  //
+  int StageTiling::anyExplored(int iplane)
+  { setCursorToPlane(iplane);
+    uint32_t* mask = AUINT32(attr_);
+    uint32_t attrmask = Explorable|Addressable,
+             attr     = Explorable|Addressable;
+
+    do{++cursor_;}
+    while( (mask[cursor_] & attrmask) != attr
+        && ON_PLANE(cursor_) );
+    return ON_PLANE(cursor_);
+  }
+
   //  fillHolesInActive  /////////////////////////////////////////////////
   //
   
@@ -304,8 +318,8 @@ namespace device {
   
     Filled regions are 4-connected.
   */
-  void StageTiling::fillHolesInActive()
-  { resetCursor();
+  void StageTiling::fillHolesInActive(size_t iplane)
+  { setCursorToPlane(iplane);
     uint32_t *c,
              *beg = AUINT32(attr_)+current_plane_offset_,
              *end = beg+sz_plane_nelem_;
@@ -339,8 +353,8 @@ namespace device {
           if(!(x>=(w-1) || *(next=(n+1))&mask )) {*next|=Reserved; push(&stack,next);}  // right
       } // end first fill
                         
-      if(!is_open)     // second fill to mark interior as Active
-      { mask = Active; // edges and self are labeled Active
+      if(!is_open)                             // second fill to mark interior as Active
+      { mask = Active;                         // edges and self are labeled Active
         push(&stack,0);
         push(&stack,c);
         while(n=pop(&stack))
@@ -361,10 +375,10 @@ namespace device {
         } // end second fill
       }
            
-      while(c++<end && *c&(Reserved|Active));      // move to next unreserved
+      while(c++<end && *c&(Reserved|Active));  // move to next unreserved
     } // done searching for regions
     destroy_stack(&stack);
-    for(c=beg;c<end;++c) // mark all unreserved
+    for(c=beg;c<end;++c)                       // mark all unreserved
       *c = c[0]&~Reserved;
   }
 
@@ -372,8 +386,8 @@ namespace device {
   //                      
   #define countof(e) (sizeof(e)/sizeof(*e))
   /** Mark tiles as Active if they are 8-connected to an Active tile. */
-  void StageTiling::dilateActive()
-  { resetCursor();
+  void StageTiling::dilateActive(size_t iplane)
+  { setCursorToPlane(iplane);
     uint32_t *c,
              *beg = AUINT32(attr_)+current_plane_offset_,
              *end = beg+sz_plane_nelem_;
@@ -381,11 +395,12 @@ namespace device {
                    h=attr_->dims[1];
     unsigned       x,y,j;
     
-    const unsigned offsets[] = {-w-1,-w,-w+1,-1,1,w-1,w,w+1};
+    const int offsets[] = {-w-1,-w,-w+1,-1,1,w-1,w,w+1};
     const unsigned top=1,left=2,bot=4,right=8; // bit flags
     const unsigned masks[]   = {top|left,top,top|right,left,right,bot|left,bot,bot|right};      
-    const unsigned mark = Reserved|Active;
-    for(c=beg;c<end;++c)          // mark original active tiles as reserved
+    const unsigned attrmask = Reserved|Active|Done,//|Explorable,
+                   attr     = Reserved|Active     ;//|Explorable;
+    for(c=beg;c<end;++c)                       // mark original active tiles as reserved
       *c |= ((*c&Active)==Active)*Reserved;
     for(y=0;y<h;++y)
     { unsigned rowmask = ((y==0)*top)|((y==h-1)*bot);
@@ -394,12 +409,13 @@ namespace device {
                           mask = rowmask|colmask;
         c=beg+y*w+x;
         for(j=0;j<countof(offsets);++j)
-          if( (mask&masks[j])==0 && (c[offsets[j]]&mark)==mark)
+          if(  (mask&masks[j])==0              // is neighbor in bounds
+            && (c[offsets[j]]&attrmask)==attr) // query neighbor attribute for match
           { *c|=Active; break; 
           }
       }
     }
-    for(c=beg;c<end;++c)          // mark all unreserved
+    for(c=beg;c<end;++c)                       // mark all unreserved
       *c = c[0]&~Reserved;
   }
 

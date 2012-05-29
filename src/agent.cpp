@@ -4,7 +4,7 @@
 
 #define DEBUG_AGENT__HANDLE_WAIT_FOR_RESULT
 
-#if 1
+#if 0
 #define DBG(...) debug(__VA_ARGS__)
 #define LOCKDBG(...)  //DBG(__VA_ARGS__)
 #else
@@ -482,7 +482,9 @@ Error:
         struct T args = {0, 0};
         reader=Chan_Open(q,CHAN_READ);
         if(CHAN_FAILURE( Chan_Next_Copy(reader, &args, sizeof(T)) )){
-            warning("In Agent_Stop_Nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
+            warning("%s(%d)"ENDL 
+                    "\tIn Agent_Stop_Nonblocking work procedure:"ENDL
+                    "\tCould not pop arguments from queue."ENDL,__FILE__,__LINE__);
             return 0;
         }
         Chan_Close(reader);

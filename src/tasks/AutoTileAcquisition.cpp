@@ -22,6 +22,8 @@
 #include "devices\tiling.h"
 
 #define CHKJMP(expr) if(!(expr)) {warning("%s(%d)"ENDL"\tExpression indicated failure:"ENDL"\t%s"ENDL,__FILE__,__LINE__,#expr); goto Error;}
+#define WARN(msg)    warning("%s(%d)"ENDL"\t%s"ENDL,__FILE__,__LINE__,msg)
+#define DBG(...)     do{debug("%s(%d)"ENDL "\t",__FILE__,__LINE__); debug(__VA_ARGS__);}while(0)
 
 namespace fetch
 {
@@ -157,48 +159,41 @@ Error:
       Preconditions:
       - tiles to explore have been labelled as such
       
-      Parameters to get:
+      Parameters to get from configuration:
       - dz_um:               zpiezo offset
-      - maxz                 stage units(mm)?
+      - maxz                 stage units(mm)
       - timeout_ms
       - ichan:               channel to use for classification, -1 uses all channels
       - intensity_threshold: use the expected pixel units
       - area_threshold:      0 to 1. The fraction of pixels that must be brighter than intensity threshold.
-      
-      Functions to implement:
-      - dc->snapshot(dz_um) -> mylib::Array() -- or equiv      
-        - this will just be a stack acquisition configured to take exactly the right number
-          of images so that one frame is emitted from the end of the pipeline.  Acquisition will
-          be at a ZPiezo offset of dz_um
-        - returns a mylib::Array
-      - PlaneInBounds(Microscope*)
-        
-      Other todos:
-        - GUI - add fill/dilate ops to ui
-        - GUI - add mark explorable (all planes?)
-        - GUI - define box for painting explorable
-        - add parameters
-        - GUI - add DockWidget for parameters
-       [x]check configurePipeline()/other setup for task
-          - taken care of inside snapshot
-        - termination condition for run loop
       */
       static int explore(device::Microscope *dc)
       { Vector3f tilepos;
         unsigned any=0; // indicates an "explorable" tile was found        
-        const cfg::tasks::AutoTile& cfg=dc->get_config().autotile();        
+        cfg::tasks::AutoTile cfg=dc->get_config().autotile();
+        size_t iplane=dc->stage()->getPosInLattice().z();
 
         device::StageTiling* tiling = dc->stage()->tiling();
-        tiling->setCursorToPlane(dc->stage()->getPosInLattice().z());
+        tiling->setCursorToPlane(iplane);
         while(  !dc->_agent->is_stopping() 
               && tiling->nextInPlaneExplorablePosition(tilepos))
-        { any=1;
-          if(classify(dc->snapshot(cfg.z_um(),cfg.timeout_ms()),cfg.ichan(),cfg.intensity_threshold(),cfg.area_threshold()))
+        { mylib::Array *im;
+          any=1;
+          DBG("Exploring tile: %6.1f %6.1f %6.1f",tilepos.x(),tilepos.y(),tilepos.z());
+          CHKJMP(dc->stage()->setPos(tilepos*0.001)); // convert um to mm
+          CHKJMP(im=dc->snapshot(cfg.z_um(),cfg.timeout_ms()));
+          if(classify(im,cfg.ichan(),cfg.intensity_threshold(),cfg.area_threshold()))
             tiling->markActive();
         }
-        if(!any) goto Error;
-        tiling->fillHolesInActive();
-        tiling->dilateActive();
+        if(!any)                                   // if no explorable tiles were found then 
+        { if(!tiling->anyExplored(iplane))         // double-check to see if any tiles were already explored.
+          { WARN("No explorable tiles found.\n");  // if not, the user probably forgot to set the exploration zone.
+            goto Error;
+          }
+        } else { 
+          tiling->fillHolesInActive(iplane);
+          tiling->dilateActive(iplane);
+        }
         return 1;
       Error:
         return 0;
@@ -212,7 +207,9 @@ Error:
         
         while(!dc->_agent->is_stopping() && PlaneInBounds(dc,cfg.maxz_mm()))
         { CHKJMP(explore(dc));       // will return an error if no explorable tiles found on the plane
+          CHKJMP(   tiling.config(dc));
           CHKJMP(0==tiling.run(dc));
+          CHKJMP(   cut.config(dc));
           CHKJMP(0==cut.run(dc));
         }
 

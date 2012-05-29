@@ -119,7 +119,7 @@ namespace fetch {
       return 0;   
     }
 
-    void NationalInstrumentsDAQ::writeAO(float64 *data)
+    int NationalInstrumentsDAQ::writeAO(float64 *data)
     {
       int32 written,
             N = _config->ao_samples_per_waveform();
@@ -154,7 +154,7 @@ namespace fetch {
       }   
 #endif    
 
-      DAQERR( DAQmxWriteAnalogF64(_ao.daqtask,
+      DAQJMP( DAQmxWriteAnalogF64(_ao.daqtask,
         N,
         0,                           // autostart?
         0.0,                         // timeout (s) - to write - 0 causes write to fail if blocked at all
@@ -163,7 +163,9 @@ namespace fetch {
         &written,
         NULL));
       Guarded_Assert( written == N );
-      return;
+      return 0; // success
+Error:
+      return 1; // fail
     }
 
     int32 NationalInstrumentsDAQ::startAO()  { DAQRTN(DAQmxStartTask(_ao.daqtask)); return 0;}

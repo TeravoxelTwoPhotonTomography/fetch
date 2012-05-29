@@ -185,9 +185,9 @@ ESHUTTER:
       _ao_workspace = vector_f64_alloc(_daq.samplesPerRecordAO()*2);
     }
 
-    void Scanner2D::writeAO()
+    int Scanner2D::writeAO()
     {
-      _daq.writeAO(_ao_workspace->contents);
+      return _daq.writeAO(_ao_workspace->contents);
     }
 
   }

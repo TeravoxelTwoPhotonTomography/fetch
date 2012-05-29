@@ -145,8 +145,8 @@ class SimulatedVibratome:public VibratomeBase<cfg::device::SimulatedVibratome>
       virtual int getAmplitude_ControllerUnits() {return _amp;}      
       virtual double getAmplitude_mm()           {return _amp*_unit2mm;}
 
-      virtual int start()                        {_is_running=!_is_running; return  _is_running;}
-      virtual int stop()                         {_is_running=!_is_running; return !_is_running;}
+      virtual int start()                        {int r=_is_running==0; _is_running=1; return r;}
+      virtual int stop()                         {int r=_is_running==1; _is_running=0; return r;}
     };
     
     class Vibratome:public VibratomeBase<cfg::device::Vibratome>
