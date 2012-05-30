@@ -28,8 +28,7 @@ namespace device {
     typedef std::set<StageListener*>             TListeners;  
   
   public: // pseudo-private
-    mylib::Array              *attr_;                                      ///< tile attribute database
-    mylib::Indx_Type           leftmostAddressable_;                       ///< marks the first tile
+    mylib::Array              *attr_;                                      ///< tile attribute database    
     mylib::Indx_Type           cursor_;                                    ///< marks the current tile
     mylib::Indx_Type           current_plane_offset_;                      ///< marks the current plane
     mylib::Indx_Type           sz_plane_nelem_;                            ///< the size of a plane in the tile database
@@ -63,11 +62,12 @@ namespace device {
 
     void     markDone(bool success);
     void     markActive();
-    
+    void     markAddressable(size_t iplane); ///< Marks the indicated plane as addressable according to the travel.
+
     int      anyExplored(int iplane);                                      //   2d
     void     fillHolesInActive(size_t iplane);                             //   2d
     void     dilateActive(size_t iplane);                                  //   2d
-    
+        
     inline mylib::Array*     attributeArray()                              {return attr_;}
     inline const TTransform& latticeToStageTransform()                     {return latticeToStage_; }
     inline const FieldOfViewGeometry& fov()                                {return fov_;}
@@ -78,6 +78,8 @@ namespace device {
     inline void addListener(StageListener *listener)                       {listeners_.insert(listener);}
     inline void delListener(StageListener *listener)                       {listeners_.erase(listener);}
 
+    
+
   protected:
     void computeLatticeToStageTransform_
                         (const FieldOfViewGeometry& fov,
@@ -85,7 +87,7 @@ namespace device {
     mylib::Coordinate* computeLatticeExtents_(const device::StageTravel& travel); ///< returned pointer needs to be freed (w Free_Array).
     void initAttr_(mylib::Coordinate *shape);                                     ///< Free's shape
 
-    //void markAddressable_(device::StageTravel *travel);
+    
     
     void notifyDone(size_t i, const Vector3f& pos, uint32_t sts);    
     void notifyNext(size_t i, const Vector3f& pos);  

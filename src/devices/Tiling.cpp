@@ -39,7 +39,6 @@ namespace device {
                            const Mode                 alignment)
     :
       attr_(NULL),
-      leftmostAddressable_(0),
       cursor_(0),
       current_plane_offset_(0),
       sz_plane_nelem_(0),
@@ -178,6 +177,7 @@ namespace device {
   /// \todo bounds checking
   void StageTiling::setCursorToPlane(size_t iplane)
   { cursor_=current_plane_offset_=iplane*sz_plane_nelem_;
+    cursor_--; // always incremented before query, so subtracting one here means first tile will not be skipped
   }
 
   //  nextInPlanePosition  /////////////////////////////////////////////
@@ -265,6 +265,26 @@ namespace device {
     *m |= Active;
     notifyDone(cursor_,computeCursorPos(),*m);
   } 
+
+  //  markAddressable  ///////////////////////////////////////////////////
+  //
+  static inline unsigned in(const Vector3f &a,const Vector3f &b,const Vector3f &v)
+  { return (a[0]<v[0]) && (v[0]<b[0])
+         &&(a[1]<v[1]) && (v[1]<b[1])
+         &&(a[2]<v[2]) && (v[2]<b[2]);
+  }
+  /** Marks the indicated plane as addressable according to the travel.
+  */
+  void StageTiling::markAddressable(size_t iplane)
+  { Vector3f a = Vector3f(travel_.x.min,travel_.y.min,travel_.z.min),
+             b = Vector3f(travel_.x.max,travel_.y.max,travel_.z.max);
+    uint32_t* v = AUINT32(attr_);
+    size_t old = cursor_;
+    setCursorToPlane(iplane);
+    while(ON_PLANE(++cursor_))    
+      v[cursor_]|=Addressable*in(a,b,computeCursorPos()*0.001);
+    cursor_=old; // restore cursor
+  }
 
   //  anyExplored  ///////////////////////////////////////////////////////////////
   //
@@ -398,8 +418,9 @@ namespace device {
     const int offsets[] = {-w-1,-w,-w+1,-1,1,w-1,w,w+1};
     const unsigned top=1,left=2,bot=4,right=8; // bit flags
     const unsigned masks[]   = {top|left,top,top|right,left,right,bot|left,bot,bot|right};      
-    const unsigned attrmask = Reserved|Active|Done,//|Explorable,
-                   attr     = Reserved|Active     ;//|Explorable;
+    const unsigned attrmask = Reserved|Addressable|Active|Done|Explorable,
+                   attr     = Reserved|Addressable|Active     |Explorable,
+                   lblmask  = Addressable|Explorable;
     for(c=beg;c<end;++c)                       // mark original active tiles as reserved
       *c |= ((*c&Active)==Active)*Reserved;
     for(y=0;y<h;++y)
@@ -408,11 +429,12 @@ namespace device {
       { const unsigned colmask = ((x==0)*left)|((x==w-1)*right),
                           mask = rowmask|colmask;
         c=beg+y*w+x;
-        for(j=0;j<countof(offsets);++j)
-          if(  (mask&masks[j])==0              // is neighbor in bounds
-            && (c[offsets[j]]&attrmask)==attr) // query neighbor attribute for match
-          { *c|=Active; break; 
-          }
+        if((*c&lblmask)==lblmask)                // mark only tile that are addressable and explorable
+          for(j=0;j<countof(offsets);++j)
+            if(  (mask&masks[j])==0              // is neighbor in bounds
+              && (c[offsets[j]]&attrmask)==attr) // query neighbor attribute for match
+            { *c|=Active; break; 
+            }
       }
     }
     for(c=beg;c<end;++c)                       // mark all unreserved

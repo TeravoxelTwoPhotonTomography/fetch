@@ -156,6 +156,10 @@ Error:
       }
       
       /**
+      Explores the current plane searching for tiles to image.  A heuristic classifier
+      is used to target a tile for imaging based on a single snapshot acquired at a 
+      given depth (\c dz_um).
+
       Preconditions:
       - tiles to explore have been labelled as such
       
@@ -166,34 +170,40 @@ Error:
       - ichan:               channel to use for classification, -1 uses all channels
       - intensity_threshold: use the expected pixel units
       - area_threshold:      0 to 1. The fraction of pixels that must be brighter than intensity threshold.
+
+      \returns 0 if no tiles were targeted for imaging, otherwise 1.
       */
       static int explore(device::Microscope *dc)
       { Vector3f tilepos;
-        unsigned any=0; // indicates an "explorable" tile was found        
+        unsigned any_explorable=0,
+                 any_active=0;
         cfg::tasks::AutoTile cfg=dc->get_config().autotile();
         size_t iplane=dc->stage()->getPosInLattice().z();
 
-        device::StageTiling* tiling = dc->stage()->tiling();
+        device::StageTiling* tiling = dc->stage()->tiling();        
+        tiling->markAddressable(iplane); // make sure the current plane is marked addressable
         tiling->setCursorToPlane(iplane);
         while(  !dc->_agent->is_stopping() 
               && tiling->nextInPlaneExplorablePosition(tilepos))
         { mylib::Array *im;
-          any=1;
+          any_explorable=1;
+          tilepos[2]=dc->stage()->getTarget().z()*1000.0; // convert mm to um
           DBG("Exploring tile: %6.1f %6.1f %6.1f",tilepos.x(),tilepos.y(),tilepos.z());
           CHKJMP(dc->stage()->setPos(tilepos*0.001)); // convert um to mm
           CHKJMP(im=dc->snapshot(cfg.z_um(),cfg.timeout_ms()));
-          if(classify(im,cfg.ichan(),cfg.intensity_threshold(),cfg.area_threshold()))
-            tiling->markActive();
+          if(any_active|=classify(im,cfg.ichan(),cfg.intensity_threshold(),cfg.area_threshold()))
+            tiling->markActive();           
         }
-        if(!any)                                   // if no explorable tiles were found then 
-        { if(!tiling->anyExplored(iplane))         // double-check to see if any tiles were already explored.
-          { WARN("No explorable tiles found.\n");  // if not, the user probably forgot to set the exploration zone.
-            goto Error;
-          }
-        } else { 
-          tiling->fillHolesInActive(iplane);
-          tiling->dilateActive(iplane);
+        if(!any_explorable)                      // if no explorable tiles were found then 
+        { WARN("No explorable tiles found.\n");  // if not, the user probably forgot to set the exploration zone.
+          goto Error;          
         }
+        if(!any_active)
+        { WARN("No tiles found to image.\n");
+          goto Error;
+        }
+        tiling->fillHolesInActive(iplane);
+        tiling->dilateActive(iplane);
         return 1;
       Error:
         return 0;

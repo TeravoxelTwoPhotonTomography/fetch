@@ -423,7 +423,7 @@ void fetch::ui::MainWindow::save_settings_()
 {
   QSettings settings;
   settings.setValue("MainWindow/geometry",saveGeometry());
-  settings.setValue("MainWindow/state",saveState(version__));
+  settings.setValue("MainWindow/state",saveState(version__));  
 }
 
 #define CHKJMP(expr,lbl) if(!(expr)) goto lbl;
