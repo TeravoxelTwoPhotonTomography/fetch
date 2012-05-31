@@ -108,6 +108,7 @@ Error:
         if(!image->size) return 0;
         for(i=0;i<image->size;++i)
           count+=(data[i]>intensity_thresh);
+        DBG("Fraction above thresh: %f",count/((double)image->size));
         return (count/((double)image->size))>area_thresh;            
       }
       #define CLASSIFY(type_id,type) case type_id: return _classify<type>(image,ichan,intensity_thresh,area_thresh); break
@@ -191,8 +192,10 @@ Error:
           DBG("Exploring tile: %6.1f %6.1f %6.1f",tilepos.x(),tilepos.y(),tilepos.z());
           CHKJMP(dc->stage()->setPos(tilepos*0.001)); // convert um to mm
           CHKJMP(im=dc->snapshot(cfg.z_um(),cfg.timeout_ms()));
-          if(any_active|=classify(im,cfg.ichan(),cfg.intensity_threshold(),cfg.area_threshold()))
+          if(classify(im,cfg.ichan(),cfg.intensity_threshold(),cfg.area_threshold()))
+          { any_active=1;
             tiling->markActive();           
+          }
         }
         if(!any_explorable)                      // if no explorable tiles were found then 
         { WARN("No explorable tiles found.\n");  // if not, the user probably forgot to set the exploration zone.
