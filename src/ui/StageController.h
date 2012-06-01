@@ -18,14 +18,14 @@ namespace ui {
     Q_OBJECT
   public:
     void tile_done( size_t index, const Vector3f& pos,uint32_t sts )       {emit sig_tile_done(index,(unsigned int)sts);}
-    void tiling_changed( device::StageTiling *tiling )                     {emit sig_tiling_changed(tiling);}
+    void tiling_changed()                                                  {emit sig_tiling_changed();}
     void tile_next( size_t index, const Vector3f& pos )                    {emit sig_tile_next((unsigned int)index);}
     void fov_changed(const device::FieldOfViewGeometry *fov)               {emit sig_fov_changed(fov->field_size_um_[0],fov->field_size_um_[1],fov->rotation_radians_);}      
     void moved(void)                                                       {emit sig_moved();}  
     
   signals:
     void sig_tile_done( unsigned index, unsigned int sts );
-    void sig_tiling_changed( device::StageTiling *tiling );
+    void sig_tiling_changed();
     void sig_tile_next( unsigned index );
     void sig_fov_changed(float w_um, float h_um, float rotation_radians);
     void sig_moved();
@@ -39,11 +39,12 @@ namespace ui {
     typedef Matrix<float,3,4>         TRectVerts;
     typedef Transform<float,3,Affine> TTransform;
 
-    TilingController(device::Stage *stage, device::StageTiling *tiling=NULL, QObject* parent=0);
+    TilingController(device::Stage *stage, QObject* parent=0);
 
     inline TilingControllerListener* listener()                            {return &listener_;}
 
-    inline bool is_valid()                                                 {return tiling_!=NULL;}
+    inline bool is_valid()                                                 {return stage_->tiling()!=NULL;}
+    inline device::Stage* stage()                                          {return stage_;}
 
     bool fovGeometry      (TRectVerts *out);                               /// \returns false if tiling is invalid
     bool latticeTransform (TTransform *out);                               /// \returns false if tiling is invalid
@@ -72,7 +73,7 @@ namespace ui {
     QAction*   autosaveAction() {return autosave_action_;}
 
   public slots:
-    void update(device::StageTiling *tiling)                               {tiling_=tiling; markAddressable(); emit changed(); emit show(tiling_!=NULL);}
+    void update()                                                          {markAddressable(); emit changed(); emit show(stage_->tiling()!=NULL);}
     void stageAttached()                                                   {emit show(true);}
     void stageDetached()                                                   {emit show(false);}    
     void updatePlane()                                                     {markAddressable();}
@@ -100,7 +101,6 @@ namespace ui {
   private:
 
     device::Stage       *stage_;
-    device::StageTiling *tiling_;
     TilingControllerListener listener_;
     QAction             *load_action_,
                         *save_action_,
@@ -247,8 +247,8 @@ namespace ui {
       void reference()                                                     { stage_->referenceNoWait(); }
       void clear()                                                         { stage_->clear(); } ///< Clears teh stage's error state, if any
 
-      void updateTiling()                                                  { tiling_controller_.update(stage_->tiling());}
-      void invalidateTiling()                                              { tiling_controller_.update(NULL);}
+      void updateTiling()                                                  { tiling_controller_.update();}
+      //void invalidateTiling()                                              { tiling_controller_.update();}
 
     private:
 

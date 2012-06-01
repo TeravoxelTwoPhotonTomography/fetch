@@ -199,7 +199,7 @@ void Mutex_Lock(Mutex* self)
   AcquireSRWLockExclusive(M_SELF(self));
   if(M_OWNER(self) && M_OWNER(self)==current)
     goto ErrorAttemptedRecursiveLock;
-  AcquireSRWLockExclusive(M_NATIVE(self));
+  AcquireSRWLockExclusive(M_NATIVE(self)); // SRW locks cannot be acquired recursively
   M_OWNER(self)=current;  
   ReleaseSRWLockExclusive(M_SELF(self));
   return;

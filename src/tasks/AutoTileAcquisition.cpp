@@ -215,13 +215,13 @@ Error:
       unsigned int AutoTileAcquisition::run(device::Microscope *dc)
       { unsigned eflag=0; //success
         cfg::tasks::AutoTile cfg=dc->get_config().autotile();
-        TiledAcquisition tiling;
+        TiledAcquisition tile;
         Cut cut;
         
         while(!dc->_agent->is_stopping() && PlaneInBounds(dc,cfg.maxz_mm()))
         { CHKJMP(explore(dc));       // will return an error if no explorable tiles found on the plane
-          CHKJMP(   tiling.config(dc));
-          CHKJMP(0==tiling.run(dc));
+          CHKJMP(   tile.config(dc));
+          CHKJMP(0==tile.run(dc));
           CHKJMP(   cut.config(dc));
           CHKJMP(0==cut.run(dc));
         }

@@ -512,9 +512,12 @@ void TilesView::paint_lattice_attribute_image_()
   painter.fillRect(r,Qt::SolidPattern);
 
   QImage attr;
-  tc_->latticeAttrImage(&attr);
+  if(!tc_->latticeAttrImage(&attr)) // locks the stage's tiling mutex on success as well as the tiling
+    return;
   //attr.save("TilesView_initCBO__attr.tif");
   QImage indexed_attr = attr.convertToFormat(QImage::Format_Indexed8,color_table_attr2idx_);
+  tc_->stage()->tiling()->unlock();
+  tc_->stage()->tilingUnlock(); // all done w attr
   //indexed_attr.save("TilesView_initCBO__indexed_attr__before.tif");
   indexed_attr.setColorTable(color_table_idx2rgb_);
   //indexed_attr.save("TilesView_initCBO__indexed_attr__after.tif");

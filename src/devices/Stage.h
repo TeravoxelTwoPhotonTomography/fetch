@@ -6,7 +6,7 @@
 #include <list>
 #include <set>
 #include "devices/FieldOfViewGeometry.h"
-
+#include "thread.h"
 #include <Eigen/Core>
 using namespace Eigen;
 
@@ -175,11 +175,13 @@ namespace device {
     TListeners           _listeners;
     FieldOfViewGeometry *_fov;
     FieldOfViewGeometry  _lastfov;
+    Mutex               *_tiling_lock;
     
     public:
       Stage(Agent *agent);
       Stage(Agent *agent, Config *cfg);
-      
+      virtual ~Stage();
+
       void setKind(Config::StageType kind);
       void setFOV(FieldOfViewGeometry *fov);
 
@@ -219,6 +221,10 @@ namespace device {
               void addListener(StageListener *listener);
               void delListener(StageListener *listener);
       inline  StageTiling* tiling()                                         {return _tiling;}
+
+      /** Only locks if tiling is not NULL */
+      inline  StageTiling* tilingLocked()                                   {Mutex_Lock(_tiling_lock); if(!_tiling) Mutex_Unlock(_tiling_lock); return _tiling;}
+      inline  void         tilingUnlock()                                   {Mutex_Unlock(_tiling_lock);}
   protected:
       void    _createTiling();       ///< only call when disarmed
       void    _destroyTiling();      ///< only call when disarmed
@@ -257,7 +263,7 @@ namespace device {
   class StageListener
   {
   public:
-    virtual void tiling_changed(StageTiling *tiling) {}                      ///< a new tiling was created.
+    virtual void tiling_changed() {}                                         ///< a new tiling was created.
     virtual void tile_done(size_t index, const Vector3f& pos,uint32_t sts) {}///< the specified tile was marked as done                                                      
     virtual void tile_next(size_t index, const Vector3f& pos) {}             ///< the next tile was requested (stage not necessarily moved yet)
 

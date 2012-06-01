@@ -19,7 +19,7 @@
 #include "devices\digitizer.h"
 #include "devices\Microscope.h"
 
-#if 1
+#if 0
 #define DBG(...) debug(__VA_ARGS__);
 #else
 #define DBG(...)

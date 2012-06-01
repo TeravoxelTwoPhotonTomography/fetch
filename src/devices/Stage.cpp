@@ -129,6 +129,7 @@ namespace device {
 #define  CHKERR( expr )  if(!(expr)) {error  ("C843:"ENDL "%s(%d): %s"ENDL "Expression evaluated as false"ENDL,__FILE__,__LINE__,#expr); goto Error;}
 
 #define WARN(msg) warning("Stage:"ENDL "\t%s(%d)"ENDL "\t%s"ENDL,__FILE__,__LINE__,msg)
+#define PANIC(e)  if(!(e)) {error  ("C843:"ENDL "%s(%d): %s"ENDL "Expression evaluated as false"ENDL,__FILE__,__LINE__,#e);}
 
   /// Interprets return codes from C843 API calls.
   /// Usually called from a macro.  See, for example, \ref C843JMP.
@@ -678,8 +679,10 @@ Error:
     ,_istage(NULL)
     ,_tiling(NULL)
     ,_fov(NULL)
+    ,_tiling_lock(NULL)
   {
-      setKind(_config->kind());
+    PANIC(_tiling_lock=Mutex_Alloc());
+    setKind(_config->kind());
   }
 
   Stage::Stage( Agent *agent, Config *cfg )
@@ -690,9 +693,15 @@ Error:
     ,_istage(NULL)
     ,_tiling(NULL)
     ,_fov(NULL)
+    ,_tiling_lock(NULL)
   {
+    PANIC(_tiling_lock=Mutex_Alloc());
     setKind(_config->kind());
   }   
+
+  Stage::~Stage()
+  { Mutex_Free(_tiling_lock);
+  }
 
   void Stage::setKind( Config::StageType kind )
   {
@@ -784,7 +793,10 @@ Error:
     {                                                             // not sure why I made this two distinct objects...
       FieldOfViewGeometry fov = *_fov;                            // this should always point to the microscope's FOV object (not the tiling's)
       _destroyTiling();                                           // this call will invalidate the _fov pointer :(  bad design [??? 2011-11 this comment seems questionable]
-      _tiling = new StageTiling(travel, fov, _config->tilemode());
+      
+      Mutex_Lock(_tiling_lock);
+      _tiling = new StageTiling(travel, fov, _config->tilemode());      
+      Mutex_Unlock(_tiling_lock);
       { TListeners::iterator i;
         for(i=_listeners.begin();i!=_listeners.end();++i)
           _tiling->addListener(*i);
@@ -795,8 +807,11 @@ Error:
 
   void Stage::_destroyTiling()
   { if(_tiling)
-    { StageTiling *t = _tiling;
+    { 
+      Mutex_Lock(_tiling_lock);
+      StageTiling *t = _tiling;
       _tiling = NULL;
+      Mutex_Unlock(_tiling_lock);
       _notifyTilingChanged();
       delete t;
     }
@@ -815,7 +830,7 @@ Error:
   void Stage::_notifyTilingChanged()
   { TListeners::iterator i;
     for(i=_listeners.begin();i!=_listeners.end();++i)
-      (*i)->tiling_changed(_tiling);  
+      (*i)->tiling_changed();  
   }
 
   void Stage::_notifyMoved()

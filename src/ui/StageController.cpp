@@ -31,22 +31,23 @@ using namespace Eigen;
 #define DBG2(e) if(!(e)) std::cout << HERE << "(!)\tCheck failed for Expression "#e << std::endl
 #define SHOW2(e) std::cout << HERE << "\t"#e << " is " << std::endl << e << std::endl << "---" << std::endl
 
+#define TRY(e) do{if(!(e)) { warning("%s(%d)"ENDL "\tExpression evaluated as false."ENDL "\t%s"ENDL,__FILE__,__LINE__,#e); goto Error;}}while(0)
+
 //////////////////////////////////////////////////////////////////////////
 //  TilingController  ////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-fetch::ui::TilingController::TilingController( device::Stage *stage, device::StageTiling *tiling, QObject* parent/*=0*/ )
+fetch::ui::TilingController::TilingController( device::Stage *stage, QObject* parent/*=0*/ )
   : QObject(parent)
   , stage_(stage)
-  , tiling_(tiling)  
 { 
   connect(
     &listener_,SIGNAL(sig_tile_done(unsigned,unsigned int)),
     this,      SIGNAL(tileDone(unsigned,unsigned int)),        // hooked up to the tileview
     Qt::QueuedConnection);
   connect(
-    &listener_,SIGNAL(sig_tiling_changed(device::StageTiling*)),
-    this,        SLOT(update(device::StageTiling*)),    
+    &listener_,SIGNAL(sig_tiling_changed()),
+    this,        SLOT(update()),    
     Qt::DirectConnection
     );
   connect(
@@ -102,11 +103,12 @@ void fetch::ui::TilingController::
 void 
   fetch::ui::TilingController::
   saveToFile(const QString& filename)
-{ if(tiling_)
+{ device::StageTiling *t;
+  if(t=stage_->tilingLocked())
   { 
     cfg::data::Tiling metadata;
     QString arrayFileName = filename + QString(metadata.attr_ext().c_str());
-    tiling_->fov().write(metadata.mutable_fov());    
+    t->fov().write(metadata.mutable_fov());    
     
     QFileInfo finfo(arrayFileName);    
     metadata.set_rel_path( finfo.fileName().toLocal8Bit().data() );
@@ -116,25 +118,30 @@ void
     google::protobuf::TextFormat::PrintToString(metadata,&buf);
     if(!metafile.open(QFile::ReadWrite))                goto ErrorOpenMetafile;
     if( buf.length() != metafile.write(buf.c_str()) )   goto ErrorWriteMetafile;
-    if(mylib::Write_Image(arrayFileName.toLocal8Bit().data(),tiling_->attributeArray(),mylib::DONT_PRESS))
+    if(mylib::Write_Image(arrayFileName.toLocal8Bit().data(),t->attributeArray(),mylib::DONT_PRESS))
       goto ErrorWriteAttrImage;
     debug("%s(%d)"ENDL "\tTiling saved to %s.",__FILE__,__LINE__,filename.toLocal8Bit().data());
+    stage_->tilingUnlock();
     return;
 ErrorWriteAttrImage:
     warning("%s(%d)"ENDL "\tSomething went wrong writing tiling attribute data to the file at"ENDL"\t%s"ENDL,
       __FILE__,__LINE__,arrayFileName.toLocal8Bit().data());
     metafile.remove();
+    stage_->tilingUnlock();
     return;
 ErrorWriteMetafile:
     warning("%s(%d)"ENDL "\tSomething went wrong with writing tiling metadata to the file at"ENDL"\t%s"ENDL,
       __FILE__,__LINE__,metafile.fileName().toLocal8Bit().data());
     metafile.remove();
+    stage_->tilingUnlock();
     return;
 ErrorOpenMetafile:
     warning("%s(%d)"ENDL "\tCould not open file at %s"ENDL,
       __FILE__,__LINE__,metafile.fileName().toLocal8Bit().data());
+    stage_->tilingUnlock();
     return;
   }
+
 }
 
 void 
@@ -199,15 +206,30 @@ void
   if(!(attr = mylib::Read_Image(attrname.toLocal8Bit().data(),0))) goto ErrorReadAttrArray;
 
   // Commit  
-  tiling_->fov_.update(metadata.fov());
-  stage_->setFOV(&tiling_->fov_); // forces refresh of tiling if the fov is different
-  if( tiling_->attributeArray()->size != attr->size ) goto ErrorArrays;
-  memcpy( tiling_->attributeArray()->data, attr->data, Bpp[attr->type]*attr->size );
+  device::StageTiling *t;
+  if(t=stage_->tilingLocked())
+  { t->fov_.update(metadata.fov());
+    { stage_->tilingUnlock();
+      stage_->setFOV(&t->fov_); // forces refresh of tiling if the fov is different
+      if(!(t=stage_->tilingLocked())) //reaquire in case tiling changed
+        goto ErrorReacquireTiling;
+    }
+    if( t->attributeArray()->size != attr->size ) // should alredy be the correct size due to setFOV call.
+    { stage_->tilingUnlock();
+      goto ErrorArrays;
+    }
+    memcpy( t->attributeArray()->data, attr->data, Bpp[attr->type]*attr->size );
+    stage_->tilingUnlock();
+  }
 
   Free_Array(attr);
   emit changed();
   return;
   // Error handling
+ErrorReacquireTiling:
+  warning("%s(%d)"ENDL"\tAfter FOV change, could not reacquire tiling"ENDL
+    __FILE__,__LINE__);
+  return;
 ErrorArrays:
   Free_Array(attr);
   error("%s(%d)"ENDL"Programing error.  Need attribute arrays to be the same size."ENDL,__FILE__,__LINE__);
@@ -231,11 +253,12 @@ ErrorOpenMetafile:
 }
 
 bool fetch::ui::TilingController::fovGeometry( TRectVerts *out )
-{ 
-  if(tiling_)
+{ device::StageTiling *tiling;
+  if(tiling=stage_->tilingLocked())
   { 
-    device::FieldOfViewGeometry fov(tiling_->fov());
+    device::FieldOfViewGeometry fov(tiling->fov());
     TRectVerts rect;
+    stage_->tilingUnlock();
     rect << 
       -0.5f, 0.5f, 0.5f, -0.5f, // x - hopefully, counter clockwise
       -0.5f,-0.5f, 0.5f,  0.5f, // y
@@ -253,18 +276,18 @@ bool fetch::ui::TilingController::fovGeometry( TRectVerts *out )
 }
 
 bool fetch::ui::TilingController::latticeTransform( TTransform *out )
-{ 
-  if(tiling_)
+{ device::StageTiling *t;
+  if(t=stage_->tilingLocked())
   { 
-    *out = tiling_->latticeToStageTransform();
+    *out = t->latticeToStageTransform();
+    stage_->tilingUnlock();
     return true;
   }
   return false;
 }
 
 bool fetch::ui::TilingController::latticeTransform( QTransform *out )
-{ 
-  if(tiling_)
+{ if(stage_->tiling())
   {     
     TTransform latticeToStage;
     latticeTransform(&latticeToStage);    
@@ -280,13 +303,17 @@ bool fetch::ui::TilingController::latticeTransform( QTransform *out )
   return false;
 }
 
-bool fetch::ui::TilingController::latticeShape( unsigned *width, unsigned *height )
-{ 
-  if(tiling_)
-  {      
-    mylib::Array *lattice = tiling_->attributeArray();
+static void _lattice_shape(fetch::device::StageTiling *t,unsigned *width, unsigned *height )
+{   mylib::Array *lattice = t->attributeArray();
     *width  = lattice->dims[0];
-    *height = lattice->dims[1]; 
+    *height = lattice->dims[1];
+}
+
+bool fetch::ui::TilingController::latticeShape( unsigned *width, unsigned *height )
+{ device::StageTiling *t;
+  if(t=stage_->tilingLocked())
+  { _lattice_shape(t,width,height);    
+    stage_->tilingUnlock();
     return true;
   }
   return false; 
@@ -306,36 +333,51 @@ bool fetch::ui::TilingController::latticeShape(QRectF *out)
    
 typedef mylib::uint8 uint8;
 typedef Matrix<size_t,1,3> Vector3z;
+/** 
+\returns 0 on failure, 1 on success.
+On success, the caller is responsible for unlocking the stage's tiling mutex.
+On success, the caller is responsible for unlocking the tiling's attribute array mutex.
+*/
 bool fetch::ui::TilingController::latticeAttrImage(QImage *out)
-{
-  if(!tiling_)
+{ device::StageTiling *t;
+  if(!(t=stage_->tilingLocked()))
     return false;  
   unsigned w,h;
-  latticeShape(&w,&h);
+  t->lock();
+  _lattice_shape(t,&w,&h);
   mylib::Array 
-    *lattice = tiling_->attributeArray(),
+    *lattice = t->attributeArray(),
      plane   = *lattice;
   Vector3z ir = stage_->getPosInLattice();
   mylib::Get_Array_Plane(&plane,ir[2]);  
-  *out = QImage(AUINT8(&plane),w,h,QImage::Format_ARGB32_Premultiplied); //QImage requires a uchar* for the data
+  *out = QImage(AUINT8(&plane),w,h,QImage::Format_ARGB32_Premultiplied); //QImage requires a uchar* for the data  
+  //stage_->tilingUnlock(); DONT unlock here...the QImage still references the tiling data...need to unlock in caller
   //out->save("TilingController_latticeAttrImage.tif");
   return true;
 }
 
-/** Returns false if iplane is out-of-bounds, otherwise returns true.
+/** \Returns false if iplane is out-of-bounds, otherwise returns true.
+    On success, the caller is responsible for unlocking the stage's tiling mutex.
+    On success, the caller is responsible for unlocking the tiling's attribute array mutex.
 */
 bool fetch::ui::TilingController::latticeAttrImageAtPlane(QImage *out, int iplane)
-{ if(!tiling_)
+{ device::StageTiling *t;
+  if(!(t=stage_->tilingLocked()))
     return false;  
+  t->lock();
   unsigned w,h;
-  latticeShape(&w,&h);
+  _lattice_shape(t,&w,&h);
   mylib::Array 
-    *lattice = tiling_->attributeArray(),
+    *lattice = t->attributeArray(),
      plane   = *lattice;
   if(!(0<=iplane && iplane<lattice->dims[2]))
+  { t->unlock();
+    stage_->tilingUnlock();
     return false;
+  }
   mylib::Get_Array_Plane(&plane,iplane);
   *out = QImage(AUINT8(&plane),w,h,QImage::Format_ARGB32_Premultiplied); //QImage requires a uchar* for the data
+  //stage_->tilingUnlock(); DONT unlock here...the QImage still references the tiling data...need to unlock in caller
   //out->save("TilingController_latticeAttrImage.tif");
   return true;
 }
@@ -359,74 +401,72 @@ static void zero_alpha(QImage &im)
 }
 
 bool fetch::ui::TilingController::mark( const QPainterPath& path, device::StageTiling::Flags attr, QPainter::CompositionMode mode )
-{    
-  if(tiling_)
-  {      
-    QColor color((QRgb)attr);
-    // 1. Path is in scene coords.  transform to lattice coords
-    //    Getting the transform is a bit of a pain bc we have to go from 
-    //    Eigen to Qt :(
-    QTransform l2s, s2l;
-    latticeTransform(&l2s);
-    s2l = l2s.inverted();
+{ 
+  QColor color((QRgb)attr);
+  QImage im;
+  // 1. Path is in scene coords.  transform to lattice coords
+  //    Getting the transform is a bit of a pain bc we have to go from 
+  //    Eigen to Qt :(
+  QTransform l2s, s2l;
+  TRY(latticeTransform(&l2s));
+  s2l = l2s.inverted();                                  
+  // 2. Get access to the attribute data  
+  TRY(latticeAttrImage(&im)); // locks the stage's tiling mutex, need to unlock when done with im
+  // 3. Fill in the path
+  { QPainter painter(&im);
     QPainterPath lpath = s2l.map(path);
+  #if DEBUG_DUMP_TILING_MARK_DATA
+    im.save("TilingController_mark__before.tif");
+  #endif
+    painter.setCompositionMode(mode);
+    painter.fillPath(lpath,color);
+  }
+  zero_alpha(im);
+  stage_->tiling()->unlock();
+  stage_->tilingUnlock();
+  //SHOW(lpath);
+#if DEBUG_DUMP_TILING_MARK_DATA
+  im.save("TilingController_mark__after.tif");
+  warning("Dumping Tiling mark data"ENDL);
+#endif
+  return true;
+Error:
+  return false;
+}
+
+bool fetch::ui::TilingController::mark_all_planes( const QPainterPath& path, device::StageTiling::Flags attr, QPainter::CompositionMode mode )
+{ if(!is_valid()) return false;  
+  QColor color((QRgb)attr);
+  // 1. Path is in scene coords.  transform to lattice coords
+  //    Getting the transform is a bit of a pain bc we have to go from 
+  //    Eigen to Qt :(
+  QTransform l2s, s2l;
+  latticeTransform(&l2s);
+  s2l = l2s.inverted();
+  QPainterPath lpath = s2l.map(path);
                                   
-    // 2. Get access to the attribute data
-    QImage im;
-    latticeAttrImage(&im);
-    QPainter painter(&im);
+  // 2. Get access to the attribute data
+  int iplane=0;
+  QImage im;
+  while(latticeAttrImageAtPlane(&im,iplane++)) // acquires the stage's tiling lock
+  { QPainter painter(&im);
 
     // 3. Fill in the path
 #if DEBUG_DUMP_TILING_MARK_DATA
     im.save("TilingController_mark__before.tif");
 #endif
     painter.setCompositionMode(mode);
-    painter.fillPath(lpath,color);
+    painter.fillPath(lpath,color);           // sets top byte to 0xff, lower bytes to attr
     zero_alpha(im);
+    stage_->tiling()->unlock();
+    stage_->tilingUnlock();
     //SHOW(lpath);
 #if DEBUG_DUMP_TILING_MARK_DATA
     im.save("TilingController_mark__after.tif");
     warning("Dumping Tiling mark data"ENDL);
 #endif
-    return true;
   }
-  return false;
-}
-
-bool fetch::ui::TilingController::mark_all_planes( const QPainterPath& path, device::StageTiling::Flags attr, QPainter::CompositionMode mode )
-{ if(tiling_)
-  {      
-    QColor color((QRgb)attr);
-    // 1. Path is in scene coords.  transform to lattice coords
-    //    Getting the transform is a bit of a pain bc we have to go from 
-    //    Eigen to Qt :(
-    QTransform l2s, s2l;
-    latticeTransform(&l2s);
-    s2l = l2s.inverted();
-    QPainterPath lpath = s2l.map(path);
-                                  
-    // 2. Get access to the attribute data
-    int iplane=0;
-    QImage im;
-    while(latticeAttrImageAtPlane(&im,iplane++))
-    { QPainter painter(&im);
-
-      // 3. Fill in the path
-#if DEBUG_DUMP_TILING_MARK_DATA
-      im.save("TilingController_mark__before.tif");
-#endif
-      painter.setCompositionMode(mode);
-      painter.fillPath(lpath,color);           // sets top byte to 0xff, lower bytes to attr
-      zero_alpha(im);
-      //SHOW(lpath);
-#if DEBUG_DUMP_TILING_MARK_DATA
-      im.save("TilingController_mark__after.tif");
-      warning("Dumping Tiling mark data"ENDL);
-#endif
-    }
-    return true;
-  }
-  return false;
+  return true;
 }
 
 bool fetch::ui::TilingController::mark_all( device::StageTiling::Flags attr, QPainter::CompositionMode mode )
@@ -436,13 +476,15 @@ bool fetch::ui::TilingController::mark_all( device::StageTiling::Flags attr, QPa
   QColor color((QRgb)attr);
   // 1. Get access to the attribute data
   QImage im;
-  latticeAttrImage(&im);
+  latticeAttrImage(&im); // locks the stage's tiling mutex, need to unlock when done with im
   QPainter painter(&im);
   // 2. fill   
   //im.save("TilingController_mark_all__before.tif");
   painter.setCompositionMode(mode);
   painter.fillRect(im.rect(),color);
   zero_alpha(im);
+  stage_->tiling()->unlock();
+  stage_->tilingUnlock();
   //im.save("TilingController_mark_all__after.tif");
   return true;
 }
@@ -537,11 +579,11 @@ bool fetch::ui::TilingController::mapToIndex(const Vector3f & stage_coord, unsig
 }
 
 bool fetch::ui::TilingController::markAddressable()
-{ 
-  if(!is_valid())
+{ device::StageTiling *t;
+  if(!(t=stage_->tiling()))
     return false;
   
-  const device::StageTravel& travel = tiling_->travel();
+  const device::StageTravel& travel = t->travel();
   float z = stage_->getTarget().z(); //tiling_->plane_mm();
   if( (travel.z.min <= z) && (z <= travel.z.max) )
   { 
@@ -560,17 +602,19 @@ bool fetch::ui::TilingController::markAddressable()
 }
 
 void fetch::ui::TilingController::fillActive()
-{ if(!stage_) return;
+{ device::StageTiling *t;
+  if(!stage_) return;
   size_t iplane = stage_->getPosInLattice().z();
-  if(stage_->tiling())
-    stage_->tiling()->fillHolesInActive(iplane);
+  if(t=stage_->tiling())
+    t->fillHolesInActive(iplane);
 }
 
 void fetch::ui::TilingController::dilateActive()
-{ if(!stage_) return;
+{ device::StageTiling *t;
+  if(!stage_) return;
   size_t iplane = stage_->getPosInLattice().z();
-  if(stage_->tiling())
-    stage_->tiling()->dilateActive(iplane);
+  if(t=stage_->tiling())
+    t->dilateActive(iplane);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -593,7 +637,7 @@ fetch::ui::PlanarStageController::PlanarStageController( device::Stage *stage, Q
 
   connect(
     &agent_controller_, SIGNAL(onDetach()),
-    this,SLOT(invalidateTiling()) );
+    this,SLOT(updateTiling()) );
   
   connect(
     &listener_,SIGNAL(sig_moved()),

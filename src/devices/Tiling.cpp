@@ -12,8 +12,8 @@ namespace mylib
 #include <iostream>
 #include <functional>
 
-#define DEBUG__WRITE_IMAGES
-#define DEBUG__SHOW
+//#define DEBUG__WRITE_IMAGES
+//#define DEBUG__SHOW
 
 #ifdef DEBUG__SHOW
 #define SHOW(e) std::cout << "---" << std::endl << #e << " is " << std::endl << (e) << std::endl << "~~~"  << std::endl;
@@ -21,7 +21,16 @@ namespace mylib
 #define SHOW(e)
 #endif
 
+#define PANIC(e) do{if(!(e)) error("%s(%d)"ENDL "\tExpression evaluated to false."ENDL "\t%s"ENDL,__FILE__,__LINE__,#e);}while(0)
 
+/// Simple mutex wrapper for scoped locking/unlocking
+class AutoLock
+{ Mutex *l_;
+public:
+  AutoLock(Mutex* l):l_(l) {Mutex_Lock(l_);}
+  ~AutoLock() {Mutex_Unlock(l_);}
+};
+// AutoLock lock(lock_);
 
 namespace fetch {
 namespace device {
@@ -44,8 +53,10 @@ namespace device {
       sz_plane_nelem_(0),
       latticeToStage_(),
       fov_(fov),
-      travel_(travel)
+      travel_(travel),
+      lock_(0)
   { 
+    PANIC(lock_=Mutex_Alloc());
     computeLatticeToStageTransform_(fov,alignment);
     initAttr_(computeLatticeExtents_(travel_));
     //markAddressable_(&travel_);
@@ -53,7 +64,9 @@ namespace device {
 
   //  Destructor  /////////////////////////////////////////////////////
   StageTiling::~StageTiling()
-  { if(attr_)           Free_Array(attr_);
+  { 
+    if(attr_) Free_Array(attr_);
+    if(lock_) Mutex_Free(lock_);
   }
 
   //  computeLatticeToStageTransform_  /////////////////////////////////
@@ -135,7 +148,8 @@ namespace device {
   //
 
   void StageTiling::initAttr_(mylib::Coordinate *shape)
-  { attr_ = mylib::Make_Array_With_Shape(
+  { AutoLock lock(lock_);
+    attr_ = mylib::Make_Array_With_Shape(
       mylib::PLAIN_KIND,
       mylib::UINT32_TYPE,
       shape); // shape gets free'd here
@@ -152,11 +166,12 @@ namespace device {
 
   typedef mylib::Dimn_Type Dimn_Type;
   void StageTiling::resetCursor()
-  { cursor_ = 0;
+  { AutoLock lock(lock_);
+    cursor_ = 0;
 
-   uint32_t* mask    = AUINT32(attr_);
-   uint32_t attrmask = Addressable | Active | Done,
-            attr     = Addressable | Active;
+    uint32_t* mask     = AUINT32(attr_);
+    uint32_t  attrmask = Addressable | Active | Done,
+              attr     = Addressable | Active;
     
     while( (mask[cursor_] & attrmask) != attr
         && ON_LATTICE(cursor_) )
@@ -176,7 +191,8 @@ namespace device {
 
   /// \todo bounds checking
   void StageTiling::setCursorToPlane(size_t iplane)
-  { cursor_=current_plane_offset_=iplane*sz_plane_nelem_;
+  { AutoLock lock(lock_);
+    cursor_=current_plane_offset_=iplane*sz_plane_nelem_;
     cursor_--; // always incremented before query, so subtracting one here means first tile will not be skipped
   }
 
@@ -184,7 +200,8 @@ namespace device {
   //                           
 
   bool StageTiling::nextInPlanePosition(Vector3f &pos)
-  { uint32_t* mask = AUINT32(attr_);
+  { lock();
+    uint32_t* mask = AUINT32(attr_);
     uint32_t attrmask = Addressable | Active | Done,
              attr     = Addressable | Active;
 
@@ -194,10 +211,12 @@ namespace device {
 
     if(ON_PLANE(cursor_) &&  (mask[cursor_] & attrmask) == attr)
     { pos = computeCursorPos();
+      unlock();
       notifyNext(cursor_,pos);
       return true;
     } else
-    { return false;
+    { unlock();
+      return false;
     }
   }
 
@@ -211,7 +230,8 @@ namespace device {
   */
 
   bool StageTiling::nextInPlaneExplorablePosition(Vector3f &pos)
-  { uint32_t* mask = AUINT32(attr_);
+  { lock();
+    uint32_t* mask = AUINT32(attr_);
     uint32_t attrmask = Explorable | Addressable | Active | Done,
              attr     = Explorable | Addressable;
 
@@ -221,17 +241,20 @@ namespace device {
 
     if(ON_PLANE(cursor_) &&  (mask[cursor_] & attrmask) == attr)
     { pos = computeCursorPos();
+      unlock();
       notifyNext(cursor_,pos);
       return true;
     } else
-    { return false;
+    { unlock();
+      return false;
     }
   }
 
   //  nextPosition  ////////////////////////////////////////////////////
   //
   bool StageTiling::nextPosition(Vector3f &pos)
-  { uint32_t* mask    = AUINT32(attr_);
+  { lock();
+    uint32_t* mask    = AUINT32(attr_);
     uint32_t attrmask = Addressable | Active | Done,
              attr     = Addressable | Active;
 
@@ -241,28 +264,36 @@ namespace device {
 
     if(ON_LATTICE(cursor_))
     { pos = computeCursorPos();
+      unlock();
       notifyNext(cursor_,pos);
       return true;
     } else
-    { return false;
+    { unlock();
+      return false;
     }
   }
 
   //  markDone  ////////////////////////////////////////////////////////
   //
   void StageTiling::markDone(bool success)
-  { uint32_t *m = AUINT32(attr_) + cursor_;
-    *m |= Done;
-    if(!success)
-      *m |= TileError;
+  { uint32_t *m=0;
+    { AutoLock lock(lock_);
+      m = AUINT32(attr_) + cursor_;
+      *m |= Done;
+      if(!success)
+        *m |= TileError;
+    }
     notifyDone(cursor_,computeCursorPos(),*m);
   } 
 
   //  markActive  ////////////////////////////////////////////////////////
   //
   void StageTiling::markActive()
-  { uint32_t *m = AUINT32(attr_) + cursor_;
-    *m |= Active;
+  { uint32_t *m=0;
+    { AutoLock lock(lock_);
+      m = AUINT32(attr_) + cursor_;
+      *m |= Active;
+    }
     notifyDone(cursor_,computeCursorPos(),*m);
   } 
 
@@ -276,11 +307,13 @@ namespace device {
   /** Marks the indicated plane as addressable according to the travel.
   */
   void StageTiling::markAddressable(size_t iplane)
-  { Vector3f a = Vector3f(travel_.x.min,travel_.y.min,travel_.z.min),
+  { 
+    size_t old = cursor_;
+    setCursorToPlane(iplane); // FIXME: chance for another thread to change the cursor...recursive locks not allowed
+    AutoLock lock(lock_);  
+    Vector3f a = Vector3f(travel_.x.min,travel_.y.min,travel_.z.min),
              b = Vector3f(travel_.x.max,travel_.y.max,travel_.z.max);
     uint32_t* v = AUINT32(attr_);
-    size_t old = cursor_;
-    setCursorToPlane(iplane);
     while(ON_PLANE(++cursor_))    
       v[cursor_]|=Addressable*in(a,b,computeCursorPos()*0.001);
     cursor_=old; // restore cursor
@@ -289,7 +322,9 @@ namespace device {
   //  anyExplored  ///////////////////////////////////////////////////////////////
   //
   int StageTiling::anyExplored(int iplane)
-  { setCursorToPlane(iplane);
+  {
+    setCursorToPlane(iplane);// FIXME: chance for another thread to change the cursor...recursive locks not allowed
+    AutoLock lock(lock_);
     uint32_t* mask = AUINT32(attr_);
     uint32_t attrmask = Explorable|Addressable,
              attr     = Explorable|Addressable;
@@ -339,7 +374,9 @@ namespace device {
     Filled regions are 4-connected.
   */
   void StageTiling::fillHolesInActive(size_t iplane)
-  { setCursorToPlane(iplane);
+  { 
+    setCursorToPlane(iplane);// FIXME: chance for another thread to change the cursor...recursive locks not allowed
+    AutoLock lock(lock_);
     uint32_t *c,
              *beg = AUINT32(attr_)+current_plane_offset_,
              *end = beg+sz_plane_nelem_;
@@ -407,7 +444,9 @@ namespace device {
   #define countof(e) (sizeof(e)/sizeof(*e))
   /** Mark tiles as Active if they are 8-connected to an Active tile. */
   void StageTiling::dilateActive(size_t iplane)
-  { setCursorToPlane(iplane);
+  { 
+    setCursorToPlane(iplane); // FIXME: chance for another thread to change the cursor...recursive locks not allowed
+    AutoLock lock(lock_);
     uint32_t *c,
              *beg = AUINT32(attr_)+current_plane_offset_,
              *end = beg+sz_plane_nelem_;
@@ -442,15 +481,13 @@ namespace device {
   }
 
   void StageTiling::notifyDone(size_t index, const Vector3f& pos, uint32_t sts)
-  { 
-    TListeners::iterator i;
+  { TListeners::iterator i;
     for(i=listeners_.begin();i!=listeners_.end();++i)
       (*i)->tile_done(index,pos,sts);
   }
 
   void StageTiling::notifyNext(size_t index, const Vector3f& pos)
-  {
-    TListeners::iterator i;
+  { TListeners::iterator i;
     for(i=listeners_.begin();i!=listeners_.end();++i)
       (*i)->tile_next(index,pos);
   }

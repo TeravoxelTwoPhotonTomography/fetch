@@ -8,6 +8,7 @@ namespace mylib {
 #include <Set>
 #include <stdint.h>
 
+#include "thread.h"
 #include "devices/Stage.h"
 
 using namespace Eigen;
@@ -36,6 +37,7 @@ namespace device {
     TListeners                 listeners_;                                 ///< set of objects to be notified of tiling events
     FieldOfViewGeometry        fov_;                                       ///< the geometry used to generate the tiling
     device::StageTravel        travel_;                                    ///< the travel used to generate the tiling
+    Mutex*                     lock_;                                      ///< protects access to attribute data.
 
   public: 
 
@@ -78,7 +80,8 @@ namespace device {
     inline void addListener(StageListener *listener)                       {listeners_.insert(listener);}
     inline void delListener(StageListener *listener)                       {listeners_.erase(listener);}
 
-    
+    void lock()                                                            {Mutex_Lock(lock_);}
+    void unlock()                                                          {Mutex_Unlock(lock_);}
 
   protected:
     void computeLatticeToStageTransform_
@@ -86,9 +89,7 @@ namespace device {
                          const Mode                 alignment);
     mylib::Coordinate* computeLatticeExtents_(const device::StageTravel& travel); ///< returned pointer needs to be freed (w Free_Array).
     void initAttr_(mylib::Coordinate *shape);                                     ///< Free's shape
-
-    
-    
+       
     void notifyDone(size_t i, const Vector3f& pos, uint32_t sts);    
     void notifyNext(size_t i, const Vector3f& pos);  
 
