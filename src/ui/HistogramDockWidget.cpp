@@ -66,7 +66,7 @@ namespace ui {
     plot_->graph(0)->setPen(QPen(Qt::blue));
     plot_->addGraph(plot_->xAxis,plot_->yAxis2);
     plot_->graph(1)->setPen(QPen(Qt::red));
-    plot_->xAxis->setLabel("PDF");
+    plot_->yAxis->setLabel("PDF");
     plot_->yAxis2->setLabelColor(Qt::blue);
     plot_->yAxis2->setVisible(true);
     plot_->yAxis2->setLabel("CDF");
@@ -145,7 +145,7 @@ namespace ui {
     for(size_t i=1;i<n;++i) cdf[i]+=cdf[i-1];
   }
   static void setbins(double *x, size_t n, double min, double dy)
-  { for(size_t i=0;i<n;++i) x[i] = i*dy+min;
+  { for(size_t i=0;i<n;++i) x[i] = i/dy+min;
   }
 
   static void histogram(QVector<double> &x, QVector<double> &pdf, QVector<double> &cdf, mylib::Array *a)
@@ -153,6 +153,7 @@ namespace ui {
     unsigned n;
     min=amin(a);
     max=amax(a);
+    debug("min %6.1f\tmax %6.1f"ENDL,min,max);
     n=nbins(a,min,max);
     dy=binsize(n,min,max); // value transform is  (data[i]-min)*dy --> for max this is (max-min)*(nbins-1)/(max-min)
 

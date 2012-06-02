@@ -101,7 +101,7 @@ Error:
       { T* data;
         mylib::Array tmp=*src,*image=&tmp;
         if(ichan>=0)
-        { mylib::Get_Array_Plane(image,ichan);
+        { image=mylib::Get_Array_Plane(&tmp,ichan);
         } 
         data = (T*)image->data;
         size_t i,count=0;
@@ -131,10 +131,10 @@ Error:
           CLASSIFY( mylib::UINT16_TYPE  ,uint16_t);
           CLASSIFY( mylib::UINT32_TYPE  ,uint32_t);
           CLASSIFY( mylib::UINT64_TYPE  ,uint64_t);
-          CLASSIFY( mylib::INT8_TYPE    ,uint8_t );
-          CLASSIFY( mylib::INT16_TYPE   ,uint16_t);
-          CLASSIFY( mylib::INT32_TYPE   ,uint32_t);
-          CLASSIFY( mylib::INT64_TYPE   ,uint64_t);
+          CLASSIFY( mylib::INT8_TYPE    , int8_t );
+          CLASSIFY( mylib::INT16_TYPE   , int16_t);
+          CLASSIFY( mylib::INT32_TYPE   , int32_t);
+          CLASSIFY( mylib::INT64_TYPE   , int64_t);
           CLASSIFY( mylib::FLOAT32_TYPE ,float   );
           CLASSIFY( mylib::FLOAT64_TYPE ,double  );
           default:
