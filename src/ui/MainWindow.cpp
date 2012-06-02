@@ -11,6 +11,7 @@
 #include "VibratomeDockWidget.h"
 #include "StageDockWidget.h"
 #include "AutoTileDockWidget.h"
+#include "HistogramDockWidget.h"
 #include "StageController.h"
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/io/tokenizer.h>
@@ -344,6 +345,13 @@ void fetch::ui::MainWindow::createDockWidgets()
   addDockWidget(Qt::LeftDockWidgetArea,_autoTileDockWidget);
   viewMenu->addAction(_autoTileDockWidget->toggleViewAction());
   _autoTileDockWidget->setObjectName("_autoTileDockWidget");
+  
+  { HistogramDockWidget *w = new HistogramDockWidget(this);
+    addDockWidget(Qt::LeftDockWidgetArea,w);
+    viewMenu->addAction(w->toggleViewAction());
+    w->setObjectName("_histogramDockWidget");
+  }
+    
 }
 
 void fetch::ui::MainWindow::createViews()

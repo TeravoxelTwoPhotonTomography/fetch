@@ -439,12 +439,12 @@ Error:
 
     // _attach_writer /////////////////////////////////////////////////////////
     unsigned int TiffGroupStream::_attach_writer(char *filename)
-    { int eflag=0;
+    { int eflag=0;     
+      Frame_With_Interleaved_Planes fmt(1024,1024,3,id_u16);
       TRY(_writers.empty()==true);  // open() should call on_detach() before on_attach().  on_detach() should close all open handles and clear this vector
 
       warning("%s(%d): "ENDL "\tNot tested.  Should test for destination writeable."ENDL,__FILE__,__LINE__);
 
-      Frame_With_Interleaved_Planes fmt(1024,1024,3,id_u16);
       if(_in==NULL)
         _alloc_qs_easy(&_in,1,4,fmt.size_bytes());
     

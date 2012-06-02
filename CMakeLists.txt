@@ -235,6 +235,8 @@ qt4_wrap_cpp(MOC_SRCS
   src/ui/AgentController.h
   src/ui/StageController.h
   src/ui/DevicePropController.h
+  src/ui/qcustomplot.h
+  src/ui/HistogramDockWidget.h
 )
 qt4_add_resources(RCC_SRCS
   src/ui/icons.qrc
