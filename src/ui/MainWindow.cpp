@@ -106,6 +106,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,_cutTaskDockWidget(0)
   ,_stageDockWidget(0)
   ,_autoTileDockWidget(0)
+  ,_histogramDockWidget(0)
   ,_display(0)
   ,_player(0)
   ,_scope_state_controller(&dc->__self_agent)
@@ -350,6 +351,7 @@ void fetch::ui::MainWindow::createDockWidgets()
     addDockWidget(Qt::LeftDockWidgetArea,w);
     viewMenu->addAction(w->toggleViewAction());
     w->setObjectName("_histogramDockWidget");
+    _histogramDockWidget=w;
   }
     
 }
@@ -593,6 +595,11 @@ void
     error("%s(%d):"ENDL"\t_player should be NULL"ENDL,__FILE__,__LINE__);
 
   _player  = new AsynqPlayer(_dc->getVideoChannel(),_display);
+  TRY(connect(
+      _player             ,SIGNAL(imageReady(mylib::Array*)),
+      _histogramDockWidget,SLOT  (set(mylib::Array*)),
+      Qt::BlockingQueuedConnection));  
+Error:
   _player->start();
 }
 
@@ -603,6 +610,7 @@ void
   _dead_players.enqueue(_player);
   _player->disconnect();
   _display->disconnect(); 
+  _histogramDockWidget->disconnect(_player,SIGNAL(imageReady(mylib::Array*)));
   connect(_player,SIGNAL(finished()),this,SLOT(clearDeadPlayers()));//,Qt::DirectConnection);
   //connect(_player,SIGNAL(terminated()),this,SLOT(clearDeadPlayers())); //,Qt::DirectConnection);
   _player->stop();

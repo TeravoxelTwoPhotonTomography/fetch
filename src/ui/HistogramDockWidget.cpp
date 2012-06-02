@@ -13,7 +13,7 @@
 
 #define ENDL "\r\n"
 #define PANIC(e) do{if(!(e)){qFatal("%s(%d)"ENDL "\tExpression evalatuated as false."ENDL "\t%s"ENDL,__FILE__,__LINE__,#e);           }}while(0)
-#define FAIL     do{         qFatal("%s(%d)"ENDL "\tNot supposed to get here."ENDL,__FILE__,__LINE__);                                 }while(0)
+#define FAIL     do{         qFatal("%s(%d)"ENDL "\tExecution should not reach here."ENDL,__FILE__,__LINE__);                                 }while(0)
 #define TRY(e)   do{if(!(e)){qDebug("%s(%d)"ENDL "\tExpression evalatuated as false."ENDL "\t%s"ENDL,__FILE__,__LINE__,#e);goto Error;}}while(0)
 #define HERE     qDebug("%s(%d). HERE."ENDL,__FILE__,__LINE__)
 
@@ -35,19 +35,7 @@ namespace ui {
       w->setLayout(layout);
       setWidget(w);
     }
-    // plot
-    plot_=new QCustomPlot;
-    //plot_->addGraph();
-    //plot_->graph(0)->setPen(QPen(Qt::blue));
-    //plot_->addGraph();
-    //plot_->graph(1)->setPen(QPen(Qt::red));
-    //plot_->graph(0)->setData(x_,pdf_);
-    //plot_->graph(1)->setData(x_,cdf_);
-    //plot_->graph(0)->rescaleAxes();
-    //plot_->graph(1)->rescaleAxes(true);
-    layout->addWidget(plot_);
-    //layout->addStretch(0);
-
+#if 1
     QFormLayout *form = new QFormLayout;
     // channel selector
     { QComboBox *c=new QComboBox;
@@ -66,8 +54,26 @@ namespace ui {
                     this,SLOT(set_live(bool))));
       b->setChecked(true);
       form->addRow(b);
-    }
+    }    
     layout->addLayout(form);
+#endif  
+
+    // plot
+    plot_=new QCustomPlot;
+    plot_->setMinimumHeight(100);
+    plot_->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    plot_->addGraph();
+    plot_->graph(0)->setPen(QPen(Qt::blue));
+    plot_->addGraph(plot_->xAxis,plot_->yAxis2);
+    plot_->graph(1)->setPen(QPen(Qt::red));
+    plot_->xAxis->setLabel("PDF");
+    plot_->yAxis2->setLabelColor(Qt::blue);
+    plot_->yAxis2->setVisible(true);
+    plot_->yAxis2->setLabel("CDF");
+    plot_->yAxis2->setLabelColor(Qt::red);
+    layout->addWidget(plot_);
+    //layout->addStretch(0);
+  
   }
   
 // histogram utilities START  
@@ -106,11 +112,17 @@ namespace ui {
   static unsigned nbins(mylib::Array *a,double min, double max)
   { unsigned n,lim = 1<<12; // max number of bins
     switch(a->type)
-    { case mylib::UINT8_TYPE:  lim=1<<8;
-      case mylib::INT8_TYPE:   lim=1<<8;
-      n=max-min+1;
-      return (n<lim)?n:lim;
-      
+    { case mylib::UINT8_TYPE:
+      case mylib::INT8_TYPE:
+        lim=1<<8;
+      case mylib::UINT16_TYPE:
+      case mylib::UINT32_TYPE:
+      case mylib::UINT64_TYPE:
+      case mylib::INT16_TYPE:
+      case mylib::INT32_TYPE:
+      case mylib::INT64_TYPE:
+        n=max-min+1;
+        return (n<lim)?n:lim;      
       case mylib::FLOAT32_TYPE:
       case mylib::FLOAT64_TYPE:
         return lim;
@@ -148,7 +160,7 @@ namespace ui {
     pdf.resize(n);
     cdf.resize(n);
     
-#define CASE(ID,T) case mylib::ID: count<T>(pdf.data(),n,(T*)a->data,a->size,min,dy);
+#define CASE(ID,T) case mylib::ID: count<T>(pdf.data(),n,(T*)a->data,a->size,min,dy); break;
     TYPECASES(a);
 #undef CASE
     scan(cdf.data(),pdf.data(),n);
@@ -156,26 +168,36 @@ namespace ui {
   }
  // histogram utilities END
 
-  /** Presumes channels are on different planes */
   void HistogramDockWidget::set(mylib::Array *im)
-  { HERE;
-    mylib::Array t,*ch;
+  { if(!is_live_) return;
     TRY(check_chan(im));
-    swap(im);    
+    swap(im);
+    compute(im);
+ Error:
+    ; // bad input, ignore 
+  }
+
+  /** Presumes channels are on different planes */
+  void HistogramDockWidget::compute(mylib::Array *im)
+  { 
+    mylib::Array t,*ch;    
     TRY(ch=mylib::Get_Array_Plane(&(t=*im),ichan_)); //select channel    
     histogram(x_,pdf_,cdf_,ch);
     plot_->graph(0)->setData(x_,pdf_);
     plot_->graph(1)->setData(x_,cdf_);
     plot_->graph(0)->rescaleAxes();
-    plot_->graph(1)->rescaleAxes(true);
-    plot_->replot();
+    plot_->graph(1)->rescaleAxes();
+    plot_->replot(); 
  Error:
-    ; // bad input, ignore      
+    ; // memory error or oob channel, should never get here.    
   }
+
   void HistogramDockWidget::set_ichan(int ichan)
-  { ichan_=ichan;
+  { ichan_=ichan;   
     if(last_)
-      set(last_);
+    { check_chan(last_);
+      compute(last_);
+    }
   }
   void HistogramDockWidget::set_live(bool is_live)
   { is_live_=is_live;

@@ -28,7 +28,9 @@ class HistogramDockWidget: public QDockWidget
     void set_live(bool is_live);
   private:
     void swap(mylib::Array *im);
-    int  check_chan(mylib::Array *im);    
+    int  check_chan(mylib::Array *im);
+    void compute(mylib::Array *im);
+
 };
 
 }} // namespace fetch::ui
