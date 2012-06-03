@@ -1,5 +1,10 @@
 /** \file
     Histogram Dock Widget
+    
+    \todo never need to rescale cdf axis, always 0 to 1
+    \todo options for scaling on x-axis...full range, zoom to range (and fix)
+    /todo size x axis by cdf? e.g where cdf is between 0.05 to 0.95? 
+    \todo inspection by hover over cdf
 */
 #include "HistogramDockWidget.h"
 #include "qcustomplot.h"
@@ -35,7 +40,6 @@ namespace ui {
       w->setLayout(layout);
       setWidget(w);
     }
-#if 1
     QFormLayout *form = new QFormLayout;
     // channel selector
     { QComboBox *c=new QComboBox;
@@ -56,7 +60,6 @@ namespace ui {
       form->addRow(b);
     }    
     layout->addLayout(form);
-#endif  
 
     // plot
     plot_=new QCustomPlot;
@@ -66,14 +69,14 @@ namespace ui {
     plot_->graph(0)->setPen(QPen(Qt::blue));
     plot_->addGraph(plot_->xAxis,plot_->yAxis2);
     plot_->graph(1)->setPen(QPen(Qt::red));
+    plot_->xAxis->setLabel("Intensity");
+    plot_->xAxis2->setVisible(true);
     plot_->yAxis->setLabel("PDF");
     plot_->yAxis2->setLabelColor(Qt::blue);
     plot_->yAxis2->setVisible(true);
     plot_->yAxis2->setLabel("CDF");
     plot_->yAxis2->setLabelColor(Qt::red);
     layout->addWidget(plot_);
-    //layout->addStretch(0);
-  
   }
   
 // histogram utilities START  

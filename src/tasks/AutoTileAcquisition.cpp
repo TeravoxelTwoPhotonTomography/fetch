@@ -205,8 +205,8 @@ Error:
         { WARN("No tiles found to image.\n");
           goto Error;
         }
-        tiling->fillHolesInActive(iplane);
         tiling->dilateActive(iplane);
+        tiling->fillHolesInActive(iplane);
         return 1;
       Error:
         return 0;
