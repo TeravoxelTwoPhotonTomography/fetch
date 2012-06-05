@@ -343,7 +343,7 @@ namespace device {
   { size_t     n,cap;
     uint32_t **data;
   } stack_t;
-  void grow(stack_t *s)
+  static void grow(stack_t *s)
   { if(s->n==s->cap-1)
     { size_t newsize = s->cap*1.2+50;
       Guarded_Realloc((void**)&s->data,newsize,"grow stack");
@@ -351,20 +351,20 @@ namespace device {
       s->cap=newsize;
     }
   }  
-  void push(stack_t *s, uint32_t* v)
+  static void push(stack_t *s, uint32_t* v)
   { grow(s);
     s->data[s->n++] = v;
   }  
-  uint32_t* pop(stack_t *s)
+  static uint32_t* pop(stack_t *s)
   { return s->data[--s->n];
   }    
-  stack_t make_stack(size_t reserve)
+  static stack_t make_stack(size_t reserve)
   { stack_t s;
     s.n=0;
     s.data=(uint32_t**)Guarded_Calloc(s.cap=reserve,sizeof(uint32_t*),"make stack");    
     return s;    
   }
-  void destroy_stack(stack_t *s)
+  static void destroy_stack(stack_t *s)
   { if(s && s->data) free(s->data);
   }
     

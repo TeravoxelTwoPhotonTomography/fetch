@@ -196,6 +196,7 @@ Error:
           { any_active=1;
             tiling->markActive();           
           }
+          mylib::Free_Array(im);
         }
         if(!any_explorable)                      // if no explorable tiles were found then 
         { WARN("No explorable tiles found.\n");  // if not, the user probably forgot to set the exploration zone.
