@@ -224,8 +224,8 @@ Error:
         { CHKJMP(explore(dc));       // will return an error if no explorable tiles found on the plane
           CHKJMP(   tile.config(dc));
           CHKJMP(0==tile.run(dc));
-          //CHKJMP(   cut.config(dc));
-          //CHKJMP(0==cut.run(dc));
+          CHKJMP(   cut.config(dc));
+          CHKJMP(0==cut.run(dc));
         }
 
 Finalize:
