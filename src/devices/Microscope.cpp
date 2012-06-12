@@ -374,14 +374,15 @@ ESCAN:
       static task::scanner::ScanStack<i16> scan;
       oldtask = __scan_agent._task;
       TRY(0==__scan_agent.arm(&scan,&scanner));
-      TRY(__scan_agent.is_runnable()); // should never fail      
+      TRY(__scan_agent.is_runnable()); // should never fail
+      TRY(c=Chan_Open(out,CHAN_READ)); // open the output channel before starting to ensure we get the data
       TRY(0==runPipeline());
+      Chan_Wait_For_Writer_Count(c,1);
       TRY(__scan_agent.run());
-      Chan_Wait_For_Writer_Count(out,1);
       
       // 3. Wait for result
-      TRY(c=Chan_Open(out,CHAN_READ));
       TRY(frm=(Frame*) Chan_Token_Buffer_Alloc(c));
+      //TRY(CHAN_SUCCESS(Chan_Next(c,(void**)&frm,Chan_Buffer_Size_Bytes(c))));
       TRY(CHAN_SUCCESS(Chan_Next_Timed(c,(void**)&frm,Chan_Buffer_Size_Bytes(c),timeout_ms)));
       { mylib::Array dummy;
         mylib::Dimn_Type dims[3];

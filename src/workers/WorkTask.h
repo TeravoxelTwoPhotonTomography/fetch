@@ -57,11 +57,17 @@
 #include "task.h"
 #include "frame.h"
 
+#if 1
+#define DBG(...) debug(__VA_ARGS__)
+#else
+#define DBG(...)
+#endif
+
 #define TRY(expr,lbl) \
   if(!(expr)) \
     { warning("%s(%d): %s"ENDL"\t%s"ENDL"\tExpression evaluated to false.",__FILE__,__LINE__,#lbl,#expr); \
       goto lbl; \
-    }
+    }    
 
 namespace fetch
 {
@@ -113,7 +119,7 @@ namespace fetch
       reader = Chan_Open(qsrc,CHAN_READ);
       writer = Chan_Open(qdst,CHAN_WRITE);
       while(CHAN_SUCCESS( Chan_Next(reader, (void**)&fsrc, nbytes_in) )) // !d->_agent->is_stopping() && 
-        { //debug("In  OneToOneWorkTask::run - just popped\r\n");
+        { DBG("%s(%d)"ENDL "\t%s just popped"ENDL,__FILE__,__LINE__,d->_agent->name());
           nbytes_in = fsrc->size_bytes();
           fsrc->format(fdst);
           TRY(reshape(d,fdst), FormatFunctionFailure);          
@@ -169,7 +175,8 @@ OutputQueueTimeoutError:
       reader = Chan_Open(qsrc,CHAN_READ);
       writer = Chan_Open(qdst,CHAN_WRITE);
       while(CHAN_SUCCESS( Chan_Next(reader,(void**)&fsrc,nbytes_in) )) //!d->_agent->is_stopping() && 
-        { //debug("In  OneToOneWorkTask::run - just popped\r\n");
+        { 
+          DBG("%s(%d)"ENDL "\t%s just popped"ENDL,__FILE__,__LINE__,d->_agent->name());
           nbytes_in = fsrc->size_bytes();
           TRY(work(d,fsrc),WorkFunctionFailure);                           
           nbytes_in = MAX( Chan_Buffer_Size_Bytes(qdst), nbytes_in ); // XXX - awkward

@@ -453,7 +453,7 @@ Error:
           // Handle a timeout on the wait.  
           if( !_handle_wait_for_result(res, "Agent stop: Wait for thread."))
           { Guarded_Assert_WinErr__NoPanic(TerminateThread(_thread,127)); // Force the thread to stop
-            error("[%s] Timed out waiting for task thread (%d) to stop.  Forcing termination.\r\n",name(), GetThreadId(_thread));            
+            warning("%s(%d)"ENDL "\t[%s] Timed out waiting for task thread (%d) to stop."ENDL,__FILE__,__LINE__,name(), GetThreadId(_thread));
           }  
           CloseHandle(_thread);
           _thread = INVALID_HANDLE_VALUE;

@@ -110,7 +110,7 @@ Condition* Condition_Alloc     ( );
 void       Condition_Initialize( Condition* self);
 void       Condition_Free      ( Condition* self);
 void       Condition_Wait      ( Condition* self, Mutex* lock);
-// TODO: int        Condition_Timed_Wait( Condition* self, Mutex* lock, unsigned timeout_ms);
+int        Condition_Timed_Wait( Condition* self, Mutex* lock, unsigned timeout_ms);
 void       Condition_Notify    ( Condition* self);
 void       Condition_Notify_All( Condition* self);
 

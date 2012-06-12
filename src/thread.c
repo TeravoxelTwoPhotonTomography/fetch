@@ -17,10 +17,20 @@
 #define ENDL "\n"
 #endif //_MSC_VER
 
-#define thread_error(...)    do{fprintf(stderr,__VA_ARGS__);exit(-1);}while(0)
+#define thread_log(...)      fprintf(stderr,__VA_ARGS__)
+#define thread_error(...)    do{thread_log(__VA_ARGS__);exit(-1);}while(0)
 #define thread_assert(e)     if(!(e)) thread_error("Assert failed in thread module" ENDL \
                                                    "\tFailed: %s" ENDL \
-                                                   "\tAt %s:%d" ENDL,#e,__FILE__,__LINE__ );
+                                                   "\tAt %s:%d" ENDL,#e,__FILE__,__LINE__ );                                                   
+#define thread_try(e)        if(!(e)) {thread_log( "Expression evaluated as false" ENDL \
+                                                   "\t%s" ENDL \
+                                                   "\tAt %s(%d)" ENDL,#e,__FILE__,__LINE__ ); \
+                                       goto Error; }                                                   
+#define thread_try_win32(e)  if(!(e)) {ReportLastWindowsError(); \
+                                       thread_log("Expression evaluated as false" ENDL \
+                                                   "\t%s" ENDL \
+                                                   "\tAt %s(%d)" ENDL,#e,__FILE__,__LINE__ ); \
+                                       goto Error; }                                                   
 
 typedef struct _closure_t 
 { ThreadProc    proc;
@@ -260,6 +270,16 @@ void Condition_Wait(Condition* self, Mutex* lock)
   thread_assert_win32(
     SleepConditionVariableSRW(PCONDCAST(self),M_NATIVE(lock),INFINITE,0));
   M_OWNER(lock)=GetCurrentThreadId();
+}
+
+int Condition_Timed_Wait( Condition* self, Mutex* lock, unsigned timeout_ms)
+{ thread_try_win32(
+    SleepConditionVariableSRW(PCONDCAST(self),M_NATIVE(lock),timeout_ms,0));
+  M_OWNER(lock)=GetCurrentThreadId();
+  return 1;
+Error:
+  M_OWNER(lock)=GetCurrentThreadId();
+  return 0;
 }
 
 void Condition_Notify(Condition* self)

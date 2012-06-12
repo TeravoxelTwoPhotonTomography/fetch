@@ -13,6 +13,12 @@
 #include "config.h"
 #include "FrameAverage.h"
 
+#if 1
+#define DBG(...) debug(__VA_ARGS__)
+#else
+#define DBG(...)
+#endif
+
 using namespace fetch::worker;
 
 namespace fetch
@@ -60,7 +66,7 @@ namespace fetch
 
           // First one
           if(CHAN_SUCCESS(Chan_Next(reader,(void**)&fsrc,src_bytes) ))     // !dc->_agent->is_stopping() &&
-          {
+          { DBG("%s(%d)"ENDL "\t%s"ENDL "\tPopped (count: %d)"ENDL,__FILE__,__LINE__,dc->_agent->name(),count);
 
             src_bytes = fsrc->size_bytes();
             nbytes    = src_bytes - sizeof(Frame); //bytes in acc
@@ -72,6 +78,7 @@ namespace fetch
             fsrc->format(fdst);
             acc = (f32*) fdst->data;
             memcpy(acc,fsrc->data,src_bytes);
+            ++count;
           } else
             break;
 
@@ -79,7 +86,9 @@ namespace fetch
           // - If the channel closes before the requested number of averages is acquired,
           //   the accumulator will not be emitted.
           while(CHAN_SUCCESS( Chan_Next(reader, (void**)&fsrc, fsrc->size_bytes()) ))    //!dc->_agent->is_stopping() && 
-          { buf = (f32*) fsrc->data;
+          { 
+            DBG("%s(%d)"ENDL "\t%s"ENDL "\tPopped (count: %d)"ENDL,__FILE__,__LINE__,dc->_agent->name(),count);
+            buf = (f32*) fsrc->data;
 
             src_bytes = fsrc->size_bytes();
             nbytes    = src_bytes - sizeof(Frame); //bytes in acc
