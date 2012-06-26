@@ -10,11 +10,11 @@
 #include "FrameFormater.h"
 #include "util\util-image.h"
 
-#if 0
-#define DBG(...) debug(__VA_ARGS__)
-#else
-#define DBG
-#endif
+//#if 0
+//#define DBG(...) debug(__VA_ARGS__)
+//#else
+//#define DBG
+//#endif
 
 // I use REMIND to warn me in case I leave in a debugging expression.
 #define REMIND(expr) \

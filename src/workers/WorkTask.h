@@ -57,7 +57,7 @@
 #include "task.h"
 #include "frame.h"
 
-#if 1
+#if 0
 #define DBG(...) debug(__VA_ARGS__)
 #else
 #define DBG(...)
@@ -202,4 +202,5 @@ OutputQueueTimeoutError:
     
   }
 }
+#undef DBG
 #undef TRY

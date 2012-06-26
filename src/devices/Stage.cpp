@@ -115,14 +115,14 @@ namespace device {
   \def C843JMP2(expr) 
   Same as \ref C843JMP but for use outside of a C843Stage member function.  A valid C843Stage *self must be in scope.
 */
-#define C843WRN( expr )  {lock_(); (c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, warning )); unlock_();}
-#define C843ERR( expr )  {BOOL v; lock_(); v=(expr); unlock_(); (c843_error_handler( handle_, v, #expr, __FILE__, __LINE__, error   ));}
-#define C843JMP( expr )  {lock_(); if(c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, warning)) {unlock_(); goto Error;} unlock_();}
-#define C843JMPSILENT( expr )  {lock_(); if(c843_error_handler( handle_, expr, #expr, __FILE__, __LINE__, NULL)) {unlock_(); goto Error;} unlock_();}
+#define C843WRN( expr )  {BOOL _v; lock_(); _v=(expr); unlock_(); (c843_error_handler( handle_, _v, #expr, __FILE__, __LINE__, warning ));}
+#define C843ERR( expr )  {BOOL _v; lock_(); _v=(expr); unlock_(); (c843_error_handler( handle_, _v, #expr, __FILE__, __LINE__, error   ));}
+#define C843JMP( expr )  {BOOL _v; lock_(); _v=(expr); unlock_(); if(c843_error_handler( handle_, _v, #expr, __FILE__, __LINE__, warning)) goto Error;}
+#define C843JMPSILENT( expr )  {BOOL _v; lock_(); _v=(expr); unlock_(); if(c843_error_handler( handle_, _v, #expr, __FILE__, __LINE__, NULL)) goto Error;}
 
-#define C843WRN2( expr )  {self->lock_(); (c843_error_handler( self->handle_, expr, #expr, __FILE__, __LINE__, warning )); self->unlock_();}
-#define C843ERR2( expr )  {BOOL v; self->lock_(); v=(expr); self->unlock_(); (c843_error_handler( self->handle_, v, #expr, __FILE__, __LINE__, error   ));}
-#define C843JMP2( expr )  {self->lock_(); if(c843_error_handler( self->handle_, expr, #expr, __FILE__, __LINE__, warning)) {self->unlock_(); goto Error;} self->unlock_();}
+#define C843WRN2( expr )  {BOOL _v; self->lock_(); _v=(expr); self->unlock_(); (c843_error_handler( self->handle_, _v, #expr, __FILE__, __LINE__, warning ));}
+#define C843ERR2( expr )  {BOOL _v; self->lock_(); _v=(expr); self->unlock_(); (c843_error_handler( self->handle_, _v, #expr, __FILE__, __LINE__, error   ));}
+#define C843JMP2( expr )  {BOOL _v; self->lock_(); _v=(expr); self->unlock_(); if(c843_error_handler( self->handle_, _v, #expr, __FILE__, __LINE__, warning)) goto Error;}
 
 #define  CHKJMP( expr )  if(!(expr)) {warning("C843:"ENDL "%s(%d): %s"ENDL "Expression evaluated as false"ENDL,__FILE__,__LINE__,#expr); goto Error;}
 #define  CHKWRN( expr )  if(!(expr)) {warning("C843:"ENDL "%s(%d): %s"ENDL "Expression evaluated as false"ENDL,__FILE__,__LINE__,#expr); }
@@ -470,10 +470,10 @@ Error:
   void C843Stage::setPosNoWait( float x, float y, float z )
   { double t[3] = {x,y,z};
   
-    { float vx,vy,vz;
-      getVelocity(&vx,&vy,&vz);
-      debug("(%s:%d): C843 Velocity %f %f %f"ENDL,__FILE__,__LINE__,vx,vy,vz);
-    }
+    //{ float vx,vy,vz;
+    //  getVelocity(&vx,&vy,&vz);
+    //  debug("(%s:%d): C843 Velocity %f %f %f"ENDL,__FILE__,__LINE__,vx,vy,vz);
+    //}
     C843JMP( C843_HLT(handle_,"123") );              // Stop any motion in progress
     C843JMP( C843_MOV(handle_,"123",t) );            // Move!
 Error:
