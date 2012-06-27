@@ -108,6 +108,9 @@ Error:
         if(!image->size) return 0;
         for(i=0;i<image->size;++i)
           count+=(data[i]>intensity_thresh);
+#if 0
+        mylib::Write_Image("classify.tif",image,mylib::DONT_PRESS);
+#endif       
         DBG("Fraction above thresh: %f",count/((double)image->size));
         return (count/((double)image->size))>area_thresh;            
       }

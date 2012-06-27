@@ -10,6 +10,10 @@
 #include "qcustomplot.h"
 #include "common.h"
 
+namespace mylib {
+#include "image.h"
+}
+
 #ifdef _MSC_VER
 #define restrict __restrict
 #else
@@ -151,11 +155,15 @@ namespace ui {
   { for(size_t i=0;i<n;++i) x[i] = i/dy+min;
   }
 
+
   static void histogram(QVector<double> &x, QVector<double> &pdf, QVector<double> &cdf, mylib::Array *a)
   { double min,max,dy;
     unsigned n;
     min=amin(a);
     max=amax(a);
+#if 1
+    mylib::Write_Image("histogram.tif",a,mylib::DONT_PRESS);    
+#endif
     debug("min %6.1f\tmax %6.1f"ENDL,min,max);
     n=nbins(a,min,max);
     dy=binsize(n,min,max); // value transform is  (data[i]-min)*dy --> for max this is (max-min)*(nbins-1)/(max-min)
