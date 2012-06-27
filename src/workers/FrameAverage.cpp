@@ -13,7 +13,7 @@
 #include "config.h"
 #include "FrameAverage.h"
 
-#if 1
+#if 0
 #define DBG(...) debug(__VA_ARGS__)
 #else
 #define DBG(...)
@@ -66,7 +66,7 @@ namespace fetch
 
           // First one
           if(CHAN_SUCCESS(Chan_Next(reader,(void**)&fsrc,src_bytes) ))     // !dc->_agent->is_stopping() &&
-          { DBG("%s(%d)"ENDL "\t%s"ENDL "\tPopped (count: %d)"ENDL,__FILE__,__LINE__,dc->_agent->name(),count);
+          { DBG("%s(%d)"ENDL "\t%s"ENDL "\tRecv (count: %d)"ENDL,__FILE__,__LINE__,dc->_agent->name(),count);
 
             src_bytes = fsrc->size_bytes();
             nbytes    = src_bytes - sizeof(Frame); //bytes in acc
@@ -87,7 +87,7 @@ namespace fetch
           //   the accumulator will not be emitted.
           while(CHAN_SUCCESS( Chan_Next(reader, (void**)&fsrc, fsrc->size_bytes()) ))    //!dc->_agent->is_stopping() && 
           { 
-            DBG("%s(%d)"ENDL "\t%s"ENDL "\tPopped (count: %d)"ENDL,__FILE__,__LINE__,dc->_agent->name(),count);
+            DBG("%s(%d)"ENDL "\t%s"ENDL "\tRecv (count: %d[%d])"ENDL,__FILE__,__LINE__,dc->_agent->name(),count,count%every);
             buf = (f32*) fsrc->data;
 
             src_bytes = fsrc->size_bytes();
@@ -110,7 +110,7 @@ namespace fetch
                   Guarded_Assert(fdst = (Frame*)realloc(fdst,dst_bytes = fsrc->size_bytes()));
               fsrc->format(fdst);              // Initialize the accumulator
               acc = (f32*)fdst->data;
-              memcpy(acc,fsrc->data,dst_bytes);
+              memcpy(acc,fsrc->data,dst_bytes);              
             } else
             { for (i = 0; i < nelem; ++i)      // accumulate
                 acc[i] += buf[i];

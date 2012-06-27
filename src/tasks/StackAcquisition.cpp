@@ -285,7 +285,8 @@ Error:
           }        
           //The real thing
           d->_scanner2d._shutter.Open();
-          for(z_um=ummin;z_um<=ummax && !d->_agent->is_stopping();z_um+=umstep)
+          // test is for z_um<=ummax, with a precision of umstep/2.
+          for(z_um=ummin; ((ummax-z_um)/umstep)>=-0.5f && !d->_agent->is_stopping();z_um+=umstep)
           { debug("%s(%d)"ENDL "\tGenerating AO for z = %f."ENDL,__FILE__,__LINE__,z_um);
             d->generateAORampZ((float)z_um);
             CHKJMP(d->writeAO());

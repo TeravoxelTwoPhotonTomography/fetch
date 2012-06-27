@@ -358,6 +358,7 @@ ESCAN:
       Frame *frm=0;
       mylib::Array *ret=0;
       Task* oldtask;
+      static task::scanner::ScanStack<i16> scan;
       transaction_lock();
       // 1. Set up the stack acquisition
       { int nframe = cfg.frame_average().ntimes();
@@ -369,13 +370,11 @@ ESCAN:
       }
       scanner.set_config(cfg.scanner3d());              // commit config
       Chan *out = configPipeline()->_out->contents[0];  // pipeline - don't connect end to anything, as we'll read produced data here.
-            
-      // 2. Start the acquisition
-      static task::scanner::ScanStack<i16> scan;
-      oldtask = __scan_agent._task;
-      TRY(0==__scan_agent.arm(&scan,&scanner));
-      TRY(__scan_agent.is_runnable()); // should never fail
       TRY(c=Chan_Open(out,CHAN_READ)); // open the output channel before starting to ensure we get the data
+            
+      // 2. Start the acquisition      
+      oldtask = __scan_agent._task;
+      TRY(0==__scan_agent.arm(&scan,&scanner));      
       TRY(0==runPipeline());
       Chan_Wait_For_Writer_Count(c,1);
       TRY(__scan_agent.run());

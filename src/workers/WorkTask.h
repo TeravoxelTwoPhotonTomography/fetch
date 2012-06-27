@@ -119,7 +119,7 @@ namespace fetch
       reader = Chan_Open(qsrc,CHAN_READ);
       writer = Chan_Open(qdst,CHAN_WRITE);
       while(CHAN_SUCCESS( Chan_Next(reader, (void**)&fsrc, nbytes_in) )) // !d->_agent->is_stopping() && 
-        { DBG("%s(%d)"ENDL "\t%s just popped"ENDL,__FILE__,__LINE__,d->_agent->name());
+        { DBG("%s(%d)"ENDL "\t%s just recieved"ENDL,__FILE__,__LINE__,d->_agent->name());
           nbytes_in = fsrc->size_bytes();
           fsrc->format(fdst);
           TRY(reshape(d,fdst), FormatFunctionFailure);          
@@ -176,7 +176,7 @@ OutputQueueTimeoutError:
       writer = Chan_Open(qdst,CHAN_WRITE);
       while(CHAN_SUCCESS( Chan_Next(reader,(void**)&fsrc,nbytes_in) )) //!d->_agent->is_stopping() && 
         { 
-          DBG("%s(%d)"ENDL "\t%s just popped"ENDL,__FILE__,__LINE__,d->_agent->name());
+          DBG("%s(%d)"ENDL "\t%s just recieved"ENDL,__FILE__,__LINE__,d->_agent->name());
           nbytes_in = fsrc->size_bytes();
           TRY(work(d,fsrc),WorkFunctionFailure);                           
           nbytes_in = MAX( Chan_Buffer_Size_Bytes(qdst), nbytes_in ); // XXX - awkward
@@ -191,11 +191,11 @@ OutputQueueTimeoutError:
       return sts;
     // Error handling
     WorkFunctionFailure:
-      warning("Work function failed.\r\n");
+      warning("%s(%d)"ENDL "\tWork function failed."ENDL,__FILE__,__LINE__);
       sts = 1;
       goto Finalize;
     OutputQueueTimeoutError:
-      warning("Pushing to output queue timed out.\r\n");
+      warning("%s(%d)"ENDL "\tPushing to output queue timed out."ENDL,__FILE__,__LINE__);
       sts = 1;
       goto Finalize;
     }

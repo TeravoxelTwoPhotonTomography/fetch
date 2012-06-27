@@ -201,7 +201,7 @@ DECL_IMCOPY_BY_DEST( f64, f64  );
 // This works as follows:
 //
 // A positional vector, r, in {whole numbers}^N gets mapped to an index with a
-// liear projection.  For example, in the <src> array the value at r is:
+// linear projection.  For example, in the <src> array the value at r is:
 //
 //   src[p.r]
 //
