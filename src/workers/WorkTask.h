@@ -57,7 +57,7 @@
 #include "task.h"
 #include "frame.h"
 
-#if 0
+#if 1
 #define DBG(...) debug(__VA_ARGS__)
 #else
 #define DBG(...)

@@ -471,7 +471,8 @@ FailedWriteIFD:
 #define ENDL "\r\n"
 #define TRY(e)     if(!(e)) {warning("%s(%d):"ENDL "\t%s"ENDL "\tExpression evaluated to false."ENDL,__FILE__,__LINE__,#e); goto Error;}
 #define TIFFTRY(e) if(!(e)) {warning("%s(%d):"ENDL "\t%s"ENDL "\t[TIFF] Expression evaluated to false."ENDL "%s",__FILE__,__LINE__,#e,(const char*)Image_Error()); Image_Error_Release(); goto Error;}
-#define TODO   error("%s(%d): [TODO] Not Implemented\r\n",__FILE__,__LINE__)
+#define TODO       error("%s(%d): [TODO] Not Implemented\r\n",__FILE__,__LINE__)
+#define DBG(msg)   debug("%s(%d): %s"ENDL "\t%s"ENDL,__FILE__,__LINE__,__FUNCTION__,msg)
 
   /** \todo Find out (and fix) what happens when the root name lacks an extension */
   static ::std::string gen_name(const ::std::string & root, int i)
@@ -483,20 +484,29 @@ FailedWriteIFD:
     return os.str();
   }
 
+#define DEBUG_FAST_EXIT
+
   unsigned int TiffGroupStreamWriteTask::run(device::TiffGroupStream *dc)
   { int                            isok;
     Chan                          *q  =0;
     Frame_With_Interleaved_Planes *buf=0;
     size_t                         nbytes;
-
+#ifdef DEBUG_FAST_EXIT
+    int any=0;
+#endif
     TRY(q=Chan_Open(dc->_in->contents[0],CHAN_READ));
     TRY(buf=(Frame_With_Interleaved_Planes*)Chan_Token_Buffer_Alloc(q));
     nbytes=Chan_Buffer_Size_Bytes(q);    
 
+DBG("Entering Loop");
     while(CHAN_SUCCESS(Chan_Next(q,(void**)&buf,nbytes)))
     { Array     dummy;
       Dimn_Type dims[3];
       int       i;
+      DBG("Recieved");
+#ifdef DEBUG_FAST_EXIT
+      any=1;
+#endif      
       TRY(buf->id==FRAME_INTERLEAVED_PLANES);
       mylib::castFetchFrameToDummyArray(&dummy,buf,dims);
       
@@ -516,10 +526,15 @@ FailedWriteIFD:
           TIFFTRY(0==Add_IFD_Channel(w,Get_Array_Plane(&tmp,i),PLAIN_CHAN));
           Update_Tiff(w,DONT_PRESS);
         }
-      }      
+      }
     }
     isok=1;
 Finalize:
+DBG("Done.");
+#ifdef DEBUG_FAST_EXIT
+    if(!any)
+      DBG("NEVER POPPED");
+#endif
     if(q)   Chan_Close(q);
     if(buf) Chan_Token_Buffer_Free(buf);
     return isok;

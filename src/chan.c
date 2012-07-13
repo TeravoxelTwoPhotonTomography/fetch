@@ -178,8 +178,10 @@ Chan* Chan_Open( Chan *self, ChanMode mode)
   goto_if_not(n = incref(c),ErrorIncref);
   n->mode = mode;
   switch(mode)
-  { case CHAN_READ:
+  { case CHAN_READ:      
       ++(n->q->nreaders);
+      if(Fifo_Is_Empty(n->q->fifo))
+        n->q->flush=0;
       Condition_Notify_All(&n->q->haveReader);
       break;
     case CHAN_WRITE: 

@@ -161,10 +161,11 @@ namespace ui {
     unsigned n;
     min=amin(a);
     max=amax(a);
-#if 1
+#if 0
+    HERE;
     mylib::Write_Image("histogram.tif",a,mylib::DONT_PRESS);    
 #endif
-    debug("min %6.1f\tmax %6.1f"ENDL,min,max);
+    debug("%s(%d) %s"ENDL "\tmin %6.1f\tmax %6.1f"ENDL,__FILE__,__LINE__,__FUNCTION__,min,max);
     n=nbins(a,min,max);
     dy=binsize(n,min,max); // value transform is  (data[i]-min)*dy --> for max this is (max-min)*(nbins-1)/(max-min)
 
