@@ -29,6 +29,8 @@
     goto lbl; \
   }
 
+#define DO_UNWARP
+
 namespace fetch
 { 
 
@@ -56,6 +58,7 @@ namespace fetch
       ,unwarp()
       ,frame_formatter("FrameFormatter")
       ,trash("Trash")
+      ,_end_of_pipeline(0)
     {      
       set_config(_config);
       unwarp.setDuty(_config->scanner3d().scanner2d().line_duty_cycle());
@@ -90,6 +93,7 @@ namespace fetch
       ,frame_formatter("FrameFormatter")
       ,trash("Trash")
       ,file_series()
+      ,_end_of_pipeline(0)
     {
       set_config(cfg);
       unwarp.setDuty(cfg.scanner3d().scanner2d().line_duty_cycle());
@@ -115,7 +119,8 @@ namespace fetch
       ,unwarp(cfg->mutable_resonant_unwarp()) 
       ,frame_formatter("FrameFormatter")
       ,trash("Trash")
-      ,file_series(cfg->mutable_file_series())
+      ,file_series(cfg->mutable_file_series())      
+      ,_end_of_pipeline(0)
     {
       unwarp.setDuty(cfg->scanner3d().scanner2d().line_duty_cycle());
       __common_setup();
@@ -168,7 +173,9 @@ ESCAN:
       eflag |= cast_to_i16._agent->detach();
       eflag |= wrap._agent->detach();
       eflag |= frame_formatter._agent->detach(); 
+#ifdef DO_UNWARP
       eflag |= unwarp._agent->detach();
+#endif
       eflag |= trash._agent->detach();
       eflag |= disk._agent->detach();
 
@@ -187,7 +194,9 @@ ESCAN:
       sts &= cast_to_i16._agent->disarm();
       sts &= wrap._agent->disarm();  
       sts &= frame_formatter._agent->disarm(); 
+#ifdef DO_UNWARP      
       sts &= unwarp._agent->disarm(); 
+#endif      
       sts &= trash._agent->disarm();
       sts &= disk._agent->disarm();
       sts &= vibratome_._agent->disarm();
@@ -281,7 +290,10 @@ ESCAN:
       cur =  cast_to_i16.apply(cur);
       cur =  frame_formatter.apply(cur);
       cur =  wrap.apply(cur);
+#ifdef DO_UNWARP      
       cur =  unwarp.apply(cur);
+#endif
+      _end_of_pipeline=cur;
       return cur;
     }
 
@@ -299,7 +311,9 @@ ESCAN:
     unsigned int Microscope::runPipeline()
     { int sts = 1;                        
       transaction_lock();
+#ifdef DO_UNWARP      
       sts &= unwarp._agent->run();
+#endif      
       sts &= frame_formatter._agent->run();
       sts &= wrap._agent->run();
       sts &= cast_to_i16._agent->run();
@@ -314,7 +328,9 @@ ESCAN:
     { int sts = 1;
       transaction_lock();
       // These should block till channel's empty 
+#ifdef DO_UNWARP      
       sts &= unwarp._agent->stop(2000);
+#endif      
       sts &= frame_formatter._agent->stop();
       sts &= wrap._agent->stop();
       sts &= cast_to_i16._agent->stop();

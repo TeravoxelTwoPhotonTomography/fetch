@@ -149,7 +149,7 @@ namespace fetch
       
       mylib::Array* snapshot(float dz_um,unsigned timeout_ms);
 
-      inline Chan*  getVideoChannel()    {if(unwarp._out) return unwarp._out->contents[0]; else return NULL;}
+      inline Chan*  getVideoChannel()    {if(_end_of_pipeline && _end_of_pipeline->_out) return _end_of_pipeline->_out->contents[0]; else return NULL;}
       inline LinearScanMirror*  LSM()    {return &scanner._scanner2d._LSM;}
       inline Pockels*       pockels()    {return &scanner._scanner2d._pockels;}
       inline ZPiezo*         zpiezo()    {return &scanner._zpiezo;}
@@ -163,6 +163,8 @@ namespace fetch
       FileSeries file_series;
 
     public:
+      IDevice* _end_of_pipeline;
+    
       Agent __self_agent;
       Agent __scan_agent;
       Agent __io_agent;
