@@ -17,22 +17,14 @@
  *      the new file.
  *    - will arm, and run
  */
+#include "util/util-mylib.h"
 #include "common.h"
 #include "DiskStream.h"
 #include "tasks/File.h"
 #include "Chan.h"         
 
-#include "util/util-mylib.h"
 #include "frame.h"
 #include "types.h"
-
-namespace mylib
-{  
-#include "MY_TIFF/tiff.image.h"
-#include "MY_TIFF/tiff.io.h"
-}
-
-using namespace mylib;
 
 namespace fetch
 {
@@ -287,12 +279,12 @@ Error:
     {
       if(_tiff_writer)
       {
-        ::Close_Tiff(_tiff_writer);
+        mylib::Close_Tiff(_tiff_writer);
         _tiff_writer = NULL;
       }
       if(_tiff_reader)
       {
-        Free_Tiff_Reader(_tiff_reader);
+        mylib::Free_Tiff_Reader(_tiff_reader);
         _tiff_reader = NULL;
       }
       return 0; //success
@@ -304,17 +296,17 @@ Error:
     {
       Guarded_Assert(_tiff_reader); // open() should call on_detach() before on_attach().  on_detach() should set open handles to null.
       
-      goto_if_fail(_tiff_reader = Open_Tiff_Reader(filename,NULL,NULL,mytiff::islsm(filename)),FailedOpen);   
+      goto_if_fail(_tiff_reader = mylib::Open_Tiff_Reader(filename,NULL,NULL,mytiff::islsm(filename)),FailedOpen);   
 
       // alloc queues
-      Tiff_IFD *ifd = NULL;
-      Tiff_Image *tim = NULL;
-      goto_if_fail(ifd=Read_Tiff_IFD(_tiff_reader),FailedIFD);
-      goto_if_fail(tim=Get_Tiff_Image(ifd),FailedImageGet);    // this loads everything but the data
+      mylib::Tiff_IFD *ifd = NULL;
+      mylib::Tiff_Image *tim = NULL;
+      goto_if_fail(ifd=mylib::Read_Tiff_IFD(_tiff_reader),FailedIFD);
+      goto_if_fail(tim=mylib::Get_Tiff_Image(ifd),FailedImageGet);    // this loads everything but the data
       Frame_With_Interleaved_Planes fmt(tim->width,tim->height,tim->number_channels,mytiff::pixel_type(tim));
-      Free_Tiff_Image(tim);
-      Free_Tiff_IFD(ifd);
-      Rewind_Tiff_Reader(_tiff_reader);
+      mylib::Free_Tiff_Image(tim);
+      mylib::Free_Tiff_IFD(ifd);
+      mylib::Rewind_Tiff_Reader(_tiff_reader);
       
       if(_out==NULL)
         _alloc_qs_easy(&_out,1,4,fmt.size_bytes());
@@ -325,14 +317,14 @@ FailedOpen:
       return 1; //failure
 FailedIFD:
       warning("Failed to read first IFD in %s\r\n",filename);
-      Free_Tiff_Reader(_tiff_reader);
+      mylib::Free_Tiff_Reader(_tiff_reader);
       _tiff_reader = NULL;
       
       return 1; //failure
 FailedImageGet:
       warning("Failed to read image params from first IFD (0x%p).\r\n\tFile: %s\r\n",ifd,filename);
-      Free_Tiff_IFD(ifd);
-      Free_Tiff_Reader(_tiff_reader);
+      mylib::Free_Tiff_IFD(ifd);
+      mylib::Free_Tiff_Reader(_tiff_reader);
       _tiff_reader = NULL;
       
       return 1; //failure
@@ -346,7 +338,7 @@ FailedImageGet:
       Guarded_Assert(_tiff_writer==NULL); // open() should call on_detach() before on_attach().  on_detach() should set open handles to null.
       
       goto_if_fail(
-        _tiff_writer = Open_Tiff_Writer(filename,FALSE/*32 bit*/,mytiff::islsm(filename)),
+        _tiff_writer = mylib::Open_Tiff_Writer(filename,FALSE/*32 bit*/,mytiff::islsm(filename)),
         FailedOpen);
       
 

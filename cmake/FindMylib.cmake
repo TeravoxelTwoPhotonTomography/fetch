@@ -106,4 +106,3 @@ if(MYLIB_FOUND)
   SET(MYLIB_DIR ${MYLIB_INCLUDE_DIR})
   include_directories(${MYLIB_INCLUDE_DIR})
 endif(MYLIB_FOUND)
-  

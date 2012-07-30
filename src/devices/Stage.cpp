@@ -257,6 +257,7 @@ Error:
   C843Stage::C843Stage( Agent *agent )
    :StageBase<cfg::device::C843StageController>(agent)
    ,handle_(-1)
+   ,logger_(0)
   {
     InitializeCriticalSection(&c843_lock_);
   }
@@ -264,6 +265,7 @@ Error:
   C843Stage::C843Stage( Agent *agent, Config *cfg )
    :StageBase<cfg::device::C843StageController>(agent,cfg)
    ,handle_(-1)
+   ,logger_(0)
   {
     InitializeCriticalSection(&c843_lock_);
   }
@@ -279,6 +281,7 @@ Error:
   void C843Stage::unlock_()
   { LeaveCriticalSection(&c843_lock_);
   }
+    
   
   /** The attach callback for this device.
       Connects to the controller, and tries to load axes.  Attempts to set the last known stage position, so the stage is 
@@ -290,6 +293,17 @@ Error:
   { 
     long ready = 0;   
     C843JMP( (handle_=C843_Connect(_config->id()))>=0 );
+    
+    #if 0
+    // Print known stages    
+    { char stages[1024*1024];
+      if(C843_qVST(handle_,stages,sizeof(stages)))
+      { debug("%s\n",stages);
+      }
+      else 
+      debug("qVST failed.\n");
+    } 
+    #endif
     
     for(int i=0;i<_config->axis_size();++i)
     { char id[10];
@@ -308,6 +322,9 @@ Error:
     CHKJMP(logger_=Thread_Alloc(poll_and_cache_stage_position,this));
     return 0; // ok
 Error:
+    debug("%s(%d): %s()\n" 
+          "If the stage database could not be found copy the installed database to where the fetch exectuable is located.\n",
+          __FILE__,__LINE__,__FUNCTION__);
     return 1; // fail
   }
 

@@ -11,7 +11,7 @@
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
 
-
+#include "util/util-mylib.h"
 #include <string>
 #include <sstream>
 #include "devices/DiskStream.h"
@@ -23,10 +23,7 @@
 #else
 #define disk_stream_debug(...)
 #endif
-namespace mylib {
-#include "MY_TIFF/tiff.image.h"
-}
-#include "util/util-mylib.h"
+
 
 using namespace mylib;
 
@@ -283,12 +280,12 @@ namespace file {
         goto_if_fail(ifd=Read_Tiff_IFD(tif),FailedIFDRead);
         goto_if_fail(tim=Get_Tiff_Image(ifd),FailedImageGet);
         Frame_With_Interleaved_Planes fmt(tim->width,tim->height,tim->number_channels,mytiff::pixel_type(tim));
-        Free_Tiff_Image(tim);
-        Free_Tiff_IFD(ifd);
+        mylib::Free_Tiff_Image(tim);
+        mylib::Free_Tiff_IFD(ifd);
         maxsize = internal::max(maxsize,fmt.size_bytes());
         maxchan = internal::max(maxchan,tim->number_channels);
       }
-      Rewind_Tiff_Reader(tif);
+      mylib::Rewind_Tiff_Reader(tif);
       
     }
 

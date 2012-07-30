@@ -24,10 +24,7 @@
 #include "agent.h"
 #include "tasks/File.h"
 #include "file.pb.h"
-#include "MY_TIFF/tiff.io.h"
-namespace mylib {
-#include "image.h"
-}
+#include "util/util-mylib.h"
 #include <vector>
 
 #define DISKSTREAM_MAX_PATH         1024
@@ -83,8 +80,8 @@ namespace fetch
     public:
       task::file::TiffStreamReadTask  _read_task;
       task::file::TiffStreamWriteTask _write_task;
-      Tiff_Reader *_tiff_reader;
-      Tiff_Writer *_tiff_writer;
+      mylib::Tiff_Reader *_tiff_reader;
+      mylib::Tiff_Writer *_tiff_writer;
     };
             
     class TiffGroupStream : public IDiskStream

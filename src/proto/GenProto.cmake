@@ -18,12 +18,17 @@
 # include("${PROTO_DIR}/GenProto.cmake")
 #
 
+set(LIB .)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  set(LIB x64)
+endif()
+
 set(CMAKE_LIBRARY_PATH
   ${CMAKE_LIBRARY_PATH}
-  "${ROOT_3RDPARTY_PATH}/protobuf-2.4.1/vsprojects/Debug"
-  "${ROOT_3RDPARTY_PATH}/protobuf-2.4.0/vsprojects/Debug"
-  "${ROOT_3RDPARTY_PATH}/protobuf-2.4.0a/vsprojects/Debug"
-  "${ROOT_3RDPARTY_PATH}/protobuf-2.3.0/vsprojects/Debug"
+  "${ROOT_3RDPARTY_PATH}/protobuf-2.4.1/vsprojects/${LIB}/Debug"
+  "${ROOT_3RDPARTY_PATH}/protobuf-2.4.0/vsprojects/${LIB}/Debug"
+  "${ROOT_3RDPARTY_PATH}/protobuf-2.4.0a/vsprojects/${LIB}/Debug"
+  "${ROOT_3RDPARTY_PATH}/protobuf-2.3.0/vsprojects/${LIB}/Debug"
 )
 set(CMAKE_INCLUDE_PATH
   ${CMAKE_INCLUDE_PATH}
@@ -34,10 +39,10 @@ set(CMAKE_INCLUDE_PATH
 )
 set(CMAKE_PROGRAM_PATH
   ${CMAKE_PROGRAM_PATH}
-  "${ROOT_3RDPARTY_PATH}/protobuf-2.4.1/vsprojects/Release"
-  "${ROOT_3RDPARTY_PATH}/protobuf-2.4.0/vsprojects/Release"
-  "${ROOT_3RDPARTY_PATH}/protobuf-2.4.0a/vsprojects/Release"
-  "${ROOT_3RDPARTY_PATH}/protobuf-2.3.0/vsprojects/Release"
+  "${ROOT_3RDPARTY_PATH}/protobuf-2.4.1/vsprojects/${LIB}/Release"
+  "${ROOT_3RDPARTY_PATH}/protobuf-2.4.0/vsprojects/${LIB}/Release"
+  "${ROOT_3RDPARTY_PATH}/protobuf-2.4.0a/vsprojects/${LIB}/Release"
+  "${ROOT_3RDPARTY_PATH}/protobuf-2.3.0/vsprojects/${LIB}/Release"
 )
 
 find_package(Protobuf REQUIRED)

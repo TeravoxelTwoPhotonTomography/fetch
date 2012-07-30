@@ -20,6 +20,8 @@ endif()
 
 SET(_GLEW_HINTS
   ~/src/mylib
+  "$ENV{USERPROFILE}/Desktop/src/libs/glew-1.8.0/${arch}"
+  ${CMAKE_SOURCE_DIR}/3rdParty/glew-1.8.0/${arch}
   "$ENV{USERPROFILE}/Desktop/src/libs/glew-1.6.0/${arch}"
   ${CMAKE_SOURCE_DIR}/3rdParty/glew-1.6.0/${arch}
   "$ENV{USERPROFILE}/Desktop/src/libs/glew-1.5.6/${arch}"
