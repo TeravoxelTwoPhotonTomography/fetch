@@ -63,6 +63,13 @@ namespace ui {
       b->setChecked(true);
       form->addRow(b);
     }    
+    // Rescale button
+    { QPushButton *b=new QPushButton("Rescale");     
+      PANIC(connect(   b,SIGNAL(pressed()),
+                    this,SLOT(rescale_axes())));
+      b->setChecked(true);
+      form->addRow(b);
+    }
     layout->addLayout(form);
 
     // plot
@@ -190,6 +197,8 @@ namespace ui {
     ; // bad input, ignore 
   }
 
+static int g_inited=0;
+
   /** Presumes channels are on different planes */
   void HistogramDockWidget::compute(mylib::Array *im)
   { 
@@ -198,11 +207,19 @@ namespace ui {
     histogram(x_,pdf_,cdf_,ch);
     plot_->graph(0)->setData(x_,pdf_);
     plot_->graph(1)->setData(x_,cdf_);
-    plot_->graph(0)->rescaleAxes();
-    plot_->graph(1)->rescaleAxes();
+    if(!g_inited)
+    { plot_->graph(0)->rescaleAxes();
+      plot_->graph(1)->rescaleAxes();
+      g_inited=1;
+    }
     plot_->replot(); 
  Error:
     ; // memory error or oob channel, should never get here.    
+  }
+
+  void HistogramDockWidget::rescale_axes()
+  { plot_->graph(0)->rescaleAxes();
+    plot_->graph(1)->rescaleAxes();
   }
 
   void HistogramDockWidget::set_ichan(int ichan)

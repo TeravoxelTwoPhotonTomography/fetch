@@ -26,6 +26,7 @@ class HistogramDockWidget: public QDockWidget
     void set(mylib::Array *im);
     void set_ichan(int ichan);
     void set_live(bool is_live);
+    void rescale_axes();
   private:
     void swap(mylib::Array *im);
     int  check_chan(mylib::Array *im);
