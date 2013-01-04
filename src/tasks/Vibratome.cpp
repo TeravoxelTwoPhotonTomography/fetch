@@ -96,8 +96,8 @@ namespace microscope {
     
     // Move to the start of the cut
     bz = cz-dz+thick;
-    CHK( dc->stage()->setPos(cx,cy,1.0));           // Drop to safe z first
-    CHK( dc->stage()->setPos(ax,ay,1.0));           // Move on safe z plane
+    CHK( dc->stage()->setPos(cx,cy,0.5));           // Drop to safe z first
+    CHK( dc->stage()->setPos(ax,ay,0.5));           // Move on safe z plane
     CHK( dc->stage()->setPos(ax,ay,bz));            // Move to final plane
     
     // do the cut
@@ -108,8 +108,8 @@ namespace microscope {
     CHK( dc->vibratome()->stop());
     
     // Move back
-    CHK( dc->stage()->setPos(bx,by,1.0));           // Drop to safe z first
-    CHK( dc->stage()->setPos(cx,cy,1.0));           // Move on safe z plane
+    CHK( dc->stage()->setPos(bx,by,0.5));           // Drop to safe z first
+    CHK( dc->stage()->setPos(cx,cy,0.5));           // Move on safe z plane
     CHK( dc->stage()->setPos(cx,cy,cz+thick));
     
     return 0;
