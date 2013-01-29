@@ -30,6 +30,7 @@
  */
 #pragma once
 
+#include "config.h"
 #include "agent.h"
 #include "util/util-niscope.h"
 #include "digitizer.pb.h"
@@ -118,7 +119,11 @@ namespace fetch
       
       virtual bool   aux_info(int *n, size_t **sizes);
     public:
-      ViSession   _vi;
+#ifdef HAVE_NISCOPE
+      ViSession   _vi;  
+#else
+      int _vi;
+#endif
       std::string _lastResourceName;
 
     private:

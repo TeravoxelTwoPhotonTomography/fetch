@@ -12,6 +12,7 @@
  */
 
 #pragma once
+#include "config.h"
 #include "task.h"
 #include "devices/scanner2D.h"
 #include "devices/scanner3D.h"
@@ -44,9 +45,11 @@ namespace fetch
         protected:
       };
 
+#ifdef HAVE_NISCOPE
       template<typename T>
       Frame_With_Interleaved_Lines
         _describe_actual_frame_niscope(device::NIScopeDigitizer *dig, ViInt32 nscans, ViInt32 *precordsize, ViInt32 *pnwfm);
+#endif
     }
   }
 }

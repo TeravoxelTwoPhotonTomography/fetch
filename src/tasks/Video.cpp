@@ -22,7 +22,7 @@
  *    the same setup as this Video class. (The run loop is different, but
  *    the setup is very similar).
  */
-
+#include "config.h"
 #include "common.h"
 #include "Video.h"
 #include "devices/scanner2D.h"
@@ -145,11 +145,13 @@ namespace fetch
         return 1;
       }
 
+#ifdef HAVE_NISCOPE
       template<typename T>
       Frame_With_Interleaved_Lines
         _describe_actual_frame_niscope(device::NIScopeDigitizer *dig, ViInt32 nscans, ViInt32 *precordsize, ViInt32 *pnwfm);
       template Frame_With_Interleaved_Lines _describe_actual_frame_niscope<i8 >(device::NIScopeDigitizer*,ViInt32,ViInt32*,ViInt32*);
       template Frame_With_Interleaved_Lines _describe_actual_frame_niscope<i16>(device::NIScopeDigitizer*,ViInt32,ViInt32*,ViInt32*);
+
       
       template<typename T>
       Frame_With_Interleaved_Lines
@@ -178,12 +180,14 @@ namespace fetch
         *pnwfm       = nwfm;
         return format;
       }
-      
+  #endif    
 
       template<class TPixel>
       unsigned int
       Video<TPixel>::run_niscope(device::IScanner *d)
-      { Chan *qdata = Chan_Open(d->get2d()->_out->contents[0],CHAN_WRITE),
+      { 
+#ifdef HAVE_NISCOPE
+        Chan *qdata = Chan_Open(d->get2d()->_out->contents[0],CHAN_WRITE),
               *qwfm = Chan_Open(d->get2d()->_out->contents[1],CHAN_WRITE);
         Frame *frm   = NULL;
         Frame_With_Interleaved_Lines ref;
@@ -274,6 +278,9 @@ Error:
         d->get2d()->_daq.stopAO();
         d->get2d()->_daq.stopCLK();
         goto Finalize;
+#else // HAVE_NISCOPE
+        return 1; //failure - no niscope
+#endif
       }
 
 

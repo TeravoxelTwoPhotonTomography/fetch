@@ -223,6 +223,7 @@ Error:
         unsigned int
         ScanStack<TPixel>::run_niscope(device::Scanner3D *d)
         {
+#ifdef HAVE_NISCOPE
           Chan *qdata = Chan_Open(d->_out->contents[0],CHAN_WRITE), 
                *qwfm  = Chan_Open(d->_out->contents[1],CHAN_WRITE);
           Frame *frm = NULL;
@@ -356,6 +357,9 @@ Error:
           d->_scanner2d._daq.stopAO();
           d->_scanner2d._daq.stopCLK();
           goto Finalize;
+#else //HAVE_NISCOPE
+          return 1; //failure - no niscope
+#endif
         }
 
         template<class TPixel>

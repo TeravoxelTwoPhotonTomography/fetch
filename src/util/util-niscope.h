@@ -1,6 +1,8 @@
 //TODO: push/pop state for niscope?
 
 #pragma once
+#include "config.h"
+#ifdef HAVE_NISCOPE
 #include "niscope.h"
 
 #define NI5105_MAX_NUM_CHANNELS 8
@@ -32,4 +34,4 @@ ViStatus Fetch (ViSession vi,
                 ViInt32 numsamples,
                 TPixel* data,
                 struct niScope_wfmInfo *info);
-                            
+#endif //HAVE_NISCOPE

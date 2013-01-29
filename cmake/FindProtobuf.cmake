@@ -51,6 +51,10 @@
 # (To distributed this file outside of CMake, substitute the full
 #  License text for the above reference.)
 
+set(PROTOBUF_VERSION 2.4.1)
+set(PROTOBUF_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/protobuf-${PROTOBUF_VERSION}")
+set(PROTOBUF_PATH_SUFFIX vsprojects/Debug /vsprojects/Release)
+
 function(PROTOBUF_GENERATE_CPP SRCS HDRS PROTOPATH)
   if(NOT ARGN)
     message(SEND_ERROR "Error: PROTOBUF_GENERATE_CPP() called without any proto files")
@@ -72,7 +76,7 @@ function(PROTOBUF_GENERATE_CPP SRCS HDRS PROTOPATH)
   foreach(FIL ${ARGN})
     get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
     get_filename_component(FIL_WE ${FIL} NAME_WE)
-    
+
     list(APPEND ${SRCS} "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.cc")
     list(APPEND ${HDRS} "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}.pb.h")
 
@@ -110,7 +114,7 @@ function(PROTOBUF_GENERATE_PYTHON SRCS PROTOPATH)
   foreach(FIL ${ARGN})
     get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
     get_filename_component(FIL_WE ${FIL} NAME_WE)
-    
+
     list(APPEND ${SRCS} "${CMAKE_CURRENT_BINARY_DIR}/${FIL_WE}_pb2.py")
 
       #ARGS --cpp_out  ${CMAKE_CURRENT_BINARY_DIR} --proto_path ${CMAKE_CURRENT_SOURCE_DIR} ${ABS_FIL}
@@ -125,7 +129,7 @@ function(PROTOBUF_GENERATE_PYTHON SRCS PROTOPATH)
 
   set_source_files_properties(${${SRCS}} ${${HDRS}} PROPERTIES GENERATED TRUE)
   set(${SRCS} ${${SRCS}} PARENT_SCOPE)
-endfunction()  
+endfunction()
 
 message("** Using custom FindProtobuf.cmake ")
 
@@ -140,12 +144,18 @@ endif()
 
 find_library(PROTOBUF_LIBRARY NAMES protobuf
              DOC "The Google Protocol Buffers Library"
+             PATHS ${PROTOBUF_PATH}
+             PATH_SUFFIXES ${PROTOBUF_PATH_SUFFIX}
 )
 find_library(PROTOBUF_PROTOC_LIBRARY NAMES protoc
              DOC "The Google Protocol Buffers Compiler Library"
+             PATHS ${PROTOBUF_PATH}
+             PATH_SUFFIXES ${PROTOBUF_PATH_SUFFIX}
 )
 find_program(PROTOBUF_PROTOC_EXECUTABLE NAMES protoc
              DOC "The Google Protocol Buffers Compiler"
+             PATHS ${PROTOBUF_PATH}
+             PATH_SUFFIXES ${PROTOBUF_PATH_SUFFIX}
 )
 
 mark_as_advanced(PROTOBUF_INCLUDE_DIR

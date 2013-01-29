@@ -13,7 +13,6 @@
 
 #include "common.h"
 #include "daq.h"
-#include "visatype.h"
 #include "DAQChannel.h"
 
 #define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, warning))
@@ -196,7 +195,7 @@ Error:
     {
       TaskHandle cur_task = 0;
 
-      ViInt32    N = _config->ao_samples_per_waveform();
+      int32      N = _config->ao_samples_per_waveform();
       float64 freq = computeSampleFrequency(nrecords, record_frequency_Hz);
 
       // The "fake" initialization
@@ -296,7 +295,7 @@ Error:
 
     float64 NationalInstrumentsDAQ::computeSampleFrequency( float64 nrecords, float64 record_frequency_Hz )
     {
-      ViInt32   N          = _config->ao_samples_per_waveform();
+      int32     N          = _config->ao_samples_per_waveform();
       float64   frame_time = nrecords/record_frequency_Hz;         //  512 records / (7920 records/sec)
       return N/frame_time;                         // 4096 samples / 64 ms = 63 kS/s
     }

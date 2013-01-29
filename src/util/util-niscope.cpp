@@ -1,3 +1,6 @@
+#include "config.h"
+#if HAVE_NISCOPE
+
 #include "common.h"
 #include "niScope.h"
 #include "niModInst.h"
@@ -174,3 +177,5 @@ ViStatus Fetch<i16> ( ViSession vi,
                       struct niScope_wfmInfo *info) 
 {return niScope_FetchBinary16(vi,channellist,timeout, numsamples,(ViInt16*)data,info);
 }  
+
+#endif //HAVE_NISCOPE

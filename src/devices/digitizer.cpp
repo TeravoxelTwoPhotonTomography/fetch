@@ -74,10 +74,10 @@ namespace fetch
     }
 
     unsigned int
-      NIScopeDigitizer::on_detach(void)
-      { 
+    NIScopeDigitizer::on_detach(void)
+    {
+#ifdef HAVE_NISCOPE
       ViStatus status = 1; //error
-
       digitizer_debug("Digitizer: Attempting to disarm. vi: %d\r\n", this->_vi);    
       if(this->_vi)
         DIGJMP(niScope_close(this->_vi));  // Close the session
@@ -87,11 +87,15 @@ namespace fetch
 Error:
       this->_vi = 0;
       return status;
-      }
+#else
+      return 1; // failure - no niscope
+#endif
+    }
 
     unsigned int
       NIScopeDigitizer::on_attach(void)
     {
+#ifdef HAVE_NISCOPE
       ViStatus status = VI_SUCCESS;      
       digitizer_debug("NIScopeDigitizer: Attach\r\n");      
       if( _vi == NULL )
@@ -108,6 +112,7 @@ Error:
       _lastResourceName = _config->name();
       return status!=VI_SUCCESS;
     Error:
+#endif
       return 1; // failure
     }
 
@@ -128,6 +133,7 @@ Error:
 
     void NIScopeDigitizer::__common_setup()
     {
+#ifdef HAVE_NISCOPE
       // Setup output queues.
       // - Sizes determine initial allocations.
       // - out[0] receives raw data     from each niScope_Fetch call.
@@ -141,10 +147,12 @@ Error:
           _config->num_records() * _config->record_size() * _config->nchannels() * Bpp,
           _config->num_records() * sizeof(struct niScope_wfmInfo)};
         _alloc_qs( &_out, 2, nbuf, sz );
+#endif
     }
 
     void NIScopeDigitizer::setup(int nrecords, double record_frequency_Hz, double duty)
     {
+#ifdef HAVE_NISCOPE
       ViSession vi = _vi;      
 
       ViReal64   refPosition         = _config->reference();
@@ -222,6 +230,7 @@ Error:
         NISCOPE_VAL_PFI_1 ));
 
       //// ALL DONE
+#endif
     }
 
     size_t NIScopeDigitizer::record_size( double record_frequency_Hz, double duty )
@@ -234,10 +243,14 @@ Error:
     
     bool NIScopeDigitizer::aux_info(int *n, size_t **sizes)
     { 
+#ifdef HAVE_NISCOPE
       *n=1;
       *sizes = (size_t*) Guarded_Malloc(sizeof(size_t),"NIScopeDigitizer::aux_info");
       (*sizes)[0] = sizeof(niScope_wfmInfo);      
       return true;
+#else
+      return false;
+#endif
     }
 
     //
