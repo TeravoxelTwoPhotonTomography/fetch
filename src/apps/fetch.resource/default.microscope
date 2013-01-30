@@ -1,4 +1,4 @@
-scanner3d { 
+scanner3d {
   scanner2d {
     frequency_hz: 7920
     nscans: 256
@@ -9,10 +9,11 @@ scanner3d {
         ao_samples_per_waveform: 16384
         trigger:  "APFI0"
         clock:    "Ctr1InternalOutput"
-        ctr:      "/Dev1/ctr1"
-        ctr_alt:  "/Dev1/ctr0"
-        armstart: "RTSI2"
+        ctr:      "/Dev1/ctr0"
+        ctr_alt:  "/Dev1/ctr1"
+        armstart: "PFI15"
         name:     "Dev1"
+        frame_trigger_out: "PFI1"
       }
       simulated {
         samples_per_record: 16384
@@ -20,7 +21,7 @@ scanner3d {
       }
     }
     digitizer {
-      kind: NIScope #Simulated #NIScope #Alazar
+      kind: Alazar #Simulated #NIScope #Alazar
       niscope {
         name: "Dev2"
         sample_rate: 60000000
@@ -31,8 +32,8 @@ scanner3d {
         nchannels: 1								   # this should correspond to the number of data channels acquired.  Used to guess memory requirements.  If it's wrong that's ok.
         line_trigger_src: 1
         channel { name: "0" range: 0.2 enabled: true }
-        channel { name: "1" range: 2.0 enabled: true 
-                  trigger { 
+        channel { name: "1" range: 2.0 enabled: true
+                  trigger {
                     level_volts     : 0.0;
                     slope           : RISING;
                     holdoff_seconds : 0.0;
@@ -44,18 +45,27 @@ scanner3d {
       }
       alazar {
         system_id: 1
-        sample_rate: SAMPLE_RATE_MAX
-        clock_edge:  CLOCK_EDGE_RISING
-        ext_clock_level: 0
-        decimation: 1
+        sample_rate: SAMPLE_RATE_125MSPS
+        channels {
+          board_id: 0
+          chan_id:  CHANNEL_A
+          range:    INPUT_RANGE_PM_1_V
+          enabled:  true
+        }
+        channels {
+          board_id: 1
+          chan_id:  CHANNEL_A
+          range:    INPUT_RANGE_PM_1_V
+          enabled:  true
+        }
       }
       simulated {
         width:  1024
         number: 0
-        sample_rate: 1000000 
+        sample_rate: 1000000
       }
     }
-    pockels { 
+    pockels {
       kind: NIDAQ #NIDAQ #Simulated
       nidaq {
         v_lim_max: 2
@@ -103,7 +113,7 @@ scanner3d {
       channel:   "/Dev1/ao1"
     }
     simulated {
-    }   
+    }
     um_max:     5
     um_min:     0
     um_step:    0.005
@@ -111,7 +121,7 @@ scanner3d {
   zref_um: 0
 }
 stage {
-    kind: Simulated   #C843 #Simulated
+    kind: C843   #C843 #Simulated
     c843 {
       id: 1
         axis {id: 1   stage: "M-511.DD_NEW"}
@@ -125,12 +135,12 @@ stage {
   }
 
   tilemode: PixelAligned #StageAligned #PixelAligned
-}    
+}
 vibratome {
   serial {
   }
   feed_axis: X
-}  
+}
 fov {
     x_size_um: 500.0
     y_size_um: 400.0

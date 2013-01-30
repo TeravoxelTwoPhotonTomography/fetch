@@ -14,7 +14,7 @@
 #include "ZPiezo.h"
 
 namespace fetch
-{ 
+{
 
   bool operator==(const cfg::device::NIDAQZPiezo& a, const cfg::device::NIDAQZPiezo& b)         {return equals(&a,&b);}
   bool operator==(const cfg::device::SimulatedZPiezo& a, const cfg::device::SimulatedZPiezo& b) {return equals(&a,&b);}
@@ -39,7 +39,7 @@ namespace fetch
 
     NIDAQZPiezo::NIDAQZPiezo( Agent *agent, Config *cfg )
       :ZPiezoBase<Config>(agent,cfg)
-      ,daq(agent,"fetch_ZPiezo")  
+      ,daq(agent,"fetch_ZPiezo")
       ,_ao(cfg->channel())
     {
     }
@@ -62,7 +62,7 @@ namespace fetch
      *          ____________________ ,- z_um
      *  _______|                     ,- z previous
      */
-    void NIDAQZPiezo::computeConstWaveform(float64 z_um,  float64 *data, int n )
+    void NIDAQZPiezo::computeConstWaveform(float64 z_um,  float64 *data, int flyback, int n )
     {
       f64 off = z_um * _config->um2v();
       for(int i=0;i<n;++i)
@@ -83,14 +83,16 @@ namespace fetch
      *
      *  Notice that N-1 is equiv. to z_step - z_step/N
      */
-    void NIDAQZPiezo::computeRampWaveform(float64 z_um, float64 step_um,  float64 *data, int n )
+    void NIDAQZPiezo::computeRampWaveform(float64 z_um, float64 step_um,  float64 *data, int flyback, int n )
     {
       f64   A = step_um * _config->um2v(),
           off = z_um * _config->um2v(),
-            N = n;
-
-      for(int i=0;i<n;++i)
+            N = flyback;
+      int i;
+      for(i=0;i<flyback;++i)
         data[i] = A*(i/(N-1))+off; // linear ramp from off to off+A
+      for(;i<n;++i)
+        data[i] = A+off;
     }
 
 #define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, warning))
@@ -121,7 +123,7 @@ Error:
       {
           DAQJMP(DAQmxMaxMinInterset(daq.daqtask,physicalChannel()->name(),&mn,&mx));
           DAQJMP(DAQmxSetAOMax(daq.daqtask,physicalChannel()->name(),mx));
-          DAQJMP(DAQmxSetAOMin(daq.daqtask,physicalChannel()->name(),mn));      
+          DAQJMP(DAQmxSetAOMin(daq.daqtask,physicalChannel()->name(),mn));
       }
       DAQJMP(DAQmxStartTask(daq.daqtask));
       DAQJMP(DAQmxWriteAnalogScalarF64(daq.daqtask,1,10,off,NULL));
@@ -153,12 +155,12 @@ Error:
       ,_ao("simulated")
     {}
 
-    void SimulatedZPiezo::computeConstWaveform( float64 z_um, float64 *data, int n )
+    void SimulatedZPiezo::computeConstWaveform( float64 z_um, float64 *data, int flyback, int n )
     {
       memset(data,0,sizeof(float64)*n);
     }
 
-    void SimulatedZPiezo::computeRampWaveform( float64 z_um, float64 step_um, float64 *data, int n )
+    void SimulatedZPiezo::computeRampWaveform( float64 z_um, float64 step_um, float64 *data, int flyback, int n )
     {
       memset(data,0,sizeof(float64)*n);
     }
@@ -196,14 +198,14 @@ Error:
     void ZPiezo::setKind( Config::ZPiezoType kind )
     {
       switch(kind)
-      {    
+      {
       case cfg::device::ZPiezo_ZPiezoType_NIDAQ:
         if(!_nidaq)
           _nidaq = new NIDAQZPiezo(_agent,_config->mutable_nidaq());
         _idevice  = _nidaq;
         _izpiezo = _nidaq;
         break;
-      case cfg::device::ZPiezo_ZPiezoType_Simulated:    
+      case cfg::device::ZPiezo_ZPiezoType_Simulated:
         if(!_simulated)
           _simulated = new SimulatedZPiezo(_agent);
         _idevice  = _simulated;
@@ -213,7 +215,7 @@ Error:
         error("Unrecognized kind() for ZPiezo.  Got: %u\r\n",(unsigned)kind);
       }
     }
- 
+
     void ZPiezo::_set_config( Config IN *cfg )
     {
       setKind(cfg->kind());
@@ -232,7 +234,7 @@ Error:
       if(_nidaq)     _nidaq->_set_config(_config->mutable_nidaq());
       if(_simulated) _simulated->_set_config(_config->mutable_simulated());
     }
-    
+
     void ZPiezo::getScanRange( f64 *min_um,f64 *max_um, f64 *step_um )
     {
       Config c = get_config();

@@ -35,7 +35,7 @@ namespace fetch
     class ILSM
     {
     public:      /* TODO: add methods to change vpp on the fly*/
-      virtual void computeSawtooth(float64 *data, int n)=0;
+      virtual void computeSawtooth(float64 *data, int flyback, int n)=0;
       virtual IDAQPhysicalChannel* physicalChannel() = 0;
 
       virtual double getAmplitudeVolts() = 0;
@@ -61,10 +61,10 @@ namespace fetch
 
       virtual unsigned int on_attach() {return daq.on_attach();}
       virtual unsigned int on_detach() {return daq.on_detach();}
-      
+
       virtual void _set_config(Config IN *cfg) {_pchan.set(cfg->ao_channel());}
-      
-      virtual void computeSawtooth(float64 *data, int n);
+
+      virtual void computeSawtooth(float64 *data, int flyback, int n);
 
       virtual IDAQPhysicalChannel* physicalChannel() {return &_pchan;}
 
@@ -85,7 +85,7 @@ namespace fetch
       virtual unsigned int on_attach() {return 0;}
       virtual unsigned int on_detach() {return 0;}
 
-      virtual void computeSawtooth(float64 *data, int n);
+      virtual void computeSawtooth(float64 *data, int flyback, int n);
 
       virtual IDAQPhysicalChannel* physicalChannel() {return &_pchan;}
 
@@ -93,7 +93,7 @@ namespace fetch
       virtual void   setAmplitudeVolts(double vpp) {Config c = get_config(); c.set_val(vpp); set_config(c);}
       virtual void   setAmplitudeVoltsNoWait(double vpp) {Config c = get_config(); c.set_val(vpp); Guarded_Assert_WinErr(set_config_nowait(c));}
     };
-   
+
    class LinearScanMirror:public LSMBase<cfg::device::LinearScanMirror>
    {
      NIDAQLinearScanMirror     *_nidaq;
@@ -112,7 +112,7 @@ namespace fetch
      void _set_config( Config IN *cfg );
      void _set_config( const Config &cfg );
 
-     virtual void computeSawtooth(float64 *data, int n);
+     virtual void computeSawtooth(float64 *data, int flyback, int n);
 
      virtual IDAQPhysicalChannel* physicalChannel() {return _ilsm->physicalChannel();}
 

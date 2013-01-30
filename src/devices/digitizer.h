@@ -38,6 +38,7 @@
 #include "types.h"
 #include "util\util-protobuf.h"
 #include "alazar.h"
+#include "frame.h"
 
 #define DIGITIZER_BUFFER_NUM_FRAMES       4        // must be a power of two
 #define DIGITIZER_DEFAULT_TIMEOUT         INFINITE // ms
@@ -141,9 +142,15 @@ namespace fetch
       unsigned int on_attach();
       unsigned int on_detach();
 
+      int start();
+      int stop();
+      int fetch(Frame* frm);
+
       virtual void setup(int nrecords, double record_frequency_Hz, double duty);
       virtual size_t record_size(double record_frequency_Hz, double duty);
       virtual size_t nchan();
+
+      void get_image_size(unsigned *w, unsigned *h); // size of the raw frame returned by the digitizer (as configured).
 
       double sample_rate();
     private:

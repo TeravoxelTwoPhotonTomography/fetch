@@ -304,6 +304,9 @@ target_link_libraries(fetch
   ${OPTIONAL_LIBS}
   ${CUDA_LIBRARIES}
 # ${DIRECTX_LIBRARIES}
+  Imm32.lib            # wierd extra windows libs that qt needs but doesn't
+  Ws2_32.lib           # automatically include
+  Winmm.lib
 )
 
 ##

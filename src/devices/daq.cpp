@@ -58,7 +58,7 @@ namespace fetch {
     }
 
     int32 CVICALLBACK _daq_event_done_callback(TaskHandle taskHandle, int32 sts, void *callbackData)
-    { 
+    {
       NationalInstrumentsDAQ *self = (NationalInstrumentsDAQ*)(callbackData);
       DAQERR(sts);
       Guarded_Assert_WinErr(SetEvent(self->_notify_done));
@@ -71,7 +71,7 @@ namespace fetch {
         _clk.daqtask,                      //task handle
         0,                                 //run the callback in a DAQmx thread
         &_daq_event_done_callback,         //callback
-        (void*)this));                     //data passed to callback 
+        (void*)this));                     //data passed to callback
     }
 
     unsigned int NationalInstrumentsDAQ::on_attach()
@@ -99,34 +99,34 @@ namespace fetch {
     {
       HANDLE hs[] = {
         _notify_done,
-        _agent->_notify_stop};        
-      DWORD  res;        
+        _agent->_notify_stop};
+      DWORD  res;
       const char classname[] = "NationalInstrumentsDAQ";
       res = WaitForMultipleObjects(2,hs,FALSE,timeout_ms);
-      if(res == WAIT_TIMEOUT)        
+      if(res == WAIT_TIMEOUT)
         error("%s: Timed out waiting for DAQ to finish AO write.\r\n",classname);
       else if(res==WAIT_ABANDONED_0)
-      { 
+      {
         warning("%s: Abandoned wait on notify_daq_done.\r\n",classname);
         return 1;
       }
       else if(res==WAIT_ABANDONED_0+1)
-      { 
+      {
         warning("%s: Abandoned wait on notify_stop.\r\n",classname);
         return 1;
       }
-      return 0;   
+      return 0;
     }
 
     int NationalInstrumentsDAQ::writeAO(float64 *data)
     {
       int32 written,
             N = _config->ao_samples_per_waveform();
-            
+
 #if 0
-      { 
+      {
         uInt32 nchan;
-        char 
+        char
           buf[1024],
           name[1024];
         memset(buf ,0,sizeof(buf ));
@@ -139,19 +139,19 @@ namespace fetch {
           name,
           nchan,
           buf);
-        
+
         while(nchan--)
         { DAQWRN( DAQmxGetNthTaskChannel(_ao.daqtask, 1+nchan, buf, sizeof(buf)) );
           DAQWRN( DAQmxGetPhysicalChanName(_ao.daqtask, buf, buf, sizeof(buf)) );
           debug("\t%d:\t%s"ENDL,nchan,buf);
         }
-      }       
-      {      
+      }
+      {
         FILE *fp = fopen("NationalInstrumentsDAQ_writeAO.f64","wb");
         fwrite(data,sizeof(f64),3*N,fp);
         fclose(fp);
-      }   
-#endif    
+      }
+#endif
 
       DAQJMP( DAQmxWriteAnalogF64(_ao.daqtask,
         N,
@@ -175,7 +175,7 @@ Error:
     //************************************
     // Method:    setupCLK
     // FullName:  fetch::device::NationalInstrumentsDAQ::setupCLK
-    // Access:    public 
+    // Access:    public
     // Returns:   void
     // Qualifier:
     //
@@ -213,9 +213,9 @@ Error:
               0.5 ));
       DAQERR( DAQmxStartTask(cur_task) );
 
-      // The "real" initialization      
+      // The "real" initialization
       DAQERR( DAQmxClearTask(_clk.daqtask) ); // Once a DAQ task is started, it needs to be cleared before restarting
-      DAQERR( DAQmxCreateTask("fetch_CLK",&_clk.daqtask));      
+      DAQERR( DAQmxCreateTask("fetch_CLK",&_clk.daqtask));
       cur_task = _clk.daqtask;
       DAQERR( DAQmxCreateCOPulseChanFreq(cur_task,       // task
               _config->ctr().c_str(),     // "Dev1/ctr1"
@@ -235,7 +235,7 @@ Error:
 
     void NationalInstrumentsDAQ::setupAO( float64 nrecords, float64 record_frequency_Hz )
     {
-      
+
       float64 freq = computeSampleFrequency(nrecords, record_frequency_Hz);
 
       DAQERR( DAQmxClearTask(_ao.daqtask) );
@@ -243,7 +243,7 @@ Error:
       registerDoneEvent();
     }
 
-    #define MAX_CHAN_STRING 1024    
+    #define MAX_CHAN_STRING 1024
     void NationalInstrumentsDAQ::setupAOChannels( float64 nrecords, float64 record_frequency_Hz, float64 vmin, float64 vmax, IDAQPhysicalChannel **channels, int nchannels )
     {
       char aochan[MAX_CHAN_STRING];
@@ -266,9 +266,9 @@ Error:
         // NI DAQ's typically have multiple voltage ranges capable of achieving different precisions.
         // The 6259 has 2 ranges.
         DAQERR(DAQmxGetDevAOVoltageRngs(_config->name().c_str(),v,4));
-        vmin = MAX(vmin,v[2]);        
-        vmax = MIN(vmax,v[3]);        
-      } 
+        vmin = MAX(vmin,v[2]);
+        vmax = MIN(vmax,v[3]);
+      }
 
       TaskHandle cur_task = _ao.daqtask;
       DAQERR( DAQmxCreateAOVoltageChan(cur_task,
@@ -281,12 +281,12 @@ Error:
       DAQERR( DAQmxSetWriteRegenMode(cur_task,DAQmx_Val_DoNotAllowRegen));
 
       DAQERR( DAQmxCfgAnlgEdgeStartTrig(cur_task,
-        _config->trigger().c_str(),        
+        _config->trigger().c_str(),
         DAQmx_Val_Rising,
         _config->level_volts() ));
 
       DAQERR( DAQmxCfgSampClkTiming(cur_task,
-        _config->clock().c_str(),// eg. "Ctr1InternalOutput"        
+        _config->clock().c_str(),// eg. "Ctr1InternalOutput"
         freq,
         DAQmx_Val_Rising,
         DAQmx_Val_ContSamps, // use continuous output so that counter stays in control
@@ -296,8 +296,8 @@ Error:
     float64 NationalInstrumentsDAQ::computeSampleFrequency( float64 nrecords, float64 record_frequency_Hz )
     {
       int32     N          = _config->ao_samples_per_waveform();
-      float64   frame_time = nrecords/record_frequency_Hz;         //  512 records / (7920 records/sec)
-      return N/frame_time;                         // 4096 samples / 64 ms = 63 kS/s
+      float64   frame_time = (nrecords+_config->flyback_scans())/record_frequency_Hz;  //  (256+16 records) / (7920 records/sec)
+      return N/frame_time;                         // 16384 samples / 32 ms = 512 kS/s
     }
 
     void NationalInstrumentsDAQ::__common_setup()
@@ -350,7 +350,7 @@ Error:
     void DAQ::setKind( Config::DAQKind kind )
     {
       switch(kind)
-      {    
+      {
       case cfg::device::DAQ_DAQKind_NIDAQ:
         if(!_nidaq)
           _nidaq = new NationalInstrumentsDAQ(_agent,_config->mutable_nidaq());
@@ -383,11 +383,11 @@ Error:
       _config->set_kind(kind);
       setKind(kind);
       switch(kind)
-      {    
+      {
       case cfg::device::DAQ_DAQKind_NIDAQ:
         _nidaq->_set_config(cfg.nidaq());
         break;
-      case cfg::device::DAQ_DAQKind_Simulated:    
+      case cfg::device::DAQ_DAQKind_Simulated:
         _simulated->_set_config(cfg.simulated());
         break;
       default:

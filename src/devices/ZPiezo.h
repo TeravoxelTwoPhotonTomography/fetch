@@ -15,8 +15,8 @@
 #include "zpiezo.pb.h"
 #include "object.h"
 
-namespace fetch 
-{ 
+namespace fetch
+{
 
   bool operator==(const cfg::device::NIDAQZPiezo& a, const cfg::device::NIDAQZPiezo& b);
   bool operator==(const cfg::device::SimulatedZPiezo& a, const cfg::device::SimulatedZPiezo& b);
@@ -26,16 +26,16 @@ namespace fetch
   bool operator!=(const cfg::device::SimulatedZPiezo& a, const cfg::device::SimulatedZPiezo& b);
   bool operator!=(const cfg::device::ZPiezo& a, const cfg::device::ZPiezo& b);
 
-  namespace device 
+  namespace device
   {
 
     class IZPiezo
     {
     public:
-      virtual void computeConstWaveform(float64 z_um, float64 *data, int n) = 0;
-      virtual void computeRampWaveform(float64 z_um, float64 step_um, float64 *data, int n)  = 0;
+      virtual void computeConstWaveform(float64 z_um, float64 *data, int flyback, int n) = 0;
+      virtual void computeRampWaveform(float64 z_um, float64 step_um, float64 *data, int flyback, int n)  = 0;
       virtual IDAQPhysicalChannel* physicalChannel() = 0;
-      
+
       virtual int moveTo(f64 z_um) = 0; // should return 1 on success, and 0 on error
     };
 
@@ -47,7 +47,7 @@ namespace fetch
       ZPiezoBase(Agent *agent, Config *cfg) :IConfigurableDevice<T>(agent,cfg) {}
     };
 
-    class NIDAQZPiezo:public ZPiezoBase<cfg::device::NIDAQZPiezo>      
+    class NIDAQZPiezo:public ZPiezoBase<cfg::device::NIDAQZPiezo>
     {
       NIDAQChannel daq;
       IDAQPhysicalChannel _ao;
@@ -57,21 +57,21 @@ namespace fetch
 
       unsigned int on_attach();
       unsigned int on_detach();
-      
+
       virtual void _set_config(Config IN *cfg)      {_ao.set(cfg->channel());}
       virtual void _set_config(const Config& cfg)   {*_config=cfg; _set_config(_config); }
 
-      virtual void computeConstWaveform(float64 z_um, float64 *data, int n);
-      virtual void computeRampWaveform(float64 z_um, float64 step_um, float64 *data, int n);
-      
+      virtual void computeConstWaveform(float64 z_um, float64 *data, int flyback, int n);
+      virtual void computeRampWaveform(float64 z_um, float64 step_um, float64 *data, int flyback, int n);
+
       virtual IDAQPhysicalChannel* physicalChannel() {return &_ao;}
 
       virtual int moveTo(f64 z_um);  // should return 1 on success, and 0 on error
     };
-      
+
     class SimulatedZPiezo:public ZPiezoBase<cfg::device::SimulatedZPiezo>
     {
-      SimulatedDAQChannel _chan;  
+      SimulatedDAQChannel _chan;
       IDAQPhysicalChannel _ao;
     public:
       SimulatedZPiezo(Agent *agent);
@@ -80,12 +80,12 @@ namespace fetch
       unsigned int on_attach() {return 0;}
       unsigned int on_detach() {return 0;}
 
-      virtual void computeConstWaveform(float64 z_um, float64 *data, int n);
-      virtual void computeRampWaveform(float64 z_um, float64 step_um, float64 *data, int n);
+      virtual void computeConstWaveform(float64 z_um, float64 *data, int flyback, int n);
+      virtual void computeRampWaveform(float64 z_um, float64 step_um, float64 *data, int flyback, int n);
 
       virtual IDAQPhysicalChannel* physicalChannel() {return &_ao;}
 
-      void getScanRange(f64 *min_um,f64 *max_um, f64 *step_um);      
+      void getScanRange(f64 *min_um,f64 *max_um, f64 *step_um);
 
       virtual int moveTo(f64 z_um) {return 1; /* success */}
     };
@@ -108,9 +108,9 @@ namespace fetch
 
       void setKind(Config::ZPiezoType kind);
 
-      virtual void computeConstWaveform(float64 z_um, float64 *data, int n) {_izpiezo->computeConstWaveform(z_um,data,n);}
-      virtual void computeRampWaveform(float64 z_um, float64 step_um, float64 *data, int n)  {_izpiezo->computeRampWaveform(z_um,step_um,data,n);}
-      virtual void computeRampWaveform(float64 z_um, float64 *data, int n)  {_izpiezo->computeRampWaveform(z_um,_config->um_step(),data,n);}
+      virtual void computeConstWaveform(float64 z_um, float64 *data, int flyback, int n) {_izpiezo->computeConstWaveform(z_um,data,flyback,n);}
+      virtual void computeRampWaveform(float64 z_um, float64 step_um, float64 *data, int flyback, int n)  {_izpiezo->computeRampWaveform(z_um,step_um,data,flyback,n);}
+      virtual void computeRampWaveform(float64 z_um, float64 *data, int flyback, int n)  {_izpiezo->computeRampWaveform(z_um,_config->um_step(),data,flyback,n);}
 
       virtual IDAQPhysicalChannel* physicalChannel() {return _izpiezo->physicalChannel();}
 

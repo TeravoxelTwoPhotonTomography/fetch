@@ -35,12 +35,12 @@ namespace fetch
     class IDAQ
     {
     public:
-      
+
       virtual int waitForDone(DWORD timeout_ms=INFINITE) = 0;                    ///<\returns 1 on fail, 0 on success
 
       virtual void setupCLK(float64 nrecords, float64 record_frequency_Hz) = 0;
       virtual void setupAO(float64 nrecords, float64 record_frequency_Hz) = 0;
-      virtual void setupAOChannels(float64 nrecords, 
+      virtual void setupAOChannels(float64 nrecords,
                            float64 record_frequency_Hz,
                            float64 vmin,
                            float64 vmax,
@@ -57,6 +57,7 @@ namespace fetch
 
       virtual float64 computeSampleFrequency( float64 nrecords, float64 record_frequency_Hz ) = 0;
       virtual int32   samplesPerRecordAO() = 0;
+      virtual int32   flybackSampleIndex(int nscans)=0;
     };
 
     template<class T>
@@ -85,16 +86,17 @@ namespace fetch
       void setupCLK(float64 nrecords, float64 record_frequency_Hz);
       void setupAO(float64 nrecords, float64 record_frequency_Hz);
       void setupAOChannels(float64 nrecords, float64 record_frequency_Hz, float64 vmin, float64 vmax, IDAQPhysicalChannel **channels, int nchannels);
-           
+
       int writeAO(float64 *data);
 
-      int32 startAO(); 
+      int32 startAO();
       int32 startCLK();
       int32 stopAO();
       int32 stopCLK();
 
       float64 computeSampleFrequency( float64 nrecords, float64 record_frequency_Hz );
       int32   samplesPerRecordAO() {return _config->ao_samples_per_waveform();}
+      int32   flybackSampleIndex(int nscans) {return (samplesPerRecordAO()*nscans)/(_config->flyback_scans()+nscans);}
     protected:
       void registerDoneEvent(void);
     private:
@@ -127,8 +129,9 @@ namespace fetch
 
       float64 computeSampleFrequency( float64 nrecords, float64 record_frequency_Hz ) {return _config->sample_frequency_hz();}
       int32   samplesPerRecordAO() {return _config->samples_per_record();}
+      int32   flybackSampleIndex(int nscans) {return _config->samples_per_record()*0.95;}
     };
-   
+
    class DAQ:public DAQBase<cfg::device::DAQ>
    {
      NationalInstrumentsDAQ *_nidaq;
@@ -151,7 +154,7 @@ namespace fetch
 
      void setupCLK(float64 nrecords, float64 record_frequency_Hz) {_idaq->setupCLK(nrecords,record_frequency_Hz);}
      void setupAO(float64 nrecords, float64 record_frequency_Hz)  {_idaq->setupAO (nrecords,record_frequency_Hz);}
-     void setupAOChannels(float64 nrecords, float64 record_frequency_Hz, float64 vmin, float64 vmax, IDAQPhysicalChannel **channels, int nchannels) 
+     void setupAOChannels(float64 nrecords, float64 record_frequency_Hz, float64 vmin, float64 vmax, IDAQPhysicalChannel **channels, int nchannels)
      {_idaq->setupAOChannels(nrecords,record_frequency_Hz,vmin,vmax,channels,nchannels);}
 
      int writeAO(float64 *data) {return _idaq->writeAO(data);}
@@ -163,6 +166,7 @@ namespace fetch
 
      float64 computeSampleFrequency( float64 nrecords, float64 record_frequency_Hz ) {return _idaq->computeSampleFrequency(nrecords,record_frequency_Hz);};
      int32   samplesPerRecordAO() {return _idaq->samplesPerRecordAO();}
+     int32   flybackSampleIndex(int nscans) {return _idaq->flybackSampleIndex(nscans);}
    };
 
    //end namespace fetch::device

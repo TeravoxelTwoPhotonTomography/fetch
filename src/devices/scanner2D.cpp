@@ -36,7 +36,7 @@ namespace fetch
 
   namespace device
   {
-  
+
 
     Scanner2D::Scanner2D( Agent *agent )
       :IConfigurableDevice<Config>(agent)
@@ -63,7 +63,7 @@ namespace fetch
     }
 
     unsigned int Scanner2D::on_attach()
-    {      
+    {
 
       CHKJMP(_shutter.on_attach()==0   ,ESHUTTER);
       CHKJMP(_digitizer.on_attach()==0 ,EDIGITIZER);
@@ -72,7 +72,7 @@ namespace fetch
       CHKJMP(_pockels.on_attach()==0   ,EPOCKELS);
 
       if(!_out)
-      { 
+      {
         // Guess for how the output will be sized for allocation.
         // [aside] this is gross and feels gross
         FrmFmt fmt(
@@ -93,15 +93,15 @@ namespace fetch
             nbuf[i] = 4;
           nbytes[0] = fmt.size_bytes();
           memcpy(nbytes+1,sizes,sizeof(size_t)*n);
-                    
+
           _alloc_qs(&_out,nout,nbuf,nbytes);
-          
+
           free(sizes);
           free(nbytes);
           free(nbuf);
-        }        
+        }
       }
-        
+
       return 0; // success
       // On error, try to detached successfully attached subdevices.
 EPOCKELS:
@@ -117,7 +117,7 @@ ESHUTTER:
     }
 
     unsigned int Scanner2D::on_detach()
-    {      
+    {
       unsigned int eflag = 0; //success = 0, error = 1
       return_val_if(eflag |= _shutter.on_detach()  ,eflag);
       return_val_if(eflag |= _digitizer.on_detach(),eflag);
@@ -169,14 +169,16 @@ ESHUTTER:
     }
 
     void Scanner2D::generateAO()
-    { 
-      int N = _daq.samplesPerRecordAO();
+    {
+      int N,f;
       transaction_lock();
+      N = _daq.samplesPerRecordAO();
+      f = _daq.flybackSampleIndex(_config->nscans());
       vector_f64_request(_ao_workspace,2*N-1/*max index*/);
       f64 *m = _ao_workspace->contents,
           *p = m+N;
-      _LSM.computeSawtooth(m,N);
-      _pockels.computeVerticalBlankWaveform(p,N);
+      _LSM.computeSawtooth(m,f,N);
+      _pockels.computeVerticalBlankWaveform(p,f,N);
       transaction_unlock();
     }
 

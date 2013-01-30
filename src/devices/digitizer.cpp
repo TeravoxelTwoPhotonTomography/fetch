@@ -294,6 +294,27 @@ Error:
 #pragma warning(pop)
     }
 
+    int AlazarDigitizer::start()
+    { CHKJMP(alazar_start(_ctx));
+      return 1;
+    Error:
+      return 0;
+    }
+
+    int AlazarDigitizer::stop()
+    { CHKJMP(alazar_stop(_ctx));
+      return 1;
+    Error:
+      return 0;
+    }
+
+    int AlazarDigitizer::fetch(Frame* frm)
+    { CHKJMP(alazar_fetch(_ctx,&frm->data,INFINITE)); // the only reason this is well behaved is because alazar_fetch doesn't actually swap pointers.
+      return 1;
+Error:
+      return 0;
+    }
+
     double AlazarDigitizer::sample_rate()
     {
       switch(_config->sample_rate())
@@ -331,6 +352,10 @@ Error:
         if(_config->channels(i).enabled())
           ++n;
       return n;
+    }
+
+    void AlazarDigitizer::get_image_size(unsigned *w, unsigned *h)
+    { alazar_get_image_size(_ctx,w,h);
     }
 
     //

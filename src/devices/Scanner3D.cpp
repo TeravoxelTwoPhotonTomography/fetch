@@ -54,10 +54,10 @@ namespace fetch
     }
 
     unsigned int Scanner3D::on_attach()
-    {      
+    {
       CHKJMP(_scanner2d.on_attach()==0  ,ESCAN2D);
       CHKJMP(   _zpiezo.on_attach()==0  ,EZPIEZO);
-      
+
       if(!_out)
       {
         // Reference the video output channel
@@ -66,8 +66,8 @@ namespace fetch
         //Guarded_Assert(_out->contents[0] = Chan_Open(_scanner2d.getVideoChannel(),CHAN_NONE) );
         for(int i=0;i<n;++i)
           Guarded_Assert(_out->contents[i] = Chan_Open(_scanner2d._out->contents[i],CHAN_NONE));
-        
-      }      
+
+      }
       //
       return 0;
       // on error, try to detach attached sub-devices
@@ -133,15 +133,17 @@ ESCAN2D:
 
     void Scanner3D::generateAOConstZ( float z_um )
     {
-      int N = _scanner2d._daq.samplesPerRecordAO();
+      int f, N;
       transaction_lock();
-      vector_f64_request(_ao_workspace,2*N-1/*max index*/);
+      N = _scanner2d._daq.samplesPerRecordAO();
+      f = _scanner2d._daq.flybackSampleIndex(_config->scanner2d().nscans());
+      vector_f64_request(_ao_workspace,3*N-1/*max index*/);
       f64 *m = _ao_workspace->contents,
           *p = m+N,
           *z = p+N;
-      _scanner2d._LSM.computeSawtooth(m,N);
-      _scanner2d._pockels.computeVerticalBlankWaveform(p,N);
-      _zpiezo.computeConstWaveform(z_um,z,N);
+      _scanner2d._LSM.computeSawtooth(m,f,N);
+      _scanner2d._pockels.computeVerticalBlankWaveform(p,f,N);
+      _zpiezo.computeConstWaveform(z_um,z,f,N);
       transaction_unlock();
     }
 
@@ -152,15 +154,17 @@ ESCAN2D:
 
     void Scanner3D::generateAORampZ( float z_um )
     {
-      int N = _scanner2d._daq.samplesPerRecordAO();
+      int N,f;
       transaction_lock();
-      vector_f64_request(_ao_workspace,2*N-1/*max index*/);
+      N = _scanner2d._daq.samplesPerRecordAO();
+      f = _scanner2d._daq.flybackSampleIndex(_config->scanner2d().nscans());
+      vector_f64_request(_ao_workspace,3*N-1/*max index*/);
       f64 *m = _ao_workspace->contents,
         *p = m+N,
         *z = p+N;
-      _scanner2d._LSM.computeSawtooth(m,N);
-      _scanner2d._pockels.computeVerticalBlankWaveform(p,N);
-      _zpiezo.computeRampWaveform(z_um,z,N);
+      _scanner2d._LSM.computeSawtooth(m,f,N);
+      _scanner2d._pockels.computeVerticalBlankWaveform(p,f,N);
+      _zpiezo.computeRampWaveform(z_um,z,f,N);
       transaction_unlock();
 #if 0
       vector_f64_dump(_ao_workspace,"Scanner3D_generateAORampZ.f64");

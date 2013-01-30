@@ -12,17 +12,24 @@
 #
 set(ALAZAR_FOUND "NO")
 set(HAVE_ALAZAR 0)
+set(ALAZAR_VERSION 6.0.3)
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  set(sys x64)
+else()
+  set(sys Win32)
+endif()
 
 find_path(ALAZAR_INCLUDE_DIR AlazarApi.h
     HINTS
-    ${CMAKE_SOURCE_DIR}/3rdParty/AlazarTech/ATS-SDK/5.8.2
+    ${CMAKE_SOURCE_DIR}/3rdParty/AlazarTech/ATS-SDK/${ALAZAR_VERSION}
     PATH_SUFFIXES Include
 )
 
 find_library(ALAZAR_LIBRARY ATSApi.lib
   HINTS
-  ${CMAKE_SOURCE_DIR}/3rdParty/AlazarTech/ATS-SDK/5.8.2
-  PATH_SUFFIXES Library/Win32 Library/x64
+  ${CMAKE_SOURCE_DIR}/3rdParty/AlazarTech/ATS-SDK/${ALAZAR_VERSION}
+  PATH_SUFFIXES Library/${sys}
   )
 
 include(FindPackageHandleStandardArgs)

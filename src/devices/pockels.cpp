@@ -38,13 +38,13 @@ namespace device {
     :PockelsBase<cfg::device::NIDAQPockels>(agent)
     ,daq(agent,"fetch_Pockels")
     ,_ao(_config->ao_channel())
-  {}    
+  {}
 
   NIDAQPockels::NIDAQPockels(Agent *agent, Config *cfg )
     :PockelsBase<cfg::device::NIDAQPockels>(agent,cfg)
-    ,daq(agent,"fetch_NIDAQPockels") 
+    ,daq(agent,"fetch_NIDAQPockels")
     ,_ao(cfg->ao_channel())
-  {}    
+  {}
 
   NIDAQPockels::~NIDAQPockels()
   {}
@@ -56,13 +56,13 @@ namespace device {
 
   int
     NIDAQPockels::setOpenVolts(f64 volts)
-  { 
+  {
     int sts = 0; //fail
     transaction_lock();
     if(sts=isValidOpenVolts(volts))
-    { 
+    {
       _config->set_v_open(volts);
-      update();        
+      update();
     }
     else
       warning("NIDAQPockels: attempted to set v_open to an out of bounds value.\r\n");
@@ -71,26 +71,27 @@ namespace device {
   }
 
   int NIDAQPockels::setOpenVoltsNoWait(f64 volts)
-  { 
+  {
     int sts = 0; //fail
     Config cfg = get_config();
     if(sts=isValidOpenVolts(volts))
-    { 
+    {
       cfg.set_v_open(volts);
-      set_config_nowait(cfg);       
+      set_config_nowait(cfg);
     }
     else
       warning("NIDAQPockels: attempted to set v_open to an out of bounds value.\r\n");
     return sts;
   }
 
-  void NIDAQPockels::computeVerticalBlankWaveform( float64 *data, int n )
-  {
+  void NIDAQPockels::computeVerticalBlankWaveform( float64 *data, int flyback, int n )
+  { int i;
     float64 max = _config->v_open(),
             min = _config->v_closed();
-    for(int i=0;i<n;++i)
+    for(i=0;i<flyback;++i)
       data[i] = max;           // step to max during y scan
-    data[n-1] = min;      // step to zero at end of scan
+    for(;i<n;++i)
+      data[i] = min;      // step to zero at end of scan
   }
 
   //
@@ -99,13 +100,13 @@ namespace device {
 
   SimulatedPockels::SimulatedPockels( Agent *agent )
     :PockelsBase<cfg::device::SimulatedPockels>(agent)
-    ,_chan(agent,"Pockels") 
+    ,_chan(agent,"Pockels")
     ,_ao("simulated")
   {}
 
   SimulatedPockels::SimulatedPockels( Agent *agent, Config *cfg )
     :PockelsBase<cfg::device::SimulatedPockels>(agent,cfg)
-    ,_chan(agent,"Pockels")  
+    ,_chan(agent,"Pockels")
     ,_ao("simulated")
   {}
 
@@ -126,10 +127,10 @@ namespace device {
   {
     Config c = get_config();
     c.set_val(volts);
-    return set_config_nowait(c);    
+    return set_config_nowait(c);
   }
 
-  void SimulatedPockels::computeVerticalBlankWaveform( float64 *data, int n )
+  void SimulatedPockels::computeVerticalBlankWaveform( float64 *data, int flyback, int n )
   {
     memset(data,0,sizeof(float64)*n);
   }
@@ -167,14 +168,14 @@ namespace device {
   void Pockels::setKind( Config::PockelsType kind )
   {
     switch(kind)
-    {    
+    {
     case cfg::device::Pockels_PockelsType_NIDAQ:
       if(!_nidaq)
         _nidaq = new NIDAQPockels(_agent,_config->mutable_nidaq());
       _idevice  = _nidaq;
       _ipockels = _nidaq;
       break;
-    case cfg::device::Pockels_PockelsType_Simulated:    
+    case cfg::device::Pockels_PockelsType_Simulated:
       if(!_simulated)
         _simulated = new SimulatedPockels(_agent);
       _idevice  = _simulated;
@@ -200,11 +201,11 @@ namespace device {
     _config->set_kind(kind);
     setKind(kind);
     switch(kind)
-    {    
+    {
     case cfg::device::Pockels_PockelsType_NIDAQ:
       _nidaq->_set_config(const_cast<Config&>(cfg).mutable_nidaq());
       break;
-    case cfg::device::Pockels_PockelsType_Simulated:    
+    case cfg::device::Pockels_PockelsType_Simulated:
       _simulated->_set_config(cfg.simulated());
       break;
     default:

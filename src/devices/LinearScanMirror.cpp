@@ -41,13 +41,14 @@ namespace fetch {
       ,_pchan(cfg->ao_channel())
     {}
 
-    void NIDAQLinearScanMirror::computeSawtooth( float64 *data, int n )
-    {      
-      double N = n;
+    void NIDAQLinearScanMirror::computeSawtooth( float64 *data, int flyback, int n )
+    { int i;
+      double N = flyback;
       float64 A = _config->vpp();
-      for(int i=0;i<n;++i)
+      for(i=0;i<flyback;++i)
         data[i] = A*((i/N)-0.5); // linear ramp from -A/2 to A/2
-      data[n-1] = data[0];  // at end of wave, head back to the starting position
+      for(;i<n;++i)
+        data[i]=data[0];         // at end of wave, head back to the starting position
     }
 
     //
@@ -66,7 +67,7 @@ namespace fetch {
       ,_pchan("simulated")
     {}
 
-    void SimulatedLinearScanMirror::computeSawtooth( float64 *data, int n )
+    void SimulatedLinearScanMirror::computeSawtooth( float64 *data, int flyback, int n )
     {
       memset(data,0,sizeof(float64)*n);
     }
@@ -104,7 +105,7 @@ namespace fetch {
     void LinearScanMirror::setKind( Config::LinearScanMirrorType kind )
     {
       switch(kind)
-      {    
+      {
       case cfg::device::LinearScanMirror_LinearScanMirrorType_NIDAQ:
         if(!_nidaq)
           _nidaq = new NIDAQLinearScanMirror(_agent,_config->mutable_nidaq());
@@ -137,11 +138,11 @@ namespace fetch {
       _config->set_kind(kind);
       setKind(kind);
       switch(kind)
-      {    
+      {
       case cfg::device::LinearScanMirror_LinearScanMirrorType_NIDAQ:
         _nidaq->_set_config(const_cast<Config&>(cfg).mutable_nidaq());
         break;
-      case cfg::device::LinearScanMirror_LinearScanMirrorType_Simulated:    
+      case cfg::device::LinearScanMirror_LinearScanMirrorType_Simulated:
         _simulated->_set_config(cfg.simulated());
         break;
       default:
@@ -149,9 +150,9 @@ namespace fetch {
       }
     }
 
-    void LinearScanMirror::computeSawtooth( float64 *data, int n )
+    void LinearScanMirror::computeSawtooth( float64 *data, int flyback, int n )
     {
-      _ilsm->computeSawtooth(data,n);
+      _ilsm->computeSawtooth(data,flyback,n);
     }
 
     //end namespace fetch::device

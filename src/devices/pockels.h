@@ -10,7 +10,7 @@
  * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
- 
+
 /* Class Pockels
  * =============
  *
@@ -89,11 +89,11 @@ namespace fetch
     {
     public:
       virtual int isValidOpenVolts(f64 volts) = 0;
-      virtual int setOpenVolts(f64 volts) = 0; 
+      virtual int setOpenVolts(f64 volts) = 0;
       virtual int setOpenVoltsNoWait(f64 volts) = 0;
       virtual f64 getOpenVolts() = 0;
-      
-      virtual void computeVerticalBlankWaveform(float64 *data, int n) = 0;
+
+      virtual void computeVerticalBlankWaveform(float64 *data, int flyback, int n) = 0;
 
       virtual IDAQPhysicalChannel* physicalChannel() = 0;
     };
@@ -111,7 +111,7 @@ namespace fetch
     //
 
     class NIDAQPockels:public PockelsBase<cfg::device::NIDAQPockels>
-    {    
+    {
       NIDAQChannel daq;
       IDAQPhysicalChannel _ao;
     public:
@@ -122,7 +122,7 @@ namespace fetch
 
       virtual unsigned int on_attach() {return daq.on_attach();}
       virtual unsigned int on_detach() {return daq.on_detach();}
-      
+
       virtual void _set_config(Config IN *cfg) {_ao.set(cfg->ao_channel());}
 
       virtual int isValidOpenVolts(f64 volts);
@@ -130,14 +130,14 @@ namespace fetch
       virtual int setOpenVoltsNoWait(f64 volts);
       virtual f64 getOpenVolts() {return _config->v_open();}
 
-      virtual void computeVerticalBlankWaveform(float64 *data, int n);
+      virtual void computeVerticalBlankWaveform(float64 *data, int flyback, int n);
 
       virtual IDAQPhysicalChannel* physicalChannel() {return &_ao;}
-    };   
+    };
 
 class SimulatedPockels:public PockelsBase<cfg::device::SimulatedPockels>
     {
-      SimulatedDAQChannel _chan;      
+      SimulatedDAQChannel _chan;
       IDAQPhysicalChannel _ao;
     public:
       SimulatedPockels(Agent *agent);
@@ -151,11 +151,11 @@ class SimulatedPockels:public PockelsBase<cfg::device::SimulatedPockels>
       virtual int setOpenVoltsNoWait(f64 volts);
       virtual f64 getOpenVolts() {return _config->val();}
 
-      virtual void computeVerticalBlankWaveform(float64 *data, int n);
+      virtual void computeVerticalBlankWaveform(float64 *data, int flyback, int n);
 
       virtual IDAQPhysicalChannel* physicalChannel() {return &_ao;}
     };
-    
+
     class Pockels:public PockelsBase<cfg::device::Pockels>
     {
       NIDAQPockels     *_nidaq;
@@ -179,7 +179,7 @@ class SimulatedPockels:public PockelsBase<cfg::device::SimulatedPockels>
       virtual int setOpenVoltsNoWait(f64 volts);
       virtual f64 getOpenVolts() {return _ipockels->getOpenVolts();}
 
-      virtual void computeVerticalBlankWaveform(float64 *data, int n) {_ipockels->computeVerticalBlankWaveform(data,n);}
+      virtual void computeVerticalBlankWaveform(float64 *data, int flyback, int n) {_ipockels->computeVerticalBlankWaveform(data,flyback,n);}
       virtual IDAQPhysicalChannel* physicalChannel() {return _ipockels->physicalChannel();}
     };
 
