@@ -17,13 +17,13 @@ set(FETCH_PATCH_VERSION develop)
 
 ######################################################################
 #  Table of contents (for assisted text searching)
-#  
+#
 #   o   Useful options
 #   o   Config
 #   o   Source groups
 #   o   Targets
 #   o   Tests
-#  
+#
 ######################################################################
 
 macro(show v)
@@ -31,7 +31,7 @@ message(${v} is ${${v}})
 endmacro()
 
 ######################################################################
-#  Useful options 
+#  Useful options
 ######################################################################
 set(CMAKE_VERBOSE_MAKEFILE 1) ## Useful for debuging the build
 
@@ -177,7 +177,7 @@ source_group("Source Files\\Workers" FILES ${FETCH_WORKERS_SRCS})
 
 file(GLOB FETCH_DEVICES_HDRS src/devices/*.h)
 source_group("Header Files\\Devices" FILES ${FETCH_DEVICES_HDRS})
-file(GLOB FETCH_DEVICES_SRCS src/devices/*.cpp)
+file(GLOB FETCH_DEVICES_SRCS src/devices/*.cpp src/devices/*.c)
 source_group("Source Files\\Devices" FILES ${FETCH_DEVICES_SRCS})
 
 file(GLOB FETCH_TASKS_HDRS src/tasks/*.h)
@@ -198,10 +198,10 @@ source_group("Source Files\\util" FILES ${FETCH_UTIL_SRCS})
 file(GLOB FETCH_ALGO_HDRS src/algo/*.h)
 file(GLOB FETCH_ALGO_SRCS src/algo/*.c)
 file(GLOB FETCH_ALGO_CUDA src/algo/*.cu)
-source_group("Header Files\\Algorithms" FILES 
+source_group("Header Files\\Algorithms" FILES
   ${FETCH_ALGO_HDRS}
   )
-source_group("Source Files\\Algorithms" FILES 
+source_group("Source Files\\Algorithms" FILES
   ${FETCH_ALGO_SRCS}
   ${FETCH_ALGO_CUDA}
   )
@@ -303,7 +303,7 @@ target_link_libraries(fetch
   ${GLEW_LIBRARIES}
   ${OPTIONAL_LIBS}
   ${CUDA_LIBRARIES}
-# ${DIRECTX_LIBRARIES} 
+# ${DIRECTX_LIBRARIES}
 )
 
 ##
@@ -337,7 +337,7 @@ if(C843_FOUND)
 endif(C843_FOUND)
 
 ###############################################################################
-#  Test  
+#  Test
 ###############################################################################
 #enable_testing(true)
 #add_subdirectory(tests)
@@ -362,16 +362,16 @@ endif()
 
 find_package(sphinx)
 if(SPHINX_FOUND)
-  set(SPHINX_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/doc/source) 
+  set(SPHINX_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/doc/source)
   set(SPHINX_CONFPY_DIR ${CMAKE_CURRENT_BINARY_DIR}/doc/)
   set(SPHINX_CACHE_DIR  ${CMAKE_CURRENT_BINARY_DIR}/doc/doctrees)
   set(SPHINX_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/doc/html)
   configure_file(${SPHINX_SOURCE_DIR}/conf.py.in
                  ${SPHINX_CONFPY_DIR}/conf.py
-                 @ONLY                 
+                 @ONLY
                  )
   add_custom_target(sphinxdocs
-    ${SPHINX_EXECUTABLE} -b html -d ${SPHINX_CACHE_DIR} -c ${SPHINX_CONFPY_DIR} ${SPHINX_SOURCE_DIR} ${SPHINX_OUTPUT_DIR} 
+    ${SPHINX_EXECUTABLE} -b html -d ${SPHINX_CACHE_DIR} -c ${SPHINX_CONFPY_DIR} ${SPHINX_SOURCE_DIR} ${SPHINX_OUTPUT_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS apidocs
     COMMENT "Generating Sphinx Docs"

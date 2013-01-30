@@ -6,7 +6,7 @@
 
 // Glew must be included before OpenGL
 #ifdef _WIN32
-#include <GL/glew.h>
+//#include <GL/glew.h>
 #define INIT_EXTENSIONS \
   assert(glewInit()==GLEW_OK)
 #else

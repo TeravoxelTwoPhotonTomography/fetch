@@ -1,8 +1,7 @@
-// Glew must be included before OpenGL
+// Glew must be included before OpenGL 
 #ifdef _WIN32
 #include <GL/glew.h>
 #endif
-#include <QtOpenGL>
 #include <QtGui>
 
 // On windows need to init glew library

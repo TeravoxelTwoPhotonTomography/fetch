@@ -1,7 +1,6 @@
-
-#ifdef _WIN32
-#include <GL/glew.h>
-#endif
+//#ifdef _WIN32
+//#include <GL/glew.h>
+//#endif
 #include <iostream>
 #include <QtGui>
 

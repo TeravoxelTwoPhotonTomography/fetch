@@ -37,6 +37,7 @@
 #include "object.h"
 #include "types.h"
 #include "util\util-protobuf.h"
+#include "alazar.h"
 
 #define DIGITIZER_BUFFER_NUM_FRAMES       4        // must be a power of two
 #define DIGITIZER_DEFAULT_TIMEOUT         INFINITE // ms
@@ -59,9 +60,9 @@ namespace fetch
     // IDigitizer
     // ----------
     //
-    // setup() - configures digitizer for triggered multirecord acquisition.  
+    // setup() - configures digitizer for triggered multirecord acquisition.
     //           specialized a bit for video acquisition.
-    // record_size() - returns the number of samples per record.  A record is 
+    // record_size() - returns the number of samples per record.  A record is
     //                 typically the samples acquired from a single trigger for
     //                 a single channel.
     // nchan() - returns the number of channels acquired by a single acquisition
@@ -73,7 +74,7 @@ namespace fetch
     //            that the main data stream will be on device->out_[0] and the aux's
     //            on device->out_[i>0].  For multirecord acquisitions the message size
     //            allocated should be nrecords*(*sizes)[i].
-    // 
+    //
     //            Returns false by default.
     //
     //            If true, *sizes should be freed.
@@ -84,10 +85,10 @@ namespace fetch
       virtual void   setup(int nrecords, double record_frequency_Hz, double duty) = 0;
       virtual size_t record_size(double record_frequency_Hz, double duty) = 0;
       virtual size_t nchan() = 0;
-      
+
       virtual bool   aux_info(int *n, size_t **sizes) { *n=0; return 0; }
       virtual void   onUpdate() {};
-    }; 
+    };
 
     template<class T>
     class DigitizerBase:public IDigitizer,public IConfigurableDevice<T>
@@ -105,7 +106,7 @@ namespace fetch
       typedef cfg::device::NIScopeDigitizer          Config;
       typedef cfg::device::NIScopeDigitizer_Channel  Channel_Config;
 
-      NIScopeDigitizer(Agent *agent);      
+      NIScopeDigitizer(Agent *agent);
       NIScopeDigitizer(Agent *agent, Config *cfg);
       ~NIScopeDigitizer();
 
@@ -116,11 +117,11 @@ namespace fetch
       virtual void   setup(int nrecords, double record_frequency_Hz, double duty);
       virtual size_t record_size(double record_frequency_Hz, double duty);
       virtual size_t nchan() {return _config->nchannels();}
-      
+
       virtual bool   aux_info(int *n, size_t **sizes);
     public:
 #ifdef HAVE_NISCOPE
-      ViSession   _vi;  
+      ViSession   _vi;
 #else
       int _vi;
 #endif
@@ -134,17 +135,20 @@ namespace fetch
     class AlazarDigitizer : public DigitizerBase<cfg::device::AlazarDigitizer>
     {
     public:
-      AlazarDigitizer(Agent *agent)             : DigitizerBase<cfg::device::AlazarDigitizer>(agent) {}
-      AlazarDigitizer(Agent *agent, Config *cfg): DigitizerBase<cfg::device::AlazarDigitizer>(agent,cfg) {}
+      AlazarDigitizer(Agent *agent);
+      AlazarDigitizer(Agent *agent, Config *cfg);
 
-      unsigned int on_attach() {return 0;}
-      unsigned int on_detach() {return 0;}
+      unsigned int on_attach();
+      unsigned int on_detach();
 
       virtual void setup(int nrecords, double record_frequency_Hz, double duty);
       virtual size_t record_size(double record_frequency_Hz, double duty);
       virtual size_t nchan();
 
       double sample_rate();
+    private:
+      void init();
+      alazar_t _ctx;
     };
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -182,7 +186,7 @@ namespace fetch
 
       virtual size_t record_size(double record_frequency_Hz, double duty) {return _idigitizer->record_size(record_frequency_Hz,duty);}
       virtual size_t nchan() {return _idigitizer->nchan();}
-      
+
       virtual bool aux_info(int *n, size_t **sizes) {return _idigitizer->aux_info(n,sizes);}
 
       // XXX: These are pretty useless, consider deleting?

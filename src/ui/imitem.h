@@ -1,7 +1,9 @@
 #pragma once
 
+
 #include <QtGui>
-#include <QtOpenGL>
+#include <QGraphicsSimpleTextItem>
+#include <QGLShaderProgram>
 
 namespace mylib {
 #include <array.h>
@@ -39,8 +41,8 @@ protected:
   void _loadTex(mylib::Array *im);  
   void _setupShader();
   void _updateCmapCtrlPoints();
-  void _autoscale(mylib::Array *data, GLuint ichannel, float percent);
-  void _resetscale(GLuint ichannel);
+  void _autoscale(mylib::Array *data, unsigned int ichannel, float percent);
+  void _resetscale(unsigned int ichannel);
 
   void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *e);
 
@@ -50,20 +52,20 @@ protected:
   float _gamma;
   
   QGraphicsSimpleTextItem _text;
-  GLuint _hQuadDisplayList;
-  GLuint _hTexture;
-  GLuint _nchan;                   // updated when an image is pushed
-  GLuint _show_mode;
+  unsigned int _hQuadDisplayList;
+  unsigned int _hTexture;
+  unsigned int _nchan;                   // updated when an image is pushed
+  unsigned int _show_mode;
 
   QGLShaderProgram _shader;
-  GLuint _hShaderPlane;
-  GLuint _hShaderCmap;
-  GLuint _hTexCmapCtrlS;
-  GLuint _hTexCmapCtrlT;
-  GLuint _hTexCmap;
+  unsigned int _hShaderPlane;
+  unsigned int _hShaderCmap;
+  unsigned int _hTexCmapCtrlS;
+  unsigned int _hTexCmapCtrlT;
+  unsigned int _hTexCmap;
 
-  GLuint _cmap_ctrl_count;
-  GLuint _cmap_ctrl_last_size;
+  unsigned int _cmap_ctrl_count;
+  unsigned int _cmap_ctrl_last_size;
   float *_cmap_ctrl_s,
         *_cmap_ctrl_t;
 

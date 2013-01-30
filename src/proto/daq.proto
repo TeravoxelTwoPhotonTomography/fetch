@@ -3,27 +3,32 @@ package fetch.cfg.device;
 message NationalInstrumentsDAQ
 {
   optional uint32 ao_samples_per_waveform = 1  [default=16384];   // DAQ AO: Samples per waveform. Used to size buffers for DAQ output during a frame.
-  optional string trigger     = 2  [default="APFI0"];             // DAQ terminal: should be connected to resonant velocity output                                                 
+  optional string trigger     = 2  [default="APFI0"];             // DAQ terminal: should be connected to resonant velocity output
   optional double level_volts = 8  [default=0.0];                 // threshold for trigger in volts
-  optional string clock       = 3  [default="Ctr1InternalOutput"];// DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock                     
-  optional string ctr         = 4  [default="/Dev1/ctr1"];        // DAQ terminal: A finite pulse train is generated so that this counter may be used as a sample clock.           
-  optional string ctr_alt     = 5  [default="/Dev1/ctr0"];        // DAQ terminal: Finite pulse train generation requires a pair of counters.  This is the implicitly used one.    
+  optional string clock       = 3  [default="Ctr1InternalOutput"];// DAQ terminal: used to produce an appropriately triggered set of pulses as ao sample clock
+  optional string ctr         = 4  [default="/Dev1/ctr1"];        // DAQ terminal: A finite pulse train is generated so that this counter may be used as a sample clock.
+  optional string ctr_alt     = 5  [default="/Dev1/ctr0"];        // DAQ terminal: Finite pulse train generation requires a pair of counters.  This is the implicitly used one.
   optional string armstart    = 6  [default="RTSI2"];             // DAQ terminal: should be connected to "ReadyForStart" event output from digitizer
-  optional string name        = 7  [default="Dev1"];              // DAQ physical device name: Must correspond with terminal names.  
+  optional string name        = 7  [default="Dev1"];              // DAQ physical device name: Must correspond with terminal names.
+
+  // for use with fast digitizers that can retrigger frames in less than a scan
+  optional uint32 flyback_scans     = 9 [default=16];             // AO will be extended for this number of scans to allow the y-mirror to reset for the next frame.
+  optional string frame_trigger_out = 10 [default="PFI1"];         // DAQ terminal.  The sample counter gate will be routed through this terminal.
+
 }
 
 message SimulatedDAQ
 {
   optional uint32  samples_per_record  = 1  [default=16384];   // DAQ AO: Samples per waveform. Used to size buffers for DAQ output during a frame.
-  optional double  sample_frequency_hz = 2  [default=1000000.0]; 
+  optional double  sample_frequency_hz = 2  [default=1000000.0];
 }
 
 message DAQ
-{ 
+{
   enum DAQKind
-  { 
+  {
     Simulated = 0;
-    NIDAQ     = 1;    
+    NIDAQ     = 1;
   }
   optional DAQKind                kind      = 1 [default=NIDAQ];
   optional NationalInstrumentsDAQ nidaq     = 2;

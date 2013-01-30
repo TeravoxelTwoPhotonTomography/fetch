@@ -14,7 +14,7 @@
 #include "util/util-niscope.h"
 #include "digitizer.h"
 #include "Chan.h"
-#include "AlazarCmd.h"
+#include "alazar.h"
 
 #pragma warning(push)
 #pragma warning(disable:4005)
@@ -53,7 +53,7 @@ namespace fetch
   bool operator!=(const cfg::device::SimulatedDigitizer& a, const cfg::device::SimulatedDigitizer& b)     {return !(a==b);}
   bool operator!=(const cfg::device::Digitizer& a, const cfg::device::Digitizer& b)                       {return !(a==b);}
 
-  namespace device 
+  namespace device
   {
     NIScopeDigitizer::NIScopeDigitizer(Agent *agent)
       :DigitizerBase<cfg::device::NIScopeDigitizer>(agent)
@@ -70,7 +70,7 @@ namespace fetch
     }
 
     NIScopeDigitizer::~NIScopeDigitizer(void)
-    {      
+    {
     }
 
     unsigned int
@@ -78,11 +78,11 @@ namespace fetch
     {
 #ifdef HAVE_NISCOPE
       ViStatus status = 1; //error
-      digitizer_debug("Digitizer: Attempting to disarm. vi: %d\r\n", this->_vi);    
+      digitizer_debug("Digitizer: Attempting to disarm. vi: %d\r\n", this->_vi);
       if(this->_vi)
         DIGJMP(niScope_close(this->_vi));  // Close the session
       status = 0;  // success
-      digitizer_debug("Digitizer: Detached.\r\n");      
+      digitizer_debug("Digitizer: Detached.\r\n");
       _lastResourceName.clear();
 Error:
       this->_vi = 0;
@@ -96,8 +96,8 @@ Error:
       NIScopeDigitizer::on_attach(void)
     {
 #ifdef HAVE_NISCOPE
-      ViStatus status = VI_SUCCESS;      
-      digitizer_debug("NIScopeDigitizer: Attach\r\n");      
+      ViStatus status = VI_SUCCESS;
+      digitizer_debug("NIScopeDigitizer: Attach\r\n");
       if( _vi == NULL )
       { // Open the NI-SCOPE instrument handle
         DIGJMP(
@@ -107,7 +107,7 @@ Error:
             NISCOPE_VAL_FALSE,   // Reset?
             &_vi)                // Session
           );
-      }      
+      }
       digitizer_debug("\tGot session %3d with status %d\n",_vi,status);
       _lastResourceName = _config->name();
       return status!=VI_SUCCESS;
@@ -117,7 +117,7 @@ Error:
     }
 
     void NIScopeDigitizer::onUpdate()
-    { if(_config->name().compare(_lastResourceName)!=0) 
+    { if(_config->name().compare(_lastResourceName)!=0)
       { if(_agent->is_attached())  // resource change - need to reattach
         { int rearm = _agent->is_armed();
           Task *last = _agent->_task;
@@ -143,7 +143,7 @@ Error:
         Bpp = 2, //bytes per pixel to initially allocated for
         nbuf[2] = {DIGITIZER_BUFFER_NUM_FRAMES,
                    DIGITIZER_BUFFER_NUM_FRAMES},
-        sz[2] = { 
+        sz[2] = {
           _config->num_records() * _config->record_size() * _config->nchannels() * Bpp,
           _config->num_records() * sizeof(struct niScope_wfmInfo)};
         _alloc_qs( &_out, 2, nbuf, sz );
@@ -153,7 +153,7 @@ Error:
     void NIScopeDigitizer::setup(int nrecords, double record_frequency_Hz, double duty)
     {
 #ifdef HAVE_NISCOPE
-      ViSession vi = _vi;      
+      ViSession vi = _vi;
 
       ViReal64   refPosition         = _config->reference();
       ViReal64   verticalOffset      = 0.0;
@@ -171,7 +171,7 @@ Error:
       if(_config->line_trigger_src() >= (unsigned) _config->channel_size())
         error("NIScopeDigitizer:\t\nTrigger source channel has not been configured.\n"
               "\tTrigger source: %hhu (out of bounds)\n"
-              "\tNumber of configured channels: %d\n", 
+              "\tNumber of configured channels: %d\n",
               _config->line_trigger_src(),
               _config->channel_size());
       const Config::Channel& line_trigger_cfg = _config->channel(_config->line_trigger_src());
@@ -190,7 +190,7 @@ Error:
       // Configure vertical of other channels
       {
         for(int ichan=0; ichan<_config->channel_size(); ++ichan)
-        { 
+        {
           if(ichan==_config->line_trigger_src())
             continue;
           const Config::Channel& c=_config->channel(ichan);
@@ -213,7 +213,7 @@ Error:
         enforceRealtime));
 
       // Analog trigger for bidirectional scans
-      
+
       const Config::Trigger& trig = line_trigger_cfg.trigger();
       ViInt32 triggerSlope = (trig.slope()==Config::Trigger::RISING) ? NISCOPE_VAL_POSITIVE:NISCOPE_VAL_NEGATIVE;
       DIGERR( niScope_ConfigureTriggerEdge (vi,
@@ -240,13 +240,13 @@ Error:
       return duty*_config->sample_rate()/record_frequency_Hz;
 #pragma warning(pop)
     }
-    
+
     bool NIScopeDigitizer::aux_info(int *n, size_t **sizes)
-    { 
+    {
 #ifdef HAVE_NISCOPE
       *n=1;
       *sizes = (size_t*) Guarded_Malloc(sizeof(size_t),"NIScopeDigitizer::aux_info");
-      (*sizes)[0] = sizeof(niScope_wfmInfo);      
+      (*sizes)[0] = sizeof(niScope_wfmInfo);
       return true;
 #else
       return false;
@@ -256,10 +256,35 @@ Error:
     //
     // Alazar digitizer
     //
+    AlazarDigitizer::AlazarDigitizer(Agent *agent)
+    : DigitizerBase<cfg::device::AlazarDigitizer>(agent)
+    , _ctx(0)
+    {}
+    AlazarDigitizer::AlazarDigitizer(Agent *agent, Config *cfg)
+    : DigitizerBase<cfg::device::AlazarDigitizer>(agent,cfg)
+    , _ctx(0)
+    {}
+
+    unsigned int AlazarDigitizer::on_attach() { return !alazar_attach(&_ctx); } // return 0 on failure and 1 on success
+    unsigned int AlazarDigitizer::on_detach() { return !alazar_detach(&_ctx); } // return 0 on failure and 1 on success
 
     void AlazarDigitizer::setup( int nrecords, double record_frequency_Hz, double duty )
-    {
-      error("TODO: Implement me!");
+    { alazar_cfg_t cfg=0;
+      CHKJMP(cfg=alazar_make_config());
+      alazar_set_image_size(cfg,record_frequency_Hz,nrecords,&duty);
+      debug("[ ]Duty (aligned): %f\n",duty);
+      { int i;
+        for(i=0;i<_config->channels_size();++i)
+        { int id=_config->channels(i).board_id()*2+(_config->channels(i).chan_id()==fetch::cfg::device::AlazarDigitizer_ChannelID_CHANNEL_B);
+          alazar_set_channel_enable(cfg,id,_config->channels(i).enabled());
+          alazar_set_channel_input_range(cfg,id,_config->channels(i).range());
+        }
+      }
+      CHKJMP(alazar_arm(_ctx,cfg));
+      alazar_free_config(&cfg);
+      return;
+Error:
+      error("FIX ME. %s(%d) %s()\n",__FILE__,__LINE__,__FUNCTION__);
     }
     size_t AlazarDigitizer::record_size( double record_frequency_Hz, double duty )
     {
@@ -273,24 +298,24 @@ Error:
     {
       switch(_config->sample_rate())
       {
-        case SAMPLE_RATE_1KSPS    : return      1000.0; break;
-        case SAMPLE_RATE_2KSPS    : return      2000.0; break;
-        case SAMPLE_RATE_5KSPS    : return      5000.0; break;
-        case SAMPLE_RATE_10KSPS   : return     10000.0; break;
-        case SAMPLE_RATE_100KSPS  : return    100000.0; break;
-        case SAMPLE_RATE_200KSPS  : return    200000.0; break;
-        case SAMPLE_RATE_500KSPS  : return    500000.0; break;
-        case SAMPLE_RATE_1MSPS    : return   1000000.0; break;
-        case SAMPLE_RATE_2MSPS    : return   2000000.0; break;
-        case SAMPLE_RATE_5MSPS    : return   5000000.0; break;
-        case SAMPLE_RATE_10MSPS   : return  10000000.0; break;
-        case SAMPLE_RATE_20MSPS   : return  20000000.0; break;
-        case SAMPLE_RATE_50MSPS   : return  50000000.0; break;
-        case SAMPLE_RATE_100MSPS  : return 100000000.0; break;
-        case SAMPLE_RATE_125MSPS  : return 125000000.0; break;
-        case SAMPLE_RATE_250MSPS  : return 250000000.0; break;
-        case SAMPLE_RATE_500MSPS  : return 500000000.0; break;
-        case SAMPLE_RATE_USER_DEF : return _config->ext_clock_rate(); break; // external clock
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_1KSPS    : return      1000.0; break;
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_2KSPS    : return      2000.0; break;
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_5KSPS    : return      5000.0; break;
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_10KSPS   : return     10000.0; break;
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_100KSPS  : return    100000.0; break;
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_200KSPS  : return    200000.0; break;
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_500KSPS  : return    500000.0; break;
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_1MSPS    : return   1000000.0; break;
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_2MSPS    : return   2000000.0; break;
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_5MSPS    : return   5000000.0; break;
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_10MSPS   : return  10000000.0; break;
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_20MSPS   : return  20000000.0; break;
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_50MSPS   : return  50000000.0; break;
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_100MSPS  : return 100000000.0; break;
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_125MSPS  : return 125000000.0; break;
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_250MSPS  : return 250000000.0; break;
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_500MSPS  : return 500000000.0; break;
+        case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_USER_DEF : return _config->ext_clock_rate(); break; // external clock
         case cfg::device::AlazarDigitizer_SampleRate_SAMPLE_RATE_MAX: return 500000000.0; break;
       default:
         error("Did not recognize value returned by sample_rate().  Got: %d\r\n.",_config->sample_rate());
@@ -358,7 +383,7 @@ Error:
     void Digitizer::setKind( Config::DigitizerType kind )
     {
       switch(kind)
-      {    
+      {
       case cfg::device::Digitizer_DigitizerType_NIScope:
         if(!_niscope)
           _niscope = new NIScopeDigitizer(_agent,_config->mutable_niscope());
@@ -371,7 +396,7 @@ Error:
         _idevice  = _niscope;
         _idigitizer = _niscope;
         break;
-      case cfg::device::Digitizer_DigitizerType_Simulated:    
+      case cfg::device::Digitizer_DigitizerType_Simulated:
         if(!_simulated)
           _simulated = new SimulatedDigitizer(_agent,_config->mutable_simulated());
         _idevice  = _simulated;
@@ -435,10 +460,10 @@ Error:
       setKind(cfg->kind()); // this will instance a device refered to in the config
       Guarded_Assert( _niscope || _alazar || _simulated );
       if(_niscope)   _niscope->_set_config(cfg->mutable_niscope());
-      if(_alazar)    _alazar->_set_config(cfg->mutable_alazar()); 
+      if(_alazar)    _alazar->_set_config(cfg->mutable_alazar());
       if(_simulated) _simulated->_set_config(cfg->mutable_simulated());;
       _config = cfg;
-      
+
     }
 
     void Digitizer::_set_config( const Config &cfg )
@@ -447,14 +472,14 @@ Error:
       _config->set_kind(kind);
       setKind(kind);
       switch(kind)
-      {    
+      {
       case cfg::device::Digitizer_DigitizerType_NIScope:
         _niscope->_set_config(cfg.niscope());
         break;
       case cfg::device::Digitizer_DigitizerType_Alazar:
         _alazar->_set_config(cfg.alazar());
         break;
-      case cfg::device::Digitizer_DigitizerType_Simulated:    
+      case cfg::device::Digitizer_DigitizerType_Simulated:
         _simulated->_set_config(cfg.simulated());
         break;
       default:

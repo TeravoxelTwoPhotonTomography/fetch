@@ -67,7 +67,7 @@ namespace fetch
       unsigned int StackAcquisition::run   (IDevice *d) {return run   (dynamic_cast<device::Microscope*>(d));}
 
       unsigned int StackAcquisition::config(device::Microscope *d)
-      { 
+      {
         static task::scanner::ScanStack<i16> grabstack;
         std::string filename;
 
@@ -111,15 +111,15 @@ Error:
       }
 
       unsigned int StackAcquisition::run(device::Microscope *dc)
-      { 
+      {
         std::string filename;
         unsigned int eflag = 0; // success
-        
+
         Guarded_Assert(dc->__scan_agent.is_runnable());
         //Guarded_Assert(dc->__io_agent.is_running());
 
         dc->transaction_lock();
-        filename = dc->stack_filename();         
+        filename = dc->stack_filename();
         dc->file_series.ensurePathExists();
         eflag |= dc->disk.open(filename,"w");
         if(eflag)
@@ -130,7 +130,7 @@ Error:
 
         //Chan_Wait_For_Writer_Count(dc->__scan_agent._owner->_out->contents[0],1);
 
-        { HANDLE hs[] = {dc->__scan_agent._thread,          
+        { HANDLE hs[] = {dc->__scan_agent._thread,
                          dc->__self_agent._notify_stop};
           DWORD res;
           int   t;
@@ -143,21 +143,21 @@ Error:
           switch(t)
           { case 0:       // in this case, the scanner thread stopped.  Nothing left to do.
               eflag |= 0; // success
-              //break; 
+              //break;
             case 1:       // in this case, the stop event triggered and must be propagated.
               eflag |= dc->__scan_agent.stop(SCANNER2D_DEFAULT_TIMEOUT) != 1;
               break;
             default:      // in this case, there was a timeout or abandoned wait
-              eflag |= 1; //failure              
-          }    
+              eflag |= 1; //failure
+          }
         }
-          
+
         // Output metadata and Increment file
         eflag |= dc->disk.close();
         dc->write_stack_metadata();
-        dc->file_series.inc();          
+        dc->file_series.inc();
         //dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
-       
+
         eflag |= dc->stopPipeline(); // wait till the  pipeline stops
         dc->transaction_unlock();
         return eflag;
@@ -179,7 +179,7 @@ Error:
       template<class TPixel> unsigned int ScanStack<TPixel>::config (IDevice *d) {return config(dynamic_cast<device::Scanner3D*>(d));}
       template<class TPixel> unsigned int ScanStack<TPixel>::update (IDevice *d) {return update(dynamic_cast<device::Scanner3D*>(d));}
 
-      template<class TPixel> unsigned int ScanStack<TPixel>::run    (IDevice *d) 
+      template<class TPixel> unsigned int ScanStack<TPixel>::run    (IDevice *d)
       {
         device::Scanner3D *s = dynamic_cast<device::Scanner3D*>(d);
         device::Digitizer::Config digcfg = s->_scanner2d._digitizer.get_config();
@@ -195,7 +195,7 @@ Error:
           return run_simulated(s);
           break;
         default:
-          warning("%s(%d)"ENDL "\tScanStack<>::run() - Got invalid kind() for Digitizer.get_config"ENDL,__FILE__,__LINE__);          
+          warning("%s(%d)"ENDL "\tScanStack<>::run() - Got invalid kind() for Digitizer.get_config"ENDL,__FILE__,__LINE__);
         }
         return 0; //failure
       }
@@ -214,8 +214,8 @@ Error:
         unsigned int
         ScanStack<TPixel>::
         update(device::Scanner3D *scanner)
-        { 
-          scanner->generateAO();          
+        {
+          scanner->generateAO();
           return 1;
         }
 
@@ -224,7 +224,7 @@ Error:
         ScanStack<TPixel>::run_niscope(device::Scanner3D *d)
         {
 #ifdef HAVE_NISCOPE
-          Chan *qdata = Chan_Open(d->_out->contents[0],CHAN_WRITE), 
+          Chan *qdata = Chan_Open(d->_out->contents[0],CHAN_WRITE),
                *qwfm  = Chan_Open(d->_out->contents[1],CHAN_WRITE);
           Frame *frm = NULL;
           Frame_With_Interleaved_Lines ref;
@@ -244,8 +244,8 @@ Error:
           d->onConfigTask();
 
           ViSession vi = dig->_vi;
-          ViChar *chan = const_cast<ViChar*>(digcfg.chan_names().c_str());                   
-          
+          ViChar *chan = const_cast<ViChar*>(digcfg.chan_names().c_str());
+
           ref = _describe_actual_frame_niscope<TPixel>(
             dig,                                 // NISCope Digitizer
             d->_scanner2d.get_config().nscans(), // number of scans
@@ -265,13 +265,13 @@ Error:
 
           d->_zpiezo.getScanRange(&ummin,&ummax,&umstep);
           //d->_zpiezo.moveTo(ummin); // reset to starting position
-                    
+
           // One dead cycle to reset stack position
           {
             d->generateAOConstZ(ummin);  // Note CONST waveform
             CHKJMP(d->writeAO());
             CHKJMP(d->_scanner2d._daq.startAO());
-            CHKJMP(d->_scanner2d._daq.startCLK());            
+            CHKJMP(d->_scanner2d._daq.startCLK());
             DIGJMP(niScope_InitiateAcquisition(vi)); // have to do an acquisition (for my triggers), though the data will get thrown away
 #if 1
             //debug("%s(%d)"ENDL "\tFetch start -- dummy to set stack position."ENDL,__FILE__,__LINE__);
@@ -283,7 +283,7 @@ Error:
 #endif
             CHKJMP(d->_scanner2d._daq.waitForDone(SCANNER2D_DEFAULT_TIMEOUT));
             d->_scanner2d._daq.stopCLK();
-          }        
+          }
           //The real thing
           d->_scanner2d._shutter.Open();
           // test is for z_um<=ummax, with a precision of umstep/2.
@@ -291,10 +291,10 @@ Error:
           { debug("%s(%d)"ENDL "\tGenerating AO for z = %f."ENDL,__FILE__,__LINE__,z_um);
             d->generateAORampZ((float)z_um);
             CHKJMP(d->writeAO());
-            CHKJMP(d->_scanner2d._daq.startCLK());            
+            CHKJMP(d->_scanner2d._daq.startCLK());
             DIGJMP(niScope_InitiateAcquisition(vi));
 
-            dt_out = toc(&outer_clock);            
+            dt_out = toc(&outer_clock);
             toc(&inner_clock);
 #if 1
             //debug("%s(%d)"ENDL "\tFetch start."ENDL,__FILE__,__LINE__);
@@ -327,7 +327,7 @@ Error:
           {
             d->generateAOConstZ(ummin);  // Note CONST waveform
             CHKJMP(d->writeAO());
-            CHKJMP(d->_scanner2d._daq.startCLK());            
+            CHKJMP(d->_scanner2d._daq.startCLK());
             DIGJMP(niScope_InitiateAcquisition(vi)); // have to do an acquisition (for my triggers), though the data will get thrown away
 #if 1
             //debug("%s(%d)"ENDL "\tFetch start -- dummy to reset stack position."ENDL,__FILE__,__LINE__);
@@ -340,19 +340,19 @@ Error:
             CHKJMP(d->_scanner2d._daq.waitForDone(SCANNER2D_DEFAULT_TIMEOUT));
             d->_scanner2d._daq.stopCLK();
           }
-Finalize: 
+Finalize:
           d->_scanner2d._shutter.Shut();
-          
+
           free(frm);
           free(wfm);
           Chan_Close(qdata);
           Chan_Close(qwfm);
-          //niscope_debug_print_status(vi);          
+          //niscope_debug_print_status(vi);
           CHKERR(d->_scanner2d._daq.stopAO());
           CHKERR(d->_scanner2d._daq.stopCLK());
           DIGERR(niScope_Abort(vi));
           return status;
-Error: 
+Error:
           warning("%s(%d)"ENDL "\tError occurred during ScanStack<%s> task."ENDL,__FILE__,__LINE__,TypeStr<TPixel>());
           d->_scanner2d._daq.stopAO();
           d->_scanner2d._daq.stopCLK();
@@ -372,11 +372,11 @@ Error:
             dig->get_config().width(),
             d->_scanner2d.get_config().nscans()*2,
             3,TypeID<TPixel>());
-          size_t nbytes;        
+          size_t nbytes;
           int status = 1; // status == 0 implies success, error otherwise
           f64 z_um,ummax,ummin,umstep;
-                  
-          nbytes = ref.size_bytes();        
+
+          nbytes = ref.size_bytes();
           Chan_Resize(qdata, nbytes);
           frm = (Frame*)Chan_Token_Buffer_Alloc(qdata);
           ref.format(frm);
