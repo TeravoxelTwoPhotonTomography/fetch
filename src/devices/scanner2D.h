@@ -77,7 +77,7 @@ namespace fetch
   namespace device
   {
     class Scanner2D;
-  
+
     class IScanner
     {
     public:
@@ -86,7 +86,7 @@ namespace fetch
       virtual void onConfigTask()   = 0;  ///< called in a 2d scanning task's config function
       virtual void generateAO() = 0;
       virtual int  writeAO()    = 0;      ///< \returns 0 on success, 1 on failure
-      
+
       virtual Scanner2D* get2d() = 0;
 
     protected:
@@ -108,6 +108,7 @@ namespace fetch
 
       virtual unsigned int on_attach(); ///< \returns 0 on success, 1 on failure
       virtual unsigned int on_detach(); ///< \returns 0 on success, 1 on failure
+      virtual unsigned int on_disarm(); ///< \returns 0 on success, 1 on failure
 
       virtual void _set_config(Config IN *cfg);
       virtual void _set_config(const Config& cfg);
@@ -116,9 +117,9 @@ namespace fetch
       virtual void onUpdate() {_digitizer.onUpdate(); generateAO();}
       virtual void generateAO();
       virtual int writeAO();            ///< \returns 0 on success, 1 on failure
-      
+
       virtual Scanner2D* get2d() {return this;}
-          
+
       Chan *getVideoChannel() { return _out->contents[0]; }
 
     private:

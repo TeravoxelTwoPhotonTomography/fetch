@@ -41,7 +41,7 @@ namespace fetch
   namespace task
   {
     unsigned int ResonantWrap::reshape( IDevice *d, Frame *fdst )
-    { 
+    {
       ResonantWrapAgent *dc = dynamic_cast<ResonantWrapAgent*>(d);
       float turn;
       int ow,oh,iw,ih;
@@ -58,7 +58,7 @@ namespace fetch
         dc->setIsInBounds(false);
         return 1; //success
       } else
-      { 
+      {
         dc->setIsInBounds(true);
       }
       fdst->width =ow;
@@ -82,10 +82,10 @@ namespace fetch
       if(!dc->isInBounds())              // is turn parameter out-of-bounds?
       { Frame::copy_data(fdst,fsrc);     // then just pass the data through - if fsrc and fdst were pointers to pointers we could avoid this copy
         return 1; //return success
-      } 
+      }
       DBG("In ResonantWrap::work.\r\n");
 
-      //REMIND(fsrc->totif("ResonantWrap-src-%s.tif",TypeStrFromID(fsrc->rtti)));
+      //REMIND(fsrc->totif("ResonantWrap-src.tif"));
       switch(fsrc->rtti)
       {
         case id_u8 : transform<u8 >((u8 *)fdst->data,(u8 *)fsrc->data,iw,ih,turn); break;
@@ -100,7 +100,7 @@ namespace fetch
         default:
           error("Unrecognized source type (id=%d).\r\n",fsrc->rtti);
       }
-      //REMIND(fdst->totif("ResonantWrap-dst-%s.tif",TypeStrFromID(fdst->rtti)));
+      //REMIND(fdst->totif("ResonantWrap-dst.tif"));
       return 1; // success
 
     }
@@ -115,7 +115,7 @@ namespace fetch
       : WorkAgent<TaskType,Config>("ResonantWrap")
       ,_notify_out_of_bounds_update(INVALID_HANDLE_VALUE),
       _is_in_bounds(false)
-    { 
+    {
       __common_setup();
     }
 
@@ -123,12 +123,12 @@ namespace fetch
       :WorkAgent<TaskType,Config>(config,"ResonantWrap")
       ,_notify_out_of_bounds_update(INVALID_HANDLE_VALUE)
       ,_is_in_bounds(false)
-    { 
+    {
        __common_setup();
     }
 
     ResonantWrapAgent::~ResonantWrapAgent()
-    { Guarded_Assert_WinErr__NoPanic(CloseHandle(_notify_out_of_bounds_update));      
+    { Guarded_Assert_WinErr__NoPanic(CloseHandle(_notify_out_of_bounds_update));
     }
 
     float
@@ -138,7 +138,7 @@ namespace fetch
 
     void
     ResonantWrapAgent::setTurn(float turn)
-    { 
+    {
       Config c = get_config();
       c.set_turn_px(turn);
       set_config(c); // FIXME only ok because the microscope is stopped when this happens
@@ -146,7 +146,7 @@ namespace fetch
 
     int
     ResonantWrapAgent::setTurnNoWait(float turn)
-    { 
+    {
       Config c = get_config();
       c.set_turn_px(turn);
       return set_config_nowait(c);
@@ -159,12 +159,12 @@ namespace fetch
     Getting the range for a valid "turn" is difficult because it depends
     on the frame size which isn't simple to calculate at this point.
 
-    I'm not sure if I need this mechanism.  If I do it might be nice to have 
+    I'm not sure if I need this mechanism.  If I do it might be nice to have
     around in other devices or workers, so I might generalize it.
 
     I'm also not sure it works like I want it to.  The wait will wake up
-    on an error, but is_in_bounds might change in the meantime.  The wait 
-    could act as a flag on it's own?  Anyway, not sure how this is 
+    on an error, but is_in_bounds might change in the meantime.  The wait
+    could act as a flag on it's own?  Anyway, not sure how this is
     going to get used yet...
     */
     inline bool
@@ -195,7 +195,7 @@ namespace fetch
     void ResonantWrapAgent::__common_setup()
     {
       Guarded_Assert_WinErr(
-        _notify_out_of_bounds_update 
+        _notify_out_of_bounds_update
         = CreateEvent(NULL, /*sec attr*/
         TRUE, /*?manual reset*/
         TRUE, /*?initial state - default oob*/

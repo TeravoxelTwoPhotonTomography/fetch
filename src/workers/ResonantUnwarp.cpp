@@ -24,12 +24,12 @@ namespace mylib {
 
 using namespace fetch::worker;
 
-#if 0
+#if 1
 #define PROFILE(expr,msg) \
       do { TicTocTimer t = tic(); \
         expr; \
         debug("%s(%d):"ENDL"\tProfiling %s"ENDL"\t%s takes %f ms.",__FILE__,__LINE__,#expr,msg,1000.0*toc(&t)); \
-      } while(0) 
+      } while(0)
 #else
 #define PROFILE(expr,msg) expr
 #endif
@@ -55,7 +55,7 @@ using namespace fetch::worker;
 namespace fetch {
 namespace task {
 
-  unsigned int 
+  unsigned int
     ResonantUnwarp::
     reshape(IDevice *d, Frame *fdst)
   {
@@ -91,13 +91,13 @@ namespace task {
 
       mylib::castFetchFrameToDummyArray(&in,fsrc,idims);
       mylib::castFetchFrameToDummyArray(&out,fdst,odims);
-      
+
       //REMIND( mylib::Write_Image("ResonantUnwarp_in.tif",&in,mylib::DONT_PRESS) );
-//#ifdef HAVE_CUDA 
-#if 0
+//#ifdef HAVE_CUDA
+#if 1
       PROFILE(CHK( unwarp_gpu(&out,&in,duty),Error),"Unwarp GPU");
 #else
-      PROFILE(CHK( unwarp_cpu(&out,&in,duty),Error),"Unwarp CPU");      
+      PROFILE(CHK( unwarp_cpu(&out,&in,duty),Error),"Unwarp CPU");
 #endif
       //REMIND( mylib::Write_Image("ResonantUnwarp_out.tif",&out,mylib::DONT_PRESS) );
 
@@ -125,13 +125,13 @@ namespace worker{
     ResonantUnwarpAgent::
       ResonantUnwarpAgent()
       : WorkAgent<TaskType,Config>("ResonantUnwarp")
-    { 
+    {
     }
 
     ResonantUnwarpAgent::
       ResonantUnwarpAgent( Config *config )
       :WorkAgent<TaskType,Config>(config,"ResonantUnwarp")
-    { 
+    {
     }
 
     float
@@ -144,7 +144,7 @@ namespace worker{
     void
     ResonantUnwarpAgent::
       setDuty(float v)
-    { 
+    {
 /* Don't do:                      Don't use this block unless you _know_ the microscope is stopped()
       Config c = get_config();    keeping it here as a warning
       c.set_duty(v);

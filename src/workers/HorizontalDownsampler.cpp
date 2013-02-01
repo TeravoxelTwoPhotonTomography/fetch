@@ -16,6 +16,12 @@
 #define DBG
 #endif
 
+#if 0
+#define DUMP(f) (f)->dump("HorizontalDownsampler-%s-%ux%ux%u.%s",#f,(f)->width,(f)->height,(f)->nchan,TypeStrFromID((f)->rtti))
+#else
+#define DUMP(f)
+#endif
+
 using namespace fetch::worker;
 
 namespace fetch
@@ -45,17 +51,17 @@ namespace fetch
         ++acc_cur;
       }
     }
-    
+
     unsigned int
     HorizontalDownsampler::
     work(IDevice *idc, Frame *fdst, Frame *fsrc)
     { HorizontalDownsampleAgent *dc = dynamic_cast<HorizontalDownsampleAgent*>(idc);
       int N;
-      size_t 
+      size_t
         nbytes = fsrc->size_bytes(),
         nelem  = (nbytes - sizeof(Frame))/fsrc->Bpp;
-        
-      N = dc->get_config().ntimes();      
+
+      N = dc->get_config().ntimes();
       if(N==1)
       {
         size_t sp[4],dp[4],ds[3],ss[3];
@@ -63,7 +69,7 @@ namespace fetch
         fsrc->compute_pitches(sp);
         fdst->get_shape(ds);
         fsrc->get_shape(ss);
-        //fsrc->dump("HorizontalDownsampler-src.%s",TypeStrFromID(fsrc->rtti));
+        DUMP(fsrc);
         switch(fsrc->rtti)
         {
         case id_u8 : imCopy<f32,u8> ((f32*)fdst->data,dp,(u8* )fsrc->data,sp,ss); break;
@@ -77,16 +83,16 @@ namespace fetch
         case id_f32: imCopy<f32,f32>((f32*)fdst->data,dp,(f32*)fsrc->data,sp,ss); break;
           //case id_f64: pwa<f64>(fdst->data,fsrc->data,N,nelem); break;
         default:
-          error("Unrecognized source type (id=%d).\r\n",fsrc->rtti);        
+          error("Unrecognized source type (id=%d).\r\n",fsrc->rtti);
         }
-        //fdst->dump("HorizontalDownsampler-dst.%s",TypeStrFromID(fdst->rtti));
+        DUMP(fdst);
         return 1; //success
       }
 
       DBG("In HorizontalDownsampler::work.\r\n");
-      //fsrc->dump("HorizontalDownsampler-src.%s",TypeStrFromID(fsrc->rtti));
+      DUMP(fsrc);
       switch(fsrc->rtti)
-      { 
+      {
         case id_u8 : pwa<u8 >(fdst->data,fsrc->data,N,(size_t)nelem); break;
         case id_u16: pwa<u16>(fdst->data,fsrc->data,N,(size_t)nelem); break;
         case id_u32: pwa<u32>(fdst->data,fsrc->data,N,(size_t)nelem); break;
@@ -98,9 +104,9 @@ namespace fetch
         case id_f32: pwa<f32>(fdst->data,fsrc->data,N,(size_t)nelem); break;
         //case id_f64: pwa<f64>(fdst->data,fsrc->data,N,nelem); break;
         default:
-          error("Unrecognized source type (id=%d).\r\n",fsrc->rtti);        
+          error("Unrecognized source type (id=%d).\r\n",fsrc->rtti);
       }
-      //fdst->dump("HorizontalDownsampler-dst.%s",TypeStrFromID(fdst->rtti));
+      DUMP(fdst);
       return 1; // success
     }
 
@@ -108,7 +114,7 @@ namespace fetch
     {
       HorizontalDownsampleAgent *dc = dynamic_cast<HorizontalDownsampleAgent*>(d);
       int N;
-      size_t 
+      size_t
         nbytes = fdst->size_bytes(),
         nelem  = (nbytes - sizeof(Frame))/fdst->Bpp;
 

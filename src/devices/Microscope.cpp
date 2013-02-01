@@ -10,8 +10,8 @@
  * Use is subject to Janelia Farm Research Campus Software Copyright 1.1
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
- 
- 
+
+
 #include "Microscope.h"
 #include <time.h>
 
@@ -32,7 +32,7 @@
 #define DO_UNWARP
 
 namespace fetch
-{ 
+{
 
   bool operator==(const cfg::device::Microscope& a, const cfg::device::Microscope& b) {return equals(&a,&b);}
   bool operator!=(const cfg::device::Microscope& a, const cfg::device::Microscope& b) {return !(a==b);}
@@ -45,25 +45,26 @@ namespace fetch
       ,__scan_agent("Scanner",&scanner)
       ,__io_agent("IO",&disk)
       ,__vibratome_agent("Vibratome",&vibratome_)
-      ,scanner(&__scan_agent)    
-      ,stage_(&__self_agent)  
+      ,scanner(&__scan_agent)
+      ,stage_(&__self_agent)
       ,vibratome_(&__vibratome_agent)
       ,fov_(_config->fov())
       ,disk(&__io_agent)
       ,frame_averager("FrameAverager")
       ,pixel_averager("PixelAverager")
       ,cast_to_i16("i16Cast")
+      ,cast_to_u16("u16Cast")
       ,inverter("inverter")
       ,wrap()
       ,unwarp()
       ,frame_formatter("FrameFormatter")
       ,trash("Trash")
       ,_end_of_pipeline(0)
-    {      
+    {
       set_config(_config);
       unwarp.setDuty(_config->scanner3d().scanner2d().line_duty_cycle());
       __common_setup();
-    }  
+    }
     /*
     worker::FrameAverageAgent 	   frame_averager;
     worker::HorizontalDownsampleAgent pixel_averager;
@@ -71,15 +72,15 @@ namespace fetch
     worker::FrameInvertAgent       inverter;
     worker::ResonantWrapAgent      wrap;
 
-    worker::TerminalAgent		       trash;    
+    worker::TerminalAgent		       trash;
     */
     Microscope::Microscope( const Config &cfg )
       :IConfigurableDevice<Config>(&__self_agent)
       ,__self_agent("Microscope",NULL)
       ,__scan_agent("Scanner",&scanner)
-      ,__io_agent("IO",&disk) 
-      ,__vibratome_agent("Vibratome",&vibratome_) 
-      ,scanner(&__scan_agent)       
+      ,__io_agent("IO",&disk)
+      ,__vibratome_agent("Vibratome",&vibratome_)
+      ,scanner(&__scan_agent)
       ,stage_(&__self_agent)
       ,vibratome_(&__vibratome_agent)
       ,fov_(cfg.fov())
@@ -87,9 +88,10 @@ namespace fetch
       ,frame_averager("FrameAverager")
       ,pixel_averager("PixelAverager")
       ,cast_to_i16("i16Cast")
+      ,cast_to_u16("u16Cast")
       ,inverter("inverter")
-      ,wrap()  
-      ,unwarp()   
+      ,wrap()
+      ,unwarp()
       ,frame_formatter("FrameFormatter")
       ,trash("Trash")
       ,file_series()
@@ -104,22 +106,23 @@ namespace fetch
       :IConfigurableDevice<Config>(&__self_agent,cfg)
       ,__self_agent("Microscope",NULL)
       ,__scan_agent("Scanner",&scanner)
-      ,__io_agent("IO",&disk)  
-      ,__vibratome_agent("Vibratome",&vibratome_) 
-      ,scanner(&__scan_agent,cfg->mutable_scanner3d())       
+      ,__io_agent("IO",&disk)
+      ,__vibratome_agent("Vibratome",&vibratome_)
+      ,scanner(&__scan_agent,cfg->mutable_scanner3d())
       ,stage_(&__self_agent,cfg->mutable_stage())
       ,vibratome_(&__vibratome_agent,cfg->mutable_vibratome())
       ,fov_(cfg->fov())
       ,disk(&__io_agent)
       ,frame_averager(cfg->mutable_frame_average(),"FrameAverager")
       ,pixel_averager(cfg->mutable_horizontal_downsample(),"PixelAverager")
-      ,cast_to_i16("i16Cast") 
+      ,cast_to_i16("i16Cast")
+      ,cast_to_u16("u16Cast")
       ,inverter("Inverter")
-      ,wrap(cfg->mutable_resonant_wrap())  
-      ,unwarp(cfg->mutable_resonant_unwarp()) 
+      ,wrap(cfg->mutable_resonant_wrap())
+      ,unwarp(cfg->mutable_resonant_unwarp())
       ,frame_formatter("FrameFormatter")
       ,trash("Trash")
-      ,file_series(cfg->mutable_file_series())      
+      ,file_series(cfg->mutable_file_series())
       ,_end_of_pipeline(0)
     {
       unwarp.setDuty(cfg->scanner3d().scanner2d().line_duty_cycle());
@@ -128,16 +131,16 @@ namespace fetch
 
 
     Microscope::~Microscope(void)
-    { 
+    {
       if(__scan_agent.detach()) warning("Microscope __scan_agent did not detach cleanly\r\n");
       if(__self_agent.detach()) warning("Microscope __self_agent did not detach cleanly\r\n");
       if(  __io_agent.detach()) warning("Microscope __io_agent did not detach cleanly\r\n");
       if(  __vibratome_agent.detach()) warning("Microscope __vibratome_agent did not detach cleanly\r\n");
-    } 
+    }
 
     unsigned int
     Microscope::on_attach(void)
-    { 
+    {
       // argh this is a confusing way to do things.  which attach to call when.
       //
       // on_attach/on_detach only gets called for the owner, so attach/detach events have to be forwarded
@@ -149,7 +152,7 @@ namespace fetch
       CHKJMP(__vibratome_agent.attach()==0,EVIBRATOME);
 
       stackname = _config->file_prefix()+_config->stack_extension();
-      //file_series.ensurePathExists();   
+      //file_series.ensurePathExists();
 
       return 0;   // success
 EVIBRATOME:
@@ -161,18 +164,18 @@ ESCAN:
 
 
     }
-    
+
     unsigned int
     Microscope::on_detach(void)
-    { 
+    {
       int eflag = 0; // 0 success, 1 failure
       eflag |= scanner._agent->detach(); //scanner.detach();
       eflag |= frame_averager._agent->detach();
       eflag |= pixel_averager._agent->detach();
       eflag |= inverter._agent->detach();
-      eflag |= cast_to_i16._agent->detach();
+      eflag |= cast_to_u16._agent->detach();
       eflag |= wrap._agent->detach();
-      eflag |= frame_formatter._agent->detach(); 
+      eflag |= frame_formatter._agent->detach();
 #ifdef DO_UNWARP
       eflag |= unwarp._agent->detach();
 #endif
@@ -181,37 +184,37 @@ ESCAN:
 
       eflag |= stage_.on_detach();
       eflag |= vibratome_._agent->detach();
-      return eflag;  
+      return eflag;
     }
-    
+
     unsigned int Microscope::on_disarm()
     {
-      unsigned int sts = 1; // success      
+      unsigned int sts = 1; // success
       sts &= scanner._agent->disarm();
       sts &= frame_averager._agent->disarm();
       sts &= pixel_averager._agent->disarm();
       sts &= inverter._agent->disarm();
-      sts &= cast_to_i16._agent->disarm();
-      sts &= wrap._agent->disarm();  
-      sts &= frame_formatter._agent->disarm(); 
-#ifdef DO_UNWARP      
-      sts &= unwarp._agent->disarm(); 
-#endif      
+      sts &= cast_to_u16._agent->disarm();
+      sts &= wrap._agent->disarm();
+      sts &= frame_formatter._agent->disarm();
+#ifdef DO_UNWARP
+      sts &= unwarp._agent->disarm();
+#endif
       sts &= trash._agent->disarm();
       sts &= disk._agent->disarm();
       sts &= vibratome_._agent->disarm();
       return sts;
     }
-    
+
     const std::string Microscope::stack_filename()
-    {     
+    {
       return file_series.getFullPath(_config->file_prefix(),_config->stack_extension());
-    }  
-    
+    }
+
     const std::string Microscope::config_filename()
-    {     
+    {
       return file_series.getFullPath(_config->file_prefix(),_config->config_extension());
-    }        
+    }
 
     const std::string Microscope::metadata_filename()
     {
@@ -219,10 +222,10 @@ ESCAN:
     }
 
     void Microscope::write_stack_metadata()
-    {      
+    {
       //{ std::ofstream fout(config_filename(),std::ios::out|std::ios::trunc|std::ios::binary);
       //  get_config().SerializePartialToOstream(&fout);
-      //}      
+      //}
       { std::ofstream fout(config_filename().c_str(),std::ios::out|std::ios::trunc);
         std::string s;
         Config c = get_config();
@@ -236,25 +239,25 @@ ESCAN:
         stage_.getPos(&x,&y,&z);
         data.set_x_mm(x);
         data.set_y_mm(y);
-        data.set_z_mm(z);        
+        data.set_z_mm(z);
         std::string s;
         google::protobuf::TextFormat::PrintToString(data,&s);
-        fout << s;        
+        fout << s;
         //get_config().SerializePartialToOstream(&fout);
       }
     }
 
     void Microscope::_set_config( Config IN *cfg )
-    {      
+    {
       scanner._set_config(cfg->mutable_scanner3d());
       pixel_averager._set_config(cfg->mutable_horizontal_downsample());
       frame_averager._set_config(cfg->mutable_frame_average());
-      wrap._set_config(cfg->mutable_resonant_wrap()); 
-      unwarp._set_config(cfg->mutable_resonant_unwarp());       
+      wrap._set_config(cfg->mutable_resonant_wrap());
+      unwarp._set_config(cfg->mutable_resonant_unwarp());
       vibratome_._set_config(cfg->mutable_vibratome());
 
       fov_.update(_config->fov());
-      stage_._set_config(cfg->mutable_stage());      
+      stage_._set_config(cfg->mutable_stage());
     }
 
     void Microscope::_set_config( const Config& cfg )
@@ -286,11 +289,11 @@ ESCAN:
       cur = &scanner;
       cur =  pixel_averager.apply(cur);
       cur =  frame_averager.apply(cur);
-      cur =  inverter.apply(cur);
-      cur =  cast_to_i16.apply(cur);
-      cur =  frame_formatter.apply(cur);
+      //cur =  inverter.apply(cur);
+      cur =  cast_to_u16.apply(cur);
+      //cur =  frame_formatter.apply(cur);
       cur =  wrap.apply(cur);
-#ifdef DO_UNWARP      
+#ifdef DO_UNWARP
       cur =  unwarp.apply(cur);
 #endif
       _end_of_pipeline=cur;
@@ -309,34 +312,34 @@ ESCAN:
     }
 
     unsigned int Microscope::runPipeline()
-    { int sts = 1;                        
+    { int sts = 1;
       transaction_lock();
-#ifdef DO_UNWARP      
+#ifdef DO_UNWARP
       sts &= unwarp._agent->run();
-#endif      
+#endif
       sts &= frame_formatter._agent->run();
       sts &= wrap._agent->run();
-      sts &= cast_to_i16._agent->run();
+      sts &= cast_to_u16._agent->run();
       sts &= inverter._agent->run();
       sts &= frame_averager._agent->run();
       sts &= pixel_averager._agent->run();
       transaction_unlock();
       return (sts!=1); // returns 1 on fail and 0 on success
     }
-    
+
     unsigned int Microscope::stopPipeline()
     { int sts = 1;
       transaction_lock();
-      // These should block till channel's empty 
-#ifdef DO_UNWARP      
+      // These should block till channel's empty
+#ifdef DO_UNWARP
       sts &= unwarp._agent->stop(2000);
-#endif      
+#endif
       sts &= frame_formatter._agent->stop();
       sts &= wrap._agent->stop();
-      sts &= cast_to_i16._agent->stop();
+      sts &= cast_to_u16._agent->stop();
       sts &= inverter._agent->stop();
       sts &= frame_averager._agent->stop();
-      sts &= pixel_averager._agent->stop();      
+      sts &= pixel_averager._agent->stop();
       transaction_unlock();
       return (sts!=1); // returns 1 on fail and 0 on success
     }
@@ -358,11 +361,11 @@ ESCAN:
     The machine state is restored after calling this function so that temporary changes to the
     config and scanner task are transparent.
 
-    This synchronously executes.  It should not be called from the GUI thread.  It is most 
+    This synchronously executes.  It should not be called from the GUI thread.  It is most
     appropriate to use the Microscope agent's thread.
-    
-    This ends up allocating a frame for each snapshot and using a copy to form the returned 
-    mylib::Array.    
+
+    This ends up allocating a frame for each snapshot and using a copy to form the returned
+    mylib::Array.
 
     \returns NULL on failure, otherwise a Mylib::Array*.  The caller is responsible for
              freeing the array.
@@ -387,14 +390,14 @@ ESCAN:
       scanner.set_config(cfg.scanner3d());              // commit config
       Chan *out = configPipeline()->_out->contents[0];  // pipeline - don't connect end to anything, as we'll read produced data here.
       TRY(c=Chan_Open(out,CHAN_READ)); // open the output channel before starting to ensure we get the data
-            
-      // 2. Start the acquisition      
+
+      // 2. Start the acquisition
       oldtask = __scan_agent._task;
-      TRY(0==__scan_agent.arm(&scan,&scanner));      
+      TRY(0==__scan_agent.arm(&scan,&scanner));
       TRY(0==runPipeline());
       Chan_Wait_For_Writer_Count(c,1);
       TRY(__scan_agent.run());
-      
+
       // 3. Wait for result
       TRY(frm=(Frame*) Chan_Token_Buffer_Alloc(c));
       //TRY(CHAN_SUCCESS(Chan_Next(c,(void**)&frm,Chan_Buffer_Size_Bytes(c))));
@@ -405,12 +408,12 @@ ESCAN:
         ret=mylib::Copy_Array(&dummy);
       }
 
-Finalize:    
+Finalize:
       TRY(__scan_agent.stop());
       if(frm) Chan_Token_Buffer_Free(frm);
       if(c) Chan_Close(c);
       stopPipeline(); //- redundant?
-      scanner.set_config(original.scanner3d()); 
+      scanner.set_config(original.scanner3d());
       __scan_agent._task=oldtask;
       transaction_unlock();
       return ret;
@@ -418,7 +421,7 @@ Error:
       ret=NULL;
       goto Finalize;
     }
-    
+
     int Microscope::updateFovFromStackDepth(int nowait)
     { Config c = get_config();
       float s,t;
@@ -440,16 +443,16 @@ Error:
 
     int Microscope::updateStackDepthFromFov(int nowait)
     { Config c = get_config();
-      float s,t,o;      
+      float s,t,o;
       o = c.fov().z_overlap_um();
-      t = vibratome()->thickness_um(); 
-      s = t+o;      
-            
+      t = vibratome()->thickness_um();
+      s = t+o;
+
       // - Really, I want one big atomic update of the microscope state.
       //   and I'll get it this way.
       cfg::device::ZPiezo *z = c.mutable_scanner3d()->mutable_zpiezo();
       z->set_um_min(0.0);
-      z->set_um_max(s);      
+      z->set_um_max(s);
       c.mutable_fov()->set_z_size_um( s );
       if(nowait)
         TRY( set_config_nowait(c) );
@@ -464,19 +467,19 @@ Error:
     ///////////////////////////////////////////////////////////////////////
     // FileSeries
     ///////////////////////////////////////////////////////////////////////
-    
+
 #if 0
 #define VALIDATE if(!_is_valid) {warning("(%s:%d) - Invalid location for file series."ENDL,__FILE__,__LINE__);}
 #else
 #define VALIDATE
 #endif
 
-    
+
     FileSeries& FileSeries::inc( void )
     {
       VALIDATE;
-      int n = _desc->seriesno();   
-      
+      int n = _desc->seriesno();
+
       // reset series number when series path changes
       updateDate();                // get the current date
       std::string seriespath = _desc->root() + _desc->pathsep() + _desc->date();
@@ -485,7 +488,7 @@ Error:
         _lastpath = seriespath;
       } else
       { _desc->set_seriesno(n+1);
-      }      
+      }
       _prev.set_seriesno(_desc->seriesno());
       notify();
       return *this;
@@ -494,7 +497,7 @@ Error:
     const std::string FileSeries::getFullPath(const std::string& prefix, const std::string& ext)
     {
       VALIDATE;
-      char strSeriesNo[32];      
+      char strSeriesNo[32];
       renderSeriesNo(strSeriesNo,sizeof(strSeriesNo));
       std::string seriespath = _desc->root() + _desc->pathsep() + _desc->date();
 
@@ -512,10 +515,10 @@ Error:
     const std::string FileSeries::getPath()
     {
       VALIDATE;
-      char strSeriesNo[32];      
+      char strSeriesNo[32];
       renderSeriesNo(strSeriesNo,sizeof(strSeriesNo));
       std::string seriespath = _desc->root() + _desc->pathsep() + _desc->date();
-    
+
       return seriespath
         + _desc->pathsep()
         + strSeriesNo
@@ -526,16 +529,16 @@ Error:
     {
       time_t clock = time(NULL);
       struct tm *t = localtime(&clock);
-      char datestr[] = "0000-00-00";      
+      char datestr[] = "0000-00-00";
       sprintf_s(datestr,sizeof(datestr),"%04d-%02d-%02d",t->tm_year+1900,t->tm_mon+1,t->tm_mday);
-      _desc->set_date(datestr);      
+      _desc->set_date(datestr);
       _prev.set_date(_desc->date());
     }
-   
+
     bool FileSeries::updateDesc(cfg::FileSeries *desc)
-    { 
+    {
       if(_desc)
-        desc->set_seriesno(_prev.seriesno()); // keep old series no      
+        desc->set_seriesno(_prev.seriesno()); // keep old series no
       _desc = desc;
       _prev.CopyFrom(*_desc);
       updateDate();
@@ -552,7 +555,7 @@ Error:
 
       renderSeriesNo(strSeriesNo,sizeof(strSeriesNo));
       updateDate();
-      
+
       tryCreateDirectory(_desc->root().c_str(), "root path", "");
 
       s = _desc->root()+_desc->pathsep()+_desc->date();
@@ -580,13 +583,13 @@ Error:
       { DWORD err;
         switch(err=GetLastError())
         {
-        case ERROR_ALREADY_EXISTS: /*ignore*/ 
+        case ERROR_ALREADY_EXISTS: /*ignore*/
           break;
         case ERROR_PATH_NOT_FOUND:
         case ERROR_NOT_READY:
           warning("[FileSeries] %s(%d)"ENDL"\tCould not create %s:"ENDL"\t%s"ENDL,__FILE__,__LINE__,description,path); // [ ] TODO chage this to a warning
           _is_valid = false;
-          break;        
+          break;
         default:
           _is_valid = false;
           warning("[FileSeries] %s(%d)"ENDL"\tUnexpected error returned after call to CreateDirectory()"ENDL"\tFor Path: %s"ENDL,__FILE__,__LINE__,path);
@@ -595,13 +598,13 @@ Error:
       }
     }
 
-    void 
+    void
       FileSeries::
       notify()
     { TListeners::iterator i;
       std::string path = getPath();
       for(i=_listeners.begin();i!=_listeners.end();++i)
-        (*i)->update(path);      
+        (*i)->update(path);
     }
 
     //notes
@@ -617,7 +620,7 @@ Error:
     //   2. assert creation or existence of <root>/<date>
     //   3. assert creation of <root>/<data>/<seriesno>
     //   4. return true on success, fail otherwise.
-    //see     
+    //see
     //---
     //
     //MSDN CreateDirectory http://msdn.microsoft.com/en-us/library/aa363855(VS.85).aspx
@@ -626,5 +629,5 @@ Error:
     //     handle = CreateTransaction(NULL/*default security*/,0,0,0,0,0/*timeout,0==inf*/,"description");
 
 
-  } // end namespace device  
+  } // end namespace device
 } // end namespace fetch

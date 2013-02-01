@@ -265,19 +265,22 @@ Error:
     , _ctx(0)
     {}
 
-    unsigned int AlazarDigitizer::on_attach() { return !alazar_attach(&_ctx); } // return 0 on failure and 1 on success
-    unsigned int AlazarDigitizer::on_detach() { return !alazar_detach(&_ctx); } // return 0 on failure and 1 on success
+    unsigned int AlazarDigitizer::on_attach() { return !alazar_attach(&_ctx); } ///< return 0 on failure and 1 on success
+    unsigned int AlazarDigitizer::on_detach() { return !alazar_detach(&_ctx); } ///< return 0 on failure and 1 on success
+    unsigned int AlazarDigitizer::on_disarm() { return !alazar_disarm(_ctx);}    ///< return 0 on failure and 1 on success
 
     void AlazarDigitizer::setup( int nrecords, double record_frequency_Hz, double duty )
     { alazar_cfg_t cfg=0;
       CHKJMP(cfg=alazar_make_config());
+      alazar_set_line_trigger_lvl_volts(cfg,_config->trigger_lvl_volts());
       alazar_set_image_size(cfg,record_frequency_Hz,nrecords,&duty);
       debug("[ ]Duty (aligned): %f\n",duty);
       { int i;
         for(i=0;i<_config->channels_size();++i)
-        { int id=_config->channels(i).board_id()*2+(_config->channels(i).chan_id()==fetch::cfg::device::AlazarDigitizer_ChannelID_CHANNEL_B);
-          alazar_set_channel_enable(cfg,id,_config->channels(i).enabled());
-          alazar_set_channel_input_range(cfg,id,_config->channels(i).range());
+        { const int iboard=_config->channels(i).board_id(),
+                    ichan =_config->channels(i).chan_id();
+          alazar_set_channel_enable     (cfg,iboard,ichan,_config->channels(i).enabled());
+          alazar_set_channel_input_range(cfg,iboard,ichan,_config->channels(i).range());
         }
       }
       CHKJMP(alazar_arm(_ctx,cfg));
@@ -309,7 +312,7 @@ Error:
     }
 
     int AlazarDigitizer::fetch(Frame* frm)
-    { CHKJMP(alazar_fetch(_ctx,&frm->data,INFINITE)); // the only reason this is well behaved is because alazar_fetch doesn't actually swap pointers.
+    { CHKJMP(alazar_fetch(_ctx,&frm->data,5000)); // the only reason this is well behaved is because alazar_fetch doesn't actually swap pointers.
       return 1;
 Error:
       return 0;
@@ -416,10 +419,10 @@ Error:
         _idigitizer = _niscope;
         break;
       case cfg::device::Digitizer_DigitizerType_Alazar:
-        if(!_niscope)
+        if(!_alazar)
           _alazar = new AlazarDigitizer(_agent,_config->mutable_alazar());
-        _idevice  = _niscope;
-        _idigitizer = _niscope;
+        _idevice  = _alazar;
+        _idigitizer = _alazar;
         break;
       case cfg::device::Digitizer_DigitizerType_Simulated:
         if(!_simulated)
@@ -478,6 +481,12 @@ Error:
     {
       Guarded_Assert(_idevice);
       return _idevice->on_detach();
+    }
+
+    unsigned int Digitizer::on_disarm()
+    {
+      Guarded_Assert(_idevice);
+      return _idevice->on_disarm();
     }
 
     void Digitizer::_set_config( Config IN *cfg )

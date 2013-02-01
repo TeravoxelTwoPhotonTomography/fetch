@@ -18,6 +18,10 @@
 #include "frame.h"
 #include "File.h"
 #include "util/util-file.h"
+
+//#define DEBUG
+#undef DEBUG
+
 #if 0
 #define disk_stream_debug(...) debug(__VA_ARGS__)
 #else
@@ -469,7 +473,11 @@ FailedWriteIFD:
 #define TRY(e)     if(!(e)) {warning("%s(%d):"ENDL "\t%s"ENDL "\tExpression evaluated to false."ENDL,__FILE__,__LINE__,#e); goto Error;}
 #define TIFFTRY(e) if(!(e)) {warning("%s(%d):"ENDL "\t%s"ENDL "\t[TIFF] Expression evaluated to false."ENDL "%s",__FILE__,__LINE__,#e,(const char*)Image_Error()); Image_Error_Release(); goto Error;}
 #define TODO       error("%s(%d): [TODO] Not Implemented\r\n",__FILE__,__LINE__)
+#ifdef DEBUG
 #define DBG(msg)   debug("%s(%d): %s"ENDL "\t%s"ENDL,__FILE__,__LINE__,__FUNCTION__,msg)
+#else
+#define DBG(msg)
+#endif
 
   /** \todo Find out (and fix) what happens when the root name lacks an extension */
   static ::std::string gen_name(const ::std::string & root, int i)

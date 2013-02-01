@@ -141,7 +141,7 @@ namespace fetch
 
       unsigned int on_attach();
       unsigned int on_detach();
-
+      unsigned int on_disarm();
       int start();
       int stop();
       int fetch(Frame* frm);
@@ -183,6 +183,7 @@ namespace fetch
 
       virtual unsigned int on_attach();
       virtual unsigned int on_detach();
+      virtual unsigned int on_disarm();
 
       void setKind(Config::DigitizerType kind);
       virtual void _set_config(Config IN *cfg);

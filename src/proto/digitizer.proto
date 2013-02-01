@@ -140,6 +140,7 @@ message AlazarDigitizer
   repeated Channel    channels        = 7;
 
   // TODO: triggers, aux io, Dual-port AutoDMA acquisition
+  optional double     trigger_lvl_volts =8 [default=0.5];
 }
 
 //////////////////////////

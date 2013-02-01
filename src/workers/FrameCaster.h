@@ -28,32 +28,38 @@
 #include "frame.h"
 #include "types.h"
 
+#if 0
+#define DUMP(f) (f)->dump("FrameCast-%s-%ux%ux%u.%s",#f,(f)->width,(f)->height,(f)->nchan,TypeStrFromID((f)->rtti))
+#else
+#define DUMP(f)
+#endif
+
 namespace fetch
 {
 
   namespace task
   {
-    
+
     template<typename Tdst>
     class FrameCast : public fetch::task::OneToOneWorkTask<Frame>
     {
     public:
         unsigned int reshape(IDevice *d, Frame *dst);
         unsigned int work(IDevice *dc, Frame *fdst, Frame *fsrc);
-        
+
         virtual void alloc_output_queues(IDevice *dc);
     };
 
-    
+
 
     /*
      * Implementation
-     */    
+     */
     template<typename Tdst>
     inline unsigned int
       FrameCast<Tdst>::
       reshape(IDevice *idc, Frame *fdst)
-    { 
+    {
       fdst->rtti = TypeID<Tdst> ();
       fdst->Bpp  = g_type_attributes[TypeID<Tdst> ()].bytes;
 
@@ -65,17 +71,17 @@ namespace fetch
     inline unsigned int
     FrameCast<Tdst>::
     work(IDevice *idc, Frame *fdst, Frame *fsrc)
-    { 
+    {
       void  *s;
       Tdst  *d;
       size_t dst_pitch[4], src_pitch[4], n[3];
       fdst->compute_pitches(dst_pitch);
       fsrc->compute_pitches(src_pitch);
       fsrc->get_shape(n);
-      
-      //debug("In FrameCast::work.\r\n");      
-      //fsrc->dump("FrameCast-src.%s",TypeStrFromID(fsrc->rtti));
-      
+
+      //debug("In FrameCast::work.\r\n");
+      DUMP(fsrc);      
+
       s = fsrc->data;
       d = (Tdst*)fdst->data;
       switch (fsrc->rtti) {
@@ -94,26 +100,25 @@ namespace fetch
           return 0; // failure
           break;
       }
-      
-      //fdst->dump("FrameCast-dst.%s",TypeStrFromID(fdst->rtti));
-      
+      DUMP(fdst);
+
       return 1; // success
     }
-    
+
     template<typename Tdst>
     void
     FrameCast<Tdst>::
     alloc_output_queues(IDevice *dc)
-    { // Allocates an output queue on out[0] that has matching storage to in[0].      
+    { // Allocates an output queue on out[0] that has matching storage to in[0].
       dc->_alloc_qs_easy(&dc->_out,
                             1,                                               // number of output channels to allocate
                             Chan_Buffer_Count(dc->_in->contents[0]),         // copy number of output buffers from input queue
                             Chan_Buffer_Size_Bytes(dc->_in->contents[0])*sizeof(Tdst)); // copy buffer size from input queue - prepare for worst case
     }
-  } 
-      
+  }
+
   namespace worker
-  { 
+  {
     typedef WorkAgent<task::FrameCast<u8 >> FrameCastAgent_u8;
     typedef WorkAgent<task::FrameCast<u16>> FrameCastAgent_u16;
     typedef WorkAgent<task::FrameCast<u32>> FrameCastAgent_u32;

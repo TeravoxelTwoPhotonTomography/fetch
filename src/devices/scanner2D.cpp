@@ -82,7 +82,7 @@ namespace fetch
           id_u16);
         int n;
         size_t nout=1;
-        size_t *sizes;
+        size_t *sizes=0;
         _digitizer.aux_info(&n,&sizes);
         {
           nout+=n;
@@ -92,13 +92,14 @@ namespace fetch
           for(size_t i=0;i<nout;++i)
             nbuf[i] = 4;
           nbytes[0] = fmt.size_bytes();
-          memcpy(nbytes+1,sizes,sizeof(size_t)*n);
+          if(n)
+            memcpy(nbytes+1,sizes,sizeof(size_t)*n);
 
           _alloc_qs(&_out,nout,nbuf,nbytes);
 
-          free(sizes);
-          free(nbytes);
-          free(nbuf);
+          if(sizes)  free(sizes);
+          if(nbytes) free(nbytes);
+          if(nbuf)   free(nbuf);
         }
       }
 
@@ -126,7 +127,16 @@ ESHUTTER:
       return_val_if(eflag |= _pockels.on_detach()  ,eflag);
       return eflag;
     }
-
+    /// \returns 0 on success, 1 on failure
+    unsigned int Scanner2D::on_disarm()
+    { unsigned eflag;
+      eflag |= _shutter.on_disarm();
+      eflag |= _digitizer.on_disarm();
+      eflag |= _daq.on_disarm();
+      eflag |= _LSM.on_disarm();
+      eflag |= _pockels.on_disarm();
+      return eflag;
+    }
     void Scanner2D::_set_config( Config IN *cfg )
     {
       // Changing where the Config data is referenced

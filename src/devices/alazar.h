@@ -10,8 +10,8 @@ typedef struct _alazar_img_t* alazar_img_t;
 alazar_cfg_t alazar_make_config();
 void         alazar_free_config(alazar_cfg_t *cfg);
 void         alazar_set_image_size(alazar_cfg_t cfg, unsigned scans_per_second,unsigned scans,double *duty);
-void         alazar_set_channel_enable(alazar_cfg_t cfg, int ichan, int isenabled);
-void         alazar_set_channel_input_range(alazar_cfg_t cfg, int ichan, float volts);
+void         alazar_set_channel_enable(alazar_cfg_t cfg, int iboard, int ichan, int isenabled);
+void         alazar_set_channel_input_range(alazar_cfg_t cfg, int iboard, int ichan, unsigned rangeid);
 void         alazar_set_line_trigger_lvl_volts(alazar_cfg_t cfg, double volts);
 
 void         alazar_get_image_size(alazar_t ctx, unsigned *w, unsigned *h);

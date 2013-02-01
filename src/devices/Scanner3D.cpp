@@ -85,6 +85,14 @@ ESCAN2D:
       return eflag;
     }
 
+    /// Returns 0 on success, nonzero otherwise
+    unsigned int Scanner3D::on_disarm()
+    { int ecode=0;
+      ecode |= _zpiezo.on_disarm();
+      ecode |= _scanner2d.on_disarm();
+      return ecode;
+    }
+
     void Scanner3D::_set_config( Config IN *cfg )
     {
       _scanner2d._set_config(cfg->mutable_scanner2d());

@@ -184,7 +184,8 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
       bar->addPermanentWidget(w);
       connect(this,SIGNAL(configFileChanged(const QString&)),w,SLOT(update(const QString&)));
     }
-    { QString f(_dc->file_series.getPath().c_str());
+    { std::string s=_dc->file_series.getPath();
+      QString f(s.c_str());
       FileSeriesNameDisplay *w = new FileSeriesNameDisplay(f);
       _dc->file_series.addListener(w->listener());
       bar->addWidget(w);      

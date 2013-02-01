@@ -66,7 +66,7 @@ struct _alazar_cfg_t
   U32 nrecords;                                                            ///< number of records
   U32 sample_rate_id;                                                      ///< ATS-SDK constant specifying sample rate
   double line_trig_lvl_volts;                                              ///< 0-255.  Full range given by input_range_id.
-  U32 enable[MAXBOARDS*CHANSPERBOARD];                                     ///< bool indicating whether to enable a channel
+  U32 enable[MAXBOARDS][CHANSPERBOARD];                                    ///< bool indicating whether to enable a channel
   U32 input_range_ids[MAXBOARDS][CHANSPERBOARD];                           ///< ATS-SDK constant specifying input range
 };
 /** Device context for the board system. */
@@ -115,11 +115,12 @@ Error:
 /** \returns the number of enabled channels across all boards */
 static size_t active_channel_count(alazar_t ctx)
 {
-  unsigned i,c=0;
+  unsigned i,j,c=0;
   VALIDATE(ctx);
   if(!ctx->cfg) return 0;
-  for(i=0;i<2*ctx->nboards;++i)  // two channels per board
-    c+=ctx->cfg->enable[i];
+  for(i=0;i<ctx->nboards;++i)  // two channels per board
+    for(j=0;j<2;++j)
+      c+=ctx->cfg->enable[i][j];
   return c;
 Error:
   return 0;
@@ -159,8 +160,8 @@ static int alazar_is_started(alazar_t ctx)
 /** \returns the channel mask specifying enabled channels on board \a i */
 static U32 channel_mask(alazar_t ctx, int i)
 {
-  return (ctx->cfg->enable[2*i  ]?CHANNEL_A:0)
-       | (ctx->cfg->enable[2*i+1]?CHANNEL_B:0);
+  return (ctx->cfg->enable[i][0]?CHANNEL_A:0)
+       | (ctx->cfg->enable[i][1]?CHANNEL_B:0);
 }
 
 /** Translates a rate id defined by the ATS-SDK into a real number.
@@ -355,7 +356,8 @@ Error:
 
 /** Releases the device context */
 int alazar_detach(alazar_t *ctx)
-{ if(alazar_is_armed(*ctx))
+{ if(!ctx || !*ctx) return SUCCESS;
+  if(alazar_is_armed(*ctx))
     WARN(alazar_disarm(*ctx),"Trying to disarm.");
   free_alazar_t(ctx);
   return SUCCESS;
@@ -393,36 +395,6 @@ int alazar_arm(alazar_t ctx, alazar_cfg_t cfg)
 
 ///// ALLOCATE WORKING MEMORY
   TRY(alloc_bufs(ctx));
-
-///// ASYNC READ
-  { U32 nbytes = (U32)buffer_size_bytes(ctx)/(U32)active_channel_count(ctx);
-
-    // init the async read
-    i=ctx->nboards;
-    while(i-->0) // need to do the master board last, so iterate backwards
-    {
-      U32 mask = channel_mask(ctx,i);
-      if(mask)
-      { ERR(AlazarSetRecordSize(BOARD(i),0,cfg->nsamples)); // this effects how often trigger enable resets
-        ERR(AlazarBeforeAsyncRead(BOARD(i),mask,
-          0,             /* transfer offset - pre-trigger samples*/
-          cfg->nsamples, /* samples per record*/
-          cfg->nrecords, /* records per buffer*/
-          0x7fffffff,    /* records per acquisition (0x7FFFFFFF is infinite)*/
-          ADMA_NPT       /* flags - No PreTrigger - enables faster retriggering*/
-          | ADMA_EXTERNAL_STARTCAPTURE /* require call to AlazarStartCapture() */
-          ));
-      }
-    }
-
-    // post buffers
-    for(i=0;i<ctx->nboards;++i)
-    { int nchan = ctx->cfg->enable[2*i]+ctx->cfg->enable[2*i+1];
-      if(nchan>0)
-        for(j=0;j<BUFS_PER_BOARD;++j)
-          ERR(AlazarPostAsyncBuffer(BOARD(i),((char*)ctx->bufs[i][j]),nbytes*nchan));
-    }
-  }
   unlock(ctx);
   return SUCCESS;
 Error:
@@ -440,19 +412,52 @@ Error:
 
 /** Releases configuration-specific resources. */
 int alazar_disarm(alazar_t ctx)
-{ if(alazar_is_started(ctx))
+{ unsigned i;
+  if(!ctx) return SUCCESS;
+  if(alazar_is_started(ctx))
     WARN(alazar_stop(ctx),"Trying to stop.");
   lock(ctx,'w'); // FIXME: There's a race condition here.  is_started() should be a condition variable
   alazar_free_config(&ctx->cfg);
   free_bufs(ctx);
   unlock(ctx);
   return SUCCESS;
+Error:
+  return FAILURE;
 }
 
 /** Starts the acquisition. */
 int alazar_start (alazar_t ctx)
-{ lock(ctx,'w');
+{ int i,j;
+  U32 nbytes;
+  lock(ctx,'w');
+  nbytes=(U32)buffer_size_bytes(ctx)/(U32)active_channel_count(ctx);
+  LOG("START START START\n");
   TRY(alazar_is_armed(ctx));
+  // init the async read
+  i=ctx->nboards;
+  while(i-->0) // need to do the master board last, so iterate backwards
+  {
+    U32 mask = channel_mask(ctx,i);
+    if(mask)
+    { ERR(AlazarSetRecordSize(BOARD(i),0,ctx->cfg->nsamples)); // this effects how often trigger enable resets
+      ERR(AlazarBeforeAsyncRead(BOARD(i),mask,
+        0,             /* transfer offset - pre-trigger samples*/
+        ctx->cfg->nsamples, /* samples per record*/
+        ctx->cfg->nrecords, /* records per buffer*/
+        0x7fffffff,    /* records per acquisition (0x7FFFFFFF is infinite)*/
+        ADMA_NPT       /* flags - No PreTrigger - enables faster retriggering*/
+        | ADMA_EXTERNAL_STARTCAPTURE /* require call to AlazarStartCapture() */
+        ));
+    }
+  }
+  // post buffers
+  for(i=0;i<ctx->nboards;++i)
+  { int nchan = ctx->cfg->enable[i][0]+ctx->cfg->enable[i][1];
+    if(nchan>0)
+      for(j=0;j<BUFS_PER_BOARD;++j)
+        ERR(AlazarPostAsyncBuffer(BOARD(i),((char*)ctx->bufs[i][j]),nbytes*nchan));
+  }
+  ctx->ibuf=0;
   ERR(AlazarStartCapture(BOARD(0)));
   ctx->is_started=1;
   unlock(ctx);
@@ -465,8 +470,9 @@ Error:
 
 /** Stops the acquisition. */
 int alazar_stop  (alazar_t ctx)
-{ unsigned i;
+{ int i;
   lock(ctx,'w');
+  LOG("STOP STOP STOP\n");
   for(i=0;i<ctx->nboards;++i) // Require Abort called for master board first
     ERR(AlazarAbortAsyncRead(BOARD(i)));
   ctx->is_started=0;
@@ -504,7 +510,7 @@ int alazar_fetch (alazar_t ctx, void **buf, unsigned timeout_ms)
   TRY(alazar_is_started(ctx));
   { const U32 nbytes=(U32)buffer_size_bytes(ctx)/(U32)active_channel_count(ctx);
     for(i=0;i<ctx->nboards;++i)
-    { int nchan = ctx->cfg->enable[2*i]+ctx->cfg->enable[2*i+1];
+    { int nchan = ctx->cfg->enable[i][0]+ctx->cfg->enable[i][1];
       if(nchan>0)
       { ERR(AlazarWaitAsyncBufferComplete(BOARD(i),(char*)CURRENT(i),timeout_ms));
         memcpy(((char*)buf[0])+o,CURRENT(i),nbytes*nchan);
@@ -596,34 +602,12 @@ void alazar_set_line_trigger_lvl_volts(alazar_cfg_t cfg, double volts)
 
  Channels are ordered like this: Board0.ChA, Board0.ChB, Board1.ChA ...
 */
-void alazar_set_channel_enable(alazar_cfg_t cfg, int ichan, int isenabled)
-{ cfg->enable[ichan]=isenabled;
+void alazar_set_channel_enable(alazar_cfg_t cfg, int iboard, int ichan, int isenabled)
+{ cfg->enable[iboard][ichan==CHANNEL_B]=isenabled;
 }
 
-void alazar_set_channel_input_range(alazar_cfg_t cfg, int ichan, float volts)
-{ int i=ichan/2,
-      j=ichan%2;
-      
-#define CASE(lvl,lbl) if(volts<=(lvl+1e-3)) {cfg->input_range_ids[i][j]=INPUT_RANGE_PM_##lbl; return;}
-  CASE(0.02, 20_MV);
-  CASE(0.04, 40_MV);
-  CASE(0.05, 50_MV);
-  CASE(0.1 ,100_MV);
-  CASE(0.2 ,200_MV);
-  CASE(0.4 ,400_MV);
-  CASE(0.5 ,800_MV);
-  CASE(0.8 ,800_MV);
-  CASE(  1 ,  1_V);
-  CASE(  2 ,  2_V);
-  CASE(  4 ,  4_V);
-  CASE(  5 ,  5_V);
-  CASE(  8 ,  8_V);
-  CASE( 10 , 10_V);
-  CASE( 16 , 16_V);
-  CASE( 20 , 20_V);
-  CASE( 40 , 40_V);
-#undef CASE
-  cfg->input_range_ids[i][j]=0; // should be an invalid input range.
+void alazar_set_channel_input_range(alazar_cfg_t cfg, int iboard, int ichan, unsigned rangeid)
+{ cfg->input_range_ids[iboard][ichan==CHANNEL_B]=rangeid;
 }
 
 /** Returns the image size that will be acquired by the armed device, */

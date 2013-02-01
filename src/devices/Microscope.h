@@ -34,7 +34,7 @@
 #include "devices/Vibratome.h"
 #include "tasks/microscope-interaction.h"
 #include "tasks/StackAcquisition.h"
-#include "tasks/TiledAcquisition.h"  
+#include "tasks/TiledAcquisition.h"
 #include "tasks/Vibratome.h"
 #include "tasks/AutoTileAcquisition.h"
 
@@ -46,14 +46,14 @@
 
 
 namespace fetch
-{ 
+{
 
   bool operator==(const cfg::device::Microscope& a, const cfg::device::Microscope& b);
   bool operator!=(const cfg::device::Microscope& a, const cfg::device::Microscope& b);
 
   namespace device
   {
-  
+
 //TODO: move this into it's own header and out of namespace fetch::device (move to fetch::)
     struct FileSeriesListener
     { virtual void update(const std::string& path) = 0;
@@ -87,13 +87,13 @@ namespace fetch
 
     public: // pseudo-private
       cfg::FileSeries *_desc;
-      cfg::FileSeries  _prev;      
+      cfg::FileSeries  _prev;
       TListeners _listeners;
     };
 
     class Microscope : public IConfigurableDevice<cfg::device::Microscope>
-    { 
-    public:     
+    {
+    public:
       // Will on_attach and arm the default task on construction
       Microscope();
       Microscope(const Config &cfg);
@@ -121,32 +121,33 @@ namespace fetch
     public:
       const std::string stack_filename();                                  // get the current file
       const std::string config_filename();                                 // get the current file
-      const std::string metadata_filename();       
-                   void write_stack_metadata();     
+      const std::string metadata_filename();
+                   void write_stack_metadata();
 
     public:
       device::Scanner3D                     scanner;
       device::Stage                         stage_;
       device::Vibratome                     vibratome_;
       device::FieldOfViewGeometry           fov_;
-                                            
+
       worker::FrameAverageAgent 	          frame_averager;
       worker::HorizontalDownsampleAgent     pixel_averager;
       worker::FrameCastAgent_i16            cast_to_i16;
+      worker::FrameCastAgent_u16            cast_to_u16;
       worker::FrameInvertAgent              inverter;
       worker::ResonantWrapAgent             wrap;
       worker::ResonantUnwarpAgent           unwarp;
       worker::FrameFormatterAgent           frame_formatter;
-                                            
+
       worker::TerminalAgent		              trash;
       device::TiffGroupStream               disk;
-                                                          
+
       task::microscope::Interaction         interaction_task;
-      task::microscope::StackAcquisition    stack_task;      
+      task::microscope::StackAcquisition    stack_task;
       task::microscope::TiledAcquisition    tiling_task;
       task::microscope::Cut                 cut_task;
-      task::microscope::AutoTileAcquisition auto_tile_task;      
-      
+      task::microscope::AutoTileAcquisition auto_tile_task;
+
       mylib::Array* snapshot(float dz_um,unsigned timeout_ms);
 
       inline Chan*  getVideoChannel()    {if(_end_of_pipeline && _end_of_pipeline->_out) return _end_of_pipeline->_out->contents[0]; else return NULL;}
@@ -154,7 +155,7 @@ namespace fetch
       inline Pockels*       pockels()    {return &scanner._scanner2d._pockels;}
       inline ZPiezo*         zpiezo()    {return &scanner._zpiezo;}
       inline Stage*           stage()    {return &stage_;}
-      inline Vibratome*   vibratome()    {return &vibratome_;}      
+      inline Vibratome*   vibratome()    {return &vibratome_;}
 
       int updateFovFromStackDepth(int nowait=0);  // These also account for cut thickness, returns 0 if overlap is not positive.
       int updateStackDepthFromFov(int nowait=0);
@@ -164,7 +165,7 @@ namespace fetch
 
     public:
       IDevice* _end_of_pipeline;
-    
+
       Agent __self_agent;
       Agent __scan_agent;
       Agent __io_agent;

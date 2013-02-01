@@ -15,6 +15,11 @@
 #include "daq.h"
 #include "DAQChannel.h"
 
+#define countof(e) (sizeof(e)/sizeof(*e))
+
+#define REPORT(estr)    warning("%s(%d): %s()\n\tExpression evaluated as false.\n\t%s\n",__FILE__,__LINE__,__FUNCTION__,estr)
+#define TRY(e)          do{if(!(e)) {REPORT(#e); goto Error;}}while(0)
+
 #define DAQWRN( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, warning))
 #define DAQERR( expr )  (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, error  ))
 #define DAQJMP( expr )  goto_if_fail( 0==DAQWRN(expr), Error)
@@ -76,7 +81,7 @@ namespace fetch {
 
     unsigned int NationalInstrumentsDAQ::on_attach()
     {
-      int sts = 0;
+      int sts = 0;      
       sts  = _clk.on_attach();
       sts |= _ao.on_attach();
       return sts;
@@ -156,7 +161,7 @@ namespace fetch {
       DAQJMP( DAQmxWriteAnalogF64(_ao.daqtask,
         N,
         0,                           // autostart?
-        0.0,                         // timeout (s) - to write - 0 causes write to fail if blocked at all
+        20.0,                        // timeout (s) - to write - 0 causes write to fail if blocked at all
         DAQmx_Val_GroupByChannel,
         data,
         &written,
@@ -171,6 +176,17 @@ Error:
     int32 NationalInstrumentsDAQ::startCLK() { DAQRTN(DAQmxStartTask(_clk.daqtask)); return 0;}
     int32 NationalInstrumentsDAQ::stopAO()   { DAQRTN(DAQmxStopTask(_ao.daqtask)); return 0;}
     int32 NationalInstrumentsDAQ::stopCLK()  { DAQRTN(DAQmxStopTask(_clk.daqtask)); return 0;}
+
+    /** Renders the full terminal string in buf.
+        Example:
+        "ctr1" for "Dev1" -> "/Dev1/ctr1"
+        \returns buf on success, otherwise returns 0.
+    */
+    static char* make_terminal_name(char *buf, size_t nbuf, const char* dev, const char* term)
+    { memset(buf,0,nbuf);
+      snprintf(buf,nbuf,"/%s/%s",dev,term);
+      return buf;
+    }
 
     //************************************
     // Method:    setupCLK
@@ -193,44 +209,35 @@ Error:
     //************************************
     void NationalInstrumentsDAQ::setupCLK(float64 nrecords, float64 record_frequency_Hz)
     {
-      TaskHandle cur_task = 0;
+      TaskHandle clk = 0;
 
       int32      N = _config->ao_samples_per_waveform();
-      float64 freq = computeSampleFrequency(nrecords, record_frequency_Hz);
+      float64   hz = computeSampleFrequency(nrecords, record_frequency_Hz);
+      const char *dev          =_config->name().c_str(),
+                 *ctr          =_config->ctr().c_str(),
+                 *armstart_in  =_config->armstart().c_str(),
+                 *gate_out     =_config->frame_trigger_out().c_str(),
+                 *trig         =_config->trigger().c_str();
+      float64     lvl          =_config->level_volts();
+      char term_ctr[1024]={0},
+           term_gate[1024]={0},
+           term_arm_out[1024]={0};
+      make_terminal_name(term_ctr    ,sizeof(term_ctr)    ,dev,ctr);
+      make_terminal_name(term_gate   ,sizeof(term_gate)   ,dev,ctr);
+      strcat(term_gate,"Gate");
+      make_terminal_name(term_arm_out,sizeof(term_arm_out),dev,gate_out);
 
-      // The "fake" initialization
-      DAQERR( DAQmxClearTask(_clk.daqtask) ); // Once a DAQ task is started, it needs to be cleared before restarting
-
-      DAQERR( DAQmxCreateTask("fetch_CLK",&_clk.daqtask));
-      cur_task = _clk.daqtask;
-      DAQERR( DAQmxCreateCOPulseChanFreq(cur_task,
-              _config->ctr_alt().c_str(),     // "Dev1/ctr0"
-              "CLK",
-              DAQmx_Val_Hz,
-              DAQmx_Val_Low,
-              0.0,
-              freq,
-              0.5 ));
-      DAQERR( DAQmxStartTask(cur_task) );
-
-      // The "real" initialization
       DAQERR( DAQmxClearTask(_clk.daqtask) ); // Once a DAQ task is started, it needs to be cleared before restarting
       DAQERR( DAQmxCreateTask("fetch_CLK",&_clk.daqtask));
-      cur_task = _clk.daqtask;
-      DAQERR( DAQmxCreateCOPulseChanFreq(cur_task,       // task
-              _config->ctr().c_str(),     // "Dev1/ctr1"
-              "CLK",          // name
-              DAQmx_Val_Hz,   // units
-              DAQmx_Val_Low,  // idle state - resting state of the output terminal
-              0.0,            // delay before first pulse
-              freq,           // the frequency at which to generate pulse
-              0.5 ));         // duty cycle
-
-      DAQERR( DAQmxCfgImplicitTiming           ( cur_task, DAQmx_Val_FiniteSamps, N ));
-      DAQERR( DAQmxCfgDigEdgeStartTrig         ( cur_task, "AnalogComparisonEvent", DAQmx_Val_Rising ));
-      DAQERR( DAQmxSetArmStartTrigType         ( cur_task, DAQmx_Val_DigEdge ));
-      DAQERR( DAQmxSetDigEdgeArmStartTrigSrc   ( cur_task, _config->armstart().c_str() ));
-      DAQERR( DAQmxSetDigEdgeArmStartTrigEdge  ( cur_task, DAQmx_Val_Rising ));
+      clk = _clk.daqtask;
+      DAQERR(DAQmxCreateCOPulseChanFreq     (clk,term_ctr,NULL,DAQmx_Val_Hz,DAQmx_Val_Low,0.0,hz,0.5));
+      DAQERR(DAQmxCfgImplicitTiming         (clk,DAQmx_Val_FiniteSamps,N));
+      DAQERR(DAQmxCfgDigEdgeStartTrig       (clk,"AnalogComparisonEvent",DAQmx_Val_Rising));
+      DAQERR(DAQmxSetArmStartTrigType       (clk,DAQmx_Val_DigEdge));             // Arm trigger has to be through clk
+      DAQERR(DAQmxSetDigEdgeArmStartTrigSrc (clk,armstart_in));
+      DAQERR(DAQmxSetDigEdgeArmStartTrigEdge(clk,DAQmx_Val_Rising));
+      DAQERR(DAQmxSetStartTrigRetriggerable (clk,1));
+      DAQERR(DAQmxConnectTerms(term_gate,term_arm_out,DAQmx_Val_DoNotInvertPolarity));
     }
 
     void NationalInstrumentsDAQ::setupAO( float64 nrecords, float64 record_frequency_Hz )
@@ -243,54 +250,73 @@ Error:
       registerDoneEvent();
     }
 
+
+    /** Renders a full terminal list using make_terminal_name().
+        \a buf should be a preallocated and zero'd bunch of bytes.  The string will
+        be rendered to \a buf.
+        The algorithm is not efficient and there is no bounds checking.
+        \returns \a buf on success, otherwise 0.
+    */
+    static char *cat_terminal_names(char *buf, size_t nbuf, const char* dev, const char **terminals, size_t nterm)
+    { char tmp[1024]={0};
+      size_t i;
+      TRY(nterm && dev && terminals);
+      strcat(buf,make_terminal_name(tmp,sizeof(tmp),dev,terminals[0]));
+      for(i=1;i<nterm;++i)
+      { strcat(buf,",");
+        strcat(buf,make_terminal_name(tmp,sizeof(tmp),dev,terminals[i]));
+      }
+      return buf;
+    Error:
+      return 0;
+    }
+
     #define MAX_CHAN_STRING 1024
-    void NationalInstrumentsDAQ::setupAOChannels( float64 nrecords, float64 record_frequency_Hz, float64 vmin, float64 vmax, IDAQPhysicalChannel **channels, int nchannels )
-    {
-      char aochan[MAX_CHAN_STRING];
-      float64 freq = computeSampleFrequency(nrecords,record_frequency_Hz);
-      // concatenate the physical channel names
-      memset(aochan, 0, sizeof(aochan));
-      {
-        int ichan;
-        for(ichan=0;ichan<nchannels-1;++ichan)
-        {
-          strcat(aochan,channels[ichan]->name());
-          strcat(aochan, ",");
-        }
-        strcat(aochan,channels[ichan]->name());
+    void NationalInstrumentsDAQ::setupAOChannels( float64 nrecords,
+                                                  float64 record_frequency_Hz,
+                                                  float64 vmin,
+                                                  float64 vmax,
+                                                  IDAQPhysicalChannel **channels,
+                                                   int nchannels )
+    { TaskHandle  ao                    = 0;
+      int32       N                     = _config->ao_samples_per_waveform();
+      char        terms[MAX_CHAN_STRING]= {0};
+      const char *dev                   = _config->name().c_str(),
+                 *trig                  = _config->trigger().c_str();
+      char        clk[MAX_CHAN_STRING]  = {0};
+      float64     hz                    = computeSampleFrequency(nrecords,record_frequency_Hz),
+                  lvl                   = _config->level_volts();
+
+      strcat(clk,_config->ctr().c_str());
+      strcat(clk,"InternalOutput");
+
+      // terminal names
+      TRY(nchannels<countof(terms));
+      { const char* names[8]={0};
+        for(int i=0;i<nchannels;++i)
+          names[i]=channels[i]->name();
+        cat_terminal_names(terms,sizeof(terms),dev,names,nchannels);
       }
 
-      //
-      {
-        f64 v[4];
-        // NI DAQ's typically have multiple voltage ranges capable of achieving different precisions.
-        // The 6259 has 2 ranges.
+      // voltage range
+      { f64 v[4];
         DAQERR(DAQmxGetDevAOVoltageRngs(_config->name().c_str(),v,4));
         vmin = MAX(vmin,v[2]);
         vmax = MIN(vmax,v[3]);
       }
 
-      TaskHandle cur_task = _ao.daqtask;
-      DAQERR( DAQmxCreateAOVoltageChan(cur_task,
-        aochan,                                  //eg: "/Dev1/ao0,/Dev1/ao2,/Dev1/ao1"
-        "AO Channels",                           //name to assign to channel
-        vmin,                                    //Volts eg: -10.0
-        vmax,                                    //Volts eg:  10.0
-        DAQmx_Val_Volts,                         //Units
-        NULL));                                  //Custom scale (none)
-      DAQERR( DAQmxSetWriteRegenMode(cur_task,DAQmx_Val_DoNotAllowRegen));
-
-      DAQERR( DAQmxCfgAnlgEdgeStartTrig(cur_task,
-        _config->trigger().c_str(),
-        DAQmx_Val_Rising,
-        _config->level_volts() ));
-
-      DAQERR( DAQmxCfgSampClkTiming(cur_task,
-        _config->clock().c_str(),// eg. "Ctr1InternalOutput"
-        freq,
-        DAQmx_Val_Rising,
-        DAQmx_Val_ContSamps, // use continuous output so that counter stays in control
-        _config->ao_samples_per_waveform()));
+      ao=_ao.daqtask;
+      DAQERR(DAQmxCreateAOVoltageChan (ao,terms,NULL,vmin,vmax,DAQmx_Val_Volts,NULL));
+      DAQERR(DAQmxCfgSampClkTiming    (ao,clk,hz,DAQmx_Val_Rising,DAQmx_Val_ContSamps,N));
+      DAQERR(DAQmxCfgOutputBuffer     (ao,N));
+      DAQERR(DAQmxSetWriteRegenMode   (ao,DAQmx_Val_DoNotAllowRegen));
+      DAQERR(DAQmxSetWriteRelativeTo  (ao,DAQmx_Val_CurrWritePos));
+      DAQERR(DAQmxSetAODataXferMech   (ao,terms,DAQmx_Val_DMA));
+      DAQERR(DAQmxSetAODataXferReqCond(ao,terms,DAQmx_Val_OnBrdMemNotFull));
+      DAQERR(DAQmxCfgAnlgEdgeStartTrig(ao,trig,DAQmx_Val_Rising,lvl));
+      return;
+Error:
+      UNREACHABLE;
     }
 
     float64 NationalInstrumentsDAQ::computeSampleFrequency( float64 nrecords, float64 record_frequency_Hz )
