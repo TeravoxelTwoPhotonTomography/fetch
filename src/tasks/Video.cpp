@@ -31,6 +31,8 @@
 
 #include "types.h"
 
+#include "util/timestream.h"
+
 #define SCANNER_VIDEO_TASK_FETCH_TIMEOUT  10.0  //10.0, //(-1=infinite) (0.0=immediate)
                                                 // Setting this to infinite can sometimes make the application difficult to quit
 #if 0
@@ -47,6 +49,27 @@
 #define DAQJMP( expr )  goto_if( DAQmxFailed(DAQWRN(expr)), Error)
 #define CHKERR( expr )  {if(expr) {error("Expression indicated failure:\r\n\t%s\r\n",#expr);}} 0 //( (expr), #expr, error  ))
 #define CHKJMP( expr )  goto_if((expr),Error)
+
+#if 1 // PROFILING
+#define TS_OPEN(name)   timestream_t ts__=timestream_open(name)
+#define TS_TIC          timestream_tic(ts__)
+#define TS_TOC          timestream_toc(ts__)
+#define TS_CLOSE        timestream_close(ts__)
+#else
+#define TS_OPEN(name)
+#define TS_TIC
+#define TS_TOC
+#define TS_CLOSE
+#endif
+
+#define LOG(...)     debug(__VA_ARGS__)
+#if 0
+#define ECHO(e)      LOG(e)
+#else
+#define ECHO(e)
+#endif
+#define REPORT(e)    LOG("%s(%d) - %s():"ENDL "\t%s"ENDL "\tExpression evaluated as false."ENDL,__FILE__,__LINE__,__FUNCTION__,e)
+#define TRY(e)       do{ ECHO(#e); if(!(e)) {REPORT(#e); goto Error;}} while(0)
 
 #if 1
 #define SCANNER_DEBUG_FAIL_WHEN_FULL
@@ -69,6 +92,7 @@ namespace fetch
 
       template class Video<i8 >;
       template class Video<i16>;
+      template class Video<u16>;
 
       // config() and update() use Scanner2D's abstracted interface.
       // The run() functions rely on specific hardware API calls, so there's a different run function for each supported API.
@@ -81,7 +105,7 @@ namespace fetch
         { device::Scanner3D *s = dynamic_cast<device::Scanner3D*>(d);
           if(s) return _config(s); else return 2;
         }
-      }      
+      }
       template<class TPixel> unsigned int Video<TPixel>::update (IDevice *d)      {
         { device::Scanner2D *s = dynamic_cast<device::Scanner2D*>(d);
           if(s) return _update(s);// else return 2;
@@ -90,8 +114,8 @@ namespace fetch
           if(s) return _update(s); else return 2;
         }
       }  //      {return update(dynamic_cast<device::Scanner2D*>(d));}
-     
-      
+
+
       //template<class TPixel> unsigned int Video<TPixel>::run(device::Scanner3D* d)  {return run(&d->_scanner2d);}
       template<class TPixel> unsigned int Video<TPixel>::run(IDevice *d)
       {
@@ -104,7 +128,7 @@ namespace fetch
       }
 
       template<class TPixel> unsigned int Video<TPixel>::_run(device::IScanner* s)
-      { 
+      {
         //device::Scanner2D *s;
         //Guarded_Assert(s = dynamic_cast<device::Scanner2D*>(d));
         device::Digitizer::Config digcfg = s->get2d()->_digitizer.get_config();
@@ -120,16 +144,16 @@ namespace fetch
           return run_simulated(s);
           break;
         default:
-          warning("Video<>::run() - Got invalid kind() for Digitizer.get_config\r\n");          
+          warning("Video<>::run() - Got invalid kind() for Digitizer.get_config\r\n");
         }
-        return 0; //failure 
+        return 0; //failure
       }
 
 
       template<class TPixel>
       unsigned int
       Video<TPixel>::_config(device::IScanner *d)
-      { 
+      {
         d->onConfigTask();
 
         DBG("Scanner2D configured for Video<%s>\r\n",TypeStr<TPixel>());
@@ -140,8 +164,8 @@ namespace fetch
       template<class TPixel>
       unsigned int
       Video<TPixel>::_update(device::IScanner *scanner)
-      { 
-        scanner->generateAO();        
+      {
+        scanner->generateAO();
         return 1;
       }
 
@@ -152,7 +176,7 @@ namespace fetch
       template Frame_With_Interleaved_Lines _describe_actual_frame_niscope<i8 >(device::NIScopeDigitizer*,ViInt32,ViInt32*,ViInt32*);
       template Frame_With_Interleaved_Lines _describe_actual_frame_niscope<i16>(device::NIScopeDigitizer*,ViInt32,ViInt32*,ViInt32*);
 
-      
+
       template<typename T>
       Frame_With_Interleaved_Lines
       _describe_actual_frame_niscope(device::NIScopeDigitizer *dig, ViInt32 nscans, ViInt32 *precordsize, ViInt32 *pnwfm)
@@ -180,12 +204,12 @@ namespace fetch
         *pnwfm       = nwfm;
         return format;
       }
-  #endif    
+  #endif
 
       template<class TPixel>
       unsigned int
       Video<TPixel>::run_niscope(device::IScanner *d)
-      { 
+      {
 #ifdef HAVE_NISCOPE
         Chan *qdata = Chan_Open(d->get2d()->_out->contents[0],CHAN_WRITE),
               *qwfm = Chan_Open(d->get2d()->_out->contents[1],CHAN_WRITE);
@@ -226,20 +250,20 @@ namespace fetch
         d->writeAO();
         CHKJMP(d->get2d()->_daq.startAO());
         do
-        { 
+        {
           CHKJMP(d->get2d()->_daq.startCLK());
           DIGJMP( niScope_InitiateAcquisition(vi));
 
           dt_out = toc(&outer_clock);
           toc(&inner_clock);
-#if 1                    
+#if 1
           DIGJMP( Fetch<TPixel>(vi,
                                 chan,
                                 SCANNER_VIDEO_TASK_FETCH_TIMEOUT,
                                 width,
                                 (TPixel*) frm->data,
                                 wfm));
-#endif                                
+#endif
 
            // Push the acquired data down the output pipes
           DBG("Task: Video<%s>: pushing wfm\r\n",TypeStr<TPixel>());
@@ -252,13 +276,13 @@ namespace fetch
           ref.format(frm);
           dt_in  = toc(&inner_clock);
                    toc(&outer_clock);
-                   
+
           CHKJMP(d->get2d()->_daq.waitForDone(SCANNER2D_DEFAULT_TIMEOUT));
           d->get2d()->_daq.stopCLK();
           d->writeAO();
           ++i;
         } while ( !d->get2d()->_agent->is_stopping() );
-        
+
         status = 0;
         DBG("Scanner - Video task completed normally.\r\n");
 Finalize:
@@ -287,7 +311,7 @@ Error:
       template<class TPixel>
       unsigned int fetch::task::scanner::Video<TPixel>::run_simulated( device::IScanner *d )
       { Chan *qdata = Chan_Open(d->get2d()->_out->contents[0],CHAN_WRITE);
-        Frame *frm   = NULL;        
+        Frame *frm   = NULL;
         device::SimulatedDigitizer *dig = d->get2d()->_digitizer._simulated;
         Frame_With_Interleaved_Planes ref(
           dig->get_config().width(),
@@ -297,8 +321,8 @@ Error:
         size_t nbytes;
         int status = 1; // status == 0 implies success, error otherwise
         size_t count = 0;
-        
-        nbytes = ref.size_bytes();        
+
+        nbytes = ref.size_bytes();
         Chan_Resize(qdata, nbytes);
         frm = (Frame*)Chan_Token_Buffer_Alloc(qdata);
         ref.format(frm);
@@ -326,15 +350,15 @@ Error:
 
 #if 0
           // Walking px
-          { 
+          {
             const TPixel low = TypeMin<TPixel>(),
                         high = TypeMax<TPixel>();
             for(size_t  ichan=0;ichan<n[0];++ichan)
-            { 
+            {
               TPixel *p = (TPixel*)((u8*)frm->data + ichan*pitch[1]);
               memset(p,0,pitch[1]);
               p[(ichan*count)%pitch[1]]=low; //high;
-            }                       
+            }
           }
 #endif
 
@@ -358,14 +382,89 @@ Error:
         goto Finalize;
       }
 
+      //
+      // --- ALAZAR ---
+      //
+      struct alazar_fetch_thread_ctx_t
+      { device::IScanner *d;
+        int running;       ///< used to indicate thread still running (thread to host)
+        int ok;            ///< used to signal error state (bidirectional)
+        Basic_Type_ID tid; ///< pixel type.  Used to allocate the frame.
+        alazar_fetch_thread_ctx_t(device::IScanner *d,Basic_Type_ID tid)
+          : d(d),tid(tid),running(1),ok(1) {}
+      };
+
+      DWORD alazar_fetch_video_thread(void *ctx_)
+      { alazar_fetch_thread_ctx_t *ctx=(alazar_fetch_thread_ctx_t*)ctx_;
+        device::Scanner2D *d=ctx->d->get2d();
+        Chan *q = Chan_Open(d->_out->contents[0],CHAN_WRITE);
+        device::AlazarDigitizer *dig=d->_digitizer._alazar;
+        unsigned w,h,i;
+        dig->get_image_size(&w,&h);
+        size_t nbytes;
+        Frame *frm   = NULL;
+        Frame_With_Interleaved_Planes ref(w,h,dig->nchan(),ctx->tid);
+        TS_OPEN("timer-video_acq.f32");
+        nbytes = ref.size_bytes();
+        Chan_Resize(q, nbytes);
+        frm = (Frame*)Chan_Token_Buffer_Alloc(q);
+        ref.format(frm);
+        TRY(dig->start());
+        TS_TIC;
+        while(!d->_agent->is_stopping() && ctx->ok)
+        { TRY(dig->fetch(frm));
+          TRY(CHAN_SUCCESS(SCANNER_PUSH(q,(void**)&frm,nbytes)));
+          TS_TOC;
+          ref.format(frm);
+        }
+Finalize:
+        TS_CLOSE;
+        ctx->running=0;
+        if(frm) free(frm);
+        Chan_Close(q);
+        return 0;
+Error:
+        ctx->ok=0;
+        goto Finalize;
+      }
+
       template<class TPixel>
       unsigned int fetch::task::scanner::Video<TPixel>::run_alazar( device::IScanner *d )
-      {
-        warning("Implement me!\r\n");
-        return 1;
+      { int ecode = 0; // ecode == 0 implies success, error otherwise
+        HANDLE fetch_thread=0;
+        alazar_fetch_thread_ctx_t ctx(d,TypeID<TPixel>());
+        TS_OPEN("timer-video_ao.f32");
+        d->generateAO();
+        d->writeAO();
+        TRY(!d->get2d()->_daq.startCLK());
+        d->get2d()->_shutter.Open();
+        TRY(!d->get2d()->_daq.startAO());
+        Guarded_Assert_WinErr(fetch_thread=CreateThread(NULL,0,alazar_fetch_video_thread,&ctx,0,NULL));
+        TS_TIC;
+        while(ctx.running)
+        { TRY(!d->writeAO());
+          TS_TOC;
+        }
+        Guarded_Assert_WinErr(WAIT_OBJECT_0==WaitForSingleObject(fetch_thread,INFINITE));
+        TRY(ctx.ok);
+Finalize:
+        TS_CLOSE;
+        d->get2d()->_shutter.Shut();
+        d->get2d()->_digitizer._alazar->stop();
+        d->get2d()->_daq.stopCLK();
+        d->get2d()->_daq.stopAO();
+        if(fetch_thread) CloseHandle(fetch_thread);
+        return ecode; // ecode == 0 implies success, error otherwise
+Error:
+        warning("Error occurred during ScanStack<%s> task."ENDL,TypeStr<TPixel>());
+        ctx.ok=0; // signal fetch thread to stop early
+        if(fetch_thread && ctx.running)
+          Guarded_Assert_WinErr(WAIT_OBJECT_0==WaitForSingleObject(fetch_thread,INFINITE)); // need to make sure thread is stopped before exiting this function so ctx remains live
+        ecode=1;
+        goto Finalize;
       }
 
 //end namespace fetch::task::scanner
-    } 
+    }
   }
 }

@@ -18,9 +18,23 @@
 #include "frame.h"
 #include "File.h"
 #include "util/util-file.h"
+#include "util/timestream.h"
 
 //#define DEBUG
 #undef DEBUG
+
+#define PROFILE
+#ifdef PROFILE // PROFILING
+#define TS_OPEN(...)    timestream_t ts__=timestream_open(__VA_ARGS__)
+#define TS_TIC          timestream_tic(ts__)
+#define TS_TOC          timestream_toc(ts__)
+#define TS_CLOSE        timestream_close(ts__)
+#else
+#define TS_OPEN(...)
+#define TS_TIC
+#define TS_TOC
+#define TS_CLOSE
+#endif
 
 #if 0
 #define disk_stream_debug(...) debug(__VA_ARGS__)
@@ -39,18 +53,18 @@ namespace file {
   // Upcasting
   unsigned int ReadRaw::config      (IDevice *d) {return config(dynamic_cast<device::HFILEDiskStreamBase*>(d));}
   unsigned int ReadRaw::run         (IDevice *d) {return run   (dynamic_cast<device::HFILEDiskStreamBase*>(d));}
-  
+
   unsigned int WriteRaw::config     (IDevice *d) {return config(dynamic_cast<device::HFILEDiskStreamBase*>(d));}
   unsigned int WriteRaw::run        (IDevice *d) {return run   (dynamic_cast<device::HFILEDiskStreamBase*>(d));}
-  
+
   unsigned int ReadMessage::config  (IDevice *d) {return config(dynamic_cast<device::HFILEDiskStreamBase*>(d));}
   unsigned int ReadMessage::run     (IDevice *d) {return run   (dynamic_cast<device::HFILEDiskStreamBase*>(d));}
-  
+
   unsigned int WriteMessage::config (IDevice *d) {return config(dynamic_cast<device::HFILEDiskStreamBase*>(d));}
   unsigned int WriteMessage::run    (IDevice *d) {return run   (dynamic_cast<device::HFILEDiskStreamBase*>(d));}
-  
+
   unsigned int WriteMessageAsRaw::config (IDevice *d) {return config(dynamic_cast<device::HFILEDiskStreamBase*>(d));}
-  unsigned int WriteMessageAsRaw::run    (IDevice *d) {return run   (dynamic_cast<device::HFILEDiskStreamBase*>(d));}  
+  unsigned int WriteMessageAsRaw::run    (IDevice *d) {return run   (dynamic_cast<device::HFILEDiskStreamBase*>(d));}
 
   unsigned int TiffStreamReadTask::config (IDevice *d) {return config(dynamic_cast<device::TiffStream*>(d));}
   unsigned int TiffStreamReadTask::run    (IDevice *d) {return run   (dynamic_cast<device::TiffStream*>(d));}
@@ -64,7 +78,7 @@ namespace file {
   unsigned int TiffGroupStreamWriteTask::config (IDevice *d) {return config(dynamic_cast<device::TiffGroupStream*>(d));}
   unsigned int TiffGroupStreamWriteTask::run    (IDevice *d) {return run   (dynamic_cast<device::TiffGroupStream*>(d));}
 
- 
+
   //
   // Implementation
   //
@@ -125,8 +139,8 @@ namespace file {
           written;
 
     TicTocTimer t = tic();
-    
-    while( CHAN_SUCCESS(Chan_Next(q,&buf,nbytes)) ) //!dc->_agent->is_stopping() && 
+
+    while( CHAN_SUCCESS(Chan_Next(q,&buf,nbytes)) ) //!dc->_agent->is_stopping() &&
       { double dt = toc(&t);
         nbytes = (DWORD) Chan_Buffer_Size_Bytes(q);
         disk_stream_debug("FPS: %3.1f Frame time: %5.4f            MB/s: %3.1f Q: %3d Write %8d bytes to %s\r\n",
@@ -166,11 +180,11 @@ namespace file {
       sz = 0;
       TicTocTimer t = tic();
       while (w32file::setpos(dc->_hfile, sz, FILE_CURRENT)>=0) // jump to next message
-      { sz = Message::from_file(dc->_hfile, NULL, 0);          // get size of this message        
+      { sz = Message::from_file(dc->_hfile, NULL, 0);          // get size of this message
         maxsize = internal::max( maxsize, sz );                          // update the max size
-      } 
+      }
       w32file::setpos(dc->_hfile,0,FILE_BEGIN);                // rewind
-      debug("Max buffer size of %lld found in %f seconds\r\n",maxsize,toc(&t));  
+      debug("Max buffer size of %lld found in %f seconds\r\n",maxsize,toc(&t));
     }
     Chan_Resize(q,(size_t)maxsize);                     // Make sure the queue's sized right
     buf = (Message*)Chan_Token_Buffer_Alloc(q);                 // get the first container
@@ -191,7 +205,7 @@ namespace file {
       // format.  That is, ideally, tiff.  This should still work for limited serialization
       // of Messages so I won't take it out yet.  Maybe I can still convert data I've already
       // taken.
-      buf->cast(); // dark magic - casts to specific message class corresponding to buf->id.      
+      buf->cast(); // dark magic - casts to specific message class corresponding to buf->id.
       Guarded_Assert(CHAN_SUCCESS( Chan_Next(q,(void**)&buf,nbytes) ));  // push
       dt = toc(&t);
       debug("Read %s bytes: %d\r\n"
@@ -242,7 +256,7 @@ namespace file {
     DWORD written;
 
     TicTocTimer t = tic();
-    while(CHAN_SUCCESS( Chan_Next(q,(void**)&buf,nbytes) ))        //!dc->_agent->is_stopping() && 
+    while(CHAN_SUCCESS( Chan_Next(q,(void**)&buf,nbytes) ))        //!dc->_agent->is_stopping() &&
       { double dt = toc(&t);
         nbytes = buf->size_bytes() - buf->self_size;
         disk_stream_debug("FPS: %3.1f Frame time: %5.4f            MB/s: %3.1f Q: %3d Write %8d bytes to %s\r\n",
@@ -277,8 +291,8 @@ namespace file {
     int eflag=0;
 
     // compute max image size
-    { 
-      
+    {
+
       while(!End_Of_Tiff(dc->_tiff_reader))
       {
         goto_if_fail(ifd=Read_Tiff_IFD(tif),FailedIFDRead);
@@ -290,7 +304,7 @@ namespace file {
         maxchan = internal::max(maxchan,tim->number_channels);
       }
       mylib::Rewind_Tiff_Reader(tif);
-      
+
     }
 
     // Resize Queue if necessary
@@ -303,7 +317,7 @@ namespace file {
     size_t pitches[4];
     while (nbytes && !dc->_agent->is_stopping() && !End_Of_Tiff(tif))
     {
-      
+
       goto_if_fail(ifd=Read_Tiff_IFD(tif),FailedIFDRead);
       goto_if_fail(tim=Get_Tiff_Image(ifd),FailedImageGet);
       Frame_With_Interleaved_Planes fmt(tim->width,tim->height,tim->number_channels,mytiff::pixel_type(tim));
@@ -316,7 +330,7 @@ namespace file {
       Load_Tiff_Image_Planes(tim,(void**)planes); // Copy from disk into buffer
       Free_Tiff_Image(tim);
       Free_Tiff_IFD(ifd);
-      
+
       goto_if_fail(
         CHAN_SUCCESS(Chan_Next(q,(void**)&buf,nbytes)),
         FailedPush);
@@ -325,25 +339,25 @@ Finalize:
     Chan_Token_Buffer_Free(buf);
     Chan_Close(q);
     return eflag; // success
-FailedPush:    
+FailedPush:
     if(planes) free(planes);
     error("Failed push while reading Tiff\r\n.");
     eflag=1;
-    goto Finalize;    
-FailedImageGet:    
+    goto Finalize;
+FailedImageGet:
     warning("Failed to interpret IFD (0x%p) from TIFF while streaming.\r\n\tGot: %s\r\n\t In: %s\r\n",ifd,Tiff_Error_String(),Tiff_Error_Source());
     Free_Tiff_IFD(ifd);
-        
-    if(planes) free(planes);    
+
+    if(planes) free(planes);
     eflag=2;
     goto Finalize;
-FailedIFDRead:    
+FailedIFDRead:
     warning("Failed to read IFD from TIFF while streaming.\r\n\tGot: %s\r\n\t In: %s\r\n",Tiff_Error_String(),Tiff_Error_Source());
-    
-    if(planes) free(planes);   
+
+    if(planes) free(planes);
     eflag=3;
     goto Finalize;
-  }  
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   //  TIFF STREAM WRITER  /////////////////////////////////////////////////////
@@ -362,13 +376,14 @@ FailedIFDRead:
     Tiff_IFD *ifd;
     size_t nbytes = Chan_Buffer_Size_Bytes(q);
     int eflag;
+    TS_OPEN("timer-TiffStreamWrite.f32");
 
-    while(CHAN_SUCCESS( Chan_Next(q,(void**)&buf,nbytes) ))      //!dc->_agent->is_stopping() && 
-    { 
+    while(CHAN_SUCCESS( Chan_Next(q,(void**)&buf,nbytes) ))      //!dc->_agent->is_stopping() &&
+    { TS_TIC;
       goto_if_fail(buf->id==FRAME_INTERLEAVED_PLANES,FailureBufferHasWrongFormat);
       nbytes = buf->size_bytes();
 
-      //buf->dump("TiffStreamWriteTask-src.%s",TypeStrFromID(buf->rtti));          
+      //buf->dump("TiffStreamWriteTask-src.%s",TypeStrFromID(buf->rtti));
       buf->totif("TiffStreamWriteTask-src.tif");
 
       {
@@ -380,7 +395,7 @@ FailedIFDRead:
           type = CHAN_FLOAT;
         else if(TYPE_IS_SIGNED(buf->rtti))
           type = CHAN_SIGNED;
-        
+
         size_t pitches[4], pp; //pp is the plane pitch in bytes
         buf->compute_pitches(pitches);
         pp = pitches[1];
@@ -389,11 +404,13 @@ FailedIFDRead:
           goto_if(Add_Tiff_Image_Channel(tim,CHAN_BLACK,scale,type,data+i*pp),FailedAddChannel);
         goto_if_fail(ifd=Make_IFD_For_Image(tim,DONT_COMPRESS,0,0),FailedMakeIFD);
         goto_if_fail(Write_Tiff_IFD(tif,ifd)==0,FailedWriteIFD);
+        TS_TOC;
       }
-      
+
     }
     eflag=0; //success
 Finalize:
+    TS_CLOSE;
     Chan_Close(q);
     Chan_Token_Buffer_Free(buf);
     return eflag;
@@ -403,26 +420,26 @@ FailureBufferHasWrongFormat:
     goto Finalize;
 FailedCreateTIFFImage:
     error("Failed to create TIFF image while streaming.\r\n\tGot: %s\r\n\t In: %s\r\n",Tiff_Error_String(),Tiff_Error_Source());
-    
+
     eflag=2;
     goto Finalize;
 FailedAddChannel:
     error("Adding a channel to a tiff image (0x%p) failed.\r\n\tGot: %s\r\n\t In: %s\r\n",tim,Tiff_Error_String(),Tiff_Error_Source());
     Free_Tiff_Image(tim);
-    
+
     eflag=3;
     goto Finalize;
 FailedMakeIFD:
     error("Failed to make Tiff IFD for tiff image (0x%p).\r\n\tGot: %s\r\n\t In: %s\r\n",tim,Tiff_Error_String(),Tiff_Error_Source());
     Free_Tiff_Image(tim);
-    
+
     eflag=4;
     goto Finalize;
 FailedWriteIFD:
     error("Write Tiff IFD failed. Reader: 0x%p IFD: 0x%p.\r\n\tGot: %s\r\n\t In: %s\r\n",tim,ifd,Tiff_Error_String(),Tiff_Error_Source());
     Free_Tiff_IFD(ifd);
     Free_Tiff_Image(tim);
-    
+
     eflag=5;
     goto Finalize;
   }
@@ -448,10 +465,10 @@ FailedWriteIFD:
 
       The number of channels is required to know exactly how many tiff writers
       to open, so the writers aren't opened till the task is started.
-      
+
       That means:
       1. Don't implicitly have validation of path before run().
-      2. Pausing and restarting an acquisition to disk will cause the files to get 
+      2. Pausing and restarting an acquisition to disk will cause the files to get
          overwritten rather than appended to.
 
          Could address this.
@@ -496,12 +513,13 @@ FailedWriteIFD:
     Chan                          *q  =0;
     Frame_With_Interleaved_Planes *buf=0;
     size_t                         nbytes;
+    TS_OPEN("timer-TiffGroupStreamWrite.f32");
 #ifdef DEBUG_FAST_EXIT
     int any=0;
 #endif
     TRY(q=Chan_Open(dc->_in->contents[0],CHAN_READ));
     TRY(buf=(Frame_With_Interleaved_Planes*)Chan_Token_Buffer_Alloc(q));
-    nbytes=Chan_Buffer_Size_Bytes(q);    
+    nbytes=Chan_Buffer_Size_Bytes(q);
 
 DBG("Entering Loop");
     while(CHAN_SUCCESS(Chan_Next(q,(void**)&buf,nbytes)))
@@ -511,14 +529,15 @@ DBG("Entering Loop");
       DBG("Recieved");
 #ifdef DEBUG_FAST_EXIT
       any=1;
-#endif      
+#endif
+      TS_TIC;
       TRY(buf->id==FRAME_INTERLEAVED_PLANES);
       mylib::castFetchFrameToDummyArray(&dummy,buf,dims);
-      
+
       for(i=0;i<dims[2];++i)
       { // maybe append writer
         if(i>=dc->_writers.size())
-        { device::TiffGroupStream::Config c = dc->get_config();          
+        { device::TiffGroupStream::Config c = dc->get_config();
           ::std::string fname = gen_name(c.path(),i);
           mylib::Tiff* tif=0;
           TIFFTRY(tif=Open_Tiff((mylib::string)fname.c_str(),"w"));
@@ -532,10 +551,12 @@ DBG("Entering Loop");
           Update_Tiff(w,DONT_PRESS);
         }
       }
+      TS_TOC;
     }
     isok=1;
 Finalize:
-DBG("Done.");
+    DBG("Done.");
+    TS_CLOSE;
 #ifdef DEBUG_FAST_EXIT
     if(!any)
       DBG("NEVER POPPED");
@@ -545,7 +566,7 @@ DBG("Done.");
     return isok;
 Error:
     isok = 0;
-    goto Finalize;    
+    goto Finalize;
   }
 
 }  // namespace file

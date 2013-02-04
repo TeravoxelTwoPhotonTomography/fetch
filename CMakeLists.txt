@@ -192,7 +192,7 @@ source_group("Source Files\\ui" FILES ${FETCH_UI_SRCS})
 
 file(GLOB FETCH_UTIL_HDRS src/util/*.h)
 source_group("Header Files\\util" FILES ${FETCH_UTIL_HDRS})
-file(GLOB FETCH_UTIL_SRCS src/util/*.cpp)
+file(GLOB FETCH_UTIL_SRCS src/util/*.cpp src/util/*.c)
 source_group("Source Files\\util" FILES ${FETCH_UTIL_SRCS})
 
 file(GLOB FETCH_ALGO_HDRS src/algo/*.h)

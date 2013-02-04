@@ -36,9 +36,25 @@
 #define CHKJMP( expr )  do{if(expr) {warning("%s(%d)"ENDL"\tExpression evaluated to an error code (non-zero)."ENDL"\t%s"ENDL,__FILE__,__LINE__,#expr); goto Error;}} while(0)
 
 #define LOG(...)     debug(__VA_ARGS__)
+#if 0
 #define ECHO(e)      LOG(e)
+#else
+#define ECHO(e)
+#endif
 #define REPORT(e)    LOG("%s(%d) - %s():"ENDL "\t%s"ENDL "\tExpression evaluated as false."ENDL,__FILE__,__LINE__,__FUNCTION__,e)
 #define TRY(e)       do{ ECHO(#e); if(!(e)) {REPORT(#e); goto Error;}} while(0)
+
+#if 1 // PROFILING
+#define TS_OPEN(name)   timestream_t ts__=timestream_open(name)
+#define TS_TIC          timestream_tic(ts__)
+#define TS_TOC          timestream_toc(ts__)
+#define TS_CLOSE        timestream_close(ts__)
+#else
+#define TS_OPEN(name)
+#define TS_TIC
+#define TS_TOC
+#define TS_CLOSE
+#endif
 
 #if 0
 #define SCANNER_DEBUG_FAIL_WHEN_FULL
@@ -426,17 +442,24 @@ Error:
         }
 
 
+        //
+        // --- ALAZAR ---
+        //
+        // NOTES:
+        // 1. First dead frame will be captured by the digitizer.
+        // 2. Should tell the pockels to stay closed during the first frame
+
         struct alazar_fetch_thread_ctx_t
         { device::Scanner3D *d;
-          int nframes;
-          int running;
-          int ok;
-          Basic_Type_ID tid;
+          int nframes;       ///< used to set the number of fetch requests made by the fetch thread
+          int running;       ///< used to indicate thread still running (thread to host)
+          int ok;            ///< used to signal error state (bidirectional)
+          Basic_Type_ID tid; ///< pixel type.  Used to allocate the frame.
           alazar_fetch_thread_ctx_t(device::Scanner3D *d,int nframes,Basic_Type_ID tid)
             : d(d),nframes(nframes),tid(tid),running(1),ok(1) {}
         };
 
-        DWORD alazar_fetch_thread(void *ctx_)
+        DWORD alazar_fetch_stack_thread(void *ctx_)
         { alazar_fetch_thread_ctx_t *ctx=(alazar_fetch_thread_ctx_t*)ctx_;
           device::Scanner3D *d=ctx->d;
           Chan *q = Chan_Open(d->_out->contents[0],CHAN_WRITE);
@@ -446,26 +469,30 @@ Error:
           dig->get_image_size(&w,&h);
           size_t nbytes;
           Frame *frm   = NULL;
+          TS_OPEN("timer-stack_acq.f32");
           Frame_With_Interleaved_Planes ref(w,h,dig->nchan(),ctx->tid);
           nbytes = ref.size_bytes();
           Chan_Resize(q, nbytes);
           frm = (Frame*)Chan_Token_Buffer_Alloc(q);
           ref.format(frm);
-
+          TRY(dig->start());
+          TS_TIC;
           TRY(dig->fetch(frm)); // first dead frame to set to zmin
-          for(i=0;i<nframes && !d->_agent->is_stopping();++i)
+          for(i=0;i<nframes && !d->_agent->is_stopping() && ctx->ok;++i)
           { TRY(dig->fetch(frm));
-            TRY(CHAN_SUCCESS(Chan_Next(q,(void**)&frm,nbytes)));
+            TRY(CHAN_SUCCESS(SCANNER_PUSH(q,(void**)&frm,nbytes)));
+            TS_TOC;
             ref.format(frm);
           }
           TRY(dig->fetch(frm)); // last dead frame to set back to zmin
 Finalize:
+          TS_CLOSE;
           ctx->running=0;
           if(frm) free(frm);
           Chan_Close(q);
           return 0;
 Error:
-          ctx->ok=0;        // FIXME UNSAFE
+          ctx->ok=0;
           goto Finalize;
         }
 
@@ -474,29 +501,29 @@ Error:
         { int ecode = 0; // ecode == 0 implies success, error otherwise
           f64 z_um,ummax,ummin,umstep;
           HANDLE fetch_thread=0;
+          TS_OPEN("timer-stack_ao.f32");
 
           d->_zpiezo.getScanRange(&ummin,&ummax,&umstep);
           alazar_fetch_thread_ctx_t ctx(d,(ummax-ummin)/umstep,TypeID<TPixel>());
-          // NOTES:
-          // 1. First dead frame will be captured by the digitizer.
-          // 2. Should tell the pockels to stay closed during the first frame
           d->generateAOConstZ(ummin);                                           // first frame is a dead frame to lock to ummin
           d->writeAO();
           TRY(!d->_scanner2d._daq.startCLK());
+          d->_scanner2d._shutter.Open();
           TRY(!d->_scanner2d._daq.startAO());
-          TRY(d->_scanner2d._digitizer._alazar->start());
-          Guarded_Assert_WinErr(fetch_thread=CreateThread(NULL,0,alazar_fetch_thread,&ctx,0,NULL));
+          Guarded_Assert_WinErr(fetch_thread=CreateThread(NULL,0,alazar_fetch_stack_thread,&ctx,0,NULL));
+          TS_TIC;
           for(z_um=ummin; ((ummax-z_um)/umstep)>=-0.5f && ctx.running;z_um+=umstep)
           { d->generateAORampZ(z_um);
             TRY(!d->writeAO());
+            TS_TOC;
           }
           d->generateAOConstZ(ummin);                                           // last frame is a dead frame to lock to ummin
           TRY(!d->writeAO());
           Guarded_Assert_WinErr(WAIT_OBJECT_0==WaitForSingleObject(fetch_thread,INFINITE));
           TRY(ctx.ok);
-HERE;
-warning("WORK IN PROGRESS");
 Finalize:
+          TS_CLOSE;
+          d->_scanner2d._shutter.Shut();
           d->_scanner2d._digitizer._alazar->stop();
           d->_scanner2d._daq.stopCLK();
           d->_scanner2d._daq.stopAO();
@@ -504,6 +531,9 @@ Finalize:
           return ecode; // ecode == 0 implies success, error otherwise
 Error:
           warning("Error occurred during ScanStack<%s> task."ENDL,TypeStr<TPixel>());
+          ctx.ok=0;
+          if(fetch_thread && ctx.running)
+            Guarded_Assert_WinErr(WAIT_OBJECT_0==WaitForSingleObject(fetch_thread,INFINITE)); // need to make sure thread is stopped before exiting this function so ctx remains live
           ecode=1;
           goto Finalize;
         }

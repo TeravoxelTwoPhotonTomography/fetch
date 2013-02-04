@@ -66,6 +66,7 @@ struct _alazar_cfg_t
   U32 nrecords;                                                            ///< number of records
   U32 sample_rate_id;                                                      ///< ATS-SDK constant specifying sample rate
   double line_trig_lvl_volts;                                              ///< 0-255.  Full range given by input_range_id.
+  U32 aux_out_board_id;                                                    ///< a board id, 0-3 depending on how many boards are in the system.
   U32 enable[MAXBOARDS][CHANSPERBOARD];                                    ///< bool indicating whether to enable a channel
   U32 input_range_ids[MAXBOARDS][CHANSPERBOARD];                           ///< ATS-SDK constant specifying input range
 };
@@ -391,7 +392,7 @@ int alazar_arm(alazar_t ctx, alazar_cfg_t cfg)
   ERR(AlazarConfigureAuxIO(BOARD(0),AUX_IN_TRIGGER_ENABLE,TRIGGER_SLOPE_POSITIVE));      // config "digitizer ready" output
 
   //ERR(AlazarConfigureAuxIO(BOARD(1),AUX_OUT_TRIGGER,0));
-  ERR(AlazarConfigureAuxIO(BOARD(1),AUX_OUT_BUSY,0));
+  ERR(AlazarConfigureAuxIO(BOARD(cfg->aux_out_board_id),AUX_OUT_BUSY,0));
 
 ///// ALLOCATE WORKING MEMORY
   TRY(alloc_bufs(ctx));
@@ -541,7 +542,7 @@ alazar_cfg_t alazar_make_config()
       for(j=0;j<CHANSPERBOARD;++j)
         cfg->input_range_ids[i][j] = INPUT_RANGE_PM_1_V;
   }
-
+  cfg->aux_out_board_id=1;
   cfg->line_trig_lvl_volts = 0.5;
   cfg->ref=1;
   return cfg;
@@ -608,6 +609,10 @@ void alazar_set_channel_enable(alazar_cfg_t cfg, int iboard, int ichan, int isen
 
 void alazar_set_channel_input_range(alazar_cfg_t cfg, int iboard, int ichan, unsigned rangeid)
 { cfg->input_range_ids[iboard][ichan==CHANNEL_B]=rangeid;
+}
+
+void alazar_set_aux_out_board(alazar_cfg_t cfg, unsigned boardid)
+{ cfg->aux_out_board_id=boardid;
 }
 
 /** Returns the image size that will be acquired by the armed device, */

@@ -56,6 +56,20 @@
 #include "WorkAgent.h"
 #include "task.h"
 #include "frame.h"
+#include "util/timestream.h"
+
+#define PROFILE
+#ifdef PROFILE // PROFILING
+#define TS_OPEN(...)    timestream_t ts__=timestream_open(__VA_ARGS__)
+#define TS_TIC          timestream_tic(ts__)
+#define TS_TOC          timestream_toc(ts__)
+#define TS_CLOSE        timestream_close(ts__)
+#else
+#define TS_OPEN(...)
+#define TS_TIC
+#define TS_TOC
+#define TS_CLOSE
+#endif
 
 #if 0
 #define DBG(...) debug(__VA_ARGS__)
@@ -67,7 +81,7 @@
   if(!(expr)) \
     { warning("%s(%d): %s"ENDL"\t%s"ENDL"\tExpression evaluated to false.",__FILE__,__LINE__,#lbl,#expr); \
       goto lbl; \
-    }    
+    }
 
 namespace fetch
 {
@@ -76,8 +90,8 @@ namespace fetch
   {
 
     class WorkTask : public fetch::Task
-    { 
-    public:        
+    {
+    public:
       unsigned int config(IDevice *d) {return 1;} // success.  Most WorkTasks don't need a config function.
       virtual void alloc_output_queues(IDevice *d);
     };
@@ -99,7 +113,7 @@ namespace fetch
     };
 
 
-// 
+//
 // Implementation
 //
 
@@ -115,14 +129,15 @@ namespace fetch
                *fdst =  (TMessage*)Chan_Token_Buffer_Alloc(qdst);
       size_t nbytes_in  = Chan_Buffer_Size_Bytes(qsrc),
              nbytes_out = Chan_Buffer_Size_Bytes(qdst);
-      
+      TS_OPEN("timer-%s.f32",d->_agent->name());
+
       reader = Chan_Open(qsrc,CHAN_READ);
       writer = Chan_Open(qdst,CHAN_WRITE);
-      while(CHAN_SUCCESS( Chan_Next(reader, (void**)&fsrc, nbytes_in) )) // !d->_agent->is_stopping() && 
+      while(CHAN_SUCCESS( Chan_Next(reader, (void**)&fsrc, nbytes_in) )) // !d->_agent->is_stopping() &&
         { DBG("%s(%d)"ENDL "\t%s just recieved"ENDL,__FILE__,__LINE__,d->_agent->name());
           nbytes_in = fsrc->size_bytes();
           fsrc->format(fdst);
-          TRY(reshape(d,fdst), FormatFunctionFailure);          
+          TRY(reshape(d,fdst), FormatFunctionFailure);
           nbytes_out = fdst->size_bytes();
           if(nbytes_out>Chan_Buffer_Size_Bytes(qdst))
           { Chan_Resize(writer,nbytes_out);
@@ -130,11 +145,14 @@ namespace fetch
             fsrc->format(fdst);
             TRY(reshape(d,fdst),FormatFunctionFailure);
           }
+          TS_TIC;
           TRY(work(d,fdst,fsrc),WorkFunctionFailure);
+          TS_TOC;
           TRY(CHAN_SUCCESS(Chan_Next(writer,(void**)&fdst, nbytes_out)),OutputQueueTimeoutError);
-        }      
+        }
 
 Finalize:
+      TS_CLOSE;
       Chan_Close(reader);
       Chan_Close(writer);
       Chan_Token_Buffer_Free(fsrc);
@@ -158,33 +176,35 @@ OutputQueueTimeoutError:
       sts = 1;
       goto Finalize;
     }
-    
-    
+
+
     template<typename TMessage>
     unsigned int
     InPlaceWorkTask<TMessage>::run(IDevice *d)
     { unsigned int sts = 0; // success=0, fail=1
-      Chan  
+      Chan
         *reader,
         *writer,
         *qsrc = d->_in->contents[0],
         *qdst = d->_out->contents[0];
-      TMessage *fsrc =  (TMessage*)Chan_Token_Buffer_Alloc(qsrc);      
+      TMessage *fsrc =  (TMessage*)Chan_Token_Buffer_Alloc(qsrc);
       size_t nbytes_in  = Chan_Buffer_Size_Bytes(qsrc);
-      
+      TS_OPEN("timer-%s.f32",d->_agent->name());
+
       reader = Chan_Open(qsrc,CHAN_READ);
       writer = Chan_Open(qdst,CHAN_WRITE);
-      while(CHAN_SUCCESS( Chan_Next(reader,(void**)&fsrc,nbytes_in) )) //!d->_agent->is_stopping() && 
-        { 
+      while(CHAN_SUCCESS( Chan_Next(reader,(void**)&fsrc,nbytes_in) )) //!d->_agent->is_stopping() &&
+        {
           DBG("%s(%d)"ENDL "\t%s just recieved"ENDL,__FILE__,__LINE__,d->_agent->name());
           nbytes_in = fsrc->size_bytes();
-          TRY(work(d,fsrc),WorkFunctionFailure);                           
+          TS_TIC;
+          TRY(work(d,fsrc),WorkFunctionFailure);
+          TS_TOC;
           nbytes_in = MAX( Chan_Buffer_Size_Bytes(qdst), nbytes_in ); // XXX - awkward
           TRY(CHAN_SUCCESS(Chan_Next(writer,(void**)&fsrc, nbytes_in)),OutputQueueTimeoutError);
         }
-      
-
     Finalize:
+      TS_CLOSE;
       Chan_Close(reader);
       Chan_Close(writer);
       Chan_Token_Buffer_Free(fsrc);
@@ -199,8 +219,13 @@ OutputQueueTimeoutError:
       sts = 1;
       goto Finalize;
     }
-    
+
   }
 }
 #undef DBG
 #undef TRY
+
+#undef TS_OPEN
+#undef TS_TIC
+#undef TS_TOC
+#undef TS_CLOSE

@@ -289,9 +289,9 @@ ESCAN:
       cur = &scanner;
       cur =  pixel_averager.apply(cur);
       cur =  frame_averager.apply(cur);
-      //cur =  inverter.apply(cur);
       cur =  cast_to_u16.apply(cur);
-      //cur =  frame_formatter.apply(cur);
+      cur =  inverter.apply(cur);
+      cur =  frame_formatter.apply(cur);
       cur =  wrap.apply(cur);
 #ifdef DO_UNWARP
       cur =  unwarp.apply(cur);

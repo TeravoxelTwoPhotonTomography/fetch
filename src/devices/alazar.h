@@ -13,6 +13,7 @@ void         alazar_set_image_size(alazar_cfg_t cfg, unsigned scans_per_second,u
 void         alazar_set_channel_enable(alazar_cfg_t cfg, int iboard, int ichan, int isenabled);
 void         alazar_set_channel_input_range(alazar_cfg_t cfg, int iboard, int ichan, unsigned rangeid);
 void         alazar_set_line_trigger_lvl_volts(alazar_cfg_t cfg, double volts);
+void         alazar_set_aux_out_board(alazar_cfg_t cfg, unsigned boardid);
 
 void         alazar_get_image_size(alazar_t ctx, unsigned *w, unsigned *h);
 size_t       alazar_get_image_size_bytes(alazar_t ctx);

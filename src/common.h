@@ -76,15 +76,24 @@ long int lroundf(float x);
 // ---------
 // Profiling
 // ---------
- 
+
 typedef struct _tic_toc_timer
 { i64 last; // last observation on the counter
-  i64 rate; // counts per second  
+  i64 rate; // counts per second
 } TicTocTimer;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 TicTocTimer tic(void);
-double      toc(TicTocTimer *last); // returns time since last in seconds and updates timer 
-                    
+double      toc(TicTocTimer *last); // returns time since last in seconds and updates timer
+
+#ifdef __cplusplus
+}
+#endif
+
+
 // -------------------------------------------
 // Threading and Atomic Operations : Utilities
 // -------------------------------------------
@@ -95,11 +104,11 @@ double      toc(TicTocTimer *last); // returns time since last in seconds and up
 #define Interlocked_Dec_u64(atomic)          (InterlockedDecrement64((atomic)))
 #define Interlocked_Dec_And_Test_u32(atomic) (InterlockedExchangeAdd((atomic),-1)==1)
 #define Interlocked_Dec_And_Test_u64(atomic) (InterlockedExchangeAdd64((atomic),-1)==1)
-                    
+
 // --------
 // Shutdown
 // --------
-// 
+//
 // Shutdown callback functions
 // Type: unsigned int callback(void)
 //   - take no arguments
@@ -142,25 +151,33 @@ void ReportLastWindowsError(void);
 
 typedef void (*pf_reporter)(const char* fmt, ...);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void error  (const char* fmt, ...);
 void warning(const char* fmt, ...);
 void debug  (const char* fmt, ...);
 
+#ifdef __cplusplus
+}
+#endif
+
 #define Guarded_Assert(expression) \
   if(!(expression))\
     error("Assertion failed: %s\n\tIn %s (line: %u)"ENDL, #expression, __FILE__ , __LINE__ )
-    
+
 #define Guarded_Assert_WinErr(expression) \
   if(!(expression))\
   { ReportLastWindowsError();\
     error("Windows call - Assertion failed: %s\n\tIn %s (line: %u)"ENDL, #expression, __FILE__ , __LINE__ );\
   }
-  
+
 #define Guarded_Assert_WinErr__NoPanic(expression) \
   if(!(expression))\
   { ReportLastWindowsError();\
     warning("Windows call - Assertion failed: %s\n\tIn %s (line: %u)"ENDL, #expression, __FILE__ , __LINE__ );\
-  }  
+  }
 
 #define return_if_fail( cond )          { if(!(cond)) return; }
 #define return_if( cond )               { if( (cond)) return; }
@@ -208,7 +225,7 @@ void RequestStorageLog2( void** array,           // Pointer to array
   void           vector_##type##_request ( vector_##type *self, size_t idx );\
   void           vector_##type##_request_pow2 ( vector_##type *self, size_t idx );\
   void           vector_##type##_free    ( vector_##type *self );\
-  void           vector_##type##_dump    ( vector_##type *self, char* stack_filename );  
+  void           vector_##type##_dump    ( vector_##type *self, char* stack_filename );
 
 #define VECTOR_EMPTY { NULL, 0, 0, 0 }
 

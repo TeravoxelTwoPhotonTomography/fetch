@@ -24,7 +24,7 @@ namespace mylib {
 
 using namespace fetch::worker;
 
-#if 1
+#if 0
 #define PROFILE(expr,msg) \
       do { TicTocTimer t = tic(); \
         expr; \

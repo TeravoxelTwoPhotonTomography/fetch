@@ -81,7 +81,7 @@ namespace fetch {
 
     unsigned int NationalInstrumentsDAQ::on_attach()
     {
-      int sts = 0;      
+      int sts = 0;
       sts  = _clk.on_attach();
       sts |= _ao.on_attach();
       return sts;
@@ -161,7 +161,7 @@ namespace fetch {
       DAQJMP( DAQmxWriteAnalogF64(_ao.daqtask,
         N,
         0,                           // autostart?
-        20.0,                        // timeout (s) - to write - 0 causes write to fail if blocked at all
+        1.0,                        // timeout (s) - to write - 0 causes write to fail if blocked at all
         DAQmx_Val_GroupByChannel,
         data,
         &written,

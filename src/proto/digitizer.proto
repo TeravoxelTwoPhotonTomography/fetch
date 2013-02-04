@@ -139,8 +139,10 @@ message AlazarDigitizer
 
   repeated Channel    channels        = 7;
 
-  // TODO: triggers, aux io, Dual-port AutoDMA acquisition
-  optional double     trigger_lvl_volts =8 [default=0.5];
+  // triggers, aux io
+  // some triggers must be on master board, so these aren't configurable
+  optional uint32     aux_out_board_id  =8 [default=1];
+  optional double     trigger_lvl_volts =9 [default=0.5];
 }
 
 //////////////////////////
