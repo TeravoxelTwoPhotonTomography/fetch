@@ -507,12 +507,14 @@ FailedWriteIFD:
   }
 
 #define DEBUG_FAST_EXIT
-
+#include <util/native-buffered-stream.h>
   unsigned int TiffGroupStreamWriteTask::run(device::TiffGroupStream *dc)
   { int                            isok;
     Chan                          *q  =0;
     Frame_With_Interleaved_Planes *buf=0;
     size_t                         nbytes;
+    std::vector<stream_t>          streams;
+    int                            i;
     TS_OPEN("timer-TiffGroupStreamWrite.f32");
 #ifdef DEBUG_FAST_EXIT
     int any=0;
@@ -525,7 +527,6 @@ DBG("Entering Loop");
     while(CHAN_SUCCESS(Chan_Next(q,(void**)&buf,nbytes)))
     { Array     dummy;
       Dimn_Type dims[3];
-      int       i;
       DBG("Recieved");
 #ifdef DEBUG_FAST_EXIT
       any=1;
@@ -540,7 +541,10 @@ DBG("Entering Loop");
         { device::TiffGroupStream::Config c = dc->get_config();
           ::std::string fname = gen_name(c.path(),i);
           mylib::Tiff* tif=0;
-          TIFFTRY(tif=Open_Tiff((mylib::string)fname.c_str(),"w"));
+          stream_t s;
+          TIFFTRY(tif=Open_Tiff_Stream(s=native_buffered_stream_open(fname.c_str(),STREAM_MODE_WRITE),"w"));
+          //TIFFTRY(tif=Open_Tiff((mylib::string)fname.c_str(),"w"));
+          streams.push_back(s);
           dc->_writers.push_back(tif);
         }
 
@@ -553,6 +557,8 @@ DBG("Entering Loop");
       }
       TS_TOC;
     }
+    for(i=0;i<streams.size();++i)
+      TRY(native_buffered_stream_flush(streams[i]));
     isok=1;
 Finalize:
     DBG("Done.");
