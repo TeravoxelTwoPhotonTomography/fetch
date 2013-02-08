@@ -256,7 +256,7 @@ Error:
     //
     // Alazar digitizer
     //
-#if HAVE_ALAZAR
+#ifdef HAVE_ALAZAR
     AlazarDigitizer::AlazarDigitizer(Agent *agent)
     : DigitizerBase<cfg::device::AlazarDigitizer>(agent)
     , _ctx(0)

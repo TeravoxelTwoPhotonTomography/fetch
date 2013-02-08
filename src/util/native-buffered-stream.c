@@ -14,9 +14,9 @@ TODO
   - read mode
   - read/write (append) mode
  */
-#define NTHREADS (64ULL)
+#define NTHREADS (16ULL)
 
-#if 1
+#if 0
 #define ECHO(estr)   LOG("---\t%s\n",estr)
 #else
 #define ECHO(estr)
@@ -164,6 +164,7 @@ int native_buffered_stream_flush(stream_t stream)
   WaitForMultipleObjects(countof(ts),ts,TRUE,INFINITE);
 Finalize:
   for(i=0;i<NTHREADS;++i) CloseHandle(ts[i]);
+  ctx->len=0; ctx->pos=0; // empty buffer now that everything is written
   return isok;
 Error:
   isok=0;
@@ -191,6 +192,7 @@ size_t nbs_write   (const void * ptr, size_t size, size_t count, stream_t stream
   off_t n=(off_t)(size*count);
   TRY(nbs_maybe_resize(ctx,ctx->pos+n));
   memcpy(((char*)ctx->buf)+ctx->pos,ptr,n);
+  ctx->len+=n;
   return n;
 Error:
   return 0;
