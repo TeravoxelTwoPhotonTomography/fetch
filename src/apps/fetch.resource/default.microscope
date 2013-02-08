@@ -4,13 +4,13 @@ scanner3d {
     nscans: 256
     line_duty_cycle: 0.95
     daq {
-      kind: NIDAQ #NIDAQ #Simulated
+      kind: Simulated #NIDAQ #NIDAQ #Simulated
       nidaq {
         ao_samples_per_waveform: 16384
         trigger:  "APFI0"
         clock:    "Ctr1InternalOutput"
-        ctr:      "/Dev1/ctr0"
-        ctr_alt:  "/Dev1/ctr1"
+        ctr:      "ctr0"
+        ctr_alt:  "ctr1"
         armstart: "PFI15"
         name:     "Dev1"
         frame_trigger_out: "PFI1"
@@ -21,7 +21,7 @@ scanner3d {
       }
     }
     digitizer {
-      kind: Alazar #Simulated #NIScope #Alazar
+      kind: Simulated #Simulated #NIScope #Alazar
       niscope {
         name: "Dev2"
         sample_rate: 60000000
@@ -66,21 +66,21 @@ scanner3d {
       }
     }
     pockels {
-      kind: NIDAQ #NIDAQ #Simulated
+      kind: Simulated #NIDAQ #Simulated
       nidaq {
         v_lim_max: 2
         v_lim_min: 0
         v_open: 0
         v_closed: 0
-        ao_channel: "/Dev1/ao2"
-        ai_channel: "/Dev1/ai16"
+        ao_channel: "ao2"
+        ai_channel: "ai16"
       }
       simulated {
         val: 0
       }
     }
     shutter {
-      kind: NIDAQ #NIDAQ #Simulated
+      kind: Simulated #NIDAQ #Simulated
       nidaq {
         open: 1
         closed: 0
@@ -91,12 +91,12 @@ scanner3d {
       }
     }
     linear_scan_mirror {
-      kind: NIDAQ  #NIDAQ #Simulated
+      kind: Simulated  #NIDAQ #Simulated
       nidaq {
         v_lim_max:  10
         v_lim_min: -10
         vpp: 10
-        ao_channel: "/Dev1/ao0"
+        ao_channel: "ao0"
       }
       simulated {
         val: 0
@@ -104,13 +104,13 @@ scanner3d {
     }
   }
   zpiezo {
-    kind: NIDAQ  #NIDAQ #Simulated
+    kind: Simulated  #NIDAQ #Simulated
     nidaq {
       um2v:       0.025    #V/um: 400um*0.025 = 10.0V
       v_lim_max:  12
       v_lim_min: -3
       v_offset:   0
-      channel:   "/Dev1/ao1"
+      channel:   "ao1"
     }
     simulated {
     }
@@ -121,7 +121,7 @@ scanner3d {
   zref_um: 0
 }
 stage {
-    kind: C843   #C843 #Simulated
+    kind: Simulated   #C843 #Simulated
     c843 {
       id: 1
         axis {id: 1   stage: "M-511.DD_NEW"}
@@ -137,6 +137,7 @@ stage {
   tilemode: PixelAligned #StageAligned #PixelAligned
 }
 vibratome {
+  kind: Simulated
   serial {
   }
   feed_axis: X

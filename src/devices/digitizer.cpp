@@ -256,6 +256,7 @@ Error:
     //
     // Alazar digitizer
     //
+#if HAVE_ALAZAR
     AlazarDigitizer::AlazarDigitizer(Agent *agent)
     : DigitizerBase<cfg::device::AlazarDigitizer>(agent)
     , _ctx(0)
@@ -361,7 +362,27 @@ Error:
     void AlazarDigitizer::get_image_size(unsigned *w, unsigned *h)
     { alazar_get_image_size(_ctx,w,h);
     }
-
+#else // DONT HAVE ALAZAR
+    AlazarDigitizer::AlazarDigitizer(Agent *agent)
+    : DigitizerBase<cfg::device::AlazarDigitizer>(agent)
+    , _ctx(0)
+    { error("AlazarDigitizer not supported.\n"); }
+    AlazarDigitizer::AlazarDigitizer(Agent *agent, Config *cfg)
+    : DigitizerBase<cfg::device::AlazarDigitizer>(agent,cfg)
+    , _ctx(0)
+    { error("AlazarDigitizer not supported.\n"); }
+    unsigned int AlazarDigitizer::on_attach() { return 0;}
+    unsigned int AlazarDigitizer::on_detach() { return 0;}
+    unsigned int AlazarDigitizer::on_disarm() { return 0;}
+    void AlazarDigitizer::setup( int nrecords, double record_frequency_Hz, double duty ){}
+    size_t AlazarDigitizer::record_size( double record_frequency_Hz, double duty ) {return 0;}
+    int AlazarDigitizer::start(){ return 0; }
+    int AlazarDigitizer::stop() { return 0; }
+    int AlazarDigitizer::fetch(Frame* frm) {return 0;}
+    double AlazarDigitizer::sample_rate(){return 0;}
+    size_t AlazarDigitizer::nchan() {return 0;}
+    void AlazarDigitizer::get_image_size(unsigned *w, unsigned *h){ }
+#endif // HAVE_ALAZAR
     //
     // Simulated Digitizer
     //

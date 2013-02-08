@@ -6,8 +6,8 @@ namespace mylib
 { 
   #include <array.h>
   #include <image.h>
-  #include <MY_TIFF/tiff.image.h> 
   #include <MY_TIFF/tiff.io.h>
+  #include <MY_TIFF/tiff.image.h> 
 }
 
 namespace mylib

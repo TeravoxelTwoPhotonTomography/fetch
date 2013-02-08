@@ -1,4 +1,6 @@
 #define WIN32_LEAN_AND_MEAN
+#include "config.h"
+#ifdef HAVE_ALAZAR;
 #include <Windows.h>
 #include <stdlib.h>
 #include <stdio.h> //for logging
@@ -628,3 +630,4 @@ size_t alazar_get_image_size_bytes(alazar_t ctx)
 {
    return buffer_size_bytes(ctx);
 }
+#endif // HAVE_ALAZAR

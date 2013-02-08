@@ -1,4 +1,6 @@
 #pragma once
+#include "config.h"
+#ifdef HAVE_ALAZAR
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -35,3 +37,7 @@ int alazar_print_version(FILE* fp);
 #ifdef __cplusplus
 } //extern "C"
 #endif
+
+#else  // DONT HAVE_ALAZAR
+typedef int alazar_t;
+#endif //HAVE_ALAZAR

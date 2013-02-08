@@ -1,5 +1,5 @@
 #include "config.h"
-#if HAVE_NISCOPE
+#ifdef HAVE_NISCOPE
 
 #include "common.h"
 #include "niScope.h"
@@ -177,5 +177,16 @@ ViStatus Fetch<i16> ( ViSession vi,
                       struct niScope_wfmInfo *info) 
 {return niScope_FetchBinary16(vi,channellist,timeout, numsamples,(ViInt16*)data,info);
 }  
+
+template<> 
+ViStatus Fetch<u16> ( ViSession vi,
+                      ViConstString channellist,
+                      ViReal64 timeout,
+                      ViInt32 numsamples,
+                      u16* data,
+                      struct niScope_wfmInfo *info) 
+{ error("Unsupported.\n");
+  return 0;
+} 
 
 #endif //HAVE_NISCOPE
