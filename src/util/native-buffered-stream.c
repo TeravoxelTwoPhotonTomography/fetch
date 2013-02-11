@@ -6,7 +6,7 @@
 #include <string.h>
 
 /*
-TODO 
+TODO
   - open file
   - close file
 
@@ -14,10 +14,10 @@ TODO
   - read mode
   - read/write (append) mode
  */
-#define NTHREADS (16ULL)
+#define NTHREADS (32ULL)
 
 #if 0
-#define ECHO(estr)   LOG("---\t%s\n",estr)
+#define ECHO(estr)   LOG("---%30s()\t%s\n",__FUNCTION__,estr)
 #else
 #define ECHO(estr)
 #endif
@@ -83,7 +83,7 @@ stream_t native_buffered_stream_open(const char *filename,stream_mode_t mode)
   native_buffered_stream_set_free_func    (self, free);
   return self;
 Error:
-  if(self) stream_close(self);  
+  if(self) stream_close(self);
   if(ctx)  free(ctx);
   return 0;
 }
@@ -99,7 +99,7 @@ void native_buffered_stream_set_free_func   (stream_t stream, native_buffered_st
 //
 
 static int nbs_maybe_resize(nbs_stream_t ctx, size_t request)
-{ size_t c=4096*( (request/4096)+1 );
+{ size_t c=4096*( ((size_t)(1.2f*request+50.0f)/4096)+1 ); // geometric increase, page aligned
   if(request>ctx->cap)
   { NBS_REALLOC(char,ctx->buf,c);
     ctx->cap=c;
@@ -124,11 +124,13 @@ static DWORD WINAPI writer(void* p)
 { thread_ctx_t tc =(thread_ctx_t)p;
   nbs_stream_t nbs=tc->nbs;
   unsigned long long i     =(int)(tc->i),
-                     chunk =(nbs->len)/NTHREADS,
-                     offset=i*chunk;
-  LOG("Piece: %3llu - offset %20llu\tchunk %20llu\n",i,offset,chunk);
+                     chunk =(nbs->len+NTHREADS-1)/NTHREADS, // ciel(len/NTHREADS)
+                     offset=i*chunk,
+                     rem=nbs->len-i*offset,
+                     n=(chunk>rem)?rem:chunk;
+  LOG("Piece: %3llu - offset %20llu\tchunk %20llu\n",i,offset,n);
   ResetEvent(nbs->overlapped[i].hEvent);
-  TRY(WriteFileEx(nbs->fd,((char*)nbs->buf)+offset,chunk,nbs->overlapped+i,done));
+  TRY(WriteFileEx(nbs->fd,((char*)nbs->buf)+offset,n,nbs->overlapped+i,done));
   WaitForSingleObjectEx(nbs->overlapped[i].hEvent,INFINITE,TRUE);
   return 0;
 Error:
@@ -151,9 +153,11 @@ int native_buffered_stream_flush(stream_t stream)
 { DECL_CTX;
   int i,isok=1;
   HANDLE ts[NTHREADS]={0};
+#if 1
   struct _thread_ctx_t tc[NTHREADS]={0};
+  size_t chunksize=(ctx->len+NTHREADS-1)/NTHREADS; // ciel(len/NTHREADS)
   for(i=0;i<NTHREADS;++i)
-  { unsigned long long offset = i*ctx->len/NTHREADS;
+  { unsigned long long offset = i*chunksize;
     ctx->overlapped[i].Offset=(DWORD)offset;
     ctx->overlapped[i].OffsetHigh=(DWORD)(offset>>32);
     tc[i].nbs=ctx;
@@ -162,8 +166,15 @@ int native_buffered_stream_flush(stream_t stream)
   for(i=0;i<NTHREADS;++i)
     TRY(ts[i]=CreateThread(NULL,0,writer,(void*)(tc+i),0,NULL));
   WaitForMultipleObjects(countof(ts),ts,TRUE,INFINITE);
+#else
+  { FILE *fp=0;
+    fp=fopen("test.tif","wb");
+    fwrite(ctx->buf,1,ctx->len,fp);
+    fclose(fp);
+  }
+#endif
 Finalize:
-  for(i=0;i<NTHREADS;++i) CloseHandle(ts[i]);
+  for(i=0;i<NTHREADS;++i) if(ts[i]) CloseHandle(ts[i]);
   ctx->len=0; ctx->pos=0; // empty buffer now that everything is written
   return isok;
 Error:
@@ -192,7 +203,8 @@ size_t nbs_write   (const void * ptr, size_t size, size_t count, stream_t stream
   off_t n=(off_t)(size*count);
   TRY(nbs_maybe_resize(ctx,ctx->pos+n));
   memcpy(((char*)ctx->buf)+ctx->pos,ptr,n);
-  ctx->len+=n;
+  ctx->pos+=n;
+  ctx->len=(ctx->len<ctx->pos)?ctx->pos:ctx->len;
   return n;
 Error:
   return 0;
@@ -203,7 +215,7 @@ int    nbs_seek    (stream_t stream, off_t offset, stream_seek_t origin)
   off_t p[]={0,(off_t)ctx->pos,(off_t)ctx->len},
         newpos=p[origin]+offset;
   switch(ctx->mode)
-  { case STREAM_MODE_READ: 
+  { case STREAM_MODE_READ:
       TRY(0<=newpos && newpos<ctx->len);
       break;
     case STREAM_MODE_WRITE:

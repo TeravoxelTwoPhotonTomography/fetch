@@ -541,10 +541,13 @@ DBG("Entering Loop");
         { device::TiffGroupStream::Config c = dc->get_config();
           ::std::string fname = gen_name(c.path(),i);
           mylib::Tiff* tif=0;
-          stream_t s;
+          stream_t s=0;
+#if 1
           TIFFTRY(tif=Open_Tiff_Stream(s=native_buffered_stream_open(fname.c_str(),STREAM_MODE_WRITE),"w"));
-          //TIFFTRY(tif=Open_Tiff((mylib::string)fname.c_str(),"w"));
           streams.push_back(s);
+#else
+          //TIFFTRY(tif=Open_Tiff((mylib::string)fname.c_str(),"w"));
+#endif
           dc->_writers.push_back(tif);
         }
 
@@ -557,8 +560,13 @@ DBG("Entering Loop");
       }
       TS_TOC;
     }
-    for(i=0;i<streams.size();++i)
-      TRY(native_buffered_stream_flush(streams[i]));
+
+    for(i=0;i<dc->_writers.size();++i)
+      if(dc->_writers[i])
+        mylib::Close_Tiff(dc->_writers[i]);
+    dc->_writers.clear();
+    //for(i=0;i<streams.size();++i)
+    //  TRY(native_buffered_stream_flush(streams[i]));
     isok=1;
 Finalize:
     DBG("Done.");
