@@ -2,6 +2,11 @@
 #include "pipeline-image.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <stdio.h>  //for printf
+#include <stdlib.h> //for malloc
+#include <string.h> //for memset
+
+#include "cuda_runtime.h"
 
 #define BX_   (32)
 #define BY_   (32)
@@ -20,8 +25,8 @@
 #define ZERO(T,e,N)  memset((e),0,sizeof(T)*(N))
 
 #define CUREPORT(ecode,estr) LOG("%s(%d): %s()\n\t%s\n\t%s\n",__FILE__,__LINE__,__FUNCTION__,estr,cudaGetErrorString(ecode))
-#define CUTRY(e)             do{ cudaError_t ecode; ECHO(#e); ecode=(e); (if(ecode!=cudaSuccess){CUREPORT(ecode,#e);goto Error;}}while(0)
-#define CUTRY(e)             do{ cudaError_t ecode; ECHO(#e); ecode=(e); (if(ecode!=cudaSuccess){CUREPORT(ecode,#e);           }}while(0)
+#define CUTRY(e)             do{ cudaError_t ecode; ECHO(#e); ecode=(e); if(ecode!=cudaSuccess){CUREPORT(ecode,#e);goto Error;}}while(0)
+#define CUWARN(e)            do{ cudaError_t ecode; ECHO(#e); ecode=(e); if(ecode!=cudaSuccess){CUREPORT(ecode,#e);           }}while(0)
 #define CUNEW(T,e,N)    CUTRY(cudaMalloc((void**)&(e),sizeof(T)*(N)))
 #define CUZERO(T,e,N)   CUTRY(cudaMemset((e),0,sizeof(T)*(N)))
 
@@ -37,7 +42,7 @@ struct pipeline_ctx_t
   unsigned * __restrict__ lut;         ///< look up table for unwarp (ctx.w/2 number of elements).  Set by launch on first call or if width changes.
   float    * __restrict__ lut_fpart;   ///< fractional part of pixel position for lut.  If a smaple is mapped to 4.6, then this is 0.6.  0.4 of the sample will go to pixel 4, and 0.6 will go to pixel 5
   float    * __restrict__ lut_norms;   ///< weight contributed by an input sample to it's main pixel and the neighbor.  Should be interleaved.  Should sum to 1 for each output pixel.
-  float    norm;        ///< 1.0/the frame count as a float - set by launcher (eg. for ctx.every=4, this should be 0.25)
+  float    norm,        ///< 1.0/the frame count as a float - set by launcher (eg. for ctx.every=4, this should be 0.25)
            m,b;         ///< slope and intercept for intensity scaling
   unsigned istride,     ///< number of elements between rows of source.
            ostride;     ///< number of elements between rows of output.
@@ -53,6 +58,7 @@ typedef struct pipeline_t_
                  every; ///< the number of frames to average
   double         samples_per_scan;
   bool           invert;
+  unsigned       downsample;
   unsigned       alignment;      ///< output rows are aligned to this target number of elements.
   void  * __restrict__ src,  ///< device buffer
         * __restrict__ dst;  ///< device buffer
@@ -64,7 +70,7 @@ typedef struct pipeline_t_
 //
 
 template<typename T,unsigned BX,unsigned BY,unsigned WORK>
-__device__ void load(const pipeline_ctx_t & ctx, const T* __restrict__ src, float * __restrict__ buf,const unsigned ox, const unsigned oy)
+__device__ void load(const pipeline_ctx_t & ctx, const T* __restrict__ src, float * __restrict__ buf[BY],const unsigned ox, const unsigned oy)
 {
   src+=ox+oy*ctx.istride;
   if(blockIdx.x!=(gridDim.x-1))
@@ -81,9 +87,9 @@ __device__ void load(const pipeline_ctx_t & ctx, const T* __restrict__ src, floa
 }
 
 template<typename T,unsigned BX,unsigned BY,unsigned WORK,bool EMIT_FRAME_AVERAGE>
-__device__ void accumulate(const pipeline_ctx_t & ctx, const float* __restrict__ buf,const unsigned ox, const unsigned oy)
+__device__ void accumulate(const pipeline_ctx_t & ctx,float* __restrict__ buf[BY],const unsigned ox, const unsigned oy)
 {
-  float *acc=ctx.acc+ox+oy*ctx.istride;
+  float *acc=ctx.accumulator+ox+oy*ctx.istride;
   #pragma unroll
   for(int i=0;i<WORK;++i)                // accumulate
     acc[i*BX]+=buf[threadIdx.y][threadIdx.x+i*BX];
@@ -91,7 +97,7 @@ __device__ void accumulate(const pipeline_ctx_t & ctx, const float* __restrict__
     return;
   #pragma unroll
   for(int i=0;i<WORK;++i)                // put frame average in buffer
-    buf[threadIdx.y][threadIdx.x+i*BX]=fma(acc[i*BX],m*ctx.norm,b);
+    buf[threadIdx.y][threadIdx.x+i*BX]=fma(acc[i*BX],ctx.m*ctx.norm,ctx.b);
   #pragma unroll
   for(int i=0;i<WORK;++i)                // reset accumulator
     acc[i*BX]=0;
@@ -105,7 +111,7 @@ __device__ void accumulate(const pipeline_ctx_t & ctx, const float* __restrict__
  * TODO(?): should buffer the load from shared memory for the lut,fpart and norms, maybe?
  */
 template<typename T,unsigned BX,unsigned BY,unsigned WORK>
-__device__ void warp(const pipeline_ctx_t & ctx, const float * __restrict__ buf, float *__restrict__ dst,const unsigned ox, const unsigned oy)
+__device__ void warp(const pipeline_ctx_t & ctx, const float * __restrict__ buf[BY], float *__restrict__ dst,const unsigned ox, const unsigned oy)
 { unsigned *lut   = ctx.lut      +  ox;
   float    *fpart = ctx.lut_fpart+  ox;
   float    *norms = ctx.lut_norms+2*ox;
@@ -150,7 +156,7 @@ pipeline_kernel(pipeline_ctx_t ctx, const T* __restrict__ src, float* __restrict
   { 
     #pragma unroll
     for(int i=0;i<WORK;++i) // in-place intensity scaling
-      buf[threadIdx.y][threadIdx.x+i*BX]=fma(buf[threadIdx.y][threadIdx.x+i*BX],m,b);
+      buf[threadIdx.y][threadIdx.x+i*BX]=fma(buf[threadIdx.y][threadIdx.x+i*BX],ctx.m,ctx.b);
   }
   warp<T,BX,BY,WORK>(ctx,buf,dst,ox,oy);
 }
@@ -193,9 +199,9 @@ pipeline_t pipeline_make(const pipeline_param_t *params)
   ZERO(pipeline_t_,self,1);
   self->every            = params->frame_average_count;
   self->samples_per_scan = params->sample_rate_MHz*1.0e6/(double)params->scan_rate_Hz;
-  self->invert           = params->invert;
+  self->invert           = params->invert_intensity;
   self->downsample       = params->pixel_average_count;
-  self->align            = BX_*WORK_;
+  self->alignment        = BX_*WORK_;
   self->ctx.norm         = 1.0f/(float)self->every;
   return self;
 Error:
@@ -207,7 +213,7 @@ void pipeline_free(pipeline_t *self)
   { void *ptrs[]={self[0]->ctx.accumulator,
                   self[0]->ctx.lut,
                   self[0]->ctx.lut_fpart,
-                  self[0]->ctx.norms,
+                  self[0]->ctx.lut_norms,
                   self[0]->src,
                   self[0]->dst,
                   self[0]->tmp};
@@ -220,14 +226,14 @@ void pipeline_free(pipeline_t *self)
 
 
 #define EPS (1e-3)
-static unsigned pipeline_get_output_width(pipeline_t self, const double inwidth);
+static unsigned pipeline_get_output_width(pipeline_t self, const double inwidth)
 { const double d=inwidth/self->samples_per_scan; // 1 - duty
-  TRY(-EPS<d && d<=(0.5+EPS));
   //max derivative of the cosine warp adjusted to cos(2pi*(d/2)) is the zero point
   //and the positive part of the warp function goes from 0 to 1.
   const double maxslope=M_PI*(1.0-d)/inwidth/cos(M_PI*d);
   const double amplitude=1.0/maxslope;
-  const unsigned w=self->align*(unsigned)(amplitude/self->align);
+  const unsigned w=self->alignment*(unsigned)(amplitude/(float)self->downsample/self->alignment);
+  TRY(-EPS<d && d<=(0.5+EPS));
   TRY(0<w && w<inwidth);
   return w;
 Error:
@@ -238,8 +244,8 @@ Error:
 int pipeline_get_output_dims(pipeline_t self, const pipeline_image_t src,unsigned *w, unsigned *h, unsigned *nchan)
 { TRY(self && src);
   if(nchan) *nchan=src->nchan;
-  if(h)     *h=src->height*2;
-  if(w)     TRY(*w=pipeline_get_output_width(self,src->width));
+  if(h)     *h=src->h*2;
+  if(w)     TRY(*w=pipeline_get_output_width(self,src->w));
   return 1;
 Error:
   return 0;
@@ -248,7 +254,7 @@ Error:
 static int pipeline_alloc_accumulator(pipeline_t self, const pipeline_image_t src)
 { if(self->ctx.accumulator)
     cudaFree(self->ctx.accumulator);
-  const unsigned w     = self->align*((src->w+self->align-1)/self->align); // increase number of columns to align
+  const unsigned w     = self->alignment*((src->w+self->alignment-1)/self->alignment); // increase number of columns to align
   const unsigned nelem = w*src->h*src->nchan;
   CUNEW(float,self->ctx.accumulator,nelem);
   CUZERO(float,self->ctx.accumulator,nelem);
@@ -264,7 +270,7 @@ static int pipeline_alloc_lut(pipeline_t self, unsigned inwidth)
     CUTRY(cudaFree(self->ctx.lut_fpart));
     CUTRY(cudaFree(self->ctx.lut_norms));
   }
-  CUNEW(unsgined,self->ctx.lut,        inwidth);
+  CUNEW(unsigned,self->ctx.lut,        inwidth);
   CUNEW(float   ,self->ctx.lut_fpart,  inwidth);
   CUNEW(float   ,self->ctx.lut_norms,2*inwidth);
   return 1;
@@ -306,8 +312,8 @@ static int pipeline_fill_lut(pipeline_t self, unsigned inwidth)
     unsigned j;
     j = lut[i]   =   floor(v);
     fpart[i]     = v-floor(v);
-    hit[j  ]+=fpart[i];
-    hit[j+1]+=(1.0f-fpart[i]);
+    hits[j  ]+=fpart[i];
+    hits[j+1]+=(1.0f-fpart[i]);
   }
   // compute norms
   for(unsigned i=0;i<inwidth;++i)
@@ -333,20 +339,20 @@ Error:
 }
 
 static int pipeline_upload(pipeline_t self, pipeline_image_t dst, const pipeline_image_t src)
-{ if(self->src && (self->ctx.w>src->width || self->ctx.h>src->height))
+{ if(self->src && (self->ctx.w>src->w || self->ctx.h>src->h))
   { CUTRY(cudaFree(self->src)); self->src=0;
     CUTRY(cudaFree(self->dst)); self->dst=0;
     CUTRY(cudaFree(self->tmp)); self->tmp=0;
   }
   if(!self->src)
-  { CUTRY(cudaMalloc(&self->src,pipeline_image_nbytes(src)));
-    CUTRY(cudaMalloc(&self->src,pipeline_image_nbytes(dst)));
-    CUTRY(cudaMalloc(&self->tmp,pipeline_image_nelem(dst)*sizeof(float)));
+  { CUTRY(cudaMalloc((void**)&self->src,pipeline_image_nbytes(src)));
+    CUTRY(cudaMalloc((void**)&self->dst,pipeline_image_nbytes(dst)));
+    CUTRY(cudaMalloc((void**)&self->tmp,pipeline_image_nelem(dst)*sizeof(float)));
   }
-  CUTRY(cudaMemset(self->tmp,0,pipeline_image_nelem(dst)*sizeof(float))));
+  CUTRY(cudaMemset(self->tmp,0,pipeline_image_nelem(dst)*sizeof(float)));
   CUTRY(cudaMemcpy(self->src,src->data,pipeline_image_nbytes(src),cudaMemcpyHostToDevice));
-  self->ctx.w=src->width;
-  self->ctx.h=src->height;
+  self->ctx.w=src->w;
+  self->ctx.h=src->h;
   self->ctx.istride=src->stride;
   self->ctx.ostride=dst->stride;
   return 1;
@@ -363,10 +369,10 @@ Error:
 }
 
 int pipeline_exec(pipeline_t self, pipeline_image_t dst, const pipeline_image_t src)
-{ if(src->width>self->ctx.w)
+{ if(src->w>self->ctx.w)
   { TRY(pipeline_alloc_accumulator(self,src)); // these will free if one already exists
-    TRY(pipeline_alloc_lut(self,src->width));
-    TRY(pipeline_fill_lut(self,src->width));
+    TRY(pipeline_alloc_lut(self,src->w));
+    TRY(pipeline_fill_lut(self,src->w));
   }
   pipeline_image_conversion_params(dst,src,self->invert,&self->ctx.m,&self->ctx.b);
   TRY(pipeline_upload(self,dst,src)); // updates context size and stride as well
