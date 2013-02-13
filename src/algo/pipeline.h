@@ -19,7 +19,7 @@ void       pipeline_free           (pipeline_t *ctx);
 int        pipeline_get_output_dims(pipeline_t ctx, 
                                     const pipeline_image_t src,
                                     unsigned *w, unsigned *h, unsigned *nchan);
-int        pipeline_exec           (pipeline_t ctx, pipeline_image_t dst, const pipeline_image_t src);
+int        pipeline_exec           (pipeline_t ctx, pipeline_image_t dst, const pipeline_image_t src, int *emit);
 
 pipeline_image_t pipeline_make_empty_image();
 void             pipeline_free_image      (pipeline_image_t *self);

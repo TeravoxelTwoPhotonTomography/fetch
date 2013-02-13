@@ -19,8 +19,9 @@
 #endif
 
 #define LOG(...)     printf(__VA_ARGS__)
-#define REPORT(estr) LOG("%s(%d): %s()\n\t%s\n\tEvaluated to false.\n",__FILE__,__LINE__,__FUNCTION__,estr)
-#define TRY(e)       do{ECHO(#e);if(!(e)){REPORT(#e);goto Error;}}while(0)
+#define REPORT(estr,msg) LOG("%s(%d): %s()\n\t%s\n\t%s\n",__FILE__,__LINE__,__FUNCTION__,estr,msg)
+#define TRY(e)       do{ECHO(#e);if(!(e)){REPORT(#e,"Evaluated to false.");goto Error;}}while(0)
+#define FAIL(msg)    do{REPORT("Failure.",msg);goto Error;}} while(0)
 #define NEW(T,e,N)   TRY((e)=(T*)malloc(sizeof(T)*(N)))
 #define ZERO(T,e,N)  memset((e),0,sizeof(T)*(N))
 
@@ -232,7 +233,7 @@ static unsigned pipeline_get_output_width(pipeline_t self, const double inwidth)
   //and the positive part of the warp function goes from 0 to 1.
   const double maxslope=M_PI*(1.0-d)/inwidth/cos(M_PI*d);
   const double amplitude=1.0/maxslope;
-  const unsigned w=self->alignment*(unsigned)(amplitude/(float)self->downsample/self->alignment);
+  const unsigned w=self->alignment*(unsigned)(amplitude/self->downsample/self->alignment);
   TRY(-EPS<d && d<=(0.5+EPS));
   TRY(0<w && w<inwidth);
   return w;
@@ -352,7 +353,7 @@ static int pipeline_upload(pipeline_t self, pipeline_image_t dst, const pipeline
   CUTRY(cudaMemset(self->tmp,0,pipeline_image_nelem(dst)*sizeof(float)));
   CUTRY(cudaMemcpy(self->src,src->data,pipeline_image_nbytes(src),cudaMemcpyHostToDevice));
   self->ctx.w=src->w;
-  self->ctx.h=src->h;
+  self->ctx.h=src->h*src->nchan;
   self->ctx.istride=src->stride;
   self->ctx.ostride=dst->stride;
   return 1;
@@ -368,8 +369,94 @@ Error:
   return 0;
 }
 
-int pipeline_exec(pipeline_t self, pipeline_image_t dst, const pipeline_image_t src)
-{ if(src->w>self->ctx.w)
+
+static template<typename Tsrc, typename Tdst,unsigned BX,unsigned BY,unsigned WORK>
+int launch(pipeline_t self, int *emit)
+{ unsigned ow=pipeline_get_output_width(self,self->ctx.w);
+#define CEIL(num,den) (((num)+(den)-(1))/(den))  
+  dim3 threads(BX,BY),
+       blocks_up(CEIL(self->ctx.w,BX*WORK),CEIL(self->ctx.h,BY)), // for the main kernel
+       blocks_down(CEIL(ow,BX*WORK),CEIL(2*self->ctx.h,BY));      // for the cast from tmp to dst
+#undef CEIL       
+  TRY(emit);
+  if(self->count>1) // frame averaging enabled
+  { if( ((self->count+1)%self->every)==0 )
+    { *emit=1;
+      pipeline_kernel<TSrc,BX,BY,WORK,1,1><<<blocks_up,threads>>>(self->ctx,self->src,self->tmp);
+      cast_kernel<Tdst,BX,BY,WORK><<<blocks_down,threads>>>(self->dst,self->tmp);  
+    } else
+    { *emit=0;
+      pipeline_kernel<TSrc,BX,BY,WORK,1,0><<<blocks_up,threads>>>(self->ctx,self->src,self->tmp);
+    }
+    self->count++;
+  } else            // frame averaging disabled
+  { if(emit) *emit=1;
+    pipeline_kernel<TSrc,BX,BY,WORK,0,1><<<blocks_up,threads>>>(self->ctx,self->src,self->tmp);
+    cast_kernel<Tdst,BX,BY,WORK><<<blocks_down,threads>>>(self->dst,self->tmp);
+    CUTRY(cudaGetLastError());
+  }
+  return 1;
+Error:
+  return 0;
+}
+
+// generics
+
+/** Requires a macro \c CASE(T) to be defined where \c T is a type parameter.
+ *  Requires a macro \c FAIL to be defined that handles when an invalid \a type_id is used.
+ *  \param[in] type_id Must be a valid nd_type_id_t.
+ */
+#define TYPECASE(type_id) \
+switch(type_id) \
+{            \
+  case u8_id :CASE(uint8_t ); \
+  case u16_id:CASE(uint16_t); \
+  case u32_id:CASE(uint32_t); \
+  case u64_id:CASE(uint64_t); \
+  case i8_id :CASE(int8_t ); \
+  case i16_id:CASE(int16_t); \
+  case i32_id:CASE(int32_t); \
+  case i64_id:CASE(int64_t); \
+  case f32_id:CASE(float); \
+  case f64_id:CASE(double); \
+  default:   \
+    FAIL("Unsupported pixel type.");    \
+}
+/** Requires a macro \c CASE2(T1,T2) to be defined where \c T1 and \c T2 are
+ *  type parameters.
+ *  Requires a macro \c FAIL to be defined that handles when an invalid \a type_id is used.
+ *  \param[in] type_id Must be a valid nd_type_id_t.
+ *  \param[in] T       A type name.  This should follow the u8,u16,u32,... form.  Usually
+ *                     these types are defined in the implemenation function where this
+ *                     macro is instanced.
+ */
+#define TYPECASE2(type_id,T) \
+switch(type_id) \
+{               \
+  case u8_id :CASE2(T,uint8_t);  \
+  case u16_id:CASE2(T,uint16_t); \
+  case u32_id:CASE2(T,uint32_t); \
+  case u64_id:CASE2(T,uint64_t); \
+  case i8_id :CASE2(T,int8_t);  \
+  case i16_id:CASE2(T,int16_t); \
+  case i32_id:CASE2(T,int32_t); \
+  case i64_id:CASE2(T,int64_t); \
+  case f32_id:CASE2(T,float); \
+  case f64_id:CASE2(T,double); \
+  default:      \
+    FAIL"Unsupported pixel type.";       \
+}
+
+int isaligned(unsigned x, unsigned n) { return (x%n)==0; }
+int pipeline_exec(pipeline_t self, pipeline_image_t dst, const pipeline_image_t src, int *emit)
+{ TRY(emit);
+
+  TRY(isaligned(src->w,BX));
+  TRY(isaligned(src->h,BY));
+  TRY(isaligned(dst->w,BX*WORK));
+  TRY(dst->h==2*src->h);
+  
+  if(src->w>self->ctx.w)
   { TRY(pipeline_alloc_accumulator(self,src)); // these will free if one already exists
     TRY(pipeline_alloc_lut(self,src->w));
     TRY(pipeline_fill_lut(self,src->w));
@@ -377,11 +464,20 @@ int pipeline_exec(pipeline_t self, pipeline_image_t dst, const pipeline_image_t 
   pipeline_image_conversion_params(dst,src,self->invert,&self->ctx.m,&self->ctx.b);
   TRY(pipeline_upload(self,dst,src)); // updates context size and stride as well
 // launch kernel
-  TRY(pipeline_download(self,dst));
+  #define CASE2(TSRC,TDST) TRY(launch<TSRC,TDST,BX,BY,WORK>(self,emit))
+  #define CASE(T)          TYPECASE2(src->type,T)
+    { TYPECASE(dst->type); }
+  #undef CASE
+  #undef CASE2
+  if(*emit)
+    TRY(pipeline_download(self,dst));
   return 1;
 Error:
   return 0;
 }
+
+#undef TYPECASE
+#undef TYPECASE2
 
 /* PLAN
   INPUT
