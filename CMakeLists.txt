@@ -149,6 +149,13 @@ if(CUDA_FOUND)
   include_directories(${CUDA_INCLUDE_DIR})
   cuda_build_clean_target()
   set(cuda_build_cubin on)
+set(CUOPTS
+  -Xcompiler -fPIC --generate-code arch=compute_30,code=sm_30
+  DEBUG -g;-G
+  RELEASE --use_fast_math
+  RELWITHDEBINFO --use_fast_math;-g
+  MINSIZEREL --use_fast_math
+  )
 endif()
 
 
@@ -261,7 +268,7 @@ source_group("Source Files\\Qt Generated" FILES
 #
 
 #cuda_compile(FETCH_ALGO_CUDA_OUT STATIC ${FETCH_ALGO_CUDA} OPTIONS -arch=sm_20)
-cuda_compile(FETCH_ALGO_CUDA_OUT STATIC ${FETCH_ALGO_CUDA})
+cuda_compile(FETCH_ALGO_CUDA_OUT STATIC ${FETCH_ALGO_CUDA} OPTIONS ${CUDA_OPTS})
 
 # FETCH_SRCS is used below and by testing framework
 set(FETCH_SRCS

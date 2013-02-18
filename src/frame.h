@@ -144,113 +144,113 @@
 #include "types.h"
 
 namespace fetch{
-	
-	
-	enum MessageFormatID
-	{ FORMAT_INVALID           = 0,
-	  FRAME_INTERLEAVED_PLANES = 1,
-	  FRAME_INTERLEAVED_LINES,
-	  FRAME_INTERLEAVED_PIXELS,
-	};
-	
-	
-	class Message
-	{ public:
-	    MessageFormatID id;
-	    size_t          self_size;
-	    void           *data;
-      //Message        *next;
-	
-	    Message(void) : id(FORMAT_INVALID), self_size(sizeof(Message)), data(NULL) {}
-	    Message(MessageFormatID id, size_t self_size) : id(id), self_size(self_size), data(NULL) {}
-	
-	           void      to_file    ( FILE *fp );
-	           void      to_file    ( HANDLE hfile );
-	    static size_t    from_file  ( FILE *fp,     Message* workspace, size_t size_workspace);
-	    static size_t    from_file  ( HANDLE hfile, Message* workspace, size_t size_workspace);
-	
-	    static size_t    copy_data  ( Message *dst, Message *src ); // returns #bytes copied
-	
-	    // Override these in implementing classes.
-	    virtual size_t   size_bytes ( void ) = 0;
-	    virtual void     format     ( Message *unformatted ) = 0;           // This should simply copy the format metadata from "this" to "unformatted."
-	    static  size_t   translate  ( Message *dst, Message *src );         // The calling class determines the destination type
-	  
-	              void   cast(void);  // Update the virtual table according to the type id.  
-	  private:
-	    template<class MT> void __cast(void) { MT eg; memcpy(this,&eg,sizeof(void*));} // overwrites the virtual table pointer with the example's pointer
-	};
   
-	class FrmFmt : public Message
-	{ public:
-	    u32           width;
-	    u32           height;
-	    u8            nchan;
-	    u8            Bpp;
-	    Basic_Type_ID rtti;
-	
-	    FrmFmt(void);
-	    FrmFmt(u32 width, u32 height, u8 nchan, Basic_Type_ID type);
-	    FrmFmt(u32 width, u32 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size);
-	
-	    unsigned int   is_equivalent( FrmFmt *ref );
-	    void           dump( const char *filename,... );                    ///< performs printf-style string formating on filename.  Thread-safe.
-	
-	            size_t size_bytes      ( void );
-	            void   format          ( Message *unformatted );
-	};
-	
-	class Frame : public FrmFmt
-	{ public:
-	    Frame(void)                                                                                      {}
-	    Frame(u32 width, u32 height, u8 nchan, Basic_Type_ID type)                                       : FrmFmt(width,height,nchan,type) {}
-	    Frame(u32 width, u32 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size) : FrmFmt(width,height,nchan,type,id,self_size) {}
-	
-	
-	    virtual void   copy_channel    ( void *dst, size_t rowpitch, size_t ichan ) = 0;
-	    virtual void   compute_pitches ( size_t pitch[4] )                          = 0;
-	    virtual void   get_shape       ( size_t n[3] )                              = 0;
-	    
-	    void           totif           ( const char *filename, ... );       ///< performs printf-style string formating on filename.  Thread-safe.
-	    // Children also need to impliment (left over from Message):
-	    //             translate()
-	    //             format()    - but only if formatting data is added
-	};
-	
-	class Frame_With_Interleaved_Pixels : public Frame
-	{ public:
-	    Frame_With_Interleaved_Pixels(void) {}
-	    Frame_With_Interleaved_Pixels(u32 width, u32 height, u8 nchan, Basic_Type_ID type);
-	
-	              void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
-	    static  size_t   translate    ( Message *dst, Message *src );
-	    
-	    virtual void   compute_pitches ( size_t pitch[4] );
-	    virtual void   get_shape       ( size_t n[3] );
-	};
-	
-	class Frame_With_Interleaved_Lines : public Frame
-	{ public:
-	    Frame_With_Interleaved_Lines(void) {}
-	    Frame_With_Interleaved_Lines(u32 width, u32 height, u8 nchan, Basic_Type_ID type);
-	
-	              void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
-	    static  size_t   translate    ( Message *dst, Message *src );
-	    
-	    virtual void   compute_pitches ( size_t pitch[4] );
-	    virtual void   get_shape       ( size_t n[3] );
-	};
-	
-	class Frame_With_Interleaved_Planes : public Frame
-	{ public:
-	    Frame_With_Interleaved_Planes(void) {}
-	    Frame_With_Interleaved_Planes(u32 width, u32 height, u8 nchan, Basic_Type_ID type);
-	
-	              void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
-	    static  size_t   translate    ( Message *dst, Message *src );
-	    
-	    virtual void   compute_pitches ( size_t pitch[4] );
-	    virtual void   get_shape       ( size_t n[3] );
-	};
+  
+  enum MessageFormatID
+  { FORMAT_INVALID           = 0,
+    FRAME_INTERLEAVED_PLANES = 1,
+    FRAME_INTERLEAVED_LINES,
+    FRAME_INTERLEAVED_PIXELS,
+  };
+  
+  
+  class Message
+  { public:
+      MessageFormatID id;
+      size_t          self_size;
+      void           *data;
+      //Message        *next;
+  
+      Message(void) : id(FORMAT_INVALID), self_size(sizeof(Message)), data(NULL) {}
+      Message(MessageFormatID id, size_t self_size) : id(id), self_size(self_size), data(NULL) {}
+  
+             void      to_file    ( FILE *fp );
+             void      to_file    ( HANDLE hfile );
+      static size_t    from_file  ( FILE *fp,     Message* workspace, size_t size_workspace);
+      static size_t    from_file  ( HANDLE hfile, Message* workspace, size_t size_workspace);
+  
+      static size_t    copy_data  ( Message *dst, Message *src ); // returns #bytes copied
+  
+      // Override these in implementing classes.
+      virtual size_t   size_bytes ( void ) = 0;
+      virtual void     format     ( Message *unformatted ) = 0;           // This should simply copy the format metadata from "this" to "unformatted."
+      static  size_t   translate  ( Message *dst, Message *src );         // The calling class determines the destination type
+    
+                void   cast(void);  // Update the virtual table according to the type id.  
+    private:
+      template<class MT> void __cast(void) { MT eg; memcpy(this,&eg,sizeof(void*));} // overwrites the virtual table pointer with the example's pointer
+  };
+  
+  class FrmFmt : public Message
+  { public:
+      u32           width;
+      u32           height;
+      u8            nchan;
+      u8            Bpp;
+      Basic_Type_ID rtti;
+  
+      FrmFmt(void);
+      FrmFmt(u32 width, u32 height, u8 nchan, Basic_Type_ID type);
+      FrmFmt(u32 width, u32 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size);
+  
+      unsigned int   is_equivalent( FrmFmt *ref );
+      void           dump( const char *filename,... );                    ///< performs printf-style string formating on filename.  Thread-safe.
+  
+              size_t size_bytes      ( void );
+              void   format          ( Message *unformatted );
+  };
+  
+  class Frame : public FrmFmt
+  { public:
+      Frame(void)                                                                                      {}
+      Frame(u32 width, u32 height, u8 nchan, Basic_Type_ID type)                                       : FrmFmt(width,height,nchan,type) {}
+      Frame(u32 width, u32 height, u8 nchan, Basic_Type_ID type, MessageFormatID id, size_t self_size) : FrmFmt(width,height,nchan,type,id,self_size) {}
+  
+  
+      virtual void   copy_channel    ( void *dst, size_t rowpitch, size_t ichan ) = 0;
+      virtual void   compute_pitches ( size_t pitch[4] )                          = 0;
+      virtual void   get_shape       ( size_t n[3] )                              = 0;
+      
+      void           totif           ( const char *filename, ... );       ///< performs printf-style string formating on filename.  Thread-safe.
+      // Children also need to impliment (left over from Message):
+      //             translate()
+      //             format()    - but only if formatting data is added
+  };
+  
+  class Frame_With_Interleaved_Pixels : public Frame
+  { public:
+      Frame_With_Interleaved_Pixels(void) {}
+      Frame_With_Interleaved_Pixels(u32 width, u32 height, u8 nchan, Basic_Type_ID type);
+  
+                void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
+      static  size_t   translate    ( Message *dst, Message *src );
+      
+      virtual void   compute_pitches ( size_t pitch[4] );
+      virtual void   get_shape       ( size_t n[3] );
+  };
+  
+  class Frame_With_Interleaved_Lines : public Frame
+  { public:
+      Frame_With_Interleaved_Lines(void) {}
+      Frame_With_Interleaved_Lines(u32 width, u32 height, u8 nchan, Basic_Type_ID type);
+  
+                void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
+      static  size_t   translate    ( Message *dst, Message *src );
+      
+      virtual void   compute_pitches ( size_t pitch[4] );
+      virtual void   get_shape       ( size_t n[3] );
+  };
+  
+  class Frame_With_Interleaved_Planes : public Frame
+  { public:
+      Frame_With_Interleaved_Planes(void) {}
+      Frame_With_Interleaved_Planes(u32 width, u32 height, u8 nchan, Basic_Type_ID type);
+  
+                void   copy_channel ( void *dst, size_t rowpitch, size_t ichan );
+      static  size_t   translate    ( Message *dst, Message *src );
+      
+      virtual void   compute_pitches ( size_t pitch[4] );
+      virtual void   get_shape       ( size_t n[3] );
+  };
 
 } // end namespace fetch

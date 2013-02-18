@@ -75,7 +75,7 @@ typedef struct pipeline_t_
 // dst width must be aligned  to WORK*BX   (256)
 //     height must be aligned to BY*2      (64)
 // ilut must be aligned to WORK*BX and sized 2*dst width
-// 
+//
 template<typename T,    ///< pixel type (input and output)
          unsigned BX,   ///< block size in X
          unsigned BY,   ///< block size in Y (channel dimension unrolled into Y)
@@ -93,7 +93,7 @@ warp_kernel(pipeline_ctx_t ctx, const T* __restrict__ src, float* __restrict__ d
 #pragma unroll
     for(int i=0;i<WORK;++i)
     { const int j0=ilut[i*BX],
-                j1=ilut[i*BX+1]; 
+                j1=ilut[i*BX+1];
       float v0=0.0f,v1=0.0f;
       if(j0>0) v1=ctx.lut_norms1[j0-1]*src[j0-1];
       for(int j=j0;j<j1;++j)
@@ -101,10 +101,10 @@ warp_kernel(pipeline_ctx_t ctx, const T* __restrict__ src, float* __restrict__ d
       dst[i*BX]+=v0+v1;
     }
   } else { // backward scan
-#pragma unroll    
+#pragma unroll
     for(int i=0;i<WORK;++i)
     { const int j1=ilut[i*BX+1],
-                j0=ilut[i*BX+2]; 
+                j0=ilut[i*BX+2];
       float v0=0.0f;
       for(int j=j0;j<j1;++j)
         v0+=ctx.lut_norms0[j]*src[j];
@@ -131,7 +131,7 @@ cast_kernel(T*__restrict__ dst, const float* __restrict__ src, unsigned stride,c
 { const int ox=threadIdx.x+blockIdx.x*WORK*BX,
             oy=threadIdx.y+blockIdx.y*BY;
   //if(oy>=h) return; // for unaligned y, uncomment and add an argument to the kernel call
-  src+=ox+oy*stride;  
+  src+=ox+oy*stride;
   dst+=ox+oy*stride;
   #pragma unroll
   for(int i=0;i<WORK;++i)
@@ -296,7 +296,7 @@ static int pipeline_fill_lut(pipeline_t self, unsigned inwidth)
   CUTRY(cudaMemcpy(self->ctx.lut_norms0,norms,2*N*sizeof(*norms)  ,cudaMemcpyHostToDevice));
   self->ctx.lut_norms1=self->ctx.lut_norms0+N;
 
-Finalize:  
+Finalize:
   if(lut)   free(lut);
   if(ilut)  free(ilut);
   if(norms) free(norms);
@@ -364,6 +364,8 @@ static int launch(pipeline_t self, int *emit)
     cast_kernel<Tdst,BX,BY,WORK><<<blocks,threads>>>((Tdst*)self->dst,self->tmp,self->ctx.ostride*2,self->m,self->b);
     CUTRY(cudaGetLastError());
   }
+  if(*emit)
+    CUTRY(cudaMemset(self->tmp,0,self->nbytes_tmp));
   return 1;
 Error:
   return 0;
@@ -424,7 +426,7 @@ int pipeline_exec(pipeline_t self, pipeline_image_t dst, const pipeline_image_t 
   TRY(isaligned(src->h,BY_));
   TRY(isaligned(dst->w,BX_*WORK_));
   TRY(dst->h==2*src->h);
-  
+
   if(src->w>self->ctx.w)
   { TRY(pipeline_alloc_lut(self,src->w));
     TRY(pipeline_fill_lut(self,src->w));

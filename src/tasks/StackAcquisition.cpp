@@ -532,8 +532,8 @@ Finalize:
 Error:
           warning("Error occurred during ScanStack<%s> task."ENDL,TypeStr<TPixel>());
           ctx.ok=0;
-          if(fetch_thread && ctx.running)
-            Guarded_Assert_WinErr(WAIT_OBJECT_0==WaitForSingleObject(fetch_thread,INFINITE)); // need to make sure thread is stopped before exiting this function so ctx remains live
+          while(fetch_thread && ctx.running)
+            Guarded_Assert_WinErr__NoPanic(WAIT_OBJECT_0==WaitForSingleObject(fetch_thread,100)); // need to make sure thread is stopped before exiting this function so ctx remains live
           ecode=1;
           goto Finalize;
         }

@@ -14,7 +14,7 @@ TODO
   - read mode
   - read/write (append) mode
  */
-#define NTHREADS (32ULL)
+#define NTHREADS (16ULL)
 
 #if 0
 #define ECHO(estr)   LOG("---%30s()\t%s\n",__FUNCTION__,estr)

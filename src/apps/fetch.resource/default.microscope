@@ -150,9 +150,6 @@ fov {
     y_overlap_um: 20.0
     rotation_radians: 0.2 #0.785398163
   }
-resonant_wrap         { turn_px: 0 }
-horizontal_downsample { ntimes : 4 }
-frame_average         { ntimes : 1 }
 file_series {
   root:     "D:\\temp"
   date:     "unknown"

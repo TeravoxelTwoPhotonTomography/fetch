@@ -384,7 +384,7 @@ FailedIFDRead:
       nbytes = buf->size_bytes();
 
       //buf->dump("TiffStreamWriteTask-src.%s",TypeStrFromID(buf->rtti));
-      buf->totif("TiffStreamWriteTask-src.tif");
+      //buf->totif("TiffStreamWriteTask-src.tif");
 
       {
         goto_if_fail(tim=Create_Tiff_Image(buf->width,buf->height),FailedCreateTIFFImage);

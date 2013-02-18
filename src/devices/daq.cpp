@@ -161,7 +161,7 @@ namespace fetch {
       DAQJMP( DAQmxWriteAnalogF64(_ao.daqtask,
         N,
         0,                           // autostart?
-        1.0,                        // timeout (s) - to write - 0 causes write to fail if blocked at all
+        1.0,                         // timeout (s) - to write - 0 causes write to fail if blocked at all
         DAQmx_Val_GroupByChannel,
         data,
         &written,

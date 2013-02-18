@@ -100,3 +100,7 @@ void pipeline_image_conversion_params(pipeline_image_t dst,pipeline_image_t src,
   if(m) *m=(float)mm;
   if(b) *b=(float)bb;
 }
+
+void pipeline_image_set_data  (pipeline_image_t self, void *data)
+{ self->data=data;
+}

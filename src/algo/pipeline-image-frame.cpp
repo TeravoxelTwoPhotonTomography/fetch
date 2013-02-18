@@ -59,10 +59,10 @@ Error:
 fetch::Frame_With_Interleaved_Planes* pipeline_format_frame(pipeline_image_t self, fetch::Frame_With_Interleaved_Planes* f)
 { size_t oldbytes=f->size_bytes();
   fetch::Frame_With_Interleaved_Planes ref(self->w,self->h,self->nchan,frametype[self->type]);
-  f->format(&ref);
+  ref.format(f);
   if(oldbytes<f->size_bytes())
   { TRY(f=(fetch::Frame_With_Interleaved_Planes*)realloc(f,f->size_bytes()));
-    f->format(&ref);
+    ref.format(f);
   }
   return f;
 Error:
