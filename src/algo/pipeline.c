@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if 1
+#if 0
 #define ECHO(estr)   LOG("---\t%s\n",estr)
 #else
 #define ECHO(estr)
@@ -17,8 +17,9 @@
 #define ZERO(T,e,N)  memset((e),0,sizeof(T)*(N))
 #define countof(e)   (sizeof(e)/sizeof(*(e)))
 
-static size_t bytes[]={1,2,4,8,1,2,4,8,4,8};
+static unsigned bytes[]={1,2,4,8,1,2,4,8,4,8};
 
+// Some constants to help with intensity scaling for type conversion and intensity inversion.
 // Note: I don't actually care about scaling 64 bit types with the pipeline
 #define POW2(bits) ((double)(1ULL<<bits))
 static double range[]={
@@ -48,6 +49,32 @@ Error:
   return NULL;
 }
 
+
+/**
+ * Maybe allocs the pipeline_image_t struct, does not allocate the buffer for intensity data.
+ * @param  dst If this is not NULL, will reuse this struct.  Otherwise, allocates a new one.
+ * @param  ctx The context parameters.
+ * @param  src A description of the input image.
+ * @return     dst on success, otherwise NULL
+ */
+pipeline_image_t pipeline_make_dst_image(pipeline_image_t dst, const pipeline_t ctx, const pipeline_image_t src)
+{ unsigned w,h,nchan;
+  TRY(ctx && src);
+  if(!dst)
+    TRY(dst=pipeline_make_empty_image());
+  TRY(pipeline_get_output_dims(ctx,src,&w,&h,&nchan));
+  dst->w=w;
+  dst->h=h;
+  dst->nchan=nchan;
+  dst->type=src->type;
+  dst->stride=w;
+  dst->data=0;
+  return dst;
+Error:
+  return NULL;
+}
+
+
 void pipeline_free_image(pipeline_image_t *self)
 { if(self && *self) {free(*self); *self=0;}
 }
@@ -70,6 +97,6 @@ void pipeline_image_conversion_params(pipeline_image_t dst,pipeline_image_t src,
                y0 = (invert?maxs:mins) [(long)dst->type],
                mm = (invert?-1.0:1.0)*yr/xr,
                bb = y0-mm*x0;
-  if(m) *m=mm;
-  if(b) *b=bb;
+  if(m) *m=(float)mm;
+  if(b) *b=(float)bb;
 }

@@ -20,7 +20,7 @@ Basic_Type_Attribute g_type_attributes[] = {
 //template<> inline Basic_Type_ID TypeID<char>(void) {return id_i8; }
 //template<> inline Basic_Type_ID TypeID<short>(void) {return id_i16;}
 
-char *TypeStrFromID(Basic_Type_ID id)
+const char *TypeStrFromID(Basic_Type_ID id)
 {
   switch(id)
   { 

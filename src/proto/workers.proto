@@ -19,3 +19,9 @@ message FrameAverage
 {
   optional int32 ntimes = 1 [default=1];
 }
+
+message Pipeline
+{ optional uint32 frame_average_count = 1 [default=0];
+  optional uint32 downsample_count    = 2 [default=1];
+  optional bool   invert_intensity    = 3 [default=false];
+}

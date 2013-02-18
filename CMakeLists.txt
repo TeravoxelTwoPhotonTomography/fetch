@@ -196,7 +196,7 @@ file(GLOB FETCH_UTIL_SRCS src/util/*.cpp src/util/*.c)
 source_group("Source Files\\util" FILES ${FETCH_UTIL_SRCS})
 
 file(GLOB FETCH_ALGO_HDRS src/algo/*.h)
-file(GLOB FETCH_ALGO_SRCS src/algo/*.c)
+file(GLOB FETCH_ALGO_SRCS src/algo/*.c src/algo/*.cpp)
 file(GLOB FETCH_ALGO_CUDA src/algo/*.cu)
 source_group("Header Files\\Algorithms" FILES
   ${FETCH_ALGO_HDRS}

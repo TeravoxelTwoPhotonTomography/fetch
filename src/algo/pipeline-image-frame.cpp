@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if 1
+#if 0
 #define ECHO(estr)   LOG("---\t%s\n",estr)
 #else
 #define ECHO(estr)
@@ -22,16 +22,49 @@ const pipeline_type_id typetable[]=
 { u8_id,u16_id,u32_id,u64_id,
   i8_id,i16_id,i32_id,i64_id,
                f32_id,f64_id};
+const Basic_Type_ID frametype[]= /* Gross -_- */
+{ id_u8,
+  id_u16,
+  id_u32,
+  id_u64,
+  id_i8,
+  id_i16,
+  id_i32,
+  id_i64,
+  id_f32,
+  id_f64
+};
 
 pipeline_image_t pipeline_set_image_from_frame(pipeline_image_t self, fetch::Frame_With_Interleaved_Planes* f)
-{ TRY(self && f);
+{ TRY(f);
+  if(!self)
+    TRY(self=pipeline_make_empty_image());
   self->w=f->width;
   self->h=f->height;
   self->nchan=f->nchan;
-  self->stride=f->width*f->Bpp;
+  self->stride=f->width; // number of elements
   self->type=typetable[(long)f->rtti];
   self->data=f->data;
   return self;
+Error:
+  return NULL;
+}
+
+/**
+ * Set the dimensions of f according to self.  May reallocate f.
+ * @param  self          The reference image.
+ * @param  f             The frame buffer to format.
+ * @return               The possibly reallocated frame pointer on success, otherwise 0.
+ */
+fetch::Frame_With_Interleaved_Planes* pipeline_format_frame(pipeline_image_t self, fetch::Frame_With_Interleaved_Planes* f)
+{ size_t oldbytes=f->size_bytes();
+  fetch::Frame_With_Interleaved_Planes ref(self->w,self->h,self->nchan,frametype[self->type]);
+  f->format(&ref);
+  if(oldbytes<f->size_bytes())
+  { TRY(f=(fetch::Frame_With_Interleaved_Planes*)realloc(f,f->size_bytes()));
+    f->format(&ref);
+  }
+  return f;
 Error:
   return NULL;
 }

@@ -22,6 +22,7 @@ int        pipeline_get_output_dims(pipeline_t ctx,
 int        pipeline_exec           (pipeline_t ctx, pipeline_image_t dst, const pipeline_image_t src, int *emit);
 
 pipeline_image_t pipeline_make_empty_image();
+pipeline_image_t pipeline_make_dst_image(pipeline_image_t dst, const pipeline_t ctx, const pipeline_image_t src); // maybe allocs the pipeline_image_t struct, does not allocate the buffer for intensity data.
 void             pipeline_free_image      (pipeline_image_t *self);
 unsigned         pipeline_image_nelem     (pipeline_image_t  self);
 unsigned         pipeline_image_nbytes    (pipeline_image_t  self);

@@ -24,10 +24,7 @@ message Microscope
   required Stage                       stage                 = 2;
   optional Vibratome                   vibratome             = 3;
   optional FieldOfViewGeometry         fov                   = 4;
-  required worker.ResonantWrap         resonant_wrap         = 5;
-  optional worker.ResonantUnwarp       resonant_unwarp       = 13;
-  required worker.HorizontalDownsample horizontal_downsample = 6;
-  required worker.FrameAverage         frame_average         = 7;
+  optional worker.Pipeline             pipeline              = 5;
   required FileSeries                  file_series           = 8;
   optional string                      file_prefix           = 9 [default="default"];
   optional string                      stack_extension       =10 [default=".tif"];

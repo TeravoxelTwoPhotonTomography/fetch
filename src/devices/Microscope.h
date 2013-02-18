@@ -16,14 +16,8 @@
 #include "task.h"
 #include "microscope.pb.h"
 
-#include "workers/FrameAverage.h"
-#include "workers/HorizontalDownsampler.h"
+#include "workers/Pipeline.h"
 #include "workers/Terminator.h"
-#include "workers/FrameCaster.h"
-#include "workers/ResonantWrap.h"
-#include "workers/ResonantUnwarp.h"
-#include "workers/FrameInvert.h"
-#include "workers/FrameFormater.h"
 
 #include "devices/scanner3D.h"
 #include "devices/DiskStream.h"
@@ -130,14 +124,7 @@ namespace fetch
       device::Vibratome                     vibratome_;
       device::FieldOfViewGeometry           fov_;
 
-      worker::FrameAverageAgent 	          frame_averager;
-      worker::HorizontalDownsampleAgent     pixel_averager;
-      worker::FrameCastAgent_i16            cast_to_i16;
-      worker::FrameCastAgent_u16            cast_to_u16;
-      worker::FrameInvertAgent              inverter;
-      worker::ResonantWrapAgent             wrap;
-      worker::ResonantUnwarpAgent           unwarp;
-      worker::FrameFormatterAgent           frame_formatter;
+      worker::PipelineAgent                 pipeline;
 
       worker::TerminalAgent		              trash;
       device::TiffGroupStream               disk;

@@ -86,6 +86,7 @@ namespace fetch
       virtual void   setup(int nrecords, double record_frequency_Hz, double duty) = 0;
       virtual size_t record_size(double record_frequency_Hz, double duty) = 0;
       virtual size_t nchan() = 0;
+      virtual unsigned sample_rate_MHz()=0; // in principle, there's no reason why this has to be MHz. see pipeline.
 
       virtual bool   aux_info(int *n, size_t **sizes) { *n=0; return 0; }
       virtual void   onUpdate() {};
@@ -118,6 +119,7 @@ namespace fetch
       virtual void   setup(int nrecords, double record_frequency_Hz, double duty);
       virtual size_t record_size(double record_frequency_Hz, double duty);
       virtual size_t nchan() {return _config->nchannels();}
+      virtual unsigned sample_rate_MHz() {return _config->sample_rate()/1e6;}
 
       virtual bool   aux_info(int *n, size_t **sizes);
     public:
@@ -149,6 +151,7 @@ namespace fetch
       virtual void setup(int nrecords, double record_frequency_Hz, double duty);
       virtual size_t record_size(double record_frequency_Hz, double duty);
       virtual size_t nchan();
+      virtual unsigned sample_rate_MHz() {return (unsigned)(sample_rate()/1.0e6);}
 
       void get_image_size(unsigned *w, unsigned *h); // size of the raw frame returned by the digitizer (as configured).
 
@@ -171,6 +174,7 @@ namespace fetch
       virtual void setup(int nrecords, double record_frequency_Hz, double duty) {}
       size_t SimulatedDigitizer::record_size( double record_frequency_Hz, double duty );
       virtual size_t nchan() {return _config->nchan();}
+      virtual unsigned sample_rate_MHz() {return _config->sample_rate()/1e6;}
     };
 
     ////////////////////////////////////////////////////////////
@@ -194,6 +198,7 @@ namespace fetch
 
       virtual size_t record_size(double record_frequency_Hz, double duty) {return _idigitizer->record_size(record_frequency_Hz,duty);}
       virtual size_t nchan() {return _idigitizer->nchan();}
+      virtual unsigned sample_rate_MHz() {return _idigitizer->sample_rate_MHz();}
 
       virtual bool aux_info(int *n, size_t **sizes) {return _idigitizer->aux_info(n,sizes);}
 

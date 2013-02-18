@@ -54,7 +54,7 @@ template<> inline Basic_Type_ID TypeID<f64>(void) {return id_f64;}
 // To string
 //
 
-char *TypeStrFromID(Basic_Type_ID id);
+const char *TypeStrFromID(Basic_Type_ID id);
 
 template<typename T> inline const char* TypeStr(void);
 template<> inline const char* TypeStr<u8 >(void) {return "u8"; }
