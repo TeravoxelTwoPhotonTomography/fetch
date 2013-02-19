@@ -32,6 +32,26 @@ TODO
 #define NBS_NEW(T,e,N)     TRY((e)=(T*)(ctx)->malloc(sizeof(T)*(N)))
 #define NBS_REALLOC(T,e,N) TRY((e)=(T*)(ctx)->realloc((e),sizeof(T)*(N)))
 
+/** Global error flag will record if a defered write fails.
+    A failure causes future nbs_open calls to fail.
+*/
+static struct nbs_error_t
+{ SRWLOCK lock;
+  unsigned eflag;
+} nbs_error_g={SRWLOCK_INIT,0};
+
+static void nbs_errset()
+{ AcquireSRWLockExclusive(&nbs_error_g.lock);
+  nbs_error_g.eflag=1;
+  ReleaseSRWLockExclusive(&nbs_error_g.lock);
+}
+static unsigned nbs_isok()
+{ unsigned isok;
+  AcquireSRWLockShared(&nbs_error_g.lock);
+  isok=nbs_error_g.eflag==0;
+  ReleaseSRWLockShared(&nbs_error_g.lock);
+  return isok;
+}
 
 typedef struct _nbs_stream_t
 { native_buffered_stream_malloc_func  malloc;
@@ -56,6 +76,7 @@ stream_t native_buffered_stream_open(const char *filename,stream_mode_t mode)
 { stream_t self;
   nbs_stream_t ctx=0;
   int i;
+  TRY(nbs_isok());
   NEW(struct _nbs_stream_t,ctx,1);
   ZERO(struct _nbs_stream_t,ctx,1);
   switch(mode)
@@ -149,10 +170,9 @@ Error:
   return 0;
 }
 
-int native_buffered_stream_flush(stream_t stream)
-{ DECL_CTX;
-  int i,isok=1;
-  HANDLE ts[NTHREADS]={0};
+static int native_buffered_stream_flush_ctx(nbs_stream_t ctx)
+{ int i,isok=1;
+  //HANDLE ts[NTHREADS]={0};
 #if 1
   struct _thread_ctx_t tc[NTHREADS]={0};
   size_t chunksize=(ctx->len+NTHREADS-1)/NTHREADS; // ciel(len/NTHREADS)
@@ -164,8 +184,9 @@ int native_buffered_stream_flush(stream_t stream)
     tc[i].i=i;
   }
   for(i=0;i<NTHREADS;++i)
-    TRY(ts[i]=CreateThread(NULL,0,writer,(void*)(tc+i),0,NULL));
-  WaitForMultipleObjects(countof(ts),ts,TRUE,INFINITE);
+    TRY(QueueUserWorkItem(writer,(void*)(tc+i),WT_EXECUTEINIOTHREAD));
+  //TRY(ts[i]=CreateThread(NULL,0,writer,(void*)(tc+i),0,NULL));
+  WaitForMultipleObjects(NTHREADS,ctx->evts,TRUE,INFINITE);
 #else
   { FILE *fp=0;
     fp=fopen("test.tif","wb");
@@ -174,14 +195,19 @@ int native_buffered_stream_flush(stream_t stream)
   }
 #endif
 Finalize:
-  for(i=0;i<NTHREADS;++i) if(ts[i]) CloseHandle(ts[i]);
+  //for(i=0;i<NTHREADS;++i) if(ts[i]) CloseHandle(ts[i]);
   ctx->len=0; ctx->pos=0; // empty buffer now that everything is written
   return isok;
 Error:
   isok=0;
+  nbs_errset();
   goto Finalize;
 }
 
+int native_buffered_stream_flush(stream_t stream)
+{ DECL_CTX;
+  return native_buffered_stream_flush_ctx(ctx);
+}
 //
 // --- PRIVATE IMPLEMENTATION OF STREAM INTERFACE ---
 //
@@ -251,13 +277,19 @@ Error:
   return -1;
 }
 
-void   nbs_close   (stream_t stream)
-{ DECL_CTX;
+DWORD WINAPI defered_close(LPVOID p)
+{ nbs_stream_t ctx=(nbs_stream_t)p;
   int i;
-  if(ctx) native_buffered_stream_flush(stream);
+  if(ctx) native_buffered_stream_flush_ctx(ctx);
   if(ctx && ctx->buf && ctx->free) ctx->free(ctx->buf);
   for(i=0;i<NTHREADS;++i) CloseHandle(ctx->evts[i]);
   if(ctx->fd) CloseHandle(ctx->fd);
   free(ctx);
+}
+
+void   nbs_close   (stream_t stream)
+{ DECL_CTX;
   stream_set_user_data(stream,0,0);
+  TRY(QueueUserWorkItem(defered_close,ctx,WT_EXECUTEDEFAULT));
+Error:;
 }

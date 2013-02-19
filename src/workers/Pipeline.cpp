@@ -107,6 +107,7 @@ namespace fetch
         TRY(fdst=pipeline_format_frame(pipedst,fdst)); // maybe realloc fdst and format the frame.
         pipeline_image_set_data(pipedst,fdst->data);
         TRY(pipeline_exec(ctx,pipedst,pipesrc,&emit));
+        TS_TOC;
         if(emit)
         { //REMIND(fdst->totif("pipeline-dst.tif"));
           TRY(CHAN_SUCCESS(Chan_Next(writer,(void**)&fdst,fdst->size_bytes())));
@@ -116,7 +117,6 @@ namespace fetch
             ref.format(fdst);
           }
         }
-        TS_TOC;
       }
 Finalize:
       TS_CLOSE;

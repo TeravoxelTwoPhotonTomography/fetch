@@ -476,12 +476,12 @@ Error:
           frm = (Frame*)Chan_Token_Buffer_Alloc(q);
           ref.format(frm);
           TRY(dig->start());
-          TS_TIC;
           TRY(dig->fetch(frm)); // first dead frame to set to zmin
           for(i=0;i<nframes && !d->_agent->is_stopping() && ctx->ok;++i)
-          { TRY(dig->fetch(frm));
-            TRY(CHAN_SUCCESS(SCANNER_PUSH(q,(void**)&frm,nbytes)));
+          { TS_TIC;
+            TRY(dig->fetch(frm));
             TS_TOC;
+            TRY(CHAN_SUCCESS(SCANNER_PUSH(q,(void**)&frm,nbytes)));
             ref.format(frm);
           }
           TRY(dig->fetch(frm)); // last dead frame to set back to zmin
@@ -508,12 +508,12 @@ Error:
           d->generateAOConstZ(ummin);                                           // first frame is a dead frame to lock to ummin
           d->writeAO();
           TRY(!d->_scanner2d._daq.startCLK());
-          d->_scanner2d._shutter.Open();
+          //d->_scanner2d._shutter.Open();
           TRY(!d->_scanner2d._daq.startAO());
           Guarded_Assert_WinErr(fetch_thread=CreateThread(NULL,0,alazar_fetch_stack_thread,&ctx,0,NULL));
-          TS_TIC;
           for(z_um=ummin; ((ummax-z_um)/umstep)>=-0.5f && ctx.running;z_um+=umstep)
-          { d->generateAORampZ(z_um);
+          { TS_TIC;
+            d->generateAORampZ(z_um);
             TRY(!d->writeAO());
             TS_TOC;
           }

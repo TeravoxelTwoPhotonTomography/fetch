@@ -308,7 +308,7 @@ Error:
       ao=_ao.daqtask;
       DAQERR(DAQmxCreateAOVoltageChan (ao,terms,NULL,vmin,vmax,DAQmx_Val_Volts,NULL));
       DAQERR(DAQmxCfgSampClkTiming    (ao,clk,hz,DAQmx_Val_Rising,DAQmx_Val_ContSamps,N));
-      DAQERR(DAQmxCfgOutputBuffer     (ao,N));
+      DAQERR(DAQmxCfgOutputBuffer     (ao,10*N));
       DAQERR(DAQmxSetWriteRegenMode   (ao,DAQmx_Val_DoNotAllowRegen));
       DAQERR(DAQmxSetWriteRelativeTo  (ao,DAQmx_Val_CurrWritePos));
       DAQERR(DAQmxSetAODataXferMech   (ao,terms,DAQmx_Val_DMA));

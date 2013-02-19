@@ -543,7 +543,9 @@ DBG("Entering Loop");
           mylib::Tiff* tif=0;
           stream_t s=0;
 #if 1
-          TIFFTRY(tif=Open_Tiff_Stream(s=native_buffered_stream_open(fname.c_str(),STREAM_MODE_WRITE),"w"));
+          TRY(s=native_buffered_stream_open(fname.c_str(),STREAM_MODE_WRITE));
+          TRY(native_buffered_stream_reserve(s,256*1024*1024));
+          TIFFTRY(tif=Open_Tiff_Stream(s,"w"));
           streams.push_back(s);
 #else
           //TIFFTRY(tif=Open_Tiff((mylib::string)fname.c_str(),"w"));

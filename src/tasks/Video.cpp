@@ -410,11 +410,12 @@ Error:
         frm = (Frame*)Chan_Token_Buffer_Alloc(q);
         ref.format(frm);
         TRY(dig->start());
-        TS_TIC;
+        //TS_TIC;
         while(!d->_agent->is_stopping() && ctx->ok)
-        { TRY(dig->fetch(frm));
-          TRY(CHAN_SUCCESS(SCANNER_PUSH(q,(void**)&frm,nbytes)));
+        { TS_TIC;
+          TRY(dig->fetch(frm));
           TS_TOC;
+          TRY(CHAN_SUCCESS(SCANNER_PUSH(q,(void**)&frm,nbytes)));
           ref.format(frm);
         }
 Finalize:

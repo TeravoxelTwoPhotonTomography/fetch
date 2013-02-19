@@ -10,7 +10,7 @@
 #include "cuda_runtime.h"
 
 #define BX_   (32)
-#define BY_   (8)
+#define BY_   (4)
 #define WORK_ (8)
 
 #if 0
@@ -277,8 +277,8 @@ static int pipeline_fill_lut(pipeline_t self, unsigned inwidth)
     for(unsigned i=0;i<halfw;++i)
       if(last!=lut[i])
         ilut[last=lut[i]]=i;
-    ilut[ow  ]=inwidth/2;
-    ilut[ow+1]=inwidth; // add elements to deal with discontinuity
+    ilut[ow  ]=inwidth/2;  // add elements to deal with discontinuity
+    ilut[ow+1]=inwidth-1;  // truncate at inwidth -1 to prevent overflow
     ilut+=2;
     for(unsigned i=halfw;i<inwidth;++i)
       if(last!=lut[i])
