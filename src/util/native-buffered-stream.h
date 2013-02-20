@@ -1,5 +1,8 @@
 #pragma once
 #ifdef __cplusplus
+typedef mylib::stream_mode_t stream_mode_t;
+typedef mylib::stream_t stream_t;
+
 extern "C" {
 #endif
 

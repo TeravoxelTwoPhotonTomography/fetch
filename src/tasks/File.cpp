@@ -11,7 +11,8 @@
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
 
-#include "util/util-mylib.h"
+#include "util/util-mylib.h"                                
+#include "util/native-buffered-stream.h"
 #include <string>
 #include <sstream>
 #include "devices/DiskStream.h"
@@ -458,6 +459,7 @@ FailedWriteIFD:
   /////////////////////////////////////////////////////////////////////////////
   //  TIFF GROUP STREAM WRITER  ///////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
+
   /** \class TiffGroupStreamWriteTask
       Appends the colors from each image to corresponding tiff stacks.
 
@@ -483,18 +485,93 @@ FailedWriteIFD:
 
       \todo what if the number of channels changes
   */
-  unsigned int TiffGroupStreamWriteTask::config(device::TiffGroupStream *dc)
-  { return 1; }
 
 #define ENDL "\r\n"
-#define TRY(e)     if(!(e)) {warning("%s(%d):"ENDL "\t%s"ENDL "\tExpression evaluated to false."ENDL,__FILE__,__LINE__,#e); goto Error;}
-#define TIFFTRY(e) if(!(e)) {warning("%s(%d):"ENDL "\t%s"ENDL "\t[TIFF] Expression evaluated to false."ENDL "%s",__FILE__,__LINE__,#e,(const char*)Image_Error()); Image_Error_Release(); goto Error;}
+#define TRY(e)     do{ DBG(#e); if(!(e)) {warning("%s(%d):"ENDL "\t%s"ENDL "\tExpression evaluated to false."ENDL,__FILE__,__LINE__,#e); goto Error;} }while(0)
+#define TIFFTRY(e) do{ DBG(#e); if(!(e)) {warning("%s(%d):"ENDL "\t%s"ENDL "\t[TIFF] Expression evaluated to false."ENDL "%s",__FILE__,__LINE__,#e,(const char*)Image_Error()); Image_Error_Release(); goto Error;} }while(0)
 #define TODO       error("%s(%d): [TODO] Not Implemented\r\n",__FILE__,__LINE__)
-#ifdef DEBUG
+#if 0
 #define DBG(msg)   debug("%s(%d): %s"ENDL "\t%s"ENDL,__FILE__,__LINE__,__FUNCTION__,msg)
 #else
 #define DBG(msg)
 #endif
+#define countof(e) (sizeof(e)/sizeof(*(e)))
+
+  // Allocate storage for the native buffered stream from a shallow pool of
+  //.buffers.  Will block none are available
+  static struct bufs_t_
+  { void *p;
+    size_t sz;
+    unsigned           inuse;
+    CONDITION_VARIABLE available;
+  } bufs_[8]={0};  // want two per channel
+
+  static SRWLOCK bufs_lock_={0};
+  static int     ibufs_=0;
+
+  static void lock()   {AcquireSRWLockExclusive(&bufs_lock_);}
+  static void unlock() {ReleaseSRWLockExclusive(&bufs_lock_);}
+
+  static void* bufs_alloc__inlock(size_t nbytes)
+  { void *p=0;
+    struct bufs_t_ *b=bufs_+ibufs_;
+    ibufs_= (ibufs_+1)%countof(bufs_);
+    DBG("TiffGroupStreamWriter: Buffer %5u -- WAIT"ENDL, (unsigned) (ibufs_));
+    while(b->inuse)
+      TRY(SleepConditionVariableSRW(&b->available,&bufs_lock_,INFINITE,0));
+    DBG("TiffGroupStreamWriter: Buffer %5u -- OPEN"ENDL, (unsigned) (ibufs_));
+    if(b->sz<nbytes)
+    { TRY(b->p=realloc(b->p,b->sz=nbytes));
+    }
+    p=b->p;
+    b->inuse=1;
+  Error:
+    return p;
+  }
+
+  static void* bufs_alloc(size_t nbytes)
+  { void *p=0;
+    lock();
+    p=bufs_alloc__inlock(nbytes);
+    unlock();
+    return p;
+  }
+
+  static void bufs_free(void *p)
+  { struct bufs_t_ *b=bufs_+countof(bufs_);
+    lock();
+    while(b-->bufs_ && p!=b->p);
+    TRY(b->p==p);
+    DBG("TiffGroupStreamWriter: Buffer %5u -- RELEASE"ENDL, (unsigned) (b-bufs_));
+    b->inuse=0;
+    WakeConditionVariable(&b->available);
+Error:
+    unlock();
+  }
+
+  static void* bufs_realloc(void *p,size_t nbytes)
+  { struct bufs_t_ *b=bufs_+countof(bufs_);
+    lock();
+    if(!p)
+      TRY(p=bufs_alloc__inlock(nbytes));
+    else
+    { while(b-->bufs_ && p!=b->p);
+      TRY(b->p==p);
+      TRY(b->inuse==1); // sanity check
+      if(b->sz<nbytes)
+      { nbytes = 4096*( (unsigned)((1.5f*nbytes+4096.0f)/4096)); // geometric size increase aligned to 4096 bytes
+        TRY(p=b->p=realloc(b->p,b->sz=nbytes));
+      }
+    }    
+Finalize:
+    unlock();
+    return p;
+Error:
+    p=NULL;
+    goto Finalize;
+  }
+  unsigned int TiffGroupStreamWriteTask::config(device::TiffGroupStream *dc)
+  { return 1; }
 
   /** \todo Find out (and fix) what happens when the root name lacks an extension */
   static ::std::string gen_name(const ::std::string & root, int i)
@@ -513,7 +590,7 @@ FailedWriteIFD:
     Chan                          *q  =0;
     Frame_With_Interleaved_Planes *buf=0;
     size_t                         nbytes;
-    std::vector<stream_t>          streams;
+    std::vector<mylib::stream_t>   streams;
     int                            i;
     TS_OPEN("timer-TiffGroupStreamWrite.f32");
 #ifdef DEBUG_FAST_EXIT
@@ -539,20 +616,21 @@ DBG("Entering Loop");
       { // maybe append writer
         if(i>=dc->_writers.size())
         { device::TiffGroupStream::Config c = dc->get_config();
+          TicTocTimer t;
           ::std::string fname = gen_name(c.path(),i);
           mylib::Tiff* tif=0;
-          stream_t s=0;
-#if 1
+          mylib::stream_t s=0;
+          t=tic();
           TRY(s=native_buffered_stream_open(fname.c_str(),STREAM_MODE_WRITE));
-          TRY(native_buffered_stream_reserve(s,256*1024*1024));
+          native_buffered_stream_set_malloc_func (s,bufs_alloc);
+          native_buffered_stream_set_realloc_func(s,bufs_realloc);
+          native_buffered_stream_set_free_func   (s,bufs_free);
+          TRY(native_buffered_stream_reserve(s,256*1024*1024)); // one stack's worth per channel
           TIFFTRY(tif=Open_Tiff_Stream(s,"w"));
+          debug("Tiff Stream Open: %f msec\r\n",toc(&t));
           streams.push_back(s);
-#else
-          //TIFFTRY(tif=Open_Tiff((mylib::string)fname.c_str(),"w"));
-#endif
           dc->_writers.push_back(tif);
         }
-
         // Write out channel
         { mylib::Tiff* w = dc->_writers[i];
           Array_Bundle tmp = dummy;
