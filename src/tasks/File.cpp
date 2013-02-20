@@ -11,7 +11,7 @@
  * license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
  */
 
-#include "util/util-mylib.h"                                
+#include "util/util-mylib.h"
 #include "util/native-buffered-stream.h"
 #include <string>
 #include <sstream>
@@ -562,7 +562,7 @@ Error:
       { nbytes = 4096*( (unsigned)((1.5f*nbytes+4096.0f)/4096)); // geometric size increase aligned to 4096 bytes
         TRY(p=b->p=realloc(b->p,b->sz=nbytes));
       }
-    }    
+    }
 Finalize:
     unlock();
     return p;
@@ -586,7 +586,7 @@ Error:
 #define DEBUG_FAST_EXIT
 #include <util/native-buffered-stream.h>
   unsigned int TiffGroupStreamWriteTask::run(device::TiffGroupStream *dc)
-  { int                            isok;
+  { int                            ecode=0;
     Chan                          *q  =0;
     Frame_With_Interleaved_Planes *buf=0;
     size_t                         nbytes;
@@ -647,7 +647,6 @@ DBG("Entering Loop");
     dc->_writers.clear();
     //for(i=0;i<streams.size();++i)
     //  TRY(native_buffered_stream_flush(streams[i]));
-    isok=1;
 Finalize:
     DBG("Done.");
     TS_CLOSE;
@@ -657,9 +656,9 @@ Finalize:
 #endif
     if(q)   Chan_Close(q);
     if(buf) Chan_Token_Buffer_Free(buf);
-    return isok;
+    return ecode;
 Error:
-    isok = 0;
+    ecode = 1;
     goto Finalize;
   }
 

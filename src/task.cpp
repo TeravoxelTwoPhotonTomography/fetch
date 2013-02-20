@@ -13,6 +13,7 @@ namespace fetch
       Agent   *a    = dc->_agent;
       Task    *task = a->_task;
       result =  task->run(dc);
+      a->_last_run_result=result;
       if(a->_is_running)
         a->stop_nowait(); // ensures thread gets cleaned up if a->stop() wasn't explicitly called.
       // Note to self: should probably take care of any

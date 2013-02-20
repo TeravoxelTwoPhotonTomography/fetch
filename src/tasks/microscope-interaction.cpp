@@ -96,6 +96,7 @@ namespace fetch
           }
           eflag |= dc->stopPipeline(); // wait till the end of the pipeline stops
           eflag |= (dc->trash._agent->stop()!=1);
+          eflag |= dc->__scan_agent.last_run_result();
           dc->transaction_unlock();
         }
         //dc->__scan_agent.disarm();

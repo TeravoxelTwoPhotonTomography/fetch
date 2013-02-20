@@ -34,7 +34,7 @@ namespace fetch
 
   inline void
     Agent::lock(void)
-  { 
+  {
       LOCKDBG("[%s] (-) LockCount: %d\r\n",name(),_lock.LockCount);
       EnterCriticalSection(&_lock);
       LOCKDBG("[%s] (+) LockCount: %d\r\n",name(),_lock.LockCount);
@@ -42,7 +42,7 @@ namespace fetch
 
   inline void
     Agent::unlock(void)
-    { 
+    {
       LOCKDBG("[%s] (+) Un LockCount: %d\r\n",name(), _lock.LockCount);
       LeaveCriticalSection(&_lock);
       LOCKDBG("[%s] (-) Un LockCount: %d\r\n",name(), _lock.LockCount);
@@ -55,11 +55,12 @@ namespace fetch
       _owner(owner),
       _task(NULL),
       _num_waiting(0),
-      _name(0)
+      _name(0),
+      _last_run_result(0)
     {
        __common_setup();
     }
-    
+
     Agent::Agent(char *name, IDevice *owner) :
       _thread(INVALID_HANDLE_VALUE),
       _is_available(0),
@@ -67,7 +68,8 @@ namespace fetch
       _owner(owner),
       _task(NULL),
       _num_waiting(0),
-      _name(name)
+      _name(name),
+      _last_run_result(0)
     {
       __common_setup();
     }
@@ -79,7 +81,7 @@ namespace fetch
                 ReportLastWindowsError();
         *h = INVALID_HANDLE_VALUE;
     }
-    
+
     Agent::~Agent(void)
     {
         //if(this->detach() > 0)                                       // FIXME: This doesn't work
@@ -94,14 +96,14 @@ namespace fetch
         _task = NULL;
         _owner = NULL;
     }
-    
+
     /* Returns 1 on success, 0 otherwise.
     * Possibly generates a panic shutdown.
     * Lack of success could indicate the lock was
     *   abandoned or a timeout elapsed.
     * A warning will be generated if the lock was
     *   abandoned.
-    * Return of 0 indicates a timeout or an 
+    * Return of 0 indicates a timeout or an
     *   abandoned wait.
     */
     inline unsigned Agent::_handle_wait_for_result(DWORD result, const char *msg)
@@ -115,7 +117,7 @@ namespace fetch
             warning("Agent: Wait timeout\r\n\t%s\r\n", msg);
 
         return 0;
-    }   
+    }
 
     inline unsigned Agent::_wait_till_available(DWORD timeout_ms)
     {
@@ -152,6 +154,10 @@ namespace fetch
     { return is_available() || this->_task != NULL;
     }
 
+    unsigned int Agent::last_run_result()
+    { return _last_run_result;
+    }
+
     unsigned int Agent::is_armed(void)
     {
         return this->_task != NULL;
@@ -172,10 +178,10 @@ namespace fetch
     {
         return this->_is_running;
     }
-    
+
     unsigned int Agent::is_stopping(void)
     { DWORD res = WaitForSingleObject(_notify_stop, 0);
-      return WAIT_OBJECT_0 == res; 
+      return WAIT_OBJECT_0 == res;
     }
 
     void Agent::set_available(void)
@@ -183,16 +189,16 @@ namespace fetch
         //Notify waiting tasks
         this->_is_available = 1;
         if( this->_num_waiting > 0 )
-        Guarded_Assert_WinErr(SetEvent(this->_notify_available));        
+        Guarded_Assert_WinErr(SetEvent(this->_notify_available));
     }
 
     unsigned int Agent::wait_till_stopped(DWORD timeout_ms)
-    { unsigned int sts = 0;      
-      if( this->_thread != INVALID_HANDLE_VALUE )      
+    { unsigned int sts = 0;
+      if( this->_thread != INVALID_HANDLE_VALUE )
         // thread could still become invalidated between if and wait, but need to enter wait unlocked
         // I expect Wait will return WAIT_FAILED immediately if that's the case, so this isn't really
         // a problem.
-        sts = WaitForSingleObject(this->_thread,timeout_ms) == WAIT_OBJECT_0;      
+        sts = WaitForSingleObject(this->_thread,timeout_ms) == WAIT_OBJECT_0;
       return sts;
     }
 
@@ -210,7 +216,7 @@ namespace fetch
       {
         warning("[%s] Agent unavailable.  Perhaps another task is running?\r\n\tAborting attempt to arm.\r\n",name());
         goto Error;
-      }      
+      }
       // Exec task config function
       if(!(task->config)(dc)){
         warning("[%s] While loading task, something went wrong with the task configuration.\r\n\tAgent not armed.\r\n",name());
@@ -228,7 +234,7 @@ namespace fetch
       unlock();
       DBG_ARMED;
       return 0;
-Error:             
+Error:
       _is_available = 1;
       _task = NULL;
       unlock();
@@ -283,12 +289,12 @@ Error:
         Chan_Close(writer);
 
         BOOL sts;
-        sts = QueueUserWorkItem(&_agent_arm_thread_proc, (void*)q, NULL /*default flags*/);        
+        sts = QueueUserWorkItem(&_agent_arm_thread_proc, (void*)q, NULL /*default flags*/);
         return sts;
     }
 
     unsigned int Agent::disarm(DWORD timeout_ms)
-    { 
+    {
       unsigned int sts = 1; //success
       if(this->_is_running)
         // Source state can be running or armed
@@ -299,10 +305,10 @@ Error:
       this->set_available();
       sts &= _owner->on_disarm();
       this->unlock();
-      DBG_DISARMED;      
+      DBG_DISARMED;
       return sts;
     }
-    
+
     DWORD WINAPI _agent_disarm_thread_proc(LPVOID lparam)
     {
         struct T
@@ -344,7 +350,7 @@ Error:
         Chan_Close(writer);
 
         BOOL sts;
-        sts = QueueUserWorkItem(&_agent_disarm_thread_proc, (void*)q, NULL /*default flags*/);        
+        sts = QueueUserWorkItem(&_agent_disarm_thread_proc, (void*)q, NULL /*default flags*/);
         return sts;
     }
 
@@ -358,11 +364,11 @@ Error:
       DWORD sts = 0;
       this->lock();
       if(this->is_runnable())
-      { 
-        this->_is_running = 1;    
+      {
+        this->_is_running = 1;
         if( this->_thread != INVALID_HANDLE_VALUE )
-        { 
-          sts = ResumeThread(this->_thread) <= 1; // Thread's already allocated so go!      
+        {
+          sts = ResumeThread(this->_thread) <= 1; // Thread's already allocated so go!
           DBG("Agent Run: ResumeThread id:%d"ENDL,GetThreadId(this->_thread));
         }
         else
@@ -378,7 +384,7 @@ Error:
           DBG("Agent Run: Created thread(id:%d) for %s\r\n",GetThreadId(this->_thread),name());
         }
       } else //(then not runnable)
-      { 
+      {
         warning(
           "[%s] Attempted to run an unarmed or already running Agent.\r\n"
           "\tAborting the run attempt.\r\n",name());
@@ -397,7 +403,7 @@ Error:
         };
         Chan *reader,*q = (Chan*)(lparam);
         struct T args = {0};
-        reader=Chan_Open(q,CHAN_READ);        
+        reader=Chan_Open(q,CHAN_READ);
         if(CHAN_FAILURE( Chan_Next_Copy(reader, &args, sizeof(T)) )){
             warning("In Agent::run_nonblocking work procedure:\r\n\tCould not pop arguments from queue.\r\n");
             return 0;
@@ -427,7 +433,7 @@ Error:
             return 0;
         }
         Chan_Close(writer);
-        
+
         BOOL sts;
         sts = QueueUserWorkItem(&_agent_run_thread_proc, (void*)q, NULL /*default flags*/);
         return sts;
@@ -442,19 +448,19 @@ Error:
       lock();
       DBG("Agent: [ ] Stopping %s 0x%p\r\n",name(), this);
       if( _is_running )
-      { 
+      {
         _is_running = 0;
         if( _thread != INVALID_HANDLE_VALUE)
         { t = _thread;
-          unlock();          
+          unlock();
           res = SignalObjectAndWait(_notify_stop,t,timeout_ms,FALSE);  // notifies and waits on thread to signal
             //res = WaitForSingleObject(t, timeout_ms); // wait for running thread to stop
           lock();
-          // Handle a timeout on the wait.  
+          // Handle a timeout on the wait.
           if( !_handle_wait_for_result(res, "Agent stop: Wait for thread."))
           { Guarded_Assert_WinErr__NoPanic(TerminateThread(_thread,127)); // Force the thread to stop
             warning("%s(%d)"ENDL "\t[%s] Timed out waiting for task thread (%d) to stop."ENDL,__FILE__,__LINE__,name(), GetThreadId(_thread));
-          }  
+          }
           CloseHandle(_thread);
           _thread = INVALID_HANDLE_VALUE;
 
@@ -467,7 +473,7 @@ Error:
         }
       }
       unlock();
-      DBG_STOP;      
+      DBG_STOP;
       return 1;
     }
 
@@ -482,7 +488,7 @@ Error:
         struct T args = {0, 0};
         reader=Chan_Open(q,CHAN_READ);
         if(CHAN_FAILURE( Chan_Next_Copy(reader, &args, sizeof(T)) )){
-            warning("%s(%d)"ENDL 
+            warning("%s(%d)"ENDL
                     "\tIn Agent_Stop_Nonblocking work procedure:"ENDL
                     "\tCould not pop arguments from queue."ENDL,__FILE__,__LINE__);
             return 0;
@@ -505,14 +511,14 @@ Error:
         {   q = Chan_Alloc(32, sizeof (T));
             Chan_Set_Expand_On_Full(q,1);
         }
-        
+
         writer=Chan_Open(q,CHAN_WRITE);
         if(CHAN_FAILURE( Chan_Next_Copy(writer, &args, sizeof(T)) )){
             warning("[%s] In Agent::stop_nonblocking:\r\n\tCould not push request arguments to queue.\r\n",name());
             return 0;
         }
         Chan_Close(writer);
-        
+
         DBG("Agent: [ ] Non-blocking stop requested for %s 0x%p\r\n",name(), this);
         BOOL sts;
         sts = QueueUserWorkItem(&_agent_stop_thread_proc, (void*)q, NULL /*default flags*/);
@@ -540,7 +546,7 @@ Error:
     Agent::attach_nowait()
     { return QueueUserWorkItem(&_agent_attach_thread_proc, (void*)this, NULL /*default flags*/);
     }
-  
+
   // Returns 0 on success, nonzero otherwise.
   unsigned int Agent::attach( void )
   { unsigned int sts = 0;
@@ -576,7 +582,7 @@ Error:
     // default security attr
     // manual reset
     // initially unsignaled
-    Guarded_Assert_WinErr(  
+    Guarded_Assert_WinErr(
       this->_notify_available = CreateEvent( NULL,  // default security attr
       TRUE,   // manual reset
       FALSE,  // initially unsignalled
@@ -584,7 +590,7 @@ Error:
     // default security attr
     // manual reset
     // initially unsignaled
-    Guarded_Assert_WinErr(  
+    Guarded_Assert_WinErr(
       this->_notify_stop      = CreateEvent( NULL,  // default security attr
       TRUE,   // manual reset
       FALSE,  // initially unsignalled
@@ -614,13 +620,13 @@ Error:
   {
     vector_PCHAN *qs = *pqs;
     if( qs )
-    { 
+    {
       size_t n = qs->count;
       int sts = 1;
       while(n--)
         sts &= Chan_Close( qs->contents[n] );      //qs[n] isn't necessarily deleted. Unref returns 0 if references remain
       if(sts)
-      { 
+      {
         vector_PCHAN_free( qs );
         *pqs = NULL;
       }
@@ -653,7 +659,7 @@ Error:
   // Destination channel inherits the existing channel's properties.
   // If both channels exist, the source properties are inherited.
   // One channel must exist.
-  // 
+  //
   // If destination channel exists, the existing one will be unref'd (deleted)
   // and replaced by the source channel (which gets ref'd).
   void
@@ -667,27 +673,27 @@ Error:
     Guarded_Assert( src->_out && dst->_in ); // neither can be NULL
 
     if( src_channel < src->_out->nelem )                // source channel exists
-    { 
+    {
       Chan *s = src->_out->contents[src_channel];
 
       if( dst_channel < dst->_in->nelem )
-      { 
+      {
         Chan **d = dst->_in->contents + dst_channel;
         s=Chan_Open(s,CHAN_NONE);
         Chan_Close(*d);
         *d=s;
       } else
-      { 
+      {
         vector_PCHAN_request( dst->_in, dst_channel );  // make space
         dst->_in->contents[ dst_channel ] = Chan_Open( s,CHAN_NONE );
       }
     } else if( dst_channel < dst->_in->nelem )           // dst exists, but not src
-    { 
+    {
       Chan *d = dst->_in->contents[dst_channel];
       vector_PCHAN_request( src->_out, src_channel );   // make space
       src->_out->contents[src_channel] = Chan_Open( d,CHAN_NONE );
     } else
-    { 
+    {
       error("In Agent::connect: Neither channel exists.\r\n");
     }
   }

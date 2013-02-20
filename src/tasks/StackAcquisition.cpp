@@ -163,7 +163,7 @@ Error:
           t = _handle_wait_for_result(res,"StackAcquisition::run - Wait for scanner to finish.");
           switch(t)
           { case 0:       // in this case, the scanner thread stopped.  Nothing left to do.
-              eflag |= 0; // success
+              eflag |= dc->__scan_agent.last_run_result();
               //break;
             case 1:       // in this case, the stop event triggered and must be propagated.
               eflag |= dc->__scan_agent.stop(SCANNER2D_DEFAULT_TIMEOUT) != 1;

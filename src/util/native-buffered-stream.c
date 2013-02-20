@@ -155,6 +155,7 @@ static DWORD WINAPI writer(void* p)
   WaitForSingleObjectEx(nbs->overlapped[i].hEvent,INFINITE,TRUE);
   return 0;
 Error:
+  nbs_errset();
   return 1;
 }
 
