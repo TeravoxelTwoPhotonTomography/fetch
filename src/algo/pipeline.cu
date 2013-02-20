@@ -208,7 +208,7 @@ static int pipeline_alloc_lut(pipeline_t self, unsigned inwidth)
   }
   const unsigned     ow = pipeline_get_output_width(self,inwidth);
   CUNEW(unsigned,self->ctx.ilut,      2*(ow+1));
-  CUNEW(float   ,self->ctx.lut_norms0,2*N);
+  CUNEW(float   ,self->ctx.lut_norms0,2*N+1);
   return 1;
 Error:
   self->ctx.ilut=NULL;
@@ -277,8 +277,8 @@ static int pipeline_fill_lut(pipeline_t self, unsigned inwidth)
     for(unsigned i=0;i<halfw;++i)
       if(last!=lut[i])
         ilut[last=lut[i]]=i;
-    ilut[ow  ]=inwidth/2;  // add elements to deal with discontinuity
-    ilut[ow+1]=inwidth-1;  // truncate at inwidth -1 to prevent overflow
+    ilut[ow  ]=inwidth/2; // add elements to deal with discontinuity
+    ilut[ow+1]=inwidth; // subtract one to prevent reading off end
     ilut+=2;
     for(unsigned i=halfw;i<inwidth;++i)
       if(last!=lut[i])
@@ -293,7 +293,7 @@ static int pipeline_fill_lut(pipeline_t self, unsigned inwidth)
 
   // upload
   CUTRY(cudaMemcpy(self->ctx.ilut      ,ilut , 2*(ow+1)*sizeof(*ilut),cudaMemcpyHostToDevice));
-  CUTRY(cudaMemcpy(self->ctx.lut_norms0,norms,2*N*sizeof(*norms)  ,cudaMemcpyHostToDevice));
+  CUTRY(cudaMemcpy(self->ctx.lut_norms0,norms,(2*N+1)*sizeof(*norms) ,cudaMemcpyHostToDevice));
   self->ctx.lut_norms1=self->ctx.lut_norms0+N;
 
 Finalize:
@@ -314,7 +314,7 @@ static int pipeline_upload(pipeline_t self, pipeline_image_t dst, const pipeline
   }
   dst->h++; // pad by a line
   if(!self->src)
-  { CUTRY(cudaMalloc((void**)&self->src,pipeline_image_nbytes(src)));
+  { CUTRY(cudaMalloc((void**)&self->src,pipeline_image_nbytes(src)+1024));
     CUTRY(cudaMalloc((void**)&self->dst,pipeline_image_nbytes(dst)));
     CUTRY(cudaMalloc((void**)&self->tmp,self->nbytes_tmp=pipeline_image_nelem(dst)*sizeof(float)));
     CUTRY(cudaMemset(self->tmp,0,pipeline_image_nelem(dst)*sizeof(float)));
@@ -351,7 +351,6 @@ static int launch(pipeline_t self, int *emit)
     { *emit=1;
       warp_kernel<Tsrc,BX,BY,WORK><<<blocks,threads>>>(self->ctx,(Tsrc*)self->src,self->tmp);
       cast_kernel<Tdst,BX,BY,WORK><<<blocks,threads>>>((Tdst*)self->dst,self->tmp,self->ctx.ostride*2,self->m*self->norm,self->b);
-      CUTRY(cudaMemset(self->tmp,0,self->nbytes_tmp));
     } else
     { *emit=0;
       warp_kernel<Tsrc,BX,BY,WORK><<<blocks,threads>>>(self->ctx,(Tsrc*)self->src,self->tmp);
@@ -426,6 +425,11 @@ int pipeline_exec(pipeline_t self, pipeline_image_t dst, const pipeline_image_t 
   TRY(isaligned(src->h,BY_));
   TRY(isaligned(dst->w,BX_*WORK_));
   TRY(dst->h==2*src->h);
+
+  { int count=0;
+    CUTRY(cudaGetDeviceCount(&count));
+    CUTRY(cudaSetDevice(count-1));
+  }
 
   if(src->w>self->ctx.w)
   { TRY(pipeline_alloc_lut(self,src->w));
