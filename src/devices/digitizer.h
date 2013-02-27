@@ -83,7 +83,7 @@ namespace fetch
     class IDigitizer
     {
     public:
-      virtual void   setup(int nrecords, double record_frequency_Hz, double duty) = 0;
+      virtual unsigned    setup(int nrecords, double record_frequency_Hz, double duty) = 0;
       virtual size_t record_size(double record_frequency_Hz, double duty) = 0;
       virtual size_t nchan() = 0;
       virtual unsigned sample_rate_MHz()=0; // in principle, there's no reason why this has to be MHz. see pipeline.
@@ -116,7 +116,7 @@ namespace fetch
       unsigned int on_detach(void);
       virtual void onUpdate();
 
-      virtual void   setup(int nrecords, double record_frequency_Hz, double duty);
+      virtual unsigned  setup(int nrecords, double record_frequency_Hz, double duty);
       virtual size_t record_size(double record_frequency_Hz, double duty);
       virtual size_t nchan() {return _config->nchannels();}
       virtual unsigned sample_rate_MHz() {return _config->sample_rate()/1e6;}
@@ -148,7 +148,7 @@ namespace fetch
       int stop();
       int fetch(Frame* frm);
 
-      virtual void setup(int nrecords, double record_frequency_Hz, double duty);
+      virtual unsigned setup(int nrecords, double record_frequency_Hz, double duty);
       virtual size_t record_size(double record_frequency_Hz, double duty);
       virtual size_t nchan();
       virtual unsigned sample_rate_MHz() {return (unsigned)(sample_rate()/1.0e6);}
@@ -171,7 +171,7 @@ namespace fetch
       unsigned int on_attach() {return 0;}
       unsigned int on_detach() {return 0;}
 
-      virtual void setup(int nrecords, double record_frequency_Hz, double duty) {}
+      virtual unsigned setup(int nrecords, double record_frequency_Hz, double duty) {return 1;}
       size_t SimulatedDigitizer::record_size( double record_frequency_Hz, double duty );
       virtual size_t nchan() {return _config->nchan();}
       virtual unsigned sample_rate_MHz() {return _config->sample_rate()/1e6;}
@@ -194,7 +194,7 @@ namespace fetch
       virtual void _set_config(const Config &cfg); // only updates the digitizer selected by cfg.kind().
       virtual void onUpdate() {_idigitizer->onUpdate();};
 
-      virtual void setup(int nrecords, double record_frequency_Hz, double duty) {_idigitizer->setup(nrecords,record_frequency_Hz,duty);}
+      virtual unsigned setup(int nrecords, double record_frequency_Hz, double duty) {return _idigitizer->setup(nrecords,record_frequency_Hz,duty);}
 
       virtual size_t record_size(double record_frequency_Hz, double duty) {return _idigitizer->record_size(record_frequency_Hz,duty);}
       virtual size_t nchan() {return _idigitizer->nchan();}

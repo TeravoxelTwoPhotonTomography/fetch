@@ -161,10 +161,11 @@ ESHUTTER:
       _pockels.setKind(_config->pockels().kind());
     }
 
-    void Scanner2D::onConfigTask()
+    int Scanner2D::onConfigTask()
     {
       float64 nscans       = _config->nscans(),
               scan_freq_Hz = _config->frequency_hz();
+      int isok=1;
       IDAQPhysicalChannel *chans[] = {
         _LSM.physicalChannel(),
         _pockels.physicalChannel()
@@ -175,7 +176,8 @@ ESHUTTER:
 
       _shutter.Shut();
 
-      _digitizer.setup((int)nscans,scan_freq_Hz,_config->line_duty_cycle());
+      isok &= _digitizer.setup((int)nscans,scan_freq_Hz,_config->line_duty_cycle());
+      return isok;
     }
 
     void Scanner2D::generateAO()

@@ -106,9 +106,7 @@ namespace fetch
         Guarded_Assert( d->disk.close()==0 );
         //Guarded_Assert( d->disk.open(filename,"w")==0);
 
-        d->__scan_agent.arm(&grabstack,&d->scanner);                      // why was this arm_nowait?
-
-        return 1; //success
+        return d->__scan_agent.arm(&grabstack,&d->scanner)==0;
 Error:
         return 0; //failure
       }

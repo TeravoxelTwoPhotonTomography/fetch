@@ -150,8 +150,8 @@ Error:
 #endif
     }
 
-    void NIScopeDigitizer::setup(int nrecords, double record_frequency_Hz, double duty)
-    {
+    unsigned NIScopeDigitizer::setup(int nrecords, double record_frequency_Hz, double duty)
+    { 
 #ifdef HAVE_NISCOPE
       ViSession vi = _vi;
 
@@ -230,6 +230,9 @@ Error:
         NISCOPE_VAL_PFI_1 ));
 
       //// ALL DONE
+      return 1;
+#else 
+      return 0;
 #endif
     }
 
@@ -270,7 +273,7 @@ Error:
     unsigned int AlazarDigitizer::on_detach() { return !alazar_detach(&_ctx); } ///< return 0 on failure and 1 on success
     unsigned int AlazarDigitizer::on_disarm() { return !alazar_disarm(_ctx);}    ///< return 0 on failure and 1 on success
 
-    void AlazarDigitizer::setup( int nrecords, double record_frequency_Hz, double duty )
+    unsigned AlazarDigitizer::setup( int nrecords, double record_frequency_Hz, double duty )
     { alazar_cfg_t cfg=0;
       CHKJMP(cfg=alazar_make_config());
       alazar_set_line_trigger_lvl_volts(cfg,_config->trigger_lvl_volts());
@@ -287,9 +290,10 @@ Error:
       }
       CHKJMP(alazar_arm(_ctx,cfg));
       alazar_free_config(&cfg);
-      return;
+      return 1;
 Error:
-      error("FIX ME. %s(%d) %s()\n",__FILE__,__LINE__,__FUNCTION__);
+      warning("DIGITIZER SETUP FAILED. %s(%d) %s()\n",__FILE__,__LINE__,__FUNCTION__);
+      return 0;
     }
     size_t AlazarDigitizer::record_size( double record_frequency_Hz, double duty )
     {

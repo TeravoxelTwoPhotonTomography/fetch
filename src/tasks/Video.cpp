@@ -100,10 +100,10 @@ namespace fetch
       template<class TPixel> unsigned int Video<TPixel>::config (IDevice *d)//      {return config(dynamic_cast<device::Scanner2D*>(d));}
       {
         { device::Scanner2D *s = dynamic_cast<device::Scanner2D*>(d);
-          if(s) return _config(s);// else return 2;
+          if(s) return _config(s)==1;// else return 2;
         }
         { device::Scanner3D *s = dynamic_cast<device::Scanner3D*>(d);
-          if(s) return _config(s); else return 2;
+          if(s) return _config(s)==1; else return 2;
         }
       }
       template<class TPixel> unsigned int Video<TPixel>::update (IDevice *d)      {
@@ -154,7 +154,8 @@ namespace fetch
       unsigned int
       Video<TPixel>::_config(device::IScanner *d)
       {
-        d->onConfigTask();
+        if(!d->onConfigTask())
+          return 0; //failure.
 
         DBG("Scanner2D configured for Video<%s>\r\n",TypeStr<TPixel>());
         return 1; //success

@@ -106,10 +106,11 @@ ESCAN2D:
       _zpiezo.setKind(_config->zpiezo().kind());
     }
 
-    void Scanner3D::onConfigTask()
+    int Scanner3D::onConfigTask()
     {
       float64 nscans       = _config->scanner2d().nscans(),
               scan_freq_Hz = _config->scanner2d().frequency_hz();
+      int isok=1;
       IDAQPhysicalChannel *chans[] = {
         _scanner2d._LSM.physicalChannel(),
         _scanner2d._pockels.physicalChannel(),
@@ -120,7 +121,8 @@ ESCAN2D:
       _scanner2d._daq.setupAOChannels(nscans,scan_freq_Hz,-10,10,chans,3);
 
       _scanner2d._shutter.Shut();
-      _scanner2d._digitizer.setup((int)nscans,scan_freq_Hz,_scanner2d._config->line_duty_cycle());
+      isok &= _scanner2d._digitizer.setup((int)nscans,scan_freq_Hz,_scanner2d._config->line_duty_cycle());
+      return isok;
     }
 
     int Scanner3D::writeAO()

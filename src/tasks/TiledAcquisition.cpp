@@ -69,10 +69,10 @@ namespace fetch
         Guarded_Assert( d->disk.close()==0 );
         //Guarded_Assert( d->disk.open(filename,"w")==0);
 
-        d->__scan_agent.arm(&grabstack,&d->scanner);  // why was this arm_nowait?     - should prolly move this to run
+        int isok=d->__scan_agent.arm(&grabstack,&d->scanner);
         d->stage()->tiling()->resetCursor();          // this is here so that run/stop cycles will pick up where they left off
 
-        return 1; //success
+        return isok; //success
 Error:
         return 0;
       }

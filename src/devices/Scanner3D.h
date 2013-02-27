@@ -82,7 +82,7 @@ namespace fetch
       virtual void _set_config(Config IN *cfg);
       virtual void _set_config(const Config& cfg);
 
-      virtual void onConfigTask();
+      virtual int  onConfigTask();
       virtual void onUpdate() {_scanner2d._digitizer.onUpdate(); generateAO();}
       virtual void generateAO();
               void generateAOConstZ();

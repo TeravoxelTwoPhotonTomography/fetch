@@ -39,10 +39,10 @@ namespace fetch
         cur =  dc->configPipeline();
         cur =  dc->trash.apply(cur);
 
-        dc->__scan_agent.arm(&focus,&dc->scanner);
+        return dc->__scan_agent.arm(&focus,&dc->scanner)==0;
         //dc->__scan_agent.arm_nowait(&focus,&dc->scanner._scanner2d,INFINITE);
 
-        return 1; //success
+        //return 1; //success
       }
 
       static int _handle_wait_for_result(int n, DWORD result, const char *msg)

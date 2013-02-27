@@ -235,8 +235,9 @@ namespace fetch
       DBG_ARMED;
       return 0;
 Error:
-      _is_available = 1;
-      _task = NULL;
+      this->_task = NULL;
+      this->set_available();
+      _owner->on_disarm();
       unlock();
       return 1;
     }
