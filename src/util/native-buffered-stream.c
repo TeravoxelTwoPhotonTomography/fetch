@@ -73,7 +73,7 @@ static int    nbs_truncate(stream_t stream, off_t length);
 static void   nbs_close   (stream_t stream);
 
 stream_t native_buffered_stream_open(const char *filename,stream_mode_t mode)
-{ stream_t self;
+{ stream_t self=0;
   nbs_stream_t ctx=0;
   int i;
   TRY(nbs_isok());

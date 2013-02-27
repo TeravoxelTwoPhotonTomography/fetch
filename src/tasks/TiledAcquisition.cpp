@@ -137,7 +137,8 @@ Error:
             case 0:                            // in this case, the scanner thread stopped.  Nothing left to do.
               eflag |= dc->__scan_agent.last_run_result(); // check the run result
               eflag |= dc->__io_agent.last_run_result();
-              tiling->markDone(eflag==0);      // only mark the tile done if the scanner task completed normally
+              if(eflag==0) // remove this if statement to mark tiles as "error" tiles.  In practice, it seems it's ok to go back and reimage, so the if statement stays
+                tiling->markDone(eflag==0);      // only mark the tile done if the scanner task completed normally
             case 1:                            // in this case, the stop event triggered and must be propagated.
               eflag |= dc->__scan_agent.stop(SCANNER2D_DEFAULT_TIMEOUT) != 1;
               break;
