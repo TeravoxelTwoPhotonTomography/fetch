@@ -139,7 +139,7 @@ static size_t active_channel_count(alazar_t ctx)
       c+=ctx->cfg->enable[i][j];
   return c;
 Error:
-  return 0;
+  return 1; // avoid divide by zero
 }
 
 /** \returns the size in bytes required to acquire all channels */
@@ -319,11 +319,13 @@ static void lock(alazar_t ctx, char mode)
     case 'w': AcquireSRWLockExclusive(&ctx->lock); break;
     default: abort();
   }
+  //LOG("+++ ALAZAR LOCK ACQUIRED MODE %c\n",mode);
   ctx->lock_mode=mode;
 }
 static void unlock(alazar_t ctx)
 { char mode=ctx->lock_mode;
   ctx->lock_mode=0;
+  //LOG("--- ALAZAR LOCK RELEASED MODE %c\n",mode);
   switch(mode)
   { case 'r': ReleaseSRWLockShared(&ctx->lock); break;
     case 'w': ReleaseSRWLockExclusive(&ctx->lock); break;
@@ -385,7 +387,7 @@ int alazar_arm(alazar_t ctx, alazar_cfg_t cfg)
   lock(ctx,'w');
   if(alazar_is_armed(ctx))
   { WARN(!alazar_is_armed(ctx),"Must disarm before re-arming.");
-    return FAILURE;
+    goto Error;
   }
   ctx->cfg=cfg;
   cfg->ref++;

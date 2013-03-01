@@ -48,6 +48,7 @@ namespace fetch
                            int nchannels) = 0;
 
       virtual int writeAO(float64 *data) = 0;                                    ///<\returns 1 on fail, 0 on success
+      virtual int writeOneToAO(float64 *data)=0;
 
       //These should return 1 on fail, 0 on success
       virtual int32 startAO() = 0;
@@ -88,6 +89,7 @@ namespace fetch
       void setupAOChannels(float64 nrecords, float64 record_frequency_Hz, float64 vmin, float64 vmax, IDAQPhysicalChannel **channels, int nchannels);
 
       int writeAO(float64 *data);
+      int writeOneToAO(float64 *data);
 
       int32 startAO();
       int32 startCLK();
@@ -121,6 +123,7 @@ namespace fetch
       void setupAOChannels(float64 nrecords, float64 record_frequency_Hz, float64 vmin, float64 vmax, IDAQPhysicalChannel **channels, int nchannels) {}
 
       int writeAO(float64 *data) {return 0;}
+      int writeOneToAO(float64 *data) {return 1;};
 
       int32 startAO()  { return 0;}
       int32 startCLK() { return 0;}
@@ -158,6 +161,7 @@ namespace fetch
      {_idaq->setupAOChannels(nrecords,record_frequency_Hz,vmin,vmax,channels,nchannels);}
 
      int writeAO(float64 *data) {return _idaq->writeAO(data);}
+     int writeOneToAO(float64 *data) {return _idaq->writeOneToAO(data);}
 
      int32 startAO()  { return _idaq->startAO();}
      int32 startCLK() { return _idaq->startCLK();}

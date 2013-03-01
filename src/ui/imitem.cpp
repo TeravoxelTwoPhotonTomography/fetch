@@ -231,7 +231,7 @@ void ImItem::updateDisplayLists()
   
   glNewList(_hQuadDisplayList, GL_COMPILE);
   glBegin(GL_QUADS);
-#if 0  // x=0 on right
+#if 1  // x=0 on right
   glTexCoord2f(1.0, 1.0); glVertex2f(l, t);//glVertex2f(r, b);
   glTexCoord2f(1.0, 0.0); glVertex2f(l, b);//glVertex2f(r, t);				
   glTexCoord2f(0.0, 0.0); glVertex2f(r, b);//glVertex2f(l, t);				

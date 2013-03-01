@@ -100,9 +100,13 @@ ESCAN2D:
       _config = cfg;
     }
 
+    // For some reason I don't want this to do a full config
+    // The problem is Microscope::snapshot() which calls this function
+    // and should probably use update or something instead.
     void Scanner3D::_set_config( const Config& cfg )
     {
       *_config=cfg;
+      //_set_config(_config);
       _zpiezo.setKind(_config->zpiezo().kind());
     }
 
@@ -185,6 +189,14 @@ ESCAN2D:
     {
       _ao_workspace = vector_f64_alloc(_scanner2d._daq.samplesPerRecordAO()*3);
     }
+
+    int Scanner3D::writeLastAOSample()
+    { int N = _scanner2d._daq.samplesPerRecordAO();
+      f64 *m = _ao_workspace->contents;
+      float64 last[] = {m[N-1],m[2*N-1],m[3*N-1]};
+      return _scanner2d._daq.writeOneToAO(last);
+    }
+
 
   }
 }

@@ -600,11 +600,13 @@ Error:
     TRY(buf=(Frame_With_Interleaved_Planes*)Chan_Token_Buffer_Alloc(q));
     nbytes=Chan_Buffer_Size_Bytes(q);
 
-DBG("Entering Loop");
+    DBG("Entering Loop");
+    //int count=0;
     while(CHAN_SUCCESS(Chan_Next(q,(void**)&buf,nbytes)))
     { Array     dummy;
       Dimn_Type dims[3];
       DBG("Recieved");
+      //debug("TiffGroupStream recieved frame %d\n",count++);
 #ifdef DEBUG_FAST_EXIT
       any=1;
 #endif

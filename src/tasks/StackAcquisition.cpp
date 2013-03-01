@@ -44,7 +44,7 @@
 #define REPORT(e)    LOG("%s(%d) - %s():"ENDL "\t%s"ENDL "\tExpression evaluated as false."ENDL,__FILE__,__LINE__,__FUNCTION__,e)
 #define TRY(e)       do{ ECHO(#e); if(!(e)) {REPORT(#e); goto Error;}} while(0)
 
-#if 1 // PROFILING
+#if 0 // PROFILING
 #define TS_OPEN(name)   timestream_t ts__=timestream_open(name)
 #define TS_TIC          timestream_tic(ts__)
 #define TS_TOC          timestream_toc(ts__)
@@ -502,9 +502,9 @@ Error:
           TS_OPEN("timer-stack_ao.f32");
 
           d->_zpiezo.getScanRange(&ummin,&ummax,&umstep);
-          alazar_fetch_thread_ctx_t ctx(d,(ummax-ummin)/umstep,TypeID<TPixel>());
+          alazar_fetch_thread_ctx_t ctx(d,((ummax-ummin)/umstep)+1,TypeID<TPixel>());     /* ummin to ummax inclusive */
           d->generateAOConstZ(ummin);                                           // first frame is a dead frame to lock to ummin
-          d->writeAO();
+          TRY(!d->writeAO());
           TRY(!d->_scanner2d._daq.startCLK());
           //d->_scanner2d._shutter.Open();
           TRY(!d->_scanner2d._daq.startAO());
@@ -523,6 +523,7 @@ Finalize:
           TS_CLOSE;
           d->_scanner2d._shutter.Shut();
           d->_scanner2d._digitizer._alazar->stop();
+          d->get2d()->_daq.waitForDone(1000/*ms*/); // will make sure the last frame finishes generating before it times out.
           d->_scanner2d._daq.stopCLK();
           d->_scanner2d._daq.stopAO();
           if(fetch_thread) CloseHandle(fetch_thread);

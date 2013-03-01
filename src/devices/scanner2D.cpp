@@ -204,6 +204,13 @@ ESHUTTER:
       return _daq.writeAO(_ao_workspace->contents);
     }
 
+    int Scanner2D::writeLastAOSample()
+    { int N = _daq.samplesPerRecordAO();
+      f64 *m = _ao_workspace->contents;
+      float64 last[] = {m[N-1],m[2*N-1]};
+      return _daq.writeOneToAO(last);
+    }
+
   }
 }
 

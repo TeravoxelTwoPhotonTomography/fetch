@@ -69,7 +69,7 @@ namespace fetch
         Guarded_Assert( d->disk.close()==0 );
         //Guarded_Assert( d->disk.open(filename,"w")==0);
 
-        int isok=d->__scan_agent.arm(&grabstack,&d->scanner);
+        int isok=d->__scan_agent.arm(&grabstack,&d->scanner)==0;
         d->stage()->tiling()->resetCursor();          // this is here so that run/stop cycles will pick up where they left off
 
         return isok; //success

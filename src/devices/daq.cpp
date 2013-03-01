@@ -102,6 +102,7 @@ namespace fetch {
 
     int NationalInstrumentsDAQ::waitForDone(DWORD timeout_ms/*=INFINITE*/)
     {
+#if 0
       HANDLE hs[] = {
         _notify_done,
         _agent->_notify_stop};
@@ -120,6 +121,11 @@ namespace fetch {
         warning("%s: Abandoned wait on notify_stop.\r\n",classname);
         return 1;
       }
+      return 0;
+#endif
+      DAQJMP(DAQmxWaitUntilTaskDone(_ao.daqtask,timeout_ms/1000));
+      return 1;
+    Error:
       return 0;
     }
 
@@ -329,6 +335,21 @@ Error:
     void NationalInstrumentsDAQ::__common_setup()
     {
       Guarded_Assert_WinErr(_notify_done=CreateEvent(NULL,FALSE,FALSE,NULL)); // auto-reset, initially untriggered
+    }
+
+    int NationalInstrumentsDAQ::writeOneToAO(float64 *data)
+    { TaskHandle ao=_ao.daqtask;
+      int32 written;
+      int32 type;
+      char terms[MAX_CHAN_STRING]={0};
+
+      //DAQJMP(DAQmxGetSampTimingType(ao,&type));
+      //DAQJMP(DAQmxSetSampTimingType(ao,DAQmx_Val_OnDemand));
+      DAQJMP(DAQmxWriteAnalogF64(ao,1,1,0.0,DAQmx_Val_GroupByChannel,data,&written,NULL));
+      //DAQJMP(DAQmxSetSampTimingType(ao,type));
+      return 1;
+    Error:
+      return 0;
     }
 
     //

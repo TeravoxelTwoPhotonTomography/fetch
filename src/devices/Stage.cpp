@@ -456,9 +456,12 @@ Error:
     C843JMP( C843_MOV(handle_,"123",t) );            // Move!
     waitForMove_();                                  // Block here until not moving (or error)
     
-    C843JMP( C843_qONT(handle_,"123",ontarget) );    // Ensure controller is on-target (if there was an error before, will repeat here?)
-    if(!all(ontarget,3))
-      goto Error;
+    while(!all(ontarget,3))
+    { C843JMP( C843_qONT(handle_,"123",ontarget) );    // Ensure controller is on-target (if there was an error before, will repeat here?)
+      Sleep(20);
+    }
+    //if(!all(ontarget,3))
+    //  goto Error;
       
     { double a[3];
       C843JMP( C843_qMOV(handle_,"123",a) );

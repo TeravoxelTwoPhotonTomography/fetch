@@ -86,6 +86,7 @@ namespace fetch
       virtual int  onConfigTask()   = 0;  ///< called in a 2d scanning task's config function
       virtual void generateAO() = 0;
       virtual int  writeAO()    = 0;      ///< \returns 0 on success, 1 on failure
+      virtual int  writeLastAOSample()=0;
 
       virtual Scanner2D* get2d() = 0;
 
@@ -117,6 +118,7 @@ namespace fetch
       virtual void onUpdate() {_digitizer.onUpdate(); generateAO();}
       virtual void generateAO();
       virtual int writeAO();            ///< \returns 0 on success, 1 on failure
+      virtual int  writeLastAOSample();
 
       virtual Scanner2D* get2d() {return this;}
 

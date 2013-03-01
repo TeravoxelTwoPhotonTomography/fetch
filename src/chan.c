@@ -284,7 +284,8 @@ void Chan_Set_Expand_On_Full( Chan* self_, int expand_on_full)
 unsigned int chan_push__locked(__chan_t *q, void **pbuf, size_t sz, unsigned timeout_ms)
 { 
   while(Fifo_Is_Full(q->fifo) && q->expand_on_full==0)
-    Condition_Wait(&q->notfull,&q->lock); // TODO: use timed wait?
+    if(!Condition_Timed_Wait(&q->notfull,&q->lock,timeout_ms))
+      return FAILURE; // timeout
   if(FIFO_SUCCESS(Fifo_Push(q->fifo,pbuf,sz,q->expand_on_full)))
     return SUCCESS;
   return FAILURE;
@@ -298,7 +299,8 @@ inline int _pop_bypass_wait(__chan_t *q)
 unsigned int chan_pop__locked(__chan_t *q, void **pbuf, size_t sz, unsigned timeout_ms)
 { //int starved;
   while(Fifo_Is_Empty(q->fifo) && !_pop_bypass_wait(q))
-    Condition_Timed_Wait(&q->notempty,&q->lock,timeout_ms); // TODO: test timed wait?
+    if(!Condition_Timed_Wait(&q->notempty,&q->lock,timeout_ms))
+      return FAILURE; //timeout
   //starved = Fifo_Is_Empty(q->fifo) && q->nwriters==0;
   if(FIFO_SUCCESS(Fifo_Pop(q->fifo,pbuf,sz)))
     return SUCCESS;
@@ -313,7 +315,7 @@ inline int _peek_bypass_wait(__chan_t *q)
 unsigned int chan_peek__locked(__chan_t *q, void **pbuf, size_t sz, unsigned timeout_ms)
 { //int starved;
   while(Fifo_Is_Empty(q->fifo) && !_peek_bypass_wait(q))
-    Condition_Wait(&q->notempty,&q->lock); // TODO:!! use timed wait
+    Condition_Wait(&q->notempty,&q->lock); //ingore timeout on peek
   //starved = Fifo_Is_Empty(q->fifo) && q->nwriters==0;
   if(FIFO_SUCCESS(Fifo_Peek(q->fifo,pbuf,sz)))
     return SUCCESS;

@@ -33,7 +33,7 @@ static double mins[]={
   0.0,0.0
 };
 static double maxs[]={
-  POW2(8),POW2(16),POW2(32),(double)((unsigned long long)-1),
+  POW2(8)-1.0,POW2(16)-1.0,POW2(32)-1.0,(double)((unsigned long long)-1),
   POW2(7)-1.0,POW2(15)-1.0,POW2(31)-1.0,POW2(63)-1.0,
   1.0,1.0
 };

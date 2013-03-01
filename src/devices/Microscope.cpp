@@ -309,7 +309,7 @@ ESCAN:
       Frame *frm=0;
       mylib::Array *ret=0;
       Task* oldtask;
-      static task::scanner::ScanStack<i16> scan;
+      static task::scanner::ScanStack<u16> scan;
       transaction_lock();
       // 1. Set up the stack acquisition
       { int nframe = cfg.pipeline().frame_average_count(); //cfg.frame_average().ntimes();
@@ -341,7 +341,9 @@ ESCAN:
       }
 
 Finalize:
+
       TRY(__scan_agent.stop());
+      TRY(0==__scan_agent.disarm(timeout_ms));
       if(frm) Chan_Token_Buffer_Free(frm);
       if(c) Chan_Close(c);
       stopPipeline(); //- redundant?

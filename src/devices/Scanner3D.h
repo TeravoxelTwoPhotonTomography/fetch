@@ -90,6 +90,7 @@ namespace fetch
               void generateAORampZ();
               void generateAORampZ(float z_um);
       virtual int  writeAO();                                                    ///< \returns 0 on success, 1 on failure
+      virtual int  writeLastAOSample();
 
       virtual Scanner2D* get2d() {return &_scanner2d;}
 

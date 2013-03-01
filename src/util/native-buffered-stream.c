@@ -147,7 +147,7 @@ static DWORD WINAPI writer(void* p)
   unsigned long long i     =(int)(tc->i),
                      chunk =(nbs->len+NTHREADS-1)/NTHREADS, // ciel(len/NTHREADS)
                      offset=i*chunk,
-                     rem=nbs->len-i*offset,
+                     rem=nbs->len-offset,
                      n=(chunk>rem)?rem:chunk;
   LOG("Piece: %3llu - offset %20llu\tchunk %20llu\n",i,offset,n);
   ResetEvent(nbs->overlapped[i].hEvent);
