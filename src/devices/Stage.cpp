@@ -1,42 +1,42 @@
 /**
   \file Stage.cpp
-  
+
   \section impl Stage Implementations
-  
+
   Right now this is just the C843 controller from physic instruments (http://www.pi-usa.us/index.php)
   and a mock stage.
-  
+
   Might want to add Thor Labs Cube controller eventually.
-  
+
   I make a lot of assumptions about having a 3d stage system in the design here which limits some
   generalizability.
-  
-  
-  
+
+
+
   \section runstate Run State Model
-  
+
   There's two design questions here:  How does this work right now?  And, how should it work?
-  
+
   Right now, attach() opens the controller for a stage system.  The stage system is assumed to have three axes.
   The axes are initialized on attach, but they may not be fully initialized properly.  There's nothing to
   check if axes are properly initialized on arm, but there probably should be.
-  
-  The way it should work is that each axis should be treated as an individual device.  A stage system should be 
-  an aggregate device.  Each axis should be "attached" when a 
-  
-  \todo Add an isReady? check or an on_arm call that queries the stage system for whether it is able to respond to 
+
+  The way it should work is that each axis should be treated as an individual device.  A stage system should be
+  an aggregate device.  Each axis should be "attached" when a
+
+  \todo Add an isReady? check or an on_arm call that queries the stage system for whether it is able to respond to
         commands.
   \todo Add stage polling threads that change the device state based on status.
         e.g. If a stage axis goes into an error state it should disarm the associated agent.
-  
-  
+
+
   \section err-macros Error handling macros
-  
+
   There are a few different error handling macros here.  The CHK versions are the same as what I use elsewhere.
   Most often they are used something like this:
   \code
   int f()
-  { 
+  {
     CHKJMP( step1() );
     CHKJMP( step2() );
     CHKJMP( step3() );
@@ -47,19 +47,19 @@
   \endcode
   If one of the steps() evaluates as false, a warning message will be logged and execution will move to the "Error" label
   so that the error can be handled.
-  
+
   The WRN and ERR versions don't jump to an Error label.  Instead they use the applications warning() and error() functions
   to log a messge.  Since error() handles fatal errors, it will cause the microscope to shutdown.
-  
-  The C843 versions have essentially the same behavior but they use a C843 API error handler to interpret return codes from 
-  C843 API functions.  These macros also help with thread safely.  Every C843 call needs to be called from within the C843 mutex.
-  Since most C843 API calls need to have error checking, these macros also handle locking and unlocking the mutex, even in the 
-  case of an exception.
-  
-  There are two versions of the C843 macros.  One set is for calling inside a C843Stage member function.  The other set is for calling
-  in non-member functions.  See the macro's documentation for more info.  
 
- 
+  The C843 versions have essentially the same behavior but they use a C843 API error handler to interpret return codes from
+  C843 API functions.  These macros also help with thread safely.  Every C843 call needs to be called from within the C843 mutex.
+  Since most C843 API calls need to have error checking, these macros also handle locking and unlocking the mutex, even in the
+  case of an exception.
+
+  There are two versions of the C843 macros.  One set is for calling inside a C843Stage member function.  The other set is for calling
+  in non-member functions.  See the macro's documentation for more info.
+
+
   \date   Apr 19, 2010
   \author Nathan Clack <clackn@janelia.hhmi.org>
 */
@@ -95,24 +95,24 @@ namespace fetch  {
 
 namespace device {
 
-     
+
   //
   // C843Stage
   //
 /**
-  \def C843WRN(expr)  
-  Evaluates expr from within the C843 mutex and interprets C843 API errors.  If there's a problem, a warning message is logged.  
-  \def C843ERR(expr)  
-  Evaluates expr from within the C843 mutex and interprets C843 API errors.  If there's a problem, an error message is logged.  Will cause a shutdown on error.  
-  \def C843JMP(expr) 
+  \def C843WRN(expr)
+  Evaluates expr from within the C843 mutex and interprets C843 API errors.  If there's a problem, a warning message is logged.
+  \def C843ERR(expr)
+  Evaluates expr from within the C843 mutex and interprets C843 API errors.  If there's a problem, an error message is logged.  Will cause a shutdown on error.
+  \def C843JMP(expr)
   Evaluates expr from within the C843 mutex and interprets C843 API errors.  If there's a problem, a warning message is logged, and execution jumps to an Error label.
   which must be defined somewhere in the calling function's scope.
-                
+
   \def C843WRN2(expr)
   Same as \ref C843WRN but for use outside of a C843Stage member function.  A valid C843Stage *self must be in scope.
-  \def C843ERR2(expr) 
+  \def C843ERR2(expr)
   Same as \ref C843ERR but for use outside of a C843Stage member function.  A valid C843Stage *self must be in scope.
-  \def C843JMP2(expr) 
+  \def C843JMP2(expr)
   Same as \ref C843JMP but for use outside of a C843Stage member function.  A valid C843Stage *self must be in scope.
 */
 #define C843WRN( expr )  {BOOL _v; lock_(); _v=(expr); unlock_(); (c843_error_handler( handle_, _v, #expr, __FILE__, __LINE__, warning ));}
@@ -140,7 +140,7 @@ namespace device {
   /// \param[in] line   The line number where the error was generated.
   /// \param[in] report The reporter function to use e.g. debug(), warning(), or error().  May be NULL, in which case no message will be output.
   /// \returns 0 if no error, otherwise 1
-  static 
+  static
   bool c843_error_handler(long handle, BOOL ok, const char* expr, const char* file, const int line, pf_reporter report)
   {
     char buf[1024];
@@ -177,9 +177,9 @@ namespace device {
 #pragma warning(disable:4244) // lots of float <-- double conversions
 
   static const char c843_stage_position_log_file[] =  "stage_position.f64";  ///< The polled stage position gets cached here.
-  
+
   /** Writes current position and velocity to a cache file with a time since last log.
-      
+
       The velocity and time can be used to estimate an upper bound to the logged stage position.
       \returns 1 on success, 0 otherwise
   */
@@ -193,18 +193,18 @@ namespace device {
     fclose(fp);
     return 1;
 Error:
-    return 0;  
+    return 0;
   }
-  
-  /** Tries to read position from log file.  
+
+  /** Tries to read position from log file.
       \param[out] r   Last recorded stage position
       \param[in]  tol Tolerance for uncertainty of last recorded position.
-                      This is used to determine whether the recorded position is trustworthy.                    
+                      This is used to determine whether the recorded position is trustworthy.
       \returns 1 on success (valid position), 0 otherwise (error or position not trusted)
   */
   static
   int maybe_read_position_from_log(double r[3], double tol)
-  { 
+  {
     FILE *fp = NULL;
     double v[3],dt;
     CHKJMP(fp=fopen(c843_stage_position_log_file,"rb"));
@@ -220,38 +220,38 @@ Error:
   }
 
   /** Stage position polling/logging thread.
-      
+
       \param[in] self_ A pointer to a C843Stage instance.
-      
+
       The thread should be started after the stage is attached.
       The thread will stop when the position query fails, presumably because the stage's handle
       was closed.
-      
+
       The cached file gets written in the working directory.
       It records a time between position queries,the stage velocity and the current position.
   */
-  static 
+  static
   void *poll_and_cache_stage_position(void* self_)
-  { C843Stage *self = (C843Stage*)self_;    
+  { C843Stage *self = (C843Stage*)self_;
     double r[3]={0},v[3]={0},dt=0.0;
     TicTocTimer clock = tic();
     while(1)
     { long ready;
-      Sleep(10);      
+      Sleep(10);
       C843JMP2(C843_IsControllerReady(self->handle_,&ready));
       if(ready)
-      { C843JMP2(C843_qPOS(self->handle_,"123",r));      
-        C843JMP2(C843_qVEL(self->handle_,"123",v));      
+      { C843JMP2(C843_qPOS(self->handle_,"123",r));
+        C843JMP2(C843_qVEL(self->handle_,"123",v));
         dt = toc(&clock);
         if(!log_(r,v,dt))
         { warning("%s(%d): C843 Failed to write to position log."ENDL,__FILE__,__LINE__);
           goto Error;
-        }        
+        }
       }
     }
 Error:
     debug("%s(%d): "ENDL "\t!!!! STAGE POSITION POLLING THREAD GOING DOWN !!!!"ENDL,__FILE__,__LINE__);
-    return NULL;    
+    return NULL;
   }
 
   C843Stage::C843Stage( Agent *agent )
@@ -273,48 +273,48 @@ Error:
   C843Stage::~C843Stage()
   { DeleteCriticalSection(&c843_lock_);
   }
-  
+
   void C843Stage::lock_()
   { EnterCriticalSection(&c843_lock_);
   }
-  
+
   void C843Stage::unlock_()
   { LeaveCriticalSection(&c843_lock_);
   }
-    
-  
+
+
   /** The attach callback for this device.
-      Connects to the controller, and tries to load axes.  Attempts to set the last known stage position, so the stage is 
+      Connects to the controller, and tries to load axes.  Attempts to set the last known stage position, so the stage is
       ready for absolute moves.
       \return 0 on success, 1 otherwise
       \todo Should do some validation.  Make sure stage name is in database.  I suppose CST does this though.
   */
   unsigned int C843Stage::on_attach()
-  { 
-    long ready = 0;   
+  {
+    long ready = 0;
     C843JMP( (handle_=C843_Connect(_config->id()))>=0 );
-    
+
     #if 0
-    // Print known stages    
+    // Print known stages
     { char stages[1024*1024];
       if(C843_qVST(handle_,stages,sizeof(stages)))
       { debug("%s\n",stages);
       }
-      else 
+      else
       debug("qVST failed.\n");
-    } 
+    }
     #endif
-    
+
     for(int i=0;i<_config->axis_size();++i)
     { char id[10];
       const char *name;
       itoa(_config->axis(i).id(),id,10);
       name = _config->axis(i).stage().c_str();
-      C843JMP( C843_CST(handle_,id,name) );  //configure selected axes       
+      C843JMP( C843_CST(handle_,id,name) );  //configure selected axes
     }
-    C843JMP( C843_INI(handle_,""));          //init all configured axes    
+    C843JMP( C843_INI(handle_,""));          //init all configured axes
     waitForController_();
-    
+
     { double r[3];
       if(maybe_read_position_from_log(r,0.2/*mm*/))
         CHKWRN(setKnownReference(r[0],r[1],r[2]));
@@ -322,7 +322,7 @@ Error:
     CHKJMP(logger_=Thread_Alloc(poll_and_cache_stage_position,this));
     return 0; // ok
 Error:
-    debug("%s(%d): %s()\n" 
+    debug("%s(%d): %s()\n"
           "If the stage database could not be found copy the installed database to where the fetch exectuable is located.\n",
           __FILE__,__LINE__,__FUNCTION__);
     return 1; // fail
@@ -335,7 +335,7 @@ Error:
     C843JMP( C843_STP(handle_) );  // all stop - HLT is more gentle
     handle_ = -1; //invalid
     Thread_Free(logger_);
-Finalize:    
+Finalize:
     lock_();
     C843_CloseConnection(handle_); // always succeeds
     unlock_();
@@ -352,7 +352,7 @@ Error:
          &&(t->z.min<=z) && (z<=t->z.max));
   }
   int C843Stage::getTravel(StageTravel* out)
-  { 
+  {
     /* NOTES:
        o  qTMN and q TMX I think
        o  There's a section in the manual on travel range adjustment (section 5.4)
@@ -360,15 +360,15 @@ Error:
        */
     double t[3];
     C843JMP( C843_qTMN(handle_,"123",t) );
-    
+
     out->x.min = t[0];
     out->y.min = t[1];
-    out->z.min = t[2];    
+    out->z.min = t[2];
 
     C843JMP( C843_qTMX(handle_,"123",t) );
     out->x.max = t[0];
     out->y.max = t[1];
-    out->z.max = t[2];   
+    out->z.max = t[2];
     return 1;
 Error:
     return 0;
@@ -390,7 +390,7 @@ Error:
     C843JMP( C843_VEL(handle_,"123",t) );
     return 1; // success
 Error:
-    return 0;    
+    return 0;
   }
 
   void C843Stage::setVelocityNoWait( float vx, float vy, float vz )
@@ -422,7 +422,7 @@ Error:
   static BOOL all(BOOL* bs, int n)
   { while(n--) if(!bs[n]) return 0;
     return 1;
-  }         
+  }
   static BOOL any(BOOL *bs, int n)
   { BOOL ret = 0;
     while(n--) ret |= bs[n];
@@ -434,7 +434,7 @@ Error:
         return 0;
     return 1;
   }
-  
+
 
 /** Moves the stage to the indicated position.  Will not return till finished (or error).
   \todo  better error handling in case I hit limits
@@ -447,7 +447,7 @@ Error:
       CHKJMP(getTravel(&t));
       CHKJMP(is_in_bounds(&t,x,y,z));
     }
-  
+
     { float vx,vy,vz;
       getVelocity(&vx,&vy,&vz);
       debug("(%s:%d): C843 Velocity %f %f %f"ENDL,__FILE__,__LINE__,vx,vy,vz);
@@ -455,14 +455,14 @@ Error:
     C843JMP( C843_HLT(handle_,"123") );              // Stop any motion in progress
     C843JMP( C843_MOV(handle_,"123",t) );            // Move!
     waitForMove_();                                  // Block here until not moving (or error)
-    
+
     while(!all(ontarget,3))
     { C843JMP( C843_qONT(handle_,"123",ontarget) );    // Ensure controller is on-target (if there was an error before, will repeat here?)
       Sleep(20);
     }
     //if(!all(ontarget,3))
     //  goto Error;
-      
+
     { double a[3];
       C843JMP( C843_qMOV(handle_,"123",a) );
       if(!same(a,t,3))
@@ -486,10 +486,10 @@ Error:
 Error:
     return 0;
   }
-  
+
   void C843Stage::setPosNoWait( float x, float y, float z )
   { double t[3] = {x,y,z};
-  
+
     //{ float vx,vy,vz;
     //  getVelocity(&vx,&vy,&vz);
     //  debug("(%s:%d): C843 Velocity %f %f %f"ENDL,__FILE__,__LINE__,vx,vy,vz);
@@ -513,57 +513,95 @@ Error:
   { BOOL b[] = {0,0,0};
     C843JMPSILENT( C843_qONT(handle_,"123",b) );
     if(all(b,3))
-      return true;    
+      return true;
 Error:
     return false; // if there's an error state, it's probably not on target
   }
-  
+
   bool C843Stage::isServoOn()
   { BOOL b[] = {0,0,0};
     C843JMPSILENT( C843_qSVO(handle_,"123",b) );
     if(all(b,3))
-      return true;    
+      return true;
 Error:
     return false; // if there's an error state, it's probably not on
   }
 
   bool C843Stage::clear()
-  { C843JMP( C843_CLR(handle_,"123") );    
-    return true;    
+  { C843JMP( C843_CLR(handle_,"123") );
+    return true;
 Error:
     return false; // if there's an error state, it's probably not on
   }
 
+  bool C843Stage::prepareForCut( unsigned axis)
+  { const long pid[]={0x1,0x2,0x3};
+    double vals[3]={0};
+    CHKJMP(axis==0 || axis==1); // x or y
+    { const char a=axis?'2':'1';
+      const char axiscode[]={a,a,a,0};
+      C843JMP(C843_qSPA(handle_,axiscode,pid,vals,NULL,0));
+      P_=vals[0];
+      I_=vals[1];
+      D_=vals[2];
+      vals[0]=_config->cut_proportional_gain();
+      vals[1]=_config->cut_integration_gain();
+      vals[2]=_config->cut_derivative_gain();
+      C843JMP(C843_SPA(handle_,axiscode,pid,vals,NULL));
+      cut_mode_active_=true;
+    }
+    return true;
+  Error:
+    cut_mode_active_=false;
+    return false;
+  }
+  bool C843Stage::doneWithCut  ( unsigned axis)
+  { const long pid[]={0x1,0x2,0x3};
+    double vals[3]={0};
+    CHKJMP(axis==0 || axis==1); // x or y
+    { const char a=axis?'2':'1';
+      const char axiscode[]={a,a,a,0};
+      vals[0]=P_;
+      vals[1]=I_;
+      vals[2]=D_;
+      C843JMP(C843_SPA(handle_,axiscode,pid,vals,NULL));
+    }
+    cut_mode_active_=false;
+    return true;
+  Error:
+    return false;
+  }
+
   void C843Stage::waitForController_()
-  { 
+  {
     long ready = 0;
     while(!ready)
     { C843ERR( C843_IsControllerReady(handle_,&ready) );
       Sleep(20); // check ~ 50x/sec
     }
-  }    
-  
+  }
+
   void C843Stage::waitForMove_()
-  { 
+  {
     BOOL isMoving = TRUE;
-    while(isMoving == TRUE)    
+    while(isMoving == TRUE)
     { C843JMP( C843_IsMoving(handle_,"",&isMoving) );
       Sleep(20); // check ~ 50x/sec
-    }    
+    }
 Error:
     return;
   }
-  
+
   bool C843Stage::setRefMode_(bool ison)
   { BOOL ons[3] = {ison,ison,ison};
     C843JMP(C843_RON(handle_,"123",ons));
     return 1;
 Error:
-    return 0;    
+    return 0;
   }
-  
+
   bool C843Stage::isReferenced(bool *isok/*=NULL*/)
-  { BOOL isrefd[3] ={0,0,0};    
+  { BOOL isrefd[3] ={0,0,0};
     if(isok) *isok=1;
     C843JMP(C843_IsReferenceOK(handle_,"123",isrefd));
     return all(isrefd,3);
@@ -571,9 +609,9 @@ Error:
     if(isok) *isok=0;
     return false;
   }
-  
+
   bool C843Stage::reference()
-  { bool isok=1;    
+  { bool isok=1;
     CHKJMP(setRefMode_(1));
     C843JMP( C843_FRF(handle_,"123") );  //fast reference
     waitForController_();
@@ -583,17 +621,17 @@ Error:
     warning("%s(%d)"ENDL "\tReferencing failed for one or more axes."ENDL,__FILE__,__LINE__);
     return false;
   }
-  
+
   void C843Stage::referenceNoWait()
-  { bool isok=1;    
+  { bool isok=1;
     CHKJMP(setRefMode_(1));
-    C843JMP( C843_FRF(handle_,"123") );  //fast reference    
-    return;    
+    C843JMP( C843_FRF(handle_,"123") );  //fast reference
+    return;
 Error:
     warning("%s(%d)"ENDL "\tReferencing failed for one or more axes."ENDL,__FILE__,__LINE__);
     return;
   }
-  
+
   bool C843Stage::setKnownReference(float x, float y, float z)
   { double r[3] = {x,y,z};
     bool isok;
@@ -605,10 +643,10 @@ Error:
       return true;
 Error:
     warning("%s(%d)"ENDL "setKnownReference failed for one or more axes."ENDL,__FILE__,__LINE__);
-    return false;    
+    return false;
   }
-#pragma warning(pop) 
-     
+#pragma warning(pop)
+
   //
   // Simulated
   //
@@ -632,9 +670,9 @@ Error:
     ,vy_(0.0f)
     ,vz_(0.0f)
   {}
-                              
+
   int SimulatedStage::getTravel( StageTravel* out )
-  { 
+  {
     Config c = get_config();
     if(c.axis_size()<3)
     {
@@ -675,7 +713,7 @@ Error:
   }
 
   int SimulatedStage::setPos( float x, float y, float z )
-  { 
+  {
     if( is_in_bounds(*_config,0,x)
       &&is_in_bounds(*_config,1,y)
       &&is_in_bounds(*_config,2,z))
@@ -717,7 +755,7 @@ Error:
   {
     PANIC(_tiling_lock=Mutex_Alloc());
     setKind(_config->kind());
-  }   
+  }
 
   Stage::~Stage()
   { Mutex_Free(_tiling_lock);
@@ -726,7 +764,7 @@ Error:
   void Stage::setKind( Config::StageType kind )
   {
     switch(kind)
-    {    
+    {
     case cfg::device::Stage_StageType_C843:
       if(!_c843)
         _c843 = new C843Stage(_agent,_config->mutable_c843());
@@ -748,20 +786,20 @@ Error:
   {
     if(!(_fov && _lastfov==(*fov)))
     {
-      _fov=fov; 
-      _lastfov=*fov; 
-      _createTiling(); 
-    } 
+      _fov=fov;
+      _lastfov=*fov;
+      _createTiling();
+    }
     _notifyFOVGeometryChanged();
   }
 
 #define _IN(L,X,H) ( ((L)<=(X)) && ((X)<=(H)) )
 #define INAXIS(NAME) _IN(t.NAME.min,NAME,t.NAME.max)
   unsigned int Stage::isPosValid( float x, float  y, float z)
-  { 
-    StageTravel t; 
-    getTravel(&t);     
-    return INAXIS(x)&&INAXIS(y)&&INAXIS(z); 
+  {
+    StageTravel t;
+    getTravel(&t);
+    return INAXIS(x)&&INAXIS(y)&&INAXIS(z);
   }
 #undef _IN
 #undef INAXIS
@@ -773,21 +811,21 @@ Error:
     if(_c843)      _c843->_set_config(cfg->mutable_c843());
     if(_simulated) _simulated->_set_config(cfg->mutable_simulated());
     _config = cfg;
-    
+
     setVelocity(_config->default_velocity_mm_per_sec());
   }
 
   void Stage::_set_config( const Config &cfg )
-  {                        
+  {
       cfg::device::Stage_StageType kind = cfg.kind();
       _config->set_kind(kind);
       setKind(kind);
       switch(kind)
-      {    
+      {
       case cfg::device::Stage_StageType_C843:
         _c843->_set_config(cfg.c843());
         break;
-      case cfg::device::Stage_StageType_Simulated:    
+      case cfg::device::Stage_StageType_Simulated:
         _simulated->_set_config(cfg.simulated());
         break;
       default:
@@ -797,25 +835,25 @@ Error:
   }
 
   float myroundf(float x) {return floorf(x/*+0.5f*/);}
-  
+
   Vector3z Stage::getPosInLattice()
   { StageTiling::TTransform l2s(_tiling->latticeToStageTransform());
     Vector3f r(getTarget()*1000.0); // convert to um
-    return Vector3z((l2s.inverse() * r).unaryExpr(std::ptr_fun<float,float>(myroundf)).cast<size_t>());    
+    return Vector3z((l2s.inverse() * r).unaryExpr(std::ptr_fun<float,float>(myroundf)).cast<size_t>());
   }
 
   // Only use when attached but disarmed.
   void Stage::_createTiling()
-  { device::StageTravel travel;    
+  { device::StageTravel travel;
     if(!getTravel(&travel))
-      return;       
+      return;
     if(_fov)                                                      // A FOV object is stored by the microscope and in the tiling.  The microscope's should be the reference
     {                                                             // not sure why I made this two distinct objects...
       FieldOfViewGeometry fov = *_fov;                            // this should always point to the microscope's FOV object (not the tiling's)
       _destroyTiling();                                           // this call will invalidate the _fov pointer :(  bad design [??? 2011-11 this comment seems questionable]
-      
+
       Mutex_Lock(_tiling_lock);
-      _tiling = new StageTiling(travel, fov, _config->tilemode());      
+      _tiling = new StageTiling(travel, fov, _config->tilemode());
       Mutex_Unlock(_tiling_lock);
       { TListeners::iterator i;
         for(i=_listeners.begin();i!=_listeners.end();++i)
@@ -827,7 +865,7 @@ Error:
 
   void Stage::_destroyTiling()
   { if(_tiling)
-    { 
+    {
       Mutex_Lock(_tiling_lock);
       StageTiling *t = _tiling;
       _tiling = NULL;
@@ -850,7 +888,7 @@ Error:
   void Stage::_notifyTilingChanged()
   { TListeners::iterator i;
     for(i=_listeners.begin();i!=_listeners.end();++i)
-      (*i)->tiling_changed();  
+      (*i)->tiling_changed();
   }
 
   void Stage::_notifyMoved()
@@ -858,13 +896,13 @@ Error:
     for(i=_listeners.begin();i!=_listeners.end();++i)
       (*i)->moved();
   }
-  
+
   void Stage::_notifyReferenced()
   { TListeners::iterator i;
     for(i=_listeners.begin();i!=_listeners.end();++i)
       (*i)->referenced();
   }
-  
+
   void Stage::_notiveVelocityChanged()
   { TListeners::iterator i;
     for(i=_listeners.begin();i!=_listeners.end();++i)
@@ -899,13 +937,13 @@ Error:
     _config->mutable_last_target_mm()->set_x(x);
     _config->mutable_last_target_mm()->set_y(y);
     _config->mutable_last_target_mm()->set_z(z);
-    _notifyMoved(); 
+    _notifyMoved();
     return out;
   }
 
   void Stage::setPosNoWait(float  x,float  y,float  z)
-  { 
-#if 0                                                 
+  {
+#if 0
     Config c = get_config();                         // This block performs a "safe" commit
     c.mutable_last_target_mm()->set_x(x);            // of the last position, but will try to
     c.mutable_last_target_mm()->set_y(y);            // stop/restart runnign tasks.
@@ -914,11 +952,11 @@ Error:
 #else                                                //
     // directly set config                           //
     _config->mutable_last_target_mm()->set_x(x);     // This is not thread-safe.  Multiple threads
-    _config->mutable_last_target_mm()->set_y(y);     // calling this at the same time might write 
+    _config->mutable_last_target_mm()->set_y(y);     // calling this at the same time might write
     _config->mutable_last_target_mm()->set_z(z);     // inconsistent values, but that's not really a risk here.
 #endif                                               // Better to avoid unneccesarily stopping a running task.
 
-    _istage->setPosNoWait(x,y,z); 
+    _istage->setPosNoWait(x,y,z);
     _notifyMoved();
   }
 }} // end anmespace fetch::device

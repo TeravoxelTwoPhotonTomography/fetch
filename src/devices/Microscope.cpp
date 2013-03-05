@@ -325,6 +325,7 @@ ESCAN:
 
       // 2. Start the acquisition
       oldtask = __scan_agent._task;
+      TRY(0==__scan_agent.disarm(timeout_ms));
       TRY(0==__scan_agent.arm(&scan,&scanner));
       TRY(0==runPipeline());
       Chan_Wait_For_Writer_Count(c,1);

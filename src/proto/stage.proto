@@ -3,7 +3,7 @@ package fetch.cfg.device;
 // Configuration for the PI C843 Stage controller
 
 message C843StageController
-{ 
+{
   message Axis
     {
         optional uint32 id    = 1 [default=1];         //1-4
@@ -12,6 +12,9 @@ message C843StageController
 
     optional uint32 id   = 1 [default=1];
     repeated Axis   axis = 2;
+    optional double cut_proportional_gain = 3 [default=30.0];
+    optional double cut_integration_gain  = 4 [default=50.0];
+    optional double cut_derivative_gain   = 5 [default=30.0];
 }
 
 message SimulatedStage
@@ -35,14 +38,14 @@ message Stage
   {
     Simulated = 0;
     C843      = 1;
-  }    
+  }
   enum TilingMode
   { PixelAligned = 0;
     StageAligned = 1;
   }
   optional StageType            kind                        = 1;
   optional C843StageController  c843                        = 2;
-  optional SimulatedStage       simulated                   = 3;  
+  optional SimulatedStage       simulated                   = 3;
   optional TilingMode           tilemode                    = 5;
   optional Point3d              default_velocity_mm_per_sec = 6;
   optional Point3d              last_target_mm              = 7;
