@@ -529,6 +529,18 @@ FailedWriteIFD:
     return p;
   }
 
+  static int bufs_wait()
+  { int isok=0;
+    lock();
+    struct bufs_t_ *b=bufs_+ibufs_;
+    while(b->inuse)
+      TRY(SleepConditionVariableSRW(&b->available,&bufs_lock_,INFINITE,0));
+    isok=1;
+  Error:
+    unlock();
+    return isok;
+  }
+
   static void* bufs_alloc(size_t nbytes)
   { void *p=0;
     lock();
@@ -549,9 +561,20 @@ Error:
     unlock();
   }
 
+  static void bufs_print_stats__inlock(void)
+  { char a[]="             ",
+         u[9]={0};
+    a[ibufs_]='^';
+    for(int i=0;i<8;++i) u[i]=bufs_[i].inuse?'x':'.';
+    debug("[TiffGroupStreamWriteTask] bufs %5d %s\n"
+          "                                      %s\n",ibufs_,u,a);
+  }
+
+
   static void* bufs_realloc(void *p,size_t nbytes)
   { struct bufs_t_ *b=bufs_+countof(bufs_);
     lock();
+    bufs_print_stats__inlock();
     if(!p)
       TRY(p=bufs_alloc__inlock(nbytes));
     else
@@ -571,7 +594,7 @@ Error:
     goto Finalize;
   }
   unsigned int TiffGroupStreamWriteTask::config(device::TiffGroupStream *dc)
-  { return 1; }
+  { return bufs_wait()==1; }  // will block caller until the next buffer is available
 
   /** \todo Find out (and fix) what happens when the root name lacks an extension */
   static ::std::string gen_name(const ::std::string & root, int i)
@@ -623,13 +646,19 @@ Error:
           mylib::Tiff* tif=0;
           mylib::stream_t s=0;
           t=tic();
-          TRY(s=native_buffered_stream_open(fname.c_str(),STREAM_MODE_WRITE));
-          native_buffered_stream_set_malloc_func (s,bufs_alloc);
-          native_buffered_stream_set_realloc_func(s,bufs_realloc);
-          native_buffered_stream_set_free_func   (s,bufs_free);
-          TRY(native_buffered_stream_reserve(s,256*1024*1024)); // one stack's worth per channel
-          TIFFTRY(tif=Open_Tiff_Stream(s,"w"));
-          debug("Tiff Stream Open: %f msec\r\n",toc(&t));
+#if 0
+#define TIME(e) do{ TicTocTimer t=tic(); e; debug("[TIME] %10.6f msec\t%s\n",1000.0*toc(&t),#e); }while(0)
+#else
+#define TIME(e) e
+#endif
+          TIME( TRY(s=native_buffered_stream_open(fname.c_str(),STREAM_MODE_WRITE)));
+          TIME( native_buffered_stream_set_malloc_func (s,bufs_alloc));
+          TIME( native_buffered_stream_set_realloc_func(s,bufs_realloc));
+          TIME( native_buffered_stream_set_free_func   (s,bufs_free));
+          TIME( TRY(native_buffered_stream_reserve(s,256*1024*1024))); // one stack's worth per channel
+          TIME( TIFFTRY(tif=Open_Tiff_Stream(s,"w")));
+#undef TIME          
+          debug("Tiff Stream Open: %f msec\r\n",toc(&t)*1.0e3);
           streams.push_back(s);
           dc->_writers.push_back(tif);
         }

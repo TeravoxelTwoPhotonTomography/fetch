@@ -72,6 +72,12 @@ static off_t  nbs_tell    (stream_t stream);
 static int    nbs_truncate(stream_t stream, off_t length);
 static void   nbs_close   (stream_t stream);
 
+#if 1
+#include "common.h"
+#define TIME(e) do{ TicTocTimer t=tic(); e; LOG("[TIME] %10.6f msec\t%s\n",toc(&t)*1000.0,#e); }while(0)
+#else
+#define TIME(e) e
+#endif
 stream_t native_buffered_stream_open(const char *filename,stream_mode_t mode)
 { stream_t self=0;
   nbs_stream_t ctx=0;
@@ -81,7 +87,7 @@ stream_t native_buffered_stream_open(const char *filename,stream_mode_t mode)
   ZERO(struct _nbs_stream_t,ctx,1);
   switch(mode)
   { case STREAM_MODE_WRITE:
-      TRY(ctx->fd=CreateFile(filename,GENERIC_WRITE,0,NULL,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED,NULL));
+      TIME( TRY(ctx->fd=CreateFile(filename,GENERIC_WRITE,0,NULL,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED,NULL)) );
       break;
     default:
       FAIL("Not implemented");
@@ -108,6 +114,7 @@ Error:
   if(ctx)  free(ctx);
   return 0;
 }
+#undef TIME
 
 #define DECL_CTX nbs_stream_t ctx=(nbs_stream_t)stream_get_user_data(stream,NULL)
 
@@ -131,7 +138,7 @@ Error:
 }
 
 static void CALLBACK done(DWORD ecode, DWORD bytes, OVERLAPPED *o)
-{ LOG("done ecode: %10d\tbytes: %d\n",(int)ecode,(int)bytes);
+{ //LOG("done ecode: %10d\tbytes: %d\n",(int)ecode,(int)bytes);
   TRY(SetEvent(o->hEvent));
 Error:;
 }
@@ -149,7 +156,7 @@ static DWORD WINAPI writer(void* p)
                      offset=i*chunk,
                      rem=nbs->len-offset,
                      n=(chunk>rem)?rem:chunk;
-  LOG("Piece: %3llu - offset %20llu\tchunk %20llu\n",i,offset,n);
+  //LOG("Piece: %3llu - offset %20llu\tchunk %20llu\n",i,offset,n);
   ResetEvent(nbs->overlapped[i].hEvent);
   TRY(WriteFileEx(nbs->fd,((char*)nbs->buf)+offset,n,nbs->overlapped+i,done));
   WaitForSingleObjectEx(nbs->overlapped[i].hEvent,INFINITE,TRUE);

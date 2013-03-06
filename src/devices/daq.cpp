@@ -25,6 +25,13 @@
 #define DAQJMP( expr )  goto_if_fail( 0==DAQWRN(expr), Error)
 #define DAQRTN( expr )  return_val_if_fail(0==DAQWRN(expr),1)
 
+void silent(const char* fmt, ...){}
+#define DAQSILENT( expr )     (Guarded_DAQmx__Silent_Warnings( (expr), #expr, __FILE__, __LINE__, silent))
+#define DAQRTN_SILENT( expr )  return_val_if_fail(0==DAQSILENT(expr),1)
+#define DAQJMP_SILENT( expr )  goto_if_fail( 0==DAQSILENT(expr), Error)
+
+
+
 namespace fetch {
 
   bool operator==(const cfg::device::NationalInstrumentsDAQ& a, const cfg::device::NationalInstrumentsDAQ& b)  {return equals(&a,&b);}
@@ -123,7 +130,7 @@ namespace fetch {
       }
       return 0;
 #endif
-      DAQJMP(DAQmxWaitUntilTaskDone(_ao.daqtask,timeout_ms/1000));
+      DAQJMP_SILENT(DAQmxWaitUntilTaskDone(_ao.daqtask,timeout_ms/1000));
       return 1;
     Error:
       return 0;
@@ -180,8 +187,8 @@ Error:
 
     int32 NationalInstrumentsDAQ::startAO()  { DAQRTN(DAQmxStartTask(_ao.daqtask)); return 0;}
     int32 NationalInstrumentsDAQ::startCLK() { DAQRTN(DAQmxStartTask(_clk.daqtask)); return 0;}
-    int32 NationalInstrumentsDAQ::stopAO()   { DAQRTN(DAQmxStopTask(_ao.daqtask)); return 0;}
-    int32 NationalInstrumentsDAQ::stopCLK()  { DAQRTN(DAQmxStopTask(_clk.daqtask)); return 0;}
+    int32 NationalInstrumentsDAQ::stopAO()   { DAQRTN_SILENT(DAQmxStopTask(_ao.daqtask)); return 0;}
+    int32 NationalInstrumentsDAQ::stopCLK()  { DAQRTN_SILENT(DAQmxStopTask(_clk.daqtask)); return 0;}
 
     /** Renders the full terminal string in buf.
         Example:

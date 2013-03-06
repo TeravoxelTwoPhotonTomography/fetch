@@ -433,14 +433,19 @@ Error:
     {
       VALIDATE;
       char strSeriesNo[32];
+      char two[3]={0};
       renderSeriesNo(strSeriesNo,sizeof(strSeriesNo));
       std::string seriespath = _desc->root() + _desc->pathsep() + _desc->date();
+      two[0]=strSeriesNo[0];
+      two[1]=strSeriesNo[1];
 
       std::string part2 = prefix;
       if(!part2.empty())
         part2 = "-" + prefix;
 
       return seriespath
+        + _desc->pathsep()
+        + two
         + _desc->pathsep()
         + strSeriesNo
         + _desc->pathsep()
@@ -451,10 +456,15 @@ Error:
     {
       VALIDATE;
       char strSeriesNo[32];
+      char two[3]={0};
       renderSeriesNo(strSeriesNo,sizeof(strSeriesNo));
       std::string seriespath = _desc->root() + _desc->pathsep() + _desc->date();
+      two[0]=strSeriesNo[0];
+      two[1]=strSeriesNo[1];
 
       return seriespath
+        + _desc->pathsep()
+        + two
         + _desc->pathsep()
         + strSeriesNo
         + _desc->pathsep();
@@ -485,10 +495,12 @@ Error:
 
     bool FileSeries::ensurePathExists()
     {
-      std::string s,t;
-      char strSeriesNo[32];
+      std::string s,t,u;
+      char strSeriesNo[32]={0},two[3]={0};
 
       renderSeriesNo(strSeriesNo,sizeof(strSeriesNo));
+      two[0]=strSeriesNo[0];
+      two[1]=strSeriesNo[1];
       updateDate();
 
       tryCreateDirectory(_desc->root().c_str(), "root path", "");
@@ -496,8 +508,11 @@ Error:
       s = _desc->root()+_desc->pathsep()+_desc->date();
       tryCreateDirectory(s.c_str(), "date path", _desc->root().c_str());
 
-      t = s + _desc->pathsep()+strSeriesNo;
-      tryCreateDirectory(t.c_str(), "series path", s.c_str());
+      t = s + _desc->pathsep()+two;
+      tryCreateDirectory(t.c_str(), "series path prefix", s.c_str());
+
+      u = t + _desc->pathsep()+strSeriesNo;
+      tryCreateDirectory(u.c_str(), "series path", t.c_str());
 
       return is_valid();
     }
