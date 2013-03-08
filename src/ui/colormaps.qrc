@@ -6,5 +6,13 @@
   <file alias="3.RGB"       >resources/cmap/bwRGB.png</file>
   <file alias="4.RGBSat"    >resources/cmap/bwRGBsat.png</file>
   <file alias="5.Continuous">resources/cmap/cmap2.jpg</file>
+  <file alias="6.GRB"       >resources/cmap/bwGRB.png</file>
+  <file alias="7.GRBSat"    >resources/cmap/bwGRBsat.png</file>
+  <file alias="8.GRBY"      >resources/cmap/bwGRBY.png</file>
+  <file alias="9.GRBYSat"   >resources/cmap/bwGRBYsat.png</file>
+  <file alias="10.1-of-4"   >resources/cmap/bw4chSatOnly0.png</file>
+  <file alias="11.2-of-4"   >resources/cmap/bw4chSatOnly1.png</file>
+  <file alias="12.3-of-4"   >resources/cmap/bw4chSatOnly2.png</file>
+  <file alias="13.4-of-4"   >resources/cmap/bw4chSatOnly3.png</file>
 </qresource>
 </RCC>
