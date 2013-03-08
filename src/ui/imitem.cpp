@@ -46,11 +46,11 @@ ImItem::ImItem()
   _selected_channel(0),
   _show_mode(0),
   _nchan(3),
-  _cmap_ctrl_count(1<<12),
+  _cmap_ctrl_count(1<<14),
   _cmap_ctrl_last_size(0),
   _cmap_ctrl_s(NULL),
   _cmap_ctrl_t(NULL)
-{ 	
+{
   _text.setBrush(Qt::yellow);
   //_bbox_px = _text.boundingRect();
   _common_setup();
@@ -60,29 +60,29 @@ ImItem::~ImItem()
 {
   glDeleteTextures(1, &_hTexture);
   glDeleteTextures(1, &_hTexCmapCtrlS);
-  glDeleteTextures(1, &_hTexCmapCtrlT);  
+  glDeleteTextures(1, &_hTexCmapCtrlT);
   glDeleteTextures(1, &_hTexCmap);
 }
 
 QRectF ImItem::boundingRect() const
 {	QRectF bbox;
   if(_loaded)
-  { 
+  {
     bbox = cvt<PIXEL_SCALE,UM>( _bbox_um );
   } else
-  { 
+  {
     bbox = _text.boundingRect();
     bbox.moveTopLeft(pos());
-  }       
-  return bbox;  
+  }
+  return bbox;
 }
 
 void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget /* = 0 */)
-{ 
+{
   if(_loaded)
-  { 
+  {
     painter->beginNativePainting();
-    checkGLError();                                                                              
+    checkGLError();
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_3D, _hTexture);
@@ -92,7 +92,7 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     glTexParameterf( GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP );
     glTexParameterf( GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP );
     checkGLError();
-    
+
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D,_hTexCmap);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
@@ -102,19 +102,19 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     checkGLError();
 
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D,_hTexCmapCtrlS); 
+    glBindTexture(GL_TEXTURE_2D,_hTexCmapCtrlS);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
     glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D,_hTexCmapCtrlT);   
+    glBindTexture(GL_TEXTURE_2D,_hTexCmapCtrlT);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    
+
     glActiveTexture(GL_TEXTURE0); // Omitting this line will give a stack underflow
     _shader.bind();
     _shader.setUniformValue(_hShaderPlane,0);
@@ -126,7 +126,7 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
     _shader.setUniformValue("gain" ,(GLfloat)_gain);
     _shader.setUniformValue("bias" ,(GLfloat)_bias);
     _shader.setUniformValue("gamma",(GLfloat)_gamma);
-    _shader.setUniformValue("show_mode",(GLint)(_show_mode%4));    
+    _shader.setUniformValue("show_mode",(GLint)(_show_mode%4));
     checkGLError();
     //glPushMatrix();
     //glRotatef(_rotation_radians*180.0/M_PI,0.0,0.0,1.0);
@@ -151,8 +151,8 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
 
     checkGLError();
     painter->endNativePainting();
-     
-    painter->setPen(Qt::yellow);    
+
+    painter->setPen(Qt::yellow);
     painter->drawRect(boundingRect());
   } else
   {
@@ -167,7 +167,7 @@ void ImItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
 GLuint typeMapMylibToGLType(mylib::Array **pa)
 { mylib::Array *a = *pa;
   GLuint ret;
-  static GLuint table[] = 
+  static GLuint table[] =
   { GL_UNSIGNED_BYTE             ,   //{ UINT8   = 0,
     GL_UNSIGNED_SHORT            ,   //  UINT16  = 1,
     GL_UNSIGNED_INT              ,   //  UINT32  = 2,
@@ -178,19 +178,19 @@ GLuint typeMapMylibToGLType(mylib::Array **pa)
     -1, //GL_INT                 ,   //  INT32   = 6,
     -1                           ,   //  INT64   = 7,
     GL_FLOAT                     ,   //  FLOAT32 = 8,
-    -1                               //  FLOAT64 = 9 
-                                     //} Array_Type; 
+    -1                               //  FLOAT64 = 9
+                                     //} Array_Type;
   };
   ret = table[a->type];
   if(ret == (GLuint)-1)
-  { 
-    
+  {
+
     //mylib::Write_Image("typeMapMylibToGLType_before.tif",a,mylib::DONT_PRESS);
     *pa = mylib::Convert_Image(a,mylib::PLAIN_KIND,mylib::FLOAT32_TYPE,32);
     if(mylib::UINT64_TYPE<a->type && a->type<=mylib::INT64_TYPE)
-      mylib::Scale_Array(*pa,0.5,1.0); // 0.5*(x+1.0)    
+      mylib::Scale_Array(*pa,0.5,1.0); // 0.5*(x+1.0)
     //mylib::Write_Image("typeMapMylibToGLType_after.tif",*pa,mylib::DONT_PRESS);
-    
+
     //Free_Array(a); //[ngc] don't do this...owner is still responsible for his array.
     ret = GL_FLOAT;
   }
@@ -210,7 +210,7 @@ void ImItem::_loadTex(mylib::Array *im)
                  im->dims[0], im->dims[1], _nchan, 0,
                  GL_LUMINANCE,
                  gltype,
-                 im->data);  
+                 im->data);
   glBindTexture(GL_TEXTURE_3D, 0);
   //glDisable(GL_TEXTURE_3D);
   checkGLError();
@@ -220,7 +220,7 @@ void ImItem::_loadTex(mylib::Array *im)
 }
 
 void ImItem::updateDisplayLists()
-{ 
+{
   float t,b,l,r;//,cx,cy;
   //float ph,pw;
   checkGLError();
@@ -228,24 +228,24 @@ void ImItem::updateDisplayLists()
   t = cvt<PIXEL_SCALE,UM>(_bbox_um.top());
   l = cvt<PIXEL_SCALE,UM>(_bbox_um.left());
   r = cvt<PIXEL_SCALE,UM>(_bbox_um.right());
-  
+
   glNewList(_hQuadDisplayList, GL_COMPILE);
   glBegin(GL_QUADS);
 #if 1  // x=0 on right
   glTexCoord2f(1.0, 1.0); glVertex2f(l, t);//glVertex2f(r, b);
-  glTexCoord2f(1.0, 0.0); glVertex2f(l, b);//glVertex2f(r, t);				
-  glTexCoord2f(0.0, 0.0); glVertex2f(r, b);//glVertex2f(l, t);				
-  glTexCoord2f(0.0, 1.0); glVertex2f(r, t);//glVertex2f(l, b);		
+  glTexCoord2f(1.0, 0.0); glVertex2f(l, b);//glVertex2f(r, t);
+  glTexCoord2f(0.0, 0.0); glVertex2f(r, b);//glVertex2f(l, t);
+  glTexCoord2f(0.0, 1.0); glVertex2f(r, t);//glVertex2f(l, b);
 #else // x=0 on left
   glTexCoord2f(0.0, 1.0); glVertex2f(l, t);//glVertex2f(r, b);
-  glTexCoord2f(0.0, 0.0); glVertex2f(l, b);//glVertex2f(r, t);				
-  glTexCoord2f(1.0, 0.0); glVertex2f(r, b);//glVertex2f(l, t);				
-  glTexCoord2f(1.0, 1.0); glVertex2f(r, t);//glVertex2f(l, b);		
+  glTexCoord2f(0.0, 0.0); glVertex2f(l, b);//glVertex2f(r, t);
+  glTexCoord2f(1.0, 0.0); glVertex2f(r, b);//glVertex2f(l, t);
+  glTexCoord2f(1.0, 1.0); glVertex2f(r, t);//glVertex2f(l, b);
 #endif
-  
+
   glEnd();
   glEndList();
-  
+
   checkGLError();
 }
 
@@ -284,7 +284,7 @@ void ImItem::push(mylib::Array *plane)
   { _resetscale(_selected_channel);
     _resetscale_next = false;
   }
-  
+
   //Guess the "fill" for mixing different channels
   // - this is needed for when there are a ton of channels
   //   Typically, there are just a handful but in general there
@@ -294,7 +294,7 @@ void ImItem::push(mylib::Array *plane)
   //   it.
   _fill = 10.0/_nchan;
   _fill = (_fill>1.0)?1.0:_fill;
-  
+
   _loadTex(plane);
   checkGLError();
 }
@@ -303,7 +303,7 @@ void ImItem::push(mylib::Array *plane)
 
 void ImItem::setRotation( double radians )
 { if(!DBL_EQ(radians,_rotation_radians))
-  {    
+  {
     _rotation_radians = radians;
     QGraphicsItem::setRotation(radians*180.0/M_PI);
   }
@@ -313,7 +313,7 @@ void ImItem::setFOVGeometry( float w_um, float h_um, float rotation_radians )
 {
   prepareGeometryChange();
   setRotation(rotation_radians);
-  
+
   _bbox_um.setHeight(h_um);
   _bbox_um.setWidth(w_um);
   _bbox_um.moveCenter(QPointF(0.0f,0.0f));
@@ -339,26 +339,26 @@ void ImItem::_setupShader()
   _hShaderCmap  = _shader.uniformLocation("cmap");
   _shader.setUniformValue("nchan",(GLfloat)_nchan);
   _shader.release();
-  
-  loadColormap(":/cmap/2");    
+
+  loadColormap(":/cmap/2");
 }
 
 void ImItem::loadColormap(const QString& filename)
 { QImage cmap;
   CHKJMP(cmap.load(filename),Error);
   //qDebug()<<cmap.format();
-  glActiveTexture(GL_TEXTURE1);	
-  {        
+  glActiveTexture(GL_TEXTURE1);
+  {
     glGenTextures(1, &_hTexCmap);
-    glBindTexture(GL_TEXTURE_2D, _hTexCmap);    
+    glBindTexture(GL_TEXTURE_2D, _hTexCmap);
     glTexImage2D(GL_TEXTURE_2D,
-                 0, 
-                 GL_RGBA, 
-                 cmap.width(), cmap.height(), 0, 
+                 0,
+                 GL_RGBA,
+                 cmap.width(), cmap.height(), 0,
                  GL_BGRA, GL_UNSIGNED_BYTE,
-                 cmap.constBits());    
+                 cmap.constBits());
     glBindTexture(GL_TEXTURE_2D,0);
-  }  
+  }
   glActiveTexture(GL_TEXTURE0);
   checkGLError();
 Error:
@@ -369,7 +369,7 @@ Error:
 // - support different lookup on each channel
 // - lookup is into a 2d colormap indexed by s and t (each go 0 to 1).
 void ImItem::_updateCmapCtrlPoints()
-{ 
+{
   //if(_nchan<=1) return;
   assert(_cmap_ctrl_count>=2);
 
@@ -387,41 +387,41 @@ void ImItem::_updateCmapCtrlPoints()
       {
         ir = i/_cmap_ctrl_count;
         ic = i%_cmap_ctrl_count;
-        _cmap_ctrl_s[i] = 1.0/(_nchan+1.0) + ir/(_nchan-1.0f);
+        _cmap_ctrl_s[i] = (ir+1)/(_nchan+1.0);
         _cmap_ctrl_t[i] = ic/(_cmap_ctrl_count-1.0f);
-      }      
+      }
     }
     _cmap_ctrl_last_size = (GLuint) nelem;
   }
 
-  // upload to the gpu  
+  // upload to the gpu
   glActiveTexture(GL_TEXTURE2);
   glBindTexture(GL_TEXTURE_2D,_hTexCmapCtrlS);
-  glTexImage2D(GL_TEXTURE_2D, 
-    0, 
-    GL_LUMINANCE, 
-    _cmap_ctrl_count, _nchan, 0, 
+  glTexImage2D(GL_TEXTURE_2D,
+    0,
+    GL_LUMINANCE,
+    _cmap_ctrl_count, _nchan, 0,
     GL_LUMINANCE, GL_FLOAT,
     _cmap_ctrl_s);
-  glBindTexture(GL_TEXTURE_2D,0);  
+  glBindTexture(GL_TEXTURE_2D,0);
   checkGLError();
-                             
+
   glActiveTexture(GL_TEXTURE3);
   glBindTexture(GL_TEXTURE_2D,_hTexCmapCtrlT);
-  glTexImage2D(GL_TEXTURE_2D, 
-    0, 
-    GL_LUMINANCE, 
-    _cmap_ctrl_count, _nchan, 0, 
+  glTexImage2D(GL_TEXTURE_2D,
+    0,
+    GL_LUMINANCE,
+    _cmap_ctrl_count, _nchan, 0,
     GL_LUMINANCE, GL_FLOAT,
     _cmap_ctrl_t);
-  glBindTexture(GL_TEXTURE_2D,0);  
-  
+  glBindTexture(GL_TEXTURE_2D,0);
+
   glActiveTexture(GL_TEXTURE0);
   checkGLError();
 
   return;
 MemoryError:
-  error("(%s:%d) Memory (re)allocation failed."ENDL,__FILE__,__LINE__);  
+  error("(%s:%d) Memory (re)allocation failed."ENDL,__FILE__,__LINE__);
 }
 
 void ImItem::_autoscale(mylib::Array *data, GLuint ichannel, float percent)
@@ -430,17 +430,17 @@ void ImItem::_autoscale(mylib::Array *data, GLuint ichannel, float percent)
   { warning("(%s:%d) Autoscale: selected channel out of bounds."ENDL,__FILE__,__LINE__);
     return;
   }
-  mylib::Array *t = Convert_Image(data,mylib::PLAIN_KIND,mylib::FLOAT32_TYPE,32);  
-  c = *t;    // For Get_Array_Plane 
+  mylib::Array *t = Convert_Image(data,mylib::PLAIN_KIND,mylib::FLOAT32_TYPE,32);
+  c = *t;    // For Get_Array_Plane
   if(mylib::UINT64_TYPE<data->type && data->type<=mylib::INT64_TYPE)  // if signed integer type
-    mylib::Scale_Array(&c,0.5,1.0);                                   //    x = 0.5*(x+1.0) 
+    mylib::Scale_Array(&c,0.5,1.0);                                   //    x = 0.5*(x+1.0)
   mylib::Get_Array_Plane(&c,(mylib::Dimn_Type)ichannel);
-  
+
 
   //mylib::Write_Image("ImItem_autoscale_input.tif",data,mylib::DONT_PRESS);
   //mylib::Write_Image("ImItem_autoscale_channel_float.tif",&c,mylib::DONT_PRESS);
 
-  
+
   float max,min,m,b;
   mylib::Range_Bundle range;
 #if 0
@@ -449,30 +449,30 @@ void ImItem::_autoscale(mylib::Array *data, GLuint ichannel, float percent)
   */
   mylib::Array_Range(&range,t);  // min max of entire array
   max = range.maxval.fval;
-  min = range.minval.fval;  
+  min = range.minval.fval;
   _gain = 1.0f/(max-min);
   _bias = min/(min-max);
 #endif
 
-  mylib::Array_Range(&range,&c); // min max of single channel  
+  mylib::Array_Range(&range,&c); // min max of single channel
   mylib::Free_Array(t);
   max = _gain*range.maxval.fval+_bias; // adjust for gain and bias
-  min = _gain*range.minval.fval+_bias;  
+  min = _gain*range.minval.fval+_bias;
   m = 1.0f/(max-min);
   b = min/(min-max);
-                   
+
   for(GLuint i=0;i<_cmap_ctrl_count;++i)
   { float x = i/(_cmap_ctrl_count-1.0f);
     _cmap_ctrl_t[ichannel*_cmap_ctrl_count+i] = m*x+b; // upload to gpu will clamp to [0,1]
-  }  
-  
+  }
+
   _updateCmapCtrlPoints();
 }
 
 void ImItem::_resetscale(GLuint ichannel)
 {
   if(ichannel<_nchan)
-  { for(GLuint i=0;i<_cmap_ctrl_count;++i)    
+  { for(GLuint i=0;i<_cmap_ctrl_count;++i)
       _cmap_ctrl_t[ichannel*_cmap_ctrl_count+i] = i/(_cmap_ctrl_count-1.0f);
     _updateCmapCtrlPoints();
   }

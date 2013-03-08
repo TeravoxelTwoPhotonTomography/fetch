@@ -24,7 +24,7 @@ namespace ui{
 /************************************************************************/
 
 ZoomableView::ZoomableView(QGraphicsScene *scene, QWidget *parent)
-  : QGraphicsView(scene,parent) 
+  : QGraphicsView(scene,parent)
   , _scalebar()
 {	QObject::connect(this     ,SIGNAL(zoomChanged(double)),
                   &_scalebar,SLOT(setZoom(double)));
@@ -37,7 +37,7 @@ void	ZoomableView::wheelEvent(QWheelEvent *event)
   d = event->delta()/MOUSEWHEEL_SCALE;
   s = powf(MOUSEWHEEL_POW,-d);
   scale(s,s);
-  notifyZoomChanged();	
+  notifyZoomChanged();
 }
 
 void
@@ -47,7 +47,7 @@ ZoomableView::drawForeground(QPainter* painter, const QRectF& rect)
   sc.moveBottomRight(vp.bottomRight());
   painter->resetTransform();                                               //painter starts with the scene transform
 
-  {  
+  {
     QPointF p  = QPointF(   mapFromGlobal(QCursor::pos())),
             ps = mapToScene(mapFromGlobal(QCursor::pos()));
     QStaticText txt(QString("(%1,%2)").arg(ps.x()).arg(ps.y()));
@@ -59,8 +59,8 @@ ZoomableView::drawForeground(QPainter* painter, const QRectF& rect)
     r.moveCenter(p);
     painter->drawEllipse(r);
   }
-  
-  // translate, but allow for a one px border 
+
+  // translate, but allow for a one px border
   // between text and the edge of the viewport
   painter->translate(sc.topLeft()-QPointF(2,2));
   _scalebar.paint(painter, rect);
@@ -73,17 +73,17 @@ ZoomableView::drawForeground(QPainter* painter, const QRectF& rect)
 Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
 :QWidget(parent)
 ,_sc(stageController)
-{	
-  _view = new ZoomableView(&_scene); 
-  QGLWidget *viewport; 
-  //_view = new QGraphicsView(&_scene);  
-  _view->setViewport(viewport = new QGLWidget);   
+{
+  _view = new ZoomableView(&_scene);
+  QGLWidget *viewport;
+  //_view = new QGraphicsView(&_scene);
+  _view->setViewport(viewport = new QGLWidget);
   viewport->makeCurrent();
   checkGLError();
   initOpenGLSentinal();
   assert(viewport->context()->isValid());
   assert(viewport->isValid());
-  
+
   _view->setDragMode(QGraphicsView::ScrollHandDrag); //RubberBandDrag would be nice for zooming...but need a change of mode
   _view->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
 
@@ -97,11 +97,11 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
   connect(stageController,SIGNAL(moved(QPointF)),
           this,SLOT(updatePos(QPointF)));
   connect(stageController->tiling(),SIGNAL(fovGeometryChanged(float,float,float)),
-          this,SLOT(fovGeometryChanged(float,float,float)));  
+          this,SLOT(fovGeometryChanged(float,float,float)));
 
   _item = new ImItem;
   _scene.addItem(_item);
-  checkGLError(); 
+  checkGLError();
 
   _tv = new TilesView(stageController->tiling());
   _scene.addItem(_tv);
@@ -110,12 +110,12 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
               _tv,SLOT(     addSelection(const QPainterPath&)));
   connect(&_scene,SIGNAL(removeSelectedArea(const QPainterPath&)),
               _tv,SLOT(  removeSelection(const QPainterPath&)));
-  
+
   connect(&_scene,SIGNAL(   markSelectedAreaAsDone(const QPainterPath&)),
               _tv,SLOT(     markSelectedAreaAsDone(const QPainterPath&)));
   connect(&_scene,SIGNAL(markSelectedAreaAsNotDone(const QPainterPath&)),
               _tv,SLOT(  markSelectedAreaAsNotDone(const QPainterPath&)));
-  
+
   connect(&_scene,SIGNAL(   markSelectedAreaAsExplorable(const QPainterPath&)),
               _tv,SLOT(     markSelectedAreaAsExplorable(const QPainterPath&)));
   connect(&_scene,SIGNAL(markSelectedAreaAsNotExplorable(const QPainterPath&)),
@@ -134,13 +134,13 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
 }
 
 void Figure::createActions()
-{ QAction *c;      
+{ QAction *c;
 
   c = new QAction(tr("&Fill Active"),this);
   c->setShortcut(QKeySequence(tr("f","Mark|Fill")));
   c->setStatusTip(tr("Fill holes in tile regions marked as active."));
   connect(c,SIGNAL(triggered()),this,SLOT(fillActive()));
-  addAction(c);    
+  addAction(c);
 
   c = new QAction(tr("&Dilate Active"),this);
   c->setShortcut(QKeySequence(tr("d","Mark|Dilate")));
@@ -173,7 +173,7 @@ void Figure::createActions()
   c->setShortcut(QKeySequence(tr("0","Autoscale|Channel0")));
   c->setStatusTip(tr("Autoscale channel 0."));
   connect(c,SIGNAL(triggered()),this,SLOT(autoscale0()));
-  addAction(c);   
+  addAction(c);
 
   c = new QAction(tr("Autoscale &1"),this);
   c->setShortcut(QKeySequence(tr("1","Autoscale|Channel1")));
@@ -186,25 +186,37 @@ void Figure::createActions()
   c->setStatusTip(tr("Autoscale channel 2."));
   connect(c,SIGNAL(triggered()),this,SLOT(autoscale2()));
   addAction(c);
-    
+
+  c = new QAction(tr("Autoscale &3"),this);
+  c->setShortcut(QKeySequence(tr("3","Autoscale|Channel3")));
+  c->setStatusTip(tr("Autoscale channel 3."));
+  connect(c,SIGNAL(triggered()),this,SLOT(autoscale3()));
+  addAction(c);
+
   c = new QAction(tr("Reset 0"),this);
   c->setShortcut(QKeySequence(tr("Shift+0","Autoscale|Channel0")));
   c->setStatusTip(tr("Autoscale channel 0."));
   connect(c,SIGNAL(triggered()),this,SLOT(resetscale0()));
-  addAction(c); 
-    
+  addAction(c);
+
   c = new QAction(tr("Reset 1"),this);
   c->setShortcut(QKeySequence(tr("Shift+1","Autoscale|Channel1")));
   c->setStatusTip(tr("Autoscale channel 1."));
   connect(c,SIGNAL(triggered()),this,SLOT(resetscale1()));
   addAction(c);
-    
+
   c = new QAction(tr("Reset 2"),this);
   c->setShortcut(QKeySequence(tr("Shift+2","Autoscale|Channel2")));
   c->setStatusTip(tr("Autoscale channel 2."));
   connect(c,SIGNAL(triggered()),this,SLOT(resetscale2()));
   addAction(c);
-  
+
+  c = new QAction(tr("Reset 3"),this);
+  c->setShortcut(QKeySequence(tr("Shift+3","Autoscale|Channel3")));
+  c->setStatusTip(tr("Autoscale channel 3."));
+  connect(c,SIGNAL(triggered()),this,SLOT(resetscale3()));
+  addAction(c);
+
   //c = new QAction(tr("Add Tiles"),this);
   //QList<QKeySequence> shortcuts;
   //shortcuts.push_back( QKeySequence(tr("+","TileMode|Add|+")) );
@@ -229,17 +241,17 @@ void Figure::setDragModeToNoDrag()
   _scene.setMode(StageScene::DrawRect);
 }
 
-void Figure::setDragModeToSelect() 
-{ 
+void Figure::setDragModeToSelect()
+{
   _view->setDragMode(QGraphicsView::NoDrag);
   _scene.setMode(StageScene::DrawRect);
 }
- 
-void Figure::setDragModeToPan()    
-{ 
+
+void Figure::setDragModeToPan()
+{
   _view->setDragMode(QGraphicsView::ScrollHandDrag);
   _scene.setMode(StageScene::DoNothing);
-} 
+}
 
 //void Figure::setAddTilesMode()
 //{ QPalette p = palette();
@@ -260,14 +272,14 @@ Figure::readSettings()
 {
   QSettings settings;
   QStringList keys = settings.allKeys();
-#if 0  
+#if 0
   _HERE_;
   qDebug() << settings.organizationName();
   qDebug() << settings.applicationName();
   qDebug() << (settings.isWritable()?"Writable":"!!! Settings are not writable !!!");
   foreach(QString k,keys)
     qDebug() << "\t" << k;
-#endif 
+#endif
   settings.beginGroup("voxel");
   /*
   double w  = settings.value("width_um",0.1).toDouble(),
@@ -301,7 +313,7 @@ Figure::~Figure()
 #if 0
 struct OpenImageWidgetSet : QSet<Figure*>
 {
-  virtual ~OpenImageWidgetSet() 
+  virtual ~OpenImageWidgetSet()
   {
     //foreach(Figure* w, *this)
     //  delete w;
@@ -329,7 +341,7 @@ void imclose(Figure *w/*=0*/)
     { assert(w);
       imclose(w);
     }
-    return; 
+    return;
   }
   assert(g_open.remove(w));
   w->close();

@@ -17,7 +17,7 @@ class ZoomableView:public QGraphicsView
   Q_OBJECT
 public:
   ZoomableView(QGraphicsScene *scene, QWidget *parent=0);
-  
+
   //inline double metersToPixels()                                           {return _scalebar.unit2px();}
   //inline void   setMetersToPixels(double unit2px)                          {_scalebar.setUnit(unit2px);}
   virtual void	wheelEvent(QWheelEvent *event);
@@ -25,10 +25,10 @@ public:
   inline void notifyZoomChanged()                                            {emit zoomChanged(transform().m11());}
 signals:
   void zoomChanged(double zoom);
-  
+
 protected:
   virtual void drawForeground(QPainter* painter, const QRectF& rect);
-  
+
 private:
   ScaleBar _scalebar;
 };
@@ -40,7 +40,7 @@ public:
   Figure(PlanarStageController *stageController, QWidget *parent=0);
   Figure(double unit2px, QWidget *parent=0);
   virtual ~Figure();
-  
+
 public slots:
   inline void push(mylib::Array *im)                                       {_item->push(im); updatePos(); emit pushed(); maybeFit();}
   inline void imshow(mylib::Array *im)                                     {_item->push(im); updatePos(); _item->flip(); maybeFit(); }
@@ -51,9 +51,11 @@ public slots:
   inline void autoscale0()                                                 {_item->autoscale(0);}
   inline void autoscale1()                                                 {_item->autoscale(1);}
   inline void autoscale2()                                                 {_item->autoscale(2);}
+  inline void autoscale3()                                                 {_item->autoscale(3);}
   inline void resetscale0()                                                {_item->resetscale(0);}
   inline void resetscale1()                                                {_item->resetscale(1);}
   inline void resetscale2()                                                {_item->resetscale(2);}
+  inline void resetscale3()                                                {_item->resetscale(3);}
   inline void fovGeometryChanged(float w_um,float h_um, float radians)     {_item->setFOVGeometry(w_um,h_um,radians);}
   inline void setColormap(const QString& filename)                         {_item->loadColormap(filename);}
   inline void setGamma(float gamma)                                        {_item->setGamma(gamma);}
@@ -71,7 +73,7 @@ public slots:
 
 signals:
   void lastFigureClosed();
-  void pushed();  
+  void pushed();
 
 protected:
   void readSettings();
@@ -81,7 +83,7 @@ protected:
 
 private:
   inline void maybeFit()                                                   {if(_isFitOnNext) {fit(); _isFitOnNext=false;}}
-         void createActions();         
+         void createActions();
 private:
   PlanarStageController *_sc;
   ZoomableView*      _view;

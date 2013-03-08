@@ -517,7 +517,8 @@ Error:
           }
           d->generateAOConstZ(ummin);                                           // last frame is a dead frame to lock to ummin
           TRY(!d->writeAO());
-          Guarded_Assert_WinErr(WAIT_OBJECT_0==WaitForSingleObject(fetch_thread,INFINITE));
+          if(ctx.ok)
+            Guarded_Assert_WinErr(WAIT_OBJECT_0==WaitForSingleObject(fetch_thread,INFINITE));
           TRY(ctx.ok);
 Finalize:
           TS_CLOSE;

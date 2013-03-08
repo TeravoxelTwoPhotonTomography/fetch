@@ -17,7 +17,7 @@ class ImItem: public QGraphicsItem
 public:
   ImItem();
   virtual ~ImItem();
-  
+
   QRectF boundingRect  () const;                                           // in meters
   void   paint         (QPainter                       *painter,
                         const QStyleOptionGraphicsItem *option,
@@ -34,11 +34,11 @@ public:
   void loadColormap(const QString& filename);
   void setGamma(float gamma)                                              {_gamma=gamma; update();}
 
-  inline double rotationRadians()                                         {return _rotation_radians;}  
+  inline double rotationRadians()                                         {return _rotation_radians;}
 protected:
   void updateDisplayLists();
   void _common_setup();
-  void _loadTex(mylib::Array *im);  
+  void _loadTex(mylib::Array *im);
   void _setupShader();
   void _updateCmapCtrlPoints();
   void _autoscale(mylib::Array *data, unsigned int ichannel, float percent);
@@ -50,7 +50,7 @@ protected:
   float _gain;
   float _bias;
   float _gamma;
-  
+
   QGraphicsSimpleTextItem _text;
   unsigned int _hQuadDisplayList;
   unsigned int _hTexture;

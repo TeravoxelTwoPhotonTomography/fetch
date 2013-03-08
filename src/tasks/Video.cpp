@@ -447,7 +447,8 @@ Error:
         { TRY(!d->writeAO());
           TS_TOC;
         }
-        Guarded_Assert_WinErr(WAIT_OBJECT_0==WaitForSingleObject(fetch_thread,INFINITE));
+        if(ctx.ok)
+          Guarded_Assert_WinErr(WAIT_OBJECT_0==WaitForSingleObject(fetch_thread,INFINITE));
         TRY(ctx.ok);
 Finalize:
         TS_CLOSE;
