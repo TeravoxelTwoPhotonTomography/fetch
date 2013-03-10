@@ -1,18 +1,22 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource prefix="cmap/">
-  <file alias="0.GRSat"     >resources/cmap/bwGRsat.png</file>
-  <file alias="1.1-of-2"    >resources/cmap/bw2chSatOnly1.png</file>
-  <file alias="2.2-of-2"    >resources/cmap/bw2chSatOnly2.png</file>
-  <file alias="3.RGB"       >resources/cmap/bwRGB.png</file>
-  <file alias="4.RGBSat"    >resources/cmap/bwRGBsat.png</file>
-  <file alias="5.Continuous">resources/cmap/cmap2.jpg</file>
-  <file alias="6.GRB"       >resources/cmap/bwGRB.png</file>
-  <file alias="7.GRBSat"    >resources/cmap/bwGRBsat.png</file>
-  <file alias="8.GRBY"      >resources/cmap/bwGRBY.png</file>
-  <file alias="9.GRBYSat"   >resources/cmap/bwGRBYsat.png</file>
-  <file alias="10.1-of-4"   >resources/cmap/bw4chSatOnly0.png</file>
-  <file alias="11.2-of-4"   >resources/cmap/bw4chSatOnly1.png</file>
-  <file alias="12.3-of-4"   >resources/cmap/bw4chSatOnly2.png</file>
-  <file alias="13.4-of-4"   >resources/cmap/bw4chSatOnly3.png</file>
+  <file alias="0.GRSat"      >resources/cmap/bwGRsat.png</file>
+  <file alias="01.1-of-2"    >resources/cmap/bw2chSatOnly1.png</file>
+  <file alias="02.2-of-2"    >resources/cmap/bw2chSatOnly2.png</file>
+  <file alias="03.RGB"       >resources/cmap/bwRGB.png</file>
+  <file alias="04.RGBSat"    >resources/cmap/bwRGBsat.png</file>
+  <file alias="05.Continuous">resources/cmap/cmap2.jpg</file>
+  <file alias="06.GRB"       >resources/cmap/bwGRB.png</file>
+  <file alias="07.GRBSat"    >resources/cmap/bwGRBsat.png</file>
+  <file alias="08.GRBP"      >resources/cmap/bwGRBP.png</file>
+  <file alias="09.GRBPSat"   >resources/cmap/bwGRBPsat.png</file>
+  <file alias="10.1-of-4-Sat">resources/cmap/bw4chSatOnly0.png</file>
+  <file alias="11.2-of-4-Sat">resources/cmap/bw4chSatOnly1.png</file>
+  <file alias="12.3-of-4-Sat">resources/cmap/bw4chSatOnly2.png</file>
+  <file alias="13.4-of-4-Sat">resources/cmap/bw4chSatOnly3.png</file>
+  <file alias="14.1-of-4"    >resources/cmap/bw4chOnly0.png</file>
+  <file alias="15.2-of-4"    >resources/cmap/bw4chOnly1.png</file>
+  <file alias="16.3-of-4"    >resources/cmap/bw4chOnly2.png</file>
+  <file alias="17.4-of-4"    >resources/cmap/bw4chOnly3.png</file>
 </qresource>
 </RCC>
