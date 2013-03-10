@@ -362,7 +362,8 @@ FailedOpen:
 
     // Constructor  ///////////////////////////////////////////////////////////
     TiffGroupStream::TiffGroupStream( Agent *agent )
-      :IDiskStream(agent)
+      :IDiskStream(agent),
+       nchan_(0)
     {
       _writer = &_write_task;
       _reader = &_read_task;
@@ -371,7 +372,8 @@ FailedOpen:
     // Constructor  ///////////////////////////////////////////////////////////
     /** \param[in] config specifies the path and mode of a file */
     TiffGroupStream::TiffGroupStream( Agent *agent, Config *config )
-      :IDiskStream(agent,config)
+      :IDiskStream(agent,config),
+       nchan_(0)
     {
       _writer = &_write_task;
       _reader = &_read_task;

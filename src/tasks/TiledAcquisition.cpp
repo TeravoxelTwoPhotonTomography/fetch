@@ -107,6 +107,7 @@ Error:
           debug("%s(%d)"ENDL "\t[Tiling Task] tilepos: %5.1f %5.1f %5.1f"ENDL,__FILE__,__LINE__,tilepos[0],tilepos[1],tilepos[2]);
           filename = dc->stack_filename();
           dc->file_series.ensurePathExists();
+          dc->disk.set_nchan(dc->scanner()->get2d()->digitizer()->nchan());
           eflag |= dc->disk.open(filename,"w");
           if(eflag)
           {

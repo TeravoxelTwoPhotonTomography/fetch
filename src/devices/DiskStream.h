@@ -86,10 +86,12 @@ namespace fetch
             
     class TiffGroupStream : public IDiskStream
     {
-      
+      int nchan_;
     public:
       TiffGroupStream(Agent *agent);
       TiffGroupStream(Agent *agent, Config *config);
+
+      void set_nchan(int nchan) {nchan_=nchan;}
 
       unsigned int on_detach();
     protected:

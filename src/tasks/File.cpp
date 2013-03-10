@@ -593,8 +593,41 @@ Error:
     p=NULL;
     goto Finalize;
   }
+
+
   unsigned int TiffGroupStreamWriteTask::config(device::TiffGroupStream *dc)
-  { return bufs_wait()==1; }  // will block caller until the next buffer is available
+  { TRY(dc->nchan_>0) 
+    for(int i=0;i<dc->nchan_;++i)
+    {
+      if(i>=dc->_writers.size())
+      { device::TiffGroupStream::Config c = dc->get_config();
+        TicTocTimer t;
+        ::std::string fname = gen_name(c.path(),i);
+        mylib::Tiff* tif=0;
+        mylib::stream_t s=0;
+        t=tic();
+  #if 0
+  #define TIME(e) do{ TicTocTimer t=tic(); e; debug("[TIME] %10.6f msec\t%s\n",1000.0*toc(&t),#e); }while(0)
+  #else
+  #define TIME(e) e
+  #endif
+        TIME( TRY(s=native_buffered_stream_open(fname.c_str(),STREAM_MODE_WRITE)));
+        TIME( native_buffered_stream_set_malloc_func (s,bufs_alloc));
+        TIME( native_buffered_stream_set_realloc_func(s,bufs_realloc));
+        TIME( native_buffered_stream_set_free_func   (s,bufs_free));
+        TIME( TRY(native_buffered_stream_reserve(s,256*1024*1024))); // one stack's worth per channel
+        TIME( TIFFTRY(tif=Open_Tiff_Stream(s,"w")));
+  #undef TIME          
+        debug("Tiff Stream Open: %f msec\r\n",toc(&t)*1.0e3);
+        streams.push_back(s);
+        dc->_writers.push_back(tif);
+      }
+    }
+
+    return bufs_wait()==1;
+  Error:
+    return 0;
+  }  // will block caller until the next buffer is available
 
   /** \todo Find out (and fix) what happens when the root name lacks an extension */
   static ::std::string gen_name(const ::std::string & root, int i)
@@ -602,7 +635,7 @@ Error:
     size_t idot = root.rfind('.');
     std::string firstpart  = root.substr(0,idot),
                 secondpart = root.substr(idot,std::string::npos);
-    os << firstpart << "." << i << secondpart;
+    os << firstpart << "." << i << secondpart; // eg default.0.tif
     return os.str();
   }
 
@@ -638,7 +671,9 @@ Error:
       mylib::castFetchFrameToDummyArray(&dummy,buf,dims);
 
       for(i=0;i<dims[2];++i)
-      { // maybe append writer
+      { 
+#if 0
+        // maybe append writer
         if(i>=dc->_writers.size())
         { device::TiffGroupStream::Config c = dc->get_config();
           TicTocTimer t;
@@ -651,7 +686,7 @@ Error:
 #else
 #define TIME(e) e
 #endif
-          TIME( TRY(s=native_buffered_stream_open(fname.c_str(),STREAM_MODE_WRITE)));
+          TIME( TRY(s=native_buffered_stream_open(fname.c_str(),STREAM_MODE_WRITE))); /// FIXME: The CreateFile call can take a long time. --> depends on filename
           TIME( native_buffered_stream_set_malloc_func (s,bufs_alloc));
           TIME( native_buffered_stream_set_realloc_func(s,bufs_realloc));
           TIME( native_buffered_stream_set_free_func   (s,bufs_free));
@@ -662,6 +697,7 @@ Error:
           streams.push_back(s);
           dc->_writers.push_back(tif);
         }
+#endif
         // Write out channel
         { mylib::Tiff* w = dc->_writers[i];
           Array_Bundle tmp = dummy;
@@ -676,8 +712,6 @@ Error:
       if(dc->_writers[i])
         mylib::Close_Tiff(dc->_writers[i]);
     dc->_writers.clear();
-    //for(i=0;i<streams.size();++i)
-    //  TRY(native_buffered_stream_flush(streams[i]));
 Finalize:
     DBG("Done.");
     TS_CLOSE;
