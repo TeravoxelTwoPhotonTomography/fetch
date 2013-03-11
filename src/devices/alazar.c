@@ -514,15 +514,16 @@ Error:
  required to make the data contiguous.
 
  \param[in]     ctx        The device context.
- \param[in,out] buf        A pointer to an image buffer.  This gets swapped with
+ \param[in,out] buf        A pointer to an image buffer.  This may be swapped with
                            the acquired buffer.  The input buffer is added to the
                            acquisition queue.
  \param[in]     timeout_ms If the acquisition doesn't complete within the
                            specified timeout (in milliseconds), the acquisition
                            will fail.
 */
+#define FUDGE ((i>0)?92:0)
 int alazar_fetch (alazar_t ctx, void **buf, unsigned timeout_ms)
-{ unsigned i;
+{ unsigned i,j,j0;
   size_t o=0;
   lock(ctx,'r');
   TRY(alazar_is_started(ctx));
@@ -531,8 +532,12 @@ int alazar_fetch (alazar_t ctx, void **buf, unsigned timeout_ms)
     { int nchan = ctx->cfg->enable[i][0]+ctx->cfg->enable[i][1];
       if(nchan>0)
       { ERR(AlazarWaitAsyncBufferComplete(BOARD(i),(char*)CURRENT(i),timeout_ms));
-        memcpy(((char*)buf[0])+o,CURRENT(i),nbytes*nchan);
-        o+=nbytes*nchan;
+        memcpy(((char*)buf[0])+o,((char*)CURRENT(i))+FUDGE,nbytes*nchan-FUDGE); ///< FIXME: HACK!!!  FOR SOME REASON TRIGGERING/ADDRESSING IS OFF FOR THE SECOND BOARD
+        { unsigned short *p=(unsigned short*)((char*)buf[0]+o+nbytes*nchan-FUDGE);
+          for(j=0;j<FUDGE/2;++j)
+            p[j]=p[-1];
+        }
+        o+=nbytes*nchan; 
         ERR(AlazarPostAsyncBuffer(BOARD(i),(char*)CURRENT(i),nbytes*nchan));
       }
     }

@@ -122,6 +122,7 @@ namespace fetch
 
       virtual Scanner2D* get2d() {return this;}
 
+      Digitizer* digitizer() { return &_digitizer; }
       Chan *getVideoChannel() { return _out->contents[0]; }
 
     private:

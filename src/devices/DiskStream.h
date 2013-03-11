@@ -39,7 +39,7 @@ namespace fetch
 
   namespace device
   {
-    
+
     class IDiskStream: public IConfigurableDevice<cfg::File>
     {
       public:
@@ -61,7 +61,7 @@ namespace fetch
         Task *_reader;
         Task *_writer;
 
-    }; 
+    };
 
     class TiffStream : public IDiskStream
     {
@@ -83,7 +83,7 @@ namespace fetch
       mylib::Tiff_Reader *_tiff_reader;
       mylib::Tiff_Writer *_tiff_writer;
     };
-            
+
     class TiffGroupStream : public IDiskStream
     {
       int nchan_;
@@ -92,6 +92,7 @@ namespace fetch
       TiffGroupStream(Agent *agent, Config *config);
 
       void set_nchan(int nchan) {nchan_=nchan;}
+      int nchan()               {return nchan_;}
 
       unsigned int on_detach();
     protected:
@@ -108,7 +109,7 @@ namespace fetch
     };
 
     class HFILEDiskStreamBase : public IDiskStream
-    {    
+    {
       // Children still need to define
       //   on_detach()
       //   on_attach()
@@ -122,15 +123,15 @@ namespace fetch
 
     template<typename TReader,typename TWriter>
     class HFILEDiskStream : public HFILEDiskStreamBase
-    { 
+    {
     public:
       HFILEDiskStream(Agent *agent);
       HFILEDiskStream(Agent *agent, Config *config);
-      
+
       unsigned int on_detach(void);
 
     protected:
-      unsigned int on_attach(void);                       // use open() instead        
+      unsigned int on_attach(void);                       // use open() instead
 
     private:
       TReader _inst_reader;

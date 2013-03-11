@@ -594,10 +594,21 @@ Error:
     goto Finalize;
   }
 
+  /** \todo Find out (and fix) what happens when the root name lacks an extension */
+  static ::std::string gen_name(const ::std::string & root, int i)
+  { ::std::ostringstream os;
+    size_t idot = root.rfind('.');
+    std::string firstpart  = root.substr(0,idot),
+                secondpart = root.substr(idot,std::string::npos);
+    os << firstpart << "." << i << secondpart; // eg default.0.tif
+    return os.str();
+  }
 
   unsigned int TiffGroupStreamWriteTask::config(device::TiffGroupStream *dc)
-  { TRY(dc->nchan_>0) 
-    for(int i=0;i<dc->nchan_;++i)
+  {
+    //std::vector<mylib::stream_t>   streams;
+    TRY(dc->nchan()>0);
+    for(int i=0;i<dc->nchan();++i)
     {
       if(i>=dc->_writers.size())
       { device::TiffGroupStream::Config c = dc->get_config();
@@ -617,9 +628,9 @@ Error:
         TIME( native_buffered_stream_set_free_func   (s,bufs_free));
         TIME( TRY(native_buffered_stream_reserve(s,256*1024*1024))); // one stack's worth per channel
         TIME( TIFFTRY(tif=Open_Tiff_Stream(s,"w")));
-  #undef TIME          
+  #undef TIME
         debug("Tiff Stream Open: %f msec\r\n",toc(&t)*1.0e3);
-        streams.push_back(s);
+        //streams.push_back(s);
         dc->_writers.push_back(tif);
       }
     }
@@ -629,15 +640,6 @@ Error:
     return 0;
   }  // will block caller until the next buffer is available
 
-  /** \todo Find out (and fix) what happens when the root name lacks an extension */
-  static ::std::string gen_name(const ::std::string & root, int i)
-  { ::std::ostringstream os;
-    size_t idot = root.rfind('.');
-    std::string firstpart  = root.substr(0,idot),
-                secondpart = root.substr(idot,std::string::npos);
-    os << firstpart << "." << i << secondpart; // eg default.0.tif
-    return os.str();
-  }
 
 #define DEBUG_FAST_EXIT
 #include <util/native-buffered-stream.h>
@@ -671,7 +673,7 @@ Error:
       mylib::castFetchFrameToDummyArray(&dummy,buf,dims);
 
       for(i=0;i<dims[2];++i)
-      { 
+      {
 #if 0
         // maybe append writer
         if(i>=dc->_writers.size())
@@ -692,7 +694,7 @@ Error:
           TIME( native_buffered_stream_set_free_func   (s,bufs_free));
           TIME( TRY(native_buffered_stream_reserve(s,256*1024*1024))); // one stack's worth per channel
           TIME( TIFFTRY(tif=Open_Tiff_Stream(s,"w")));
-#undef TIME          
+#undef TIME
           debug("Tiff Stream Open: %f msec\r\n",toc(&t)*1.0e3);
           streams.push_back(s);
           dc->_writers.push_back(tif);

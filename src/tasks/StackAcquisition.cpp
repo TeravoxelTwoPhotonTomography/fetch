@@ -140,7 +140,7 @@ Error:
         dc->transaction_lock();
         filename = dc->stack_filename();
         dc->file_series.ensurePathExists();
-        dc->disk.set_nchan(dc->scanner()->get2d()->digitizer()->nchan());
+        dc->disk.set_nchan(dc->scanner.get2d()->digitizer()->nchan());
         eflag |= dc->disk.open(filename,"w");
         if(eflag)
           return eflag;
