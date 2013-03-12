@@ -460,6 +460,7 @@ Error:
     { C843JMP( C843_qONT(handle_,"123",ontarget) );    // Ensure controller is on-target (if there was an error before, will repeat here?)
       Sleep(20);
     }
+    Sleep(500); // let the bath soln settle.
     //if(!all(ontarget,3))
     //  goto Error;
 
