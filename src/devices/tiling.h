@@ -65,7 +65,7 @@ namespace device {
     bool     nextInPlaneExplorablePosition(Vector3f &pos);
     bool     nextPosition(Vector3f& pos);
 
-    //bool     nextSearchPosition(Vector3f &pos,TileSearchContext *ctx);     ///< *ctx should be NULL on the first call.  It will be internally managed.
+    bool     nextSearchPosition(Vector3f &pos,TileSearchContext *ctx);     ///< *ctx should be NULL on the first call.  It will be internally managed.
 
     void     markDone(bool success);
     void     markActive(); // used by gui to explicitly set tiles to image

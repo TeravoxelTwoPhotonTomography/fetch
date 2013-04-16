@@ -159,9 +159,9 @@ namespace device {
   }
 
   //  resetCursor  /////////////////////////////////////////////////////
-  //  
-  
-#define ON_PLANE(e)    ((e) < (current_plane_offset_ + sz_plane_nelem_))
+  //
+
+#define ON_PLANE(e)    (((e)>=current_plane_offset_) && ((e)<(current_plane_offset_ + sz_plane_nelem_)))
 #define ON_LATTICE(e)  ((e) < (attr_->size))
 
   typedef mylib::Dimn_Type Dimn_Type;
@@ -272,6 +272,155 @@ namespace device {
       return false;
     }
   }
+
+  //  nextSearchPosition  //////////////////////////////////////////////
+  //
+  // *ctx should be NULL on the first call.  It will be internally managed.
+
+  struct tile_search_parent_t
+  { uint32_t *c,dir;
+  };
+
+  struct tile_search_history_t
+  { tile_search_parent_t *history;
+    size_t i,n;
+    tile_search_history_t():history(0),i(0),sz(0),cap(0){}
+    ~tile_search_history_t() {if history() {free(history);}}
+    /** Returns 0 on error (memory) */
+    int push(uint32_t *c,int dir)
+    { if(!request(i+1)) return 0;
+      ++i;
+      history[i].c=c;
+      history[i].c=dir;
+    }
+    /** Returns 0 on underflow */
+    int pop(uint32_t **pc, int *pdir)
+    { if(pc)   *pc=history[i].c;
+      if(pdir) *pc=history[i].dir;
+      return (--i>0);
+    }
+    /** returns 0 on failure, otherwise 1 */
+    int request(size_t  i_)
+    { if(i_>n)
+      { n=1.2*i_+16;
+        history=realloc(history,sizeof(tile_search_parent_t)*n);
+      }
+      return (history!=NULL);
+    }
+    void flush() {i=0;}
+  };
+
+  struct TileSearchContext
+  { StageTiling *tiling;
+    uint32_t *c, // not necessary?
+              n,
+              dir,
+              mode; // 0 - hunt mode, 1 - outline mode
+    size_t line, plane; // strides in elements
+    tile_search_history_t history;
+    TileSearchContext(StageTiling *t) : tiling(t), c(0),n(0),dir(0),mode(0) {}
+    void sync()
+    {  c    =tiling->cursor_;
+       line =tiling->attr_->dims[1];
+       plane=tiling->sz_plane_nelem_;
+    }
+    void set_outline_mode(bool tf=true) { mode=tf; if(!tf) ctx->flush();}
+    bool is_outline_mode() {return mode;}
+    bool is_hunt_mode()    {return !mode;}
+    uint32_t *next_neighbor()
+    { int steps[]={-1,-line,1,line};
+      uint32_t *p=c+steps[ dir+(n++)%4 ];
+      if(n<3 && tiling->on_plane(p))
+        return p;
+      return 0;
+    }
+    void flush() {n=dir=0;histroy.flush();}
+    /** returns 0 on failure, otherwise 1 */
+    int push(uint32_t* p)
+    { if(!history.push(c,dir))
+        return 0;;
+      tiling->cursor_=c=p;
+      dir=(dir+n)%4;
+      n=0;
+      return 1;
+    }
+    int pop()
+    { if(!history.pop(&c,&dir))
+        return false;
+      return true;
+    }
+  };
+
+  bool StageTiling::on_plane(uint32_t *p)
+  { return ON_PLANE(p);
+  }
+
+#define CHECK(e,flag) ((*(e)&(flag))==(flag))
+#define MARK(e,flag)  (*(e)|=(flag))
+#define ELIGABLE(e)   (*(e)&eligable_mask==eligable)
+
+  bool StageTiling::nextSearchPosition(Vector3f &pos,TileSearchContext *ctx)
+  { const uint32_t eligable_mask = Addressable | Explorable | Explored | Active | Done,
+                   eligable      = Addressable | Explorable,
+                  *beg = AUINT32(attr_)+current_plane_offset_,
+                  *end = beg+sz_plane_nelem_;
+    lock();
+    if(!ctx)
+    { ctx=new TileSearchContext(this);
+    }
+Start:
+    ctx->sync();
+    if(CHECK(cursor_,Detected))
+    { MARK(cursor_,Reserved);
+      ctx->set_outline_mode();
+    }
+    if(ctx->is_outline_mode())
+    { uint32_t *n;
+      while(n=ctx->next_neighbor())
+      { if(FLAG(n,Reserved))
+        {
+          // BOOM DONE - the loop is closed
+          // **** DO STUFF ****
+          // [ ] fllod fill detected
+          // [ ] expand explorable from detected
+
+          // Reset Reserved
+          for(uint32_t *t=beg;t<end;++t)
+            *t = t[0]&~Reserved;
+          }
+          // RESET
+          ctx->set_outline_mode(false);
+          cursor_=beg;
+          goto Hunt;
+        }
+        if(ELIGABLE(n))
+        { ctx->push(n);
+          goto Yield;
+        }
+      }
+      // [ ] handle dead end - no neighbors eligable or reserved
+      if(ctx->pop())
+      { goto Start; // [?] FIXME - don't want to yield here.  Want to reinit the search.
+      }
+      // underflow...wierd
+      FAIL;
+    }
+Hunt:
+    if(ctx->is_hunt_mode())
+    { unlock(); // FIXME: race condition - mutex released here and immediately reaquired in the next call. - not serious
+      return this->nextInPlaneExplorablePosition(pos);
+    }
+    unlock();
+    return false;
+Yield:
+    pos=computeCursorPos();
+    unlock();
+    notifyNext(cursor_,pos);
+    return true;
+  }
+#undef CHECK
+#undef MARK
+#undef ELIGABLE
 
   //  markDone  ////////////////////////////////////////////////////////
   //
