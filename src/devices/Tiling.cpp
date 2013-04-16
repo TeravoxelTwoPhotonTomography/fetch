@@ -43,8 +43,8 @@ namespace device {
   //////////////////////////////////////////////////////////////////////
 
   //  Constructors  ////////////////////////////////////////////////////
-  StageTiling::StageTiling(const device::StageTravel &travel,     
-                           const FieldOfViewGeometry &fov,        
+  StageTiling::StageTiling(const device::StageTravel &travel,
+                           const FieldOfViewGeometry &fov,
                            const Mode                 alignment)
     :
       attr_(NULL),
@@ -55,7 +55,7 @@ namespace device {
       fov_(fov),
       travel_(travel),
       lock_(0)
-  { 
+  {
     PANIC(lock_=Mutex_Alloc());
     computeLatticeToStageTransform_(fov,alignment);
     initAttr_(computeLatticeExtents_(travel_));
@@ -64,14 +64,14 @@ namespace device {
 
   //  Destructor  /////////////////////////////////////////////////////
   StageTiling::~StageTiling()
-  { 
+  {
     if(attr_) Free_Array(attr_);
     if(lock_) Mutex_Free(lock_);
   }
 
   //  computeLatticeToStageTransform_  /////////////////////////////////
   //
-  //  For an index vector i, compute T, such that T*i are the nodes of 
+  //  For an index vector i, compute T, such that T*i are the nodes of
   //  the lattice in stage space.
   //
   //  FOV angle should be between 0 and pi/2 (180 degrees).
@@ -81,19 +81,19 @@ namespace device {
   { latticeToStage_ = TTransform::Identity();
     Vector3f sc = fov.field_size_um_ - fov.overlap_um_;
     switch(alignment)
-    { 
+    {
     case Mode::Stage_TilingMode_PixelAligned:
         // Rotate the lattice
         latticeToStage_
           .rotate( AngleAxis<float>(fov.rotation_radians_,Vector3f::UnitZ()) )
-          .scale(sc);          
+          .scale(sc);
         //SHOW(latticeToStage_.matrix());
         return;
     case Mode::Stage_TilingMode_StageAligned:
         // Shear the lattice
         float th = fov.rotation_radians_;
-        latticeToStage_.linear() = 
-          (Matrix3f() << 
+        latticeToStage_.linear() =
+          (Matrix3f() <<
             1.0f/cos(th), -sin(th), 0,
                        0,  cos(th), 0,
                        0,        0, 1).finished();
@@ -101,7 +101,7 @@ namespace device {
         return;
     }
   }
-  
+
   //  computeLatticeExtents_  //////////////////////////////////////////
   //
   //  Find the range of indexes that cover the stage.
@@ -124,14 +124,14 @@ namespace device {
          travel.x.max,   travel.y.max,   travel.z.max,
          travel.x.max,   travel.y.min,   travel.z.max;
     sabox *= 1000.0; //mm to um
-    
+
     Matrix<float,3,8> labox; // vertices of the cube, lattice aligned
     labox.noalias() = latticeToStage_.inverse() * sabox.transpose();
-    
+
     Vector3f maxs,mins;
     maxs.noalias() = labox.rowwise().maxCoeff();
     mins.noalias() = labox.rowwise().minCoeff();
-    
+
     latticeToStage_.translate(mins);
     Vector3z c((maxs-mins).unaryExpr(std::ptr_fun<float,float>(ceil)).cast<size_t>());
     SHOW(sabox);
@@ -172,7 +172,7 @@ namespace device {
     uint32_t* mask     = AUINT32(attr_);
     uint32_t  attrmask = Addressable | Active | Done,
               attr     = Addressable | Active;
-    
+
     while( (mask[cursor_] & attrmask) != attr
         && ON_LATTICE(cursor_) )
     {++cursor_;}
@@ -187,7 +187,7 @@ namespace device {
   }
 
   //  setCursorToPlane  ////////////////////////////////////////////////
-  //  
+  //
 
   /// \todo bounds checking
   void StageTiling::setCursorToPlane(size_t iplane)
@@ -197,7 +197,7 @@ namespace device {
   }
 
   //  nextInPlanePosition  /////////////////////////////////////////////
-  //                           
+  //
 
   bool StageTiling::nextInPlanePosition(Vector3f &pos)
   { lock();
@@ -221,18 +221,18 @@ namespace device {
   }
 
   //  nextInPlaneExplorablePosition  /////////////////////////////////////////////
-  //                           
+  //
 
   /** Return the next tile-position to explore in the current tile-plane.
-      
-      Exclude tiles that are not Addressable, or that have already been 
+
+      Exclude tiles that are not Addressable, or that have already been
       marked Active or Done.
   */
 
   bool StageTiling::nextInPlaneExplorablePosition(Vector3f &pos)
   { lock();
     uint32_t* mask = AUINT32(attr_);
-    uint32_t attrmask = Explorable | Addressable | Active | Done,
+    uint32_t attrmask = Explorable | Explored | Addressable | Active | Done,
              attr     = Explorable | Addressable;
 
     do{++cursor_;}
@@ -284,7 +284,35 @@ namespace device {
         *m |= TileError;
     }
     notifyDone(cursor_,computeCursorPos(),*m);
-  } 
+  }
+
+  //  markExplored  //////////////////////////////////////////////////////
+  //
+  void StageTiling::markExplored(bool tf)
+  { uint32_t *m=0;
+    { AutoLock lock(lock_);
+      m = AUINT32(attr_) + cursor_;
+      if(tf)
+        *m |= Explored;
+      else
+        *m &= ~Explored;
+    }
+    notifyDone(cursor_,computeCursorPos(),*m);
+  }
+
+  //  markDetected  //////////////////////////////////////////////////////
+  //
+  void StageTiling::markDetected(bool tf)
+  { uint32_t *m=0;
+    { AutoLock lock(lock_);
+      m = AUINT32(attr_) + cursor_;
+      if(tf)
+        *m |= Detected;
+      else
+        *m &= ~Detected;
+    }
+    notifyDone(cursor_,computeCursorPos(),*m);
+  }
 
   //  markActive  ////////////////////////////////////////////////////////
   //
@@ -295,7 +323,7 @@ namespace device {
       *m |= Active;
     }
     notifyDone(cursor_,computeCursorPos(),*m);
-  } 
+  }
 
   //  markAddressable  ///////////////////////////////////////////////////
   //
@@ -307,14 +335,14 @@ namespace device {
   /** Marks the indicated plane as addressable according to the travel.
   */
   void StageTiling::markAddressable(size_t iplane)
-  { 
+  {
     size_t old = cursor_;
     setCursorToPlane(iplane); // FIXME: chance for another thread to change the cursor...recursive locks not allowed
-    AutoLock lock(lock_);  
+    AutoLock lock(lock_);
     Vector3f a = Vector3f(travel_.x.min,travel_.y.min,travel_.z.min),
              b = Vector3f(travel_.x.max,travel_.y.max,travel_.z.max);
     uint32_t* v = AUINT32(attr_);
-    while(ON_PLANE(++cursor_))    
+    while(ON_PLANE(++cursor_))
       v[cursor_]|=Addressable*in(a,b,computeCursorPos()*0.001);
     cursor_=old; // restore cursor
   }
@@ -337,7 +365,7 @@ namespace device {
 
   //  fillHolesInActive  /////////////////////////////////////////////////
   //
-  
+
   /// Private stack implementation for non-recursive flood fill.
   typedef struct _stack_t
   { size_t     n,cap;
@@ -350,31 +378,56 @@ namespace device {
       memset(s->data+s->cap,0,(newsize-s->cap)*sizeof(uint32_t*));
       s->cap=newsize;
     }
-  }  
+  }
   static void push(stack_t *s, uint32_t* v)
   { grow(s);
     s->data[s->n++] = v;
-  }  
+  }
   static uint32_t* pop(stack_t *s)
   { return s->data[--s->n];
-  }    
+  }
   static stack_t make_stack(size_t reserve)
   { stack_t s;
     s.n=0;
-    s.data=(uint32_t**)Guarded_Calloc(s.cap=reserve,sizeof(uint32_t*),"make stack");    
-    return s;    
+    s.data=(uint32_t**)Guarded_Calloc(s.cap=reserve,sizeof(uint32_t*),"make stack");
+    return s;
   }
   static void destroy_stack(stack_t *s)
   { if(s && s->data) free(s->data);
   }
-    
-  
-  /** Fill holes in regions marked as active 
-  
+
+
+  /**
+    Looks at tiles in this plane and the previous plane for detection events in
+    order to determine whether tiles in the plane should be marked Active
+
+    \returns 1 if any tiles were marked active, otherwise 0.
+  */
+  int StageTiling::updateActive(size_t iplane)
+  { int any=0;
+    setCursorToPlane(iplane);// FIXME: chance for another thread to change the cursor...recursive locks not allowed
+    AutoLock lock(lock_);
+    uint32_t *c,*p,
+             *beg  = AUINT32(attr_)+current_plane_offset_,
+             *end  = beg+sz_plane_nelem_,
+             *prev = beg-sz_plane_nelem_;
+    #define DETECTED(e) ((*(e)&Detected)==Detected)
+    for(c=beg,p=prev;c<end;c++,p++)
+    { if( DETECTED(c) || ((iplane>0)?DETECTED(p):0) )
+      { *c |= Active;
+        any=1;
+      }
+    }
+    #undef DETECTED
+    return any;
+  }
+
+  /** Fill holes in regions marked as active
+
     Filled regions are 4-connected.
   */
   void StageTiling::fillHolesInActive(size_t iplane)
-  { 
+  {
     setCursorToPlane(iplane);// FIXME: chance for another thread to change the cursor...recursive locks not allowed
     AutoLock lock(lock_);
     uint32_t *c,
@@ -382,9 +435,9 @@ namespace device {
              *end = beg+sz_plane_nelem_;
     int is_open=0;
     const unsigned w=attr_->dims[0],
-                   h=attr_->dims[1];    
+                   h=attr_->dims[1];
     stack_t stack = make_stack(sz_plane_nelem_);
-  
+
     for(c=beg;c<end;)
     { uint32 *n,*next;
       uint32 mask = Active | Reserved;
@@ -401,7 +454,7 @@ namespace device {
                 (n[0]&Active)?"Active":".",
                 (n[0]&Explorable)?"Explorable":".",
                 (n[0]&Addressable)?"Addressable":".");
-#endif                
+#endif
           *n |= Reserved;
           is_open |= ((x==0)||(x==w-1)||(y==0)||(y==h-1)); // is the region connected to the plane bounds?
           if(!(y>=(h-1) || *(next=(n+w))&mask )) {*next|=Reserved; push(&stack,next);}  // down
@@ -409,7 +462,7 @@ namespace device {
           if(!(x<=0     || *(next=(n-1))&mask )) {*next|=Reserved; push(&stack,next);}  // left
           if(!(x>=(w-1) || *(next=(n+1))&mask )) {*next|=Reserved; push(&stack,next);}  // right
       } // end first fill
-                        
+
       if(!is_open)                             // second fill to mark interior as Active
       { mask = Active;                         // edges and self are labeled Active
         push(&stack,0);
@@ -424,14 +477,14 @@ namespace device {
                 (n[0]&Explorable)?"Explorable":".",
                 (n[0]&Addressable)?"Addressable":".");
 #endif
-            *n |= Active; 
+            *n |= Active;
             if(!(y>=(h-1) || *(next=(n+w))&mask )) {*next|=Active; push(&stack,next);}  // down
             if(!(y<=0     || *(next=(n-w))&mask )) {*next|=Active; push(&stack,next);}  // up
             if(!(x<=0     || *(next=(n-1))&mask )) {*next|=Active; push(&stack,next);}  // left
             if(!(x>=(w-1) || *(next=(n+1))&mask )) {*next|=Active; push(&stack,next);}  // right
         } // end second fill
       }
-           
+
       while(c++<end && *c&(Reserved|Active));  // move to next unreserved
     } // done searching for regions
     destroy_stack(&stack);
@@ -440,11 +493,11 @@ namespace device {
   }
 
   //  dilateActive  //////////////////////////////////////////////////////
-  //                      
+  //
   #define countof(e) (sizeof(e)/sizeof(*e))
   /** Mark tiles as Active if they are 8-connected to an Active tile. */
   void StageTiling::dilateActive(size_t iplane)
-  { 
+  {
     setCursorToPlane(iplane); // FIXME: chance for another thread to change the cursor...recursive locks not allowed
     AutoLock lock(lock_);
     uint32_t *c,
@@ -453,10 +506,10 @@ namespace device {
     const unsigned w=attr_->dims[0],
                    h=attr_->dims[1];
     unsigned       x,y,j;
-    
+
     const int offsets[] = {-w-1,-w,-w+1,-1,1,w-1,w,w+1};
     const unsigned top=1,left=2,bot=4,right=8; // bit flags
-    const unsigned masks[]   = {top|left,top,top|right,left,right,bot|left,bot,bot|right};      
+    const unsigned masks[]   = {top|left,top,top|right,left,right,bot|left,bot,bot|right};
     const unsigned attrmask = Reserved|Addressable|Active|Done|Explorable,
                    attr     = Reserved|Addressable|Active     |Explorable,
                    lblmask  = Addressable|Explorable;
@@ -472,7 +525,7 @@ namespace device {
           for(j=0;j<countof(offsets);++j)
             if(  (mask&masks[j])==0              // is neighbor in bounds
               && (c[offsets[j]]&attrmask)==attr) // query neighbor attribute for match
-            { *c|=Active; break; 
+            { *c|=Active; break;
             }
       }
     }
@@ -493,13 +546,13 @@ namespace device {
   }
 
   const Vector3f StageTiling::computeCursorPos()
-  {          
-    mylib::Coordinate *c = mylib::Idx2CoordA(attr_,cursor_);     
+  {
+    mylib::Coordinate *c = mylib::Idx2CoordA(attr_,cursor_);
     mylib::Dimn_Type *d = (mylib::Dimn_Type*)ADIMN(c);
     Vector3z r;
     r << d[0],d[1],d[2];
     Vector3f pos = latticeToStage_ * r.transpose().cast<float>();
-    Free_Array(c);	
+    Free_Array(c);
     return pos;
   }
 

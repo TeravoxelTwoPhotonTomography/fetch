@@ -1,4 +1,4 @@
-/** \file 
+/** \file
   Task: Full-automatic 3D tiling acquisition.
 
   \author: Nathan Clack <clackn@janelia.hhmi.org>
@@ -38,11 +38,11 @@ namespace fetch
     namespace microscope {
 
       /** \class AutoTileAcquisition AutoTileAcquisition.h
-      
+
       Microscope task fro automatic 3d tiling of a volume.
-      
+
       The task operates in three phases:
-      
+
       While zpos in bounds:
       -#  Explore the current slice to determine which tiles to acquire.
          - foreach tile in zone:
@@ -54,10 +54,10 @@ namespace fetch
            - close
            - dilate1
       -#  Run the TiledAcquisition task to collect those tiles.
-         - since TiledAcquisition is a microscope task, it's run function will be directly 
+         - since TiledAcquisition is a microscope task, it's run function will be directly
            invoked rather than running it asynchronously.
       -#  Run the Cut (vibratome) task to cut the imaged slice off.
-      
+
       Questions:
       -#  How to define exploration zone? Z limits.
           How to iterate over tiles for exploration.
@@ -66,15 +66,15 @@ namespace fetch
       -#  User interuption.
       -#  Speed?  How fast can I explore a given area?
           - initially assume I don't need to be efficient (take simple approach)
-      
-      */    
+
+      */
 
       //Upcasting
       unsigned int AutoTileAcquisition::config(IDevice *d) {return config(dynamic_cast<device::Microscope*>(d));}
       unsigned int AutoTileAcquisition::run   (IDevice *d) {return run   (dynamic_cast<device::Microscope*>(d));}
 
       unsigned int AutoTileAcquisition::config(device::Microscope *d)
-      { 
+      {
         return 1; //success
 Error:
         return 0;
@@ -94,7 +94,7 @@ Error:
           }
           return -1;
       }
-      
+
       ///// CLASSIFY //////////////////////////////////////////////////
       template<class T>
       static int _classify(mylib::Array *src, int ichan, double intensity_thresh, double area_thresh)
@@ -102,7 +102,7 @@ Error:
         mylib::Array tmp=*src,*image=&tmp;
         if(ichan>=0)
         { image=mylib::Get_Array_Plane(&tmp,ichan);
-        } 
+        }
         data = (T*)image->data;
         size_t i,count=0;
         if(!image->size) return 0;
@@ -110,24 +110,24 @@ Error:
           count+=(data[i]>intensity_thresh);
 #if 0
         mylib::Write_Image("classify.tif",image,mylib::DONT_PRESS);
-#endif       
+#endif
         DBG("Fraction above thresh: %f",count/((double)image->size));
-        return (count/((double)image->size))>area_thresh;            
+        return (count/((double)image->size))>area_thresh;
       }
       #define CLASSIFY(type_id,type) case type_id: return _classify<type>(image,ichan,intensity_thresh,area_thresh); break
-      /** 
-      \returns 0 if background, 1 if foreground 
-      
-      Image could be multiple channels.  Channels are assumed to plane-wise.            
+      /**
+      \returns 0 if background, 1 if foreground
+
+      Image could be multiple channels.  Channels are assumed to plane-wise.
       */
       static int classify(mylib::Array *image, int ichan, double intensity_thresh, double area_thresh)
-      { 
+      {
         if(image->ndims<3)  // check that there are enough dimensions to select a channel
         { ichan=-1;
         } else if(ichan>=image->dims[image->ndims-1]) // is ichan sane?  If not, use chan 0.
-        { ichan=0;         
+        { ichan=0;
         }
-          
+
         switch(image->type)
         {
           CLASSIFY( mylib::UINT8_TYPE   ,uint8_t );
@@ -147,26 +147,26 @@ Error:
       #undef CLASSIFY
 
       ///// EXPLORE  //////////////////////////////////////////////////
-      
+
       /** Tests to make sure the cut/image cycle stays in z bounds.
-      
+
       Only need to test max since stage only moves up as cuts progress.
-      
+
       */
       static int PlaneInBounds(device::Microscope *dc,float maxz)
       { float x,y,z;
         dc->stage()->getPos(&x,&y,&z);
         return z<maxz;
       }
-      
+
       /**
       Explores the current plane searching for tiles to image.  A heuristic classifier
-      is used to target a tile for imaging based on a single snapshot acquired at a 
+      is used to target a tile for imaging based on a single snapshot acquired at a
       given depth (\c dz_um).
 
       Preconditions:
       - tiles to explore have been labelled as such
-      
+
       Parameters to get from configuration:
       - dz_um:               zpiezo offset
       - maxz                 stage units(mm)
@@ -184,10 +184,10 @@ Error:
         cfg::tasks::AutoTile cfg=dc->get_config().autotile();
         size_t iplane=dc->stage()->getPosInLattice().z();
 
-        device::StageTiling* tiling = dc->stage()->tiling();        
+        device::StageTiling* tiling = dc->stage()->tiling();
         tiling->markAddressable(iplane); // make sure the current plane is marked addressable
         tiling->setCursorToPlane(iplane);
-        while(  !dc->_agent->is_stopping() 
+        while(  !dc->_agent->is_stopping()
               && tiling->nextInPlaneExplorablePosition(tilepos))
         { mylib::Array *im;
           any_explorable=1;
@@ -195,17 +195,15 @@ Error:
           DBG("Exploring tile: %6.1f %6.1f %6.1f",tilepos.x(),tilepos.y(),tilepos.z());
           CHKJMP(dc->stage()->setPos(tilepos*0.001)); // convert um to mm
           CHKJMP(im=dc->snapshot(cfg.z_um(),cfg.timeout_ms()));
-          if(classify(im,cfg.ichan(),cfg.intensity_threshold(),cfg.area_threshold()))
-          { any_active=1;
-            tiling->markActive();           
-          }
+          tiling->markExplored();
+          tiling->markDetected(classify(im,cfg.ichan(),cfg.intensity_threshold(),cfg.area_threshold()));
           mylib::Free_Array(im);
         }
-        if(!any_explorable)                      // if no explorable tiles were found then 
+        if(!any_explorable)                      // if no explorable tiles were found then
         { WARN("No explorable tiles found.\n");  // if not, the user probably forgot to set the exploration zone.
-          goto Error;          
+          goto Error;
         }
-        if(!any_active)
+        if(!tiling->updateActive(iplane))
         { WARN("No tiles found to image.\n");
           goto Error;
         }
@@ -221,9 +219,9 @@ Error:
         cfg::tasks::AutoTile cfg=dc->get_config().autotile();
         TiledAcquisition tile;
         Cut cut;
-        
+
         while(!dc->_agent->is_stopping() && PlaneInBounds(dc,cfg.maxz_mm()))
-        //if(!dc->_agent->is_stopping() && PlaneInBounds(dc,cfg.maxz_mm()))        
+        //if(!dc->_agent->is_stopping() && PlaneInBounds(dc,cfg.maxz_mm()))
         { CHKJMP(explore(dc));       // will return an error if no explorable tiles found on the plane
           CHKJMP(   tile.config(dc));
           CHKJMP(0==tile.run(dc));

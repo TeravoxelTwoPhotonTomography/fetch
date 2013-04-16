@@ -33,23 +33,23 @@ public:
 
 public slots:
   void addSelection(const QPainterPath& path);
-  void removeSelection(const QPainterPath& path);   
+  void removeSelection(const QPainterPath& path);
   void markSelectedAreaAsDone(const QPainterPath& path);
-  void markSelectedAreaAsNotDone(const QPainterPath& path);   
+  void markSelectedAreaAsNotDone(const QPainterPath& path);
   void markSelectedAreaAsExplorable(const QPainterPath& path);
-  void markSelectedAreaAsNotExplorable(const QPainterPath& path);  
+  void markSelectedAreaAsNotExplorable(const QPainterPath& path);
 
   void update_tiling();
   void show(bool tf);
   void refreshPlane();
   void refreshLatticeAttributes(unsigned itile, unsigned int attr);
-  
+
   void fillActive();
   void dilateActive();
 
 protected:
   virtual void hoverMoveEvent (QGraphicsSceneHoverEvent *event);
-  virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event); 
+  virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);
 
 private:
   typedef TilingController::TTransform TTransform;

@@ -11,8 +11,8 @@
 
 #undef HERE
 #define HERE "[TILES] At " << __FILE__ << "("<<__LINE__<<")\n"
-#define DBG(e) if(!(e)) qDebug() << HERE << "(!)\tCheck failed for Expression "#e << "\n" 
-#define SHOW(e) qDebug() << HERE << "\t"#e << " is " << e <<"\n" 
+#define DBG(e) if(!(e)) qDebug() << HERE << "(!)\tCheck failed for Expression "#e << "\n"
+#define SHOW(e) qDebug() << HERE << "\t"#e << " is " << e <<"\n"
 
 //const int   GRID_ROWS = 500,
 //            GRID_COLS = 700;
@@ -23,21 +23,21 @@
    *       --------------
    *       |            |
    *       | Upper Left |
-   *       | [x,y,z]    |  
+   *       | [x,y,z]    |
    *       +------------+   COLS*ROWS*NVERTS
    *       |            |
    *       | Upper Right|
-   *       |            |   
-   *       +------------+ 2*COLS*ROWS*NVERTS 
+   *       |            |
+   *       +------------+ 2*COLS*ROWS*NVERTS
    *       |            |
    *       | Lower Right|
-   *       |            |   
-   *       +------------+ 3*COLS*ROWS*NVERTS 
+   *       |            |
+   *       +------------+ 3*COLS*ROWS*NVERTS
    *       |            |
    *       | Lower Left |
-   *       |            |   
+   *       |            |
    *       +------------+
-   *       
+   *
    */
 
 namespace fetch {
@@ -45,11 +45,11 @@ namespace ui {
 
 
 TilesView::TilesView(TilingController *tc, QGraphicsItem *parent)
-  : 
+  :
     QGraphicsObject(parent),
     tc_(tc),
     vbo_(QGLBuffer::VertexBuffer),
-    ibo_(QGLBuffer::IndexBuffer), 
+    ibo_(QGLBuffer::IndexBuffer),
     cbo_(QGLBuffer::VertexBuffer),
     icursor_(-1),
     bbox_(0,0,10,10),
@@ -57,7 +57,7 @@ TilesView::TilesView(TilingController *tc, QGraphicsItem *parent)
     color_table_idx2rgb_(256),
     latticeImage_(NULL),
     is_active_(false)
-{ 
+{
   setAcceptHoverEvents(true);
   init_color_tables();
  // setFlags(ItemIsSelectable);
@@ -77,7 +77,7 @@ TilesView::TilesView(TilingController *tc, QGraphicsItem *parent)
   connect(
     tc,SIGNAL(planeChanged()),
     this,SLOT(refreshPlane()));
-    
+
   initVBO();
   updateVBO();
 
@@ -90,12 +90,12 @@ TilesView::TilesView(TilingController *tc, QGraphicsItem *parent)
 
 #define myround(e) floor(0.5+(e))
 void TilesView::init_cursor_(const QPointF& pos)
-{ 
+{
   unsigned i;
   Vector3f r(pos.x(),pos.y(),0.0);
   if(tc_->mapToIndex(r,&i))
-    icursor_ = i;   
-  else 
+    icursor_ = i;
+  else
     icursor_ = -1;
 }
 
@@ -112,18 +112,18 @@ void TilesView::draw_grid_()
 
   DBG( vbo_.bind() );
   glVertexPointer(3,GL_FLOAT,3*sizeof(float),(void*)0);
-  vbo_.release();  
+  vbo_.release();
 
   DBG( cbo_.bind() );
   glColorPointer(4,GL_UNSIGNED_BYTE,4*sizeof(GLubyte),(void*)0);
   cbo_.release();
-  
+
   DBG( ibo_.bind() );
   GLsizei rect_stride = 4, // verts per rect
-          nrect = ibo_.size()/sizeof(GLuint)/rect_stride;  
+          nrect = ibo_.size()/sizeof(GLuint)/rect_stride;
   glDrawElements(GL_QUADS,nrect*rect_stride,GL_UNSIGNED_INT,NULL);
-  ibo_.release();         
-     
+  ibo_.release();
+
   glDisableClientState(GL_COLOR_ARRAY);
   glDisableClientState(GL_VERTEX_ARRAY);
   checkGLError();
@@ -157,14 +157,14 @@ void TilesView::paint(QPainter                       *painter,
   glEnable(GL_POINT_SMOOTH);
   glEnable(GL_LINE_SMOOTH);
   glHint(GL_LINE_SMOOTH_HINT,GL_NICEST);
-  
+
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-  
+
   glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
   draw_grid_();
   draw_cursor_();
-  glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);  
+  glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 
   // paint a little square to indicate the paint
   glEnable(GL_SCISSOR_TEST);
@@ -193,23 +193,23 @@ TilesView::~TilesView()
 }
 
 void TilesView::paint_lattice_(const QPainterPath& path, const QColor& pc, const QColor &bc)
-{ 
-  
-  QTransform l2s,s2l;  
+{
+
+  QTransform l2s,s2l;
   if(!tc_->latticeTransform(&l2s))
     return;
   s2l = l2s.inverted();
-  { 
+  {
     QPainter painter(latticeImage_);
     QPainterPath p = s2l.map(path); //path in lattice space
-    painter.setPen(pc);      
-    painter.setBrush(bc);  
+    painter.setPen(pc);
+    painter.setBrush(bc);
 
     unsigned w,h;
     tc_->latticeShape(&w,&h);
-    QPointF offset(0.0f,h);    
+    QPointF offset(0.0f,h);
     for(int ivert=0;ivert<4;++ivert)
-    { 
+    {
       painter.drawPath(p);
       painter.translate(offset);
     }
@@ -219,7 +219,7 @@ void TilesView::paint_lattice_(const QPainterPath& path, const QColor& pc, const
 }
 
 void TilesView::addSelection( const QPainterPath& path )
-{  
+{
   tc_->markActive(path);
   paint_lattice_attribute_image_();
   updateCBO();
@@ -227,13 +227,13 @@ void TilesView::addSelection( const QPainterPath& path )
 }
 
 void TilesView::removeSelection( const QPainterPath& path )
-{  
+{
   tc_->markInactive(path);
   paint_lattice_attribute_image_();
   updateCBO();
   update();
 }
-  
+
 void TilesView::markSelectedAreaAsDone(const QPainterPath& path)
 {
   tc_->markDone(path);
@@ -249,7 +249,7 @@ void TilesView::markSelectedAreaAsNotDone(const QPainterPath& path)
   updateCBO();
   update();
 }
-  
+
 void TilesView::markSelectedAreaAsExplorable(const QPainterPath& path)
 {
   tc_->markAllPlanesExplorable(path);
@@ -289,8 +289,8 @@ void TilesView::initIBO()
     ibo_.setUsagePattern(QGLBuffer::StaticDraw);
   }
   if(tc_->latticeShape(&w,&h))
-  {    
-    DBG( ibo_.bind() );    
+  {
+    DBG( ibo_.bind() );
     ibo_.allocate(sizeof(GLuint)*4*w*h);                   // number of verts
     ibo_.release();
     checkGLError();
@@ -298,17 +298,17 @@ void TilesView::initIBO()
 }
 
 void TilesView::updateIBO()
-{ 
+{
   unsigned w,h;
   if(!ibo_.isCreated())
     initIBO();
   if(tc_->latticeShape(&w,&h))
-  {       
+  {
     GLuint vert_stride = w*h;
-    DBG( ibo_.bind() );  
+    DBG( ibo_.bind() );
     GLuint *idata = (GLuint*)ibo_.map(QGLBuffer::WriteOnly);
     for(GLuint irect=0;irect<w*h;++irect)
-    { 
+    {
       GLuint *row = idata + 4*irect;
       for(GLuint ivert=0;ivert<4;++ivert)
         row[ivert] = irect + ivert*vert_stride;
@@ -328,34 +328,34 @@ void TilesView::initVBO()
     vbo_.setUsagePattern(QGLBuffer::StaticDraw);
   }
   if(tc_->latticeShape(&w,&h))
-  {    
-    DBG( vbo_.bind() );    
+  {
+    DBG( vbo_.bind() );
     vbo_.allocate(sizeof(float)*12*w*h);                   // 4 verts per rect, 3 floats per vert = 12 floats per rect
     vbo_.release();
     checkGLError();
   }
 }
-          
+
 #include <Eigen\Core>
 void TilesView::updateVBO()
 {
   if(!vbo_.isCreated())
     initVBO();
 
-  TilingController::TRectVerts verts; 
+  TilingController::TRectVerts verts;
   if(tc_->fovGeometry(&verts))
-  { 
+  {
     unsigned w,h;
     tc_->latticeShape(&w,&h);
     DBG( vbo_.bind() );
     float *vdata = (float*)vbo_.map(QGLBuffer::WriteOnly);
-    
+
     /// Load in verts
     {
       float *d = vdata;
       for(int ivert = 0;ivert<4;++ivert)
-      {        
-        const float 
+      {
+        const float
           x = verts(0,ivert),
           y = verts(1,ivert),
           z = verts(2,ivert);
@@ -368,15 +368,15 @@ void TilesView::updateVBO()
       }
 
     }
-    
+
     Map<Matrix3Xf,Unaligned> vmat(vdata,3,w*h*4);
 
     /// make lattice coords
     Matrix3Xf lcoord(3,w*h),scoord(3,w*h);
     {
-      float *d = lcoord.data();    
-      for(float iy=0;iy<h;++iy)      
-      { 
+      float *d = lcoord.data();
+      for(float iy=0;iy<h;++iy)
+      {
         for(float ix=0;ix<w;++ix)
         {
           *d++ = ix;
@@ -387,18 +387,18 @@ void TilesView::updateVBO()
 
     }
 
-    /// transform lattice coords 
-    TTransform l2s;    
+    /// transform lattice coords
+    TTransform l2s;
     tc_->latticeTransform(&l2s);
     scoord.noalias() = l2s * lcoord;  // FIXME: SLOW faster but still slower than it ought to be [~1-2s per 1e6 rect debug]
 
     /// translate verts
     {
       const int N = w*h;
-      for(int ivert=0;ivert<4;++ivert) // FIXME: SLOW 
+      for(int ivert=0;ivert<4;++ivert) // FIXME: SLOW
         vmat.block(0,ivert*N,3,N).noalias() += scoord;
     }
-    
+
     DBG( vbo_.unmap() );
     vbo_.release();
     checkGLError();
@@ -408,17 +408,17 @@ void TilesView::updateVBO()
 void TilesView::initCBO()
 { unsigned w,h;
   if(!cbo_.isCreated())
-    DBG( cbo_.create() );  
+    DBG( cbo_.create() );
 
   if(tc_->latticeShape(&w,&h))
-  { 
-    latticeImage_ = new QImage(w,4*h,QImage::Format_ARGB32_Premultiplied);  
+  {
+    latticeImage_ = new QImage(w,4*h,QImage::Format_ARGB32_Premultiplied);
     paint_lattice_attribute_image_();
 
-    cbo_.setUsagePattern(QGLBuffer::StaticDraw);  
+    cbo_.setUsagePattern(QGLBuffer::StaticDraw);
     DBG( cbo_.bind() );
-    cbo_.allocate(sizeof(GLubyte)*16*w*h);                   // 4 verts per rect, 4 ubytes per vert = 16 ubytes per rect   
-    cbo_.release();  
+    cbo_.allocate(sizeof(GLubyte)*16*w*h);                   // 4 verts per rect, 4 ubytes per vert = 16 ubytes per rect
+    cbo_.release();
     checkGLError();
   }
 }
@@ -430,10 +430,10 @@ void TilesView::updateCBO()
 
   if(tc_->is_valid())
   {
-    //QPainter painter(latticeImage_);  
+    //QPainter painter(latticeImage_);
     // QT->OpenGL switches red and blue.  This is a -60 degress rotation in the hue colorwheel.
 
-    
+
     //painter.setCompositionMode(QPainter::CompositionMode_Source);
     //painter.fillRect(r,QColor::fromHsvF(0.5,1.0,1.0,0.4));
 
@@ -459,55 +459,92 @@ void TilesView::updateCBO()
 }
 
 void TilesView::update_tiling()
-{  
+{
   if(!tc_->stageAlignedBBox(&bbox_))
     return;
-  prepareGeometryChange();  
+  prepareGeometryChange();
   initVBO(); // these must be called in case a realloc is needed:(
   initIBO();
   initCBO();
 
   updateVBO();
   updateIBO();
-  updateCBO();  
+  updateCBO();
+}
+
+static unsigned tobgra(unsigned x)
+{ unsigned y=x;
+  unsigned char t,*p=(unsigned char*)&y;
+  t=p[0]; p[0]=p[2]; p[2]=t;
+  return y;
 }
 
 void TilesView::show( bool tf )
 {
-   setVisible(tf); 
+   setVisible(tf);
 }
-
+/*
+    enum Flags
+    {
+      Addressable = 1,                                                     ///< indicates the stage should be allowed to move to this tile
+      Active      = 2,                                                     ///< indicates this tile is in the region of interest.
+      Done        = 4,                                                     ///< indicates the tile has been imaged
+      Explorable  = 8,                                                     ///< indicates the tile should be expored for auto-tiling
+      TileError   = 16,                                                    ///< indicates there was some error moving to or imaging this tile
+      Explored    = 32,                                                    ///< indicates area has already been looked at
+      Detected    = 64,                                                    ///< indicates some signal was found at the bootom of this tile
+      Reserved    = 128                                                    ///< used internally to temporarily mark tiles
+    };
+*/
 void TilesView::init_color_tables()
-{
+{ //Attribute table
   for(int i=0;i<256;++i)
     color_table_attr2idx_[i] = (QRgb)i;
+  //Init colormap
   for(int i=0;i<256;++i)
     color_table_idx2rgb_[i] = (QRgb)0xffff00ff; // purple
 
-  // Blue and Red get switched between OpenGL and Qt
-  color_table_idx2rgb_[0x0 ] = qRgba(155,155,155,  0);     //00000 not addressable
-  color_table_idx2rgb_[0x1 ] = qRgba(127,127,127,127);     //00001 addressable
-  color_table_idx2rgb_[0x3 ] = qRgba( 55,155,155,200);     //00011 active,addressable
-  color_table_idx2rgb_[0x5 ] = qRgba(155, 55, 55,200);     //00101 done,addressable
-  color_table_idx2rgb_[0x7 ] = qRgba(  0,155,  0,200);     //00111 done,active,addressable
-  
-  color_table_idx2rgb_[0x9 ] = qRgba(155,155,155,200);     //01001 explorable,addressable
-  color_table_idx2rgb_[0xb ] = qRgba( 55,255,255,200);     //01011 explorable,active,addressable
-  color_table_idx2rgb_[0xd ] = qRgba(255, 55, 55,200);     //01101 explorable,done,addressable
-  color_table_idx2rgb_[0xf ] = qRgba(  0,255,  0,200);     //01111 explorable,done,active,addressable
-  
-  color_table_idx2rgb_[0x15] = qRgba(127,127,255,200);     //10101 error,done,addressable
-  color_table_idx2rgb_[0x17] = qRgba(  0,  0,255,200);     //10111 error,done,active,addressable
-  color_table_idx2rgb_[0x1d] = qRgba(127,127,255,200);     //11101 error,explorable,done,addressable
-  color_table_idx2rgb_[0x1f] = qRgba(  0,  0,255,200);     //11111 error,explorable,done,active,addressable
+  // Rules - fetch::device::StageTiling::Flags
+  for(int i=0;i<255;++i)
+  {
+    qreal hue=0.0,sat=0.0,val=0.6,alpha=0.5;
+    // base color
+
+    if(i>fetch::device::StageTiling::Addressable)
+    { sat=0.3; val=0.5, alpha=0.7; }
+
+#define FLAG(e) ((i&e)==e)
+    { unsigned char huebits=0;
+      huebits |= FLAG(fetch::device::StageTiling::Explored  )<<0;
+      huebits |= FLAG(fetch::device::StageTiling::Detected  )<<1;
+      huebits |= FLAG(fetch::device::StageTiling::Active    )<<2;
+      huebits |= FLAG(fetch::device::StageTiling::Done      )<<3;
+      huebits |= FLAG(fetch::device::StageTiling::TileError )<<4;
+      if(huebits==0)
+        sat=0.0;
+      hue=(qreal)huebits/(qreal)(1<<5);
+    }
+#undef FLAG
+
+    if(!(i & fetch::device::StageTiling::Addressable))
+    { if(i==0) alpha=0.0;
+      val*=0.5;
+    }
+
+    if( i & fetch::device::StageTiling::Explorable)        {val=sat=1.0;}
+    if( i & fetch::device::StageTiling::Explored)          {val=1.0; sat=0.8;}
+    QColor color;
+    color.setHsvF(hue,sat,val,alpha);
+    color_table_idx2rgb_[i]=tobgra(color.rgba());
+  }
 }
 
 void TilesView::paint_lattice_attribute_image_()
-{  
+{
   if(!latticeImage_) return;
-  QPainter painter(latticeImage_);  
+  QPainter painter(latticeImage_);
   painter.setCompositionMode(QPainter::CompositionMode_Clear);
-  QRectF r(latticeImage_->rect());       
+  QRectF r(latticeImage_->rect());
   painter.fillRect(r,Qt::SolidPattern);
 
   QImage attr;
@@ -523,14 +560,14 @@ void TilesView::paint_lattice_attribute_image_()
 
   unsigned w,h;
   tc_->latticeShape(&w,&h);
-  QPointF offset(0.0f,h);    
+  QPointF offset(0.0f,h);
   painter.setCompositionMode(QPainter::CompositionMode_Source);
   for(int ivert=0;ivert<4;++ivert)
-  {         
+  {
     painter.drawImage(indexed_attr.rect(),indexed_attr);
     painter.translate(offset);
-  }  
-  //latticeImage_->save("TilesView_initCBO_latticeImage__after.tif");  
+  }
+  //latticeImage_->save("TilesView_initCBO_latticeImage__after.tif");
 }
 
 void TilesView::refreshPlane()
@@ -551,4 +588,4 @@ void TilesView::refreshLatticeAttributes(unsigned itile, unsigned int attr)
   update();
 }
 
-}} // end namepsace fetch::ui 
+}} // end namepsace fetch::ui

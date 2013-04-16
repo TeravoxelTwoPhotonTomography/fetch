@@ -507,7 +507,7 @@ Error:
           d->generateAOConstZ(ummin);                                           // first frame is a dead frame to lock to ummin
           TRY(!d->writeAO());
           TRY(!d->_scanner2d._daq.startCLK());
-          //d->_scanner2d._shutter.Open();
+          d->_scanner2d._shutter.Open();
           TRY(!d->_scanner2d._daq.startAO());
           Guarded_Assert_WinErr(fetch_thread=CreateThread(NULL,0,alazar_fetch_stack_thread,&ctx,0,NULL));
           for(z_um=ummin; ((ummax-z_um)/umstep)>=-0.5f && ctx.running;z_um+=umstep)
