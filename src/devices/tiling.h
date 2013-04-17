@@ -21,7 +21,7 @@ namespace device {
   //  StageTiling  /////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////
   class StageListener;
-  class TileSearchContext;
+  struct TileSearchContext;
   class StageTiling
   {
   public:
@@ -65,7 +65,7 @@ namespace device {
     bool     nextInPlaneExplorablePosition(Vector3f &pos);
     bool     nextPosition(Vector3f& pos);
 
-    bool     nextSearchPosition(Vector3f &pos,TileSearchContext *ctx);     ///< *ctx should be NULL on the first call.  It will be internally managed.
+    bool     nextSearchPosition(int iplane, int ntimes, Vector3f &pos,TileSearchContext **ctx);     ///< *ctx should be NULL on the first call.  It will be internally managed.
 
     void     markDone(bool success);
     void     markActive(); // used by gui to explicitly set tiles to image
@@ -77,6 +77,9 @@ namespace device {
     int      updateActive(size_t iplane);                                  //   2d - returns 1 if any tiles were marked active, otherwise 0.
     void     fillHolesInActive(size_t iplane);                             //   2d
     void     dilateActive(size_t iplane);                                  //   2d
+
+    void     fillHoles(size_t iplane, StageTiling::Flags flag);            //   2d
+    void     dilate(size_t iplane, int ntimes, StageTiling::Flags query_flag, StageTiling::Flags write_flag, int explorable_only); // 2d
 
     inline mylib::Array*     attributeArray()                              {return attr_;}
     inline const TTransform& latticeToStageTransform()                     {return latticeToStage_; }

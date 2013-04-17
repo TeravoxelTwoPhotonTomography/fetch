@@ -283,27 +283,36 @@ namespace device {
 
   struct tile_search_history_t
   { tile_search_parent_t *history;
-    size_t i,n;
-    tile_search_history_t():history(0),i(0),sz(0),cap(0){}
-    ~tile_search_history_t() {if history() {free(history);}}
+    size_t i,n; // i is the read point
+    tile_search_history_t():history(0),i(0),n(0){}
+    ~tile_search_history_t() {if (history) {free(history);}}
     /** Returns 0 on error (memory) */
     int push(uint32_t *c,int dir)
     { if(!request(i+1)) return 0;
       ++i;
-      history[i].c=c;
-      history[i].c=dir;
+      history[i].c  =c;
+      history[i].dir=(uint32_t)dir;
     }
     /** Returns 0 on underflow */
     int pop(uint32_t **pc, int *pdir)
-    { if(pc)   *pc=history[i].c;
-      if(pdir) *pc=history[i].dir;
-      return (--i>0);
+    { if(i<0) return 0;
+      if(pc)   *pc  =history[i].c;
+      if(pdir) *pdir=(int)history[i].dir;
+      --i;
+      return 1;
+    }
+    int pop(uint32_t **pc, uint32_t *pdir)
+    { if(i<=0) return 0; // zero is never written to, it's reserved for signalling empty
+      if(pc)   *pc  =history[i].c;
+      if(pdir) *pdir=history[i].dir;
+      --i;
+      return 1;
     }
     /** returns 0 on failure, otherwise 1 */
     int request(size_t  i_)
     { if(i_>n)
       { n=1.2*i_+16;
-        history=realloc(history,sizeof(tile_search_parent_t)*n);
+        history=(tile_search_parent_t*)realloc(history,sizeof(tile_search_parent_t)*n);
       }
       return (history!=NULL);
     }
@@ -312,104 +321,103 @@ namespace device {
 
   struct TileSearchContext
   { StageTiling *tiling;
-    uint32_t *c, // not necessary?
-              n,
-              dir,
+    uint32_t *c, 
+              n,    // the next neighbor to look at
+              dir,  // the direction of the last move
               mode; // 0 - hunt mode, 1 - outline mode
     size_t line, plane; // strides in elements
     tile_search_history_t history;
     TileSearchContext(StageTiling *t) : tiling(t), c(0),n(0),dir(0),mode(0) {}
     void sync()
-    {  c    =tiling->cursor_;
+    {  c    =AUINT32(tiling->attr_)+tiling->cursor_;
        line =tiling->attr_->dims[1];
        plane=tiling->sz_plane_nelem_;
+       n=0;
     }
-    void set_outline_mode(bool tf=true) { mode=tf; if(!tf) ctx->flush();}
+    void set_outline_mode(bool tf=true) { mode=tf; if(!tf) flush();}
     bool is_outline_mode() {return mode;}
     bool is_hunt_mode()    {return !mode;}
     uint32_t *next_neighbor()
     { int steps[]={-1,-line,1,line};
-      uint32_t *p=c+steps[ dir+(n++)%4 ];
-      if(n<3 && tiling->on_plane(p))
+      uint32_t *p=c+steps[ (dir+n)%4 ];
+      ++n;
+      if(n<4 && tiling->on_plane(p))
         return p;
       return 0;
     }
-    void flush() {n=dir=0;histroy.flush();}
+    void flush() {n=dir=0;history.flush();}
     /** returns 0 on failure, otherwise 1 */
     int push(uint32_t* p)
     { if(!history.push(c,dir))
-        return 0;;
-      tiling->cursor_=c=p;
-      dir=(dir+n)%4;
+        return 0;
+      c=p;
+      tiling->cursor_=c-AUINT32(tiling->attr_);
+      dir=(dir+n-1)%4; // remmber n is the next neighbor, subtract 1 for current
       n=0;
       return 1;
     }
     int pop()
-    { if(!history.pop(&c,&dir))
+    { n=0;
+      if(!history.pop(&c,&dir))
         return false;
       return true;
     }
+#define CHECK(e,flag) ((*(e)&(flag))==(flag))
+#define MARK(e,flag)  (*(e)|=(flag))
+    inline bool detected() {return CHECK(c,StageTiling::Detected); }
+    inline void reserve()  { MARK(c,StageTiling::Reserved); }
   };
 
   bool StageTiling::on_plane(uint32_t *p)
-  { return ON_PLANE(p);
+  { return ON_PLANE(p-AUINT32(attr_));
   }
 
-#define CHECK(e,flag) ((*(e)&(flag))==(flag))
-#define MARK(e,flag)  (*(e)|=(flag))
-#define ELIGABLE(e)   (*(e)&eligable_mask==eligable)
+#define ELIGABLE(e)   ((*(e)&eligable_mask)==eligable)
 
-  bool StageTiling::nextSearchPosition(Vector3f &pos,TileSearchContext *ctx)
+  /* Sorry for the goto's.  don't hate. */
+  bool StageTiling::nextSearchPosition(int iplane, int radius, Vector3f &pos,TileSearchContext **pctx)
   { const uint32_t eligable_mask = Addressable | Explorable | Explored | Active | Done,
                    eligable      = Addressable | Explorable,
                   *beg = AUINT32(attr_)+current_plane_offset_,
                   *end = beg+sz_plane_nelem_;
+    if(!pctx) return 0;
+    TileSearchContext *ctx=*pctx;
     lock();
     if(!ctx)
-    { ctx=new TileSearchContext(this);
+    { *pctx=ctx=new TileSearchContext(this);
     }
 Start:
     ctx->sync();
-    if(CHECK(cursor_,Detected))
-    { MARK(cursor_,Reserved);
+    if(ctx->detected())
+    { ctx->reserve();
       ctx->set_outline_mode();
     }
     if(ctx->is_outline_mode())
     { uint32_t *n;
       while(n=ctx->next_neighbor())
-      { if(FLAG(n,Reserved))
-        {
-          // BOOM DONE - the loop is closed
-          // **** DO STUFF ****
-          // [ ] fllod fill detected
-          // [ ] expand explorable from detected
-
-          // Reset Reserved
-          for(uint32_t *t=beg;t<end;++t)
-            *t = t[0]&~Reserved;
-          }
-          // RESET
-          ctx->set_outline_mode(false);
-          cursor_=beg;
-          goto Hunt;
+      { if(CHECK(n,Reserved))// BOOM DONE - the loop is closed
+        { goto DoneOutlining;
         }
         if(ELIGABLE(n))
         { ctx->push(n);
           goto Yield;
         }
       }
-      // [ ] handle dead end - no neighbors eligable or reserved
-      if(ctx->pop())
+      if(ctx->pop()) // handle dead end - no neighbors eligable or reserved
       { goto Start; // [?] FIXME - don't want to yield here.  Want to reinit the search.
       }
-      // underflow...wierd
-      FAIL;
+      // underflow...
+      // The found region is just a strip of detected...not a closed loop
+      goto DoneOutlining;
     }
 Hunt:
     if(ctx->is_hunt_mode())
     { unlock(); // FIXME: race condition - mutex released here and immediately reaquired in the next call. - not serious
       return this->nextInPlaneExplorablePosition(pos);
     }
+    // ALL DONE
+    delete ctx;
+    *pctx=0;
     unlock();
     return false;
 Yield:
@@ -417,6 +425,20 @@ Yield:
     unlock();
     notifyNext(cursor_,pos);
     return true;
+DoneOutlining:
+    // Reset Reserved
+    for(uint32_t *t=(uint32_t*)beg;t<end;++t)
+    { *t = t[0]&~Reserved;
+    }
+    unlock(); // FIXME: possible race condition
+    fillHoles(iplane,Detected);
+    if(radius)
+      dilate(iplane,radius,Detected,Explorable,0);
+    lock();
+    // RESET to hunt mode
+    ctx->set_outline_mode(false);
+    cursor_=beg-AUINT32(attr_);
+    goto Hunt;
   }
 #undef CHECK
 #undef MARK
@@ -576,6 +598,9 @@ Yield:
     Filled regions are 4-connected.
   */
   void StageTiling::fillHolesInActive(size_t iplane)
+  { fillHoles(iplane,Active);}
+
+  void StageTiling::fillHoles(size_t iplane, StageTiling::Flags flag)
   {
     setCursorToPlane(iplane);// FIXME: chance for another thread to change the cursor...recursive locks not allowed
     AutoLock lock(lock_);
@@ -589,7 +614,7 @@ Yield:
 
     for(c=beg;c<end;)
     { uint32 *n,*next;
-      uint32 mask = Active | Reserved;
+      uint32 mask = flag | Reserved;
       // mark connected and do bounds test for region
       is_open=0;
       push(&stack,0); // push 0 to detect underflow when the fill is done
@@ -600,7 +625,7 @@ Yield:
 #if 0
           debug("%3d %3d %15s %15s %15s %15s\n",x,y,
                 (n[0]&Reserved)?"Reserved":".",
-                (n[0]&Active)?"Active":".",
+                (n[0]&flag)?"flag":".",
                 (n[0]&Explorable)?"Explorable":".",
                 (n[0]&Addressable)?"Addressable":".");
 #endif
@@ -612,8 +637,8 @@ Yield:
           if(!(x>=(w-1) || *(next=(n+1))&mask )) {*next|=Reserved; push(&stack,next);}  // right
       } // end first fill
 
-      if(!is_open)                             // second fill to mark interior as Active
-      { mask = Active;                         // edges and self are labeled Active
+      if(!is_open)                             // second fill to mark interior as flag
+      { mask = flag;                         // edges and self are labeled flag
         push(&stack,0);
         push(&stack,c);
         while(n=pop(&stack))
@@ -622,19 +647,19 @@ Yield:
 #if 0
             debug("%3d %3d %15s %15s %15s %15s\n",x,y,
                 (n[0]&Reserved)?"Reserved":".",
-                (n[0]&Active)?"Active":".",
+                (n[0]&flag)?"flag":".",
                 (n[0]&Explorable)?"Explorable":".",
                 (n[0]&Addressable)?"Addressable":".");
 #endif
-            *n |= Active;
-            if(!(y>=(h-1) || *(next=(n+w))&mask )) {*next|=Active; push(&stack,next);}  // down
-            if(!(y<=0     || *(next=(n-w))&mask )) {*next|=Active; push(&stack,next);}  // up
-            if(!(x<=0     || *(next=(n-1))&mask )) {*next|=Active; push(&stack,next);}  // left
-            if(!(x>=(w-1) || *(next=(n+1))&mask )) {*next|=Active; push(&stack,next);}  // right
+            *n |= flag;
+            if(!(y>=(h-1) || *(next=(n+w))&mask )) {*next|=flag; push(&stack,next);}  // down
+            if(!(y<=0     || *(next=(n-w))&mask )) {*next|=flag; push(&stack,next);}  // up
+            if(!(x<=0     || *(next=(n-1))&mask )) {*next|=flag; push(&stack,next);}  // left
+            if(!(x>=(w-1) || *(next=(n+1))&mask )) {*next|=flag; push(&stack,next);}  // right
         } // end second fill
       }
 
-      while(c++<end && *c&(Reserved|Active));  // move to next unreserved
+      while(c++<end && *c&(Reserved|flag));  // move to next unreserved
     } // done searching for regions
     destroy_stack(&stack);
     for(c=beg;c<end;++c)                       // mark all unreserved
@@ -646,6 +671,16 @@ Yield:
   #define countof(e) (sizeof(e)/sizeof(*e))
   /** Mark tiles as Active if they are 8-connected to an Active tile. */
   void StageTiling::dilateActive(size_t iplane)
+  { dilate(iplane,1,Active,Active,1 /*restrict to explorable */);
+  }
+
+  // dilate         //////////////////////////////////////////////////////
+  //
+  // Does not dilate into Done tiles.
+  // Optionally restricts dilation to explorable tiles.
+  //
+  //
+  void StageTiling::dilate(size_t iplane, int n, StageTiling::Flags query_flag, StageTiling::Flags write_flag, int explorable_only)
   {
     setCursorToPlane(iplane); // FIXME: chance for another thread to change the cursor...recursive locks not allowed
     AutoLock lock(lock_);
@@ -658,24 +693,28 @@ Yield:
 
     const int offsets[] = {-w-1,-w,-w+1,-1,1,w-1,w,w+1};
     const unsigned top=1,left=2,bot=4,right=8; // bit flags
+#define MAYBE_EXPLORABLE ((explorable_only)?Explorable:0)
     const unsigned masks[]   = {top|left,top,top|right,left,right,bot|left,bot,bot|right};
-    const unsigned attrmask = Reserved|Addressable|Active|Done|Explorable,
-                   attr     = Reserved|Addressable|Active     |Explorable,
-                   lblmask  = Addressable|Explorable;
-    for(c=beg;c<end;++c)                       // mark original active tiles as reserved
-      *c |= ((*c&Active)==Active)*Reserved;
-    for(y=0;y<h;++y)
-    { unsigned rowmask = ((y==0)*top)|((y==h-1)*bot);
-      for(x=0;x<w;++x)
-      { const unsigned colmask = ((x==0)*left)|((x==w-1)*right),
-                          mask = rowmask|colmask;
-        c=beg+y*w+x;
-        if((*c&lblmask)==lblmask)                // mark only tile that are addressable and explorable
-          for(j=0;j<countof(offsets);++j)
-            if(  (mask&masks[j])==0              // is neighbor in bounds
-              && (c[offsets[j]]&attrmask)==attr) // query neighbor attribute for match
-            { *c|=Active; break;
-            }
+    const unsigned attrmask = Reserved|Addressable|Done|MAYBE_EXPLORABLE|query_flag, // attr is the neighbor query
+                   attr     = Reserved|Addressable     |MAYBE_EXPLORABLE|query_flag,
+                   lblmask  = Addressable|MAYBE_EXPLORABLE;                          // lblmask selects for valid write points
+#undef MAYBE_EXPLORABLE
+    for(c=beg;c<end;++c)                             // mark original active tiles as reserved
+      *c |= ((*c&query_flag)==query_flag)*Reserved;  // this way only the originally labelled tiles will be dilated from
+    while(n-->0)
+    { for(y=0;y<h;++y)
+      { unsigned rowmask = ((y==0)*top)|((y==h-1)*bot);
+        for(x=0;x<w;++x)
+        { const unsigned colmask = ((x==0)*left)|((x==w-1)*right),
+                            mask = rowmask|colmask;
+          c=beg+y*w+x;
+          if((*c&lblmask)==lblmask)                // mark only tile that are addressable and explorable
+            for(j=0;j<countof(offsets);++j)
+              if(  (mask&masks[j])==0              // is neighbor in bounds
+                && (c[offsets[j]]&attrmask)==attr) // query neighbor attribute for match
+              { *c|=write_flag; break;
+              }
+        }
       }
     }
     for(c=beg;c<end;++c)                       // mark all unreserved

@@ -187,8 +187,11 @@ Error:
         device::StageTiling* tiling = dc->stage()->tiling();
         tiling->markAddressable(iplane); // make sure the current plane is marked addressable
         tiling->setCursorToPlane(iplane);
+
+        device::TileSearchContext *ctx=0;
         while(  !dc->_agent->is_stopping()
-              && tiling->nextInPlaneExplorablePosition(tilepos))
+              && tiling->nextSearchPosition(iplane,3/*radius - tiles*/,tilepos,&ctx))
+              //&& tiling->nextInPlaneExplorablePosition(tilepos))
         { mylib::Array *im;
           any_explorable=1;
           tilepos[2]=dc->stage()->getTarget().z()*1000.0; // convert mm to um
@@ -209,8 +212,10 @@ Error:
         }
         tiling->dilateActive(iplane);
         tiling->fillHolesInActive(iplane);
+        if(ctx) delete ctx;
         return 1;
       Error:
+        if(ctx) delete ctx;
         return 0;
       }
 
