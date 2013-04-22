@@ -294,13 +294,6 @@ namespace device {
       history[i].dir=(uint32_t)dir;
     }
     /** Returns 0 on underflow */
-    int pop(uint32_t **pc, int *pdir)
-    { if(i<0) return 0;
-      if(pc)   *pc  =history[i].c;
-      if(pdir) *pdir=(int)history[i].dir;
-      --i;
-      return 1;
-    }
     int pop(uint32_t **pc, uint32_t *pdir)
     { if(i<=0) return 0; // zero is never written to, it's reserved for signalling empty
       if(pc)   *pc  =history[i].c;
@@ -308,11 +301,19 @@ namespace device {
       --i;
       return 1;
     }
+    int pop(uint32_t **pc, int *pdir)
+    { uint32_t t=0;
+      int ret=pop(pc,&t);
+      *pdir=t;
+      return ret;
+    }
     /** returns 0 on failure, otherwise 1 */
     int request(size_t  i_)
     { if(i_>n)
-      { n=1.2*i_+16;
+      { size_t oldn=n;
+        n=1.2*i_+16;
         history=(tile_search_parent_t*)realloc(history,sizeof(tile_search_parent_t)*n);
+        memset(history+oldn,0,sizeof(tile_search_parent_t)*(n-oldn));
       }
       return (history!=NULL);
     }
@@ -330,7 +331,7 @@ namespace device {
     TileSearchContext(StageTiling *t) : tiling(t), c(0),n(0),dir(0),mode(0) {}
     void sync()
     {  c    =AUINT32(tiling->attr_)+tiling->cursor_;
-       line =tiling->attr_->dims[1];
+       line =tiling->attr_->dims[0];
        plane=tiling->sz_plane_nelem_;
        n=0;
     }
@@ -352,7 +353,7 @@ namespace device {
         return 0;
       c=p;
       tiling->cursor_=c-AUINT32(tiling->attr_);
-      dir=(dir+n-1)%4; // remmber n is the next neighbor, subtract 1 for current
+      dir=(dir+n-2)%4; // remmber n is the next neighbor, subtract 1 for current, subtract another 1 to start with left turn
       n=0;
       return 1;
     }
@@ -394,6 +395,9 @@ Start:
     }
     if(ctx->is_outline_mode())
     { uint32_t *n;
+      if(!ctx->detected())
+        if(!ctx->pop())
+          goto DoneOutlining;
       while(n=ctx->next_neighbor())
       { if(CHECK(n,Reserved))// BOOM DONE - the loop is closed
         { goto DoneOutlining;
@@ -611,7 +615,6 @@ DoneOutlining:
     const unsigned w=attr_->dims[0],
                    h=attr_->dims[1];
     stack_t stack = make_stack(sz_plane_nelem_);
-
     for(c=beg;c<end;)
     { uint32 *n,*next;
       uint32 mask = flag | Reserved;
@@ -636,7 +639,6 @@ DoneOutlining:
           if(!(x<=0     || *(next=(n-1))&mask )) {*next|=Reserved; push(&stack,next);}  // left
           if(!(x>=(w-1) || *(next=(n+1))&mask )) {*next|=Reserved; push(&stack,next);}  // right
       } // end first fill
-
       if(!is_open)                             // second fill to mark interior as flag
       { mask = flag;                         // edges and self are labeled flag
         push(&stack,0);
@@ -695,8 +697,8 @@ DoneOutlining:
     const unsigned top=1,left=2,bot=4,right=8; // bit flags
 #define MAYBE_EXPLORABLE ((explorable_only)?Explorable:0)
     const unsigned masks[]   = {top|left,top,top|right,left,right,bot|left,bot,bot|right};
-    const unsigned attrmask = Reserved|Addressable|Done|MAYBE_EXPLORABLE|query_flag, // attr is the neighbor query
-                   attr     = Reserved|Addressable     |MAYBE_EXPLORABLE|query_flag,
+    const unsigned attrmask = Reserved|Addressable|Done|MAYBE_EXPLORABLE,            // attr is the neighbor query
+                   attr     = Reserved|Addressable     |MAYBE_EXPLORABLE,
                    lblmask  = Addressable|MAYBE_EXPLORABLE;                          // lblmask selects for valid write points
 #undef MAYBE_EXPLORABLE
     for(c=beg;c<end;++c)                             // mark original active tiles as reserved
@@ -712,10 +714,15 @@ DoneOutlining:
             for(j=0;j<countof(offsets);++j)
               if(  (mask&masks[j])==0              // is neighbor in bounds
                 && (c[offsets[j]]&attrmask)==attr) // query neighbor attribute for match
-              { *c|=write_flag; break;
+              { *c|=(write_flag|Reserved2); break;
               }
         }
       }
+      for(c=beg;c<end;++c)                     // make query transitive over dilation radius
+        if(*c&Reserved2)
+        { *c|=Reserved;
+          *c = c[0]&~Reserved2;
+        }
     }
     for(c=beg;c<end;++c)                       // mark all unreserved
       *c = c[0]&~Reserved;

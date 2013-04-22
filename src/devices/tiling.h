@@ -51,7 +51,8 @@ namespace device {
       TileError   = 16,                                                    ///< indicates there was some error moving to or imaging this tile
       Explored    = 32,                                                    ///< indicates area has already been looked at
       Detected    = 64,                                                    ///< indicates some signal was found at the bootom of this tile
-      Reserved    = 128                                                    ///< used internally to temporarily mark tiles
+      Reserved    = 128,                                                   ///< used internally to temporarily mark tiles
+      Reserved2   = 256                                                    ///< used internally to temporarily mark tiles
     };
 
              StageTiling(const device::StageTravel& travel,
