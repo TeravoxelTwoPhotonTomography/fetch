@@ -220,6 +220,27 @@ namespace device {
     }
   }
 
+  //  nextInPlane                    /////////////////////////////////////////////
+  //
+  bool StageTiling::nextInPlaneQuery(Vector3f &pos,uint32_t attrmask,uint32_t attr)
+  { lock();
+    uint32_t* mask = AUINT32(attr_);
+    do{++cursor_;}
+    while( (mask[cursor_] & attrmask) != attr
+        && ON_PLANE(cursor_) );
+
+    if(ON_PLANE(cursor_) &&  (mask[cursor_] & attrmask) == attr)
+    { pos = computeCursorPos();
+      unlock();
+      notifyNext(cursor_,pos);
+      return true;
+    } else
+    { unlock();
+      return false;
+    }
+  }
+
+
   //  nextInPlaneExplorablePosition  /////////////////////////////////////////////
   //
 
@@ -278,67 +299,63 @@ namespace device {
   // *ctx should be NULL on the first call.  It will be internally managed.
 
   struct tile_search_parent_t
-  { uint32_t *c,dir;
+  { uint32_t *c,dir,n;
   };
 
-  struct tile_search_history_t
-  { tile_search_parent_t *history;
-    size_t i,n; // i is the read point
-    tile_search_history_t():history(0),i(0),n(0){}
-    ~tile_search_history_t() {if (history) {free(history);}}
+  
+    tile_search_history_t::tile_search_history_t():history(0),i(0),n(0){}
+    tile_search_history_t::~tile_search_history_t() {if (history) {free(history);}}
     /** Returns 0 on error (memory) */
-    int push(uint32_t *c,int dir)
+    int tile_search_history_t::push(uint32_t *c,int dir,int n)
     { if(!request(i+1)) return 0;
       ++i;
       history[i].c  =c;
       history[i].dir=(uint32_t)dir;
+      history[i].n  =(uint32_t)n;
+      return 1;
     }
     /** Returns 0 on underflow */
-    int pop(uint32_t **pc, uint32_t *pdir)
+    int tile_search_history_t::pop(uint32_t **pc, uint32_t *pdir, uint32_t* pn)
     { if(i<=0) return 0; // zero is never written to, it's reserved for signalling empty
-      if(pc)   *pc  =history[i].c;
-      if(pdir) *pdir=history[i].dir;
+      *pc  =history[i].c;
+      *pdir=history[i].dir;
+      *pn  =history[i].n;
       --i;
       return 1;
     }
-    int pop(uint32_t **pc, int *pdir)
-    { uint32_t t=0;
-      int ret=pop(pc,&t);
-      *pdir=t;
+    int tile_search_history_t::pop(uint32_t **pc, int *pdir, int *pn)
+    { uint32_t d,n;
+      int ret=pop(pc,&d,&n);
+      *pdir=d;
+      *pn=n;
       return ret;
     }
     /** returns 0 on failure, otherwise 1 */
-    int request(size_t  i_)
-    { if(i_>n)
+    int tile_search_history_t::request(size_t  i_)
+    { if(i_>=n)
       { size_t oldn=n;
-        n=1.2*i_+16;
+        n=1.2*i_+50;
         history=(tile_search_parent_t*)realloc(history,sizeof(tile_search_parent_t)*n);
         memset(history+oldn,0,sizeof(tile_search_parent_t)*(n-oldn));
       }
       return (history!=NULL);
     }
-    void flush() {i=0;}
-  };
-
-  struct TileSearchContext
-  { StageTiling *tiling;
-    uint32_t *c, 
-              n,    // the next neighbor to look at
-              dir,  // the direction of the last move
-              mode; // 0 - hunt mode, 1 - outline mode
-    size_t line, plane; // strides in elements
-    tile_search_history_t history;
-    TileSearchContext(StageTiling *t) : tiling(t), c(0),n(0),dir(0),mode(0) {}
-    void sync()
+    void tile_search_history_t::flush() {i=0;}
+ 
+    TileSearchContext::TileSearchContext(StageTiling *t,int radius/*=0*/) : tiling(t), c(0),n(0),dir(0),mode(0),radius(radius) {}
+    TileSearchContext::~TileSearchContext()
+    { if(tiling) tiling->tileSearchCleanup(this);
+    }
+    void TileSearchContext::sync()
     {  c    =AUINT32(tiling->attr_)+tiling->cursor_;
        line =tiling->attr_->dims[0];
        plane=tiling->sz_plane_nelem_;
        n=0;
     }
-    void set_outline_mode(bool tf=true) { mode=tf; if(!tf) flush();}
-    bool is_outline_mode() {return mode;}
-    bool is_hunt_mode()    {return !mode;}
-    uint32_t *next_neighbor()
+    void TileSearchContext::set_outline_mode(bool tf/*=true*/) { mode=tf; if(!tf) flush();}
+    bool TileSearchContext::is_outline_mode() {return mode;}
+    bool TileSearchContext::is_hunt_mode()    {return !mode;}
+    uint32_t *TileSearchContext::next_neighbor()
     { int steps[]={-1,-line,1,line};
       uint32_t *p=c+steps[ (dir+n)%4 ];
       ++n;
@@ -346,10 +363,10 @@ namespace device {
         return p;
       return 0;
     }
-    void flush() {n=dir=0;history.flush();}
+    void TileSearchContext::flush() {n=dir=0;history.flush();}
     /** returns 0 on failure, otherwise 1 */
-    int push(uint32_t* p)
-    { if(!history.push(c,dir))
+    int TileSearchContext::push(uint32_t* p)
+    { if(!history.push(c,dir,n))
         return 0;
       c=p;
       tiling->cursor_=c-AUINT32(tiling->attr_);
@@ -357,27 +374,53 @@ namespace device {
       n=0;
       return 1;
     }
-    int pop()
-    { n=0;
-      if(!history.pop(&c,&dir))
+    int TileSearchContext::pop()
+    { if(!history.pop(&c,&dir,&n))
         return false;
+      tiling->cursor_=c-AUINT32(tiling->attr_);
       return true;
     }
 #define CHECK(e,flag) ((*(e)&(flag))==(flag))
 #define MARK(e,flag)  (*(e)|=(flag))
-    inline bool detected() {return CHECK(c,StageTiling::Detected); }
-    inline void reserve()  { MARK(c,StageTiling::Reserved); }
-  };
+    bool TileSearchContext::detected() {return CHECK(c,StageTiling::Detected); }
+    void TileSearchContext::reserve()  { MARK(c,StageTiling::Reserved); }
 
   bool StageTiling::on_plane(uint32_t *p)
   { return ON_PLANE(p-AUINT32(attr_));
   }
 
-#define ELIGABLE(e)   ((*(e)&eligable_mask)==eligable)
+  void StageTiling::tileSearchCleanup(TileSearchContext *ctx)
+  { const uint32_t *beg = AUINT32(attr_)+current_plane_offset_,
+                   *end = beg+sz_plane_nelem_;
+    int iplane=current_plane_offset_/sz_plane_nelem_;
+    lock();
+    for(uint32_t *t=(uint32_t*)beg;t<end;++t) // Reset Reserved
+      *t = t[0]&~Reserved;
+    if(ctx->is_outline_mode())
+    { unlock(); // FIXME: possible race condition
+      fillHoles(iplane,Detected);
+      if(ctx->radius)
+        dilate(iplane,ctx->radius,Detected,Explorable,0);
+      lock();    
+      ctx->set_outline_mode(false);
+    }
+    cursor_=beg-AUINT32(attr_); // reset to start of plane
+    // Copy explorable to next plane
+    if( (current_plane_offset_/sz_plane_nelem_)<(attr_->dims[2]-1)) // if not last plane
+    { uint32_t *c,*n;
+      for(c=(uint32_t*)beg,n=(uint32_t*)end;c<end;++c,++n)
+        *n|=(*c&Explorable);
+    }
+    unlock();
+  }
+
+#define ELIGABLE(e)          ((*(e)&eligable_mask)==eligable)
+#define ALREADY_DETECTED(e)  ((*(e)&(Addressable|Explorable|Detected|Reserved))==(Addressable|Explorable|Detected))
+//#define IMPLY_DETECTED(e)    ((*(e)&(Done))==(Done)) | ((*(e)&(Active))==(Active))
 
   /* Sorry for the goto's.  don't hate. */
   bool StageTiling::nextSearchPosition(int iplane, int radius, Vector3f &pos,TileSearchContext **pctx)
-  { const uint32_t eligable_mask = Addressable | Explorable | Explored | Active | Done,
+  { const uint32_t eligable_mask = Addressable | Explorable | Explored /*| Active | Done*/, // Active/Done do not imply detection and we don't want them to
                    eligable      = Addressable | Explorable,
                   *beg = AUINT32(attr_)+current_plane_offset_,
                   *end = beg+sz_plane_nelem_;
@@ -385,39 +428,46 @@ namespace device {
     TileSearchContext *ctx=*pctx;
     lock();
     if(!ctx)
-    { *pctx=ctx=new TileSearchContext(this);
+    { *pctx=ctx=new TileSearchContext(this,radius);
     }
-Start:
     ctx->sync();
+Start:
     if(ctx->detected())
     { ctx->reserve();
       ctx->set_outline_mode();
     }
     if(ctx->is_outline_mode())
-    { uint32_t *n;
-      if(!ctx->detected())
-        if(!ctx->pop())
-          goto DoneOutlining;
-      while(n=ctx->next_neighbor())
-      { if(CHECK(n,Reserved))// BOOM DONE - the loop is closed
-        { goto DoneOutlining;
-        }
-        if(ELIGABLE(n))
-        { ctx->push(n);
-          goto Yield;
+    { uint32_t *n;      
+      if(ctx->detected())
+      { while(n=ctx->next_neighbor())
+        { if(CHECK(n,Reserved)) // BOOM DONE - the loop is closed
+          { goto DoneOutlining;
+          }          
+#if 0 // Actually don't want to infer detected from any other flags
+          if(IMPLY_DETECTED(n)) //infer_detected - some flags imply tile is detected
+            *n|=Detected;
+#endif
+          if(ALREADY_DETECTED(n)) 
+          { ctx->push(n); // treat previously detected as ok part of the perimeter
+            goto Start;   // don't need to detect again
+          }
+          if(ELIGABLE(n))
+          { ctx->push(n);
+            goto Yield;
+          }
         }
       }
-      if(ctx->pop()) // handle dead end - no neighbors eligable or reserved
-      { goto Start; // [?] FIXME - don't want to yield here.  Want to reinit the search.
-      }
-      // underflow...
-      // The found region is just a strip of detected...not a closed loop
-      goto DoneOutlining;
+      if(ctx->pop())      // Back up.  Also part of handling dead end - no neighbors eligable or reserved
+        goto Start;      
+      goto DoneOutlining; // underflow...The found region is just a strip, not a closed loop.
     }
 Hunt:
     if(ctx->is_hunt_mode())
-    { unlock(); // FIXME: race condition - mutex released here and immediately reaquired in the next call. - not serious
-      return this->nextInPlaneExplorablePosition(pos);
+    { unlock(); // FIXME: racy
+      return nextInPlaneQuery(pos,
+        Addressable|Explorable|Explored|Detected|Active|Done,  // skip explored,detected,active or done tiles.
+        Addressable|Explorable                              );
+      lock();
     }
     // ALL DONE
     delete ctx;
@@ -430,18 +480,9 @@ Yield:
     notifyNext(cursor_,pos);
     return true;
 DoneOutlining:
-    // Reset Reserved
-    for(uint32_t *t=(uint32_t*)beg;t<end;++t)
-    { *t = t[0]&~Reserved;
-    }
-    unlock(); // FIXME: possible race condition
-    fillHoles(iplane,Detected);
-    if(radius)
-      dilate(iplane,radius,Detected,Explorable,0);
+    unlock(); // FIXME - racy
+    tileSearchCleanup(ctx); // this cleans up the outlining and resets to hunt mode
     lock();
-    // RESET to hunt mode
-    ctx->set_outline_mode(false);
-    cursor_=beg-AUINT32(attr_);
     goto Hunt;
   }
 #undef CHECK

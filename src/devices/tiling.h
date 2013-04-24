@@ -65,8 +65,10 @@ namespace device {
     bool     nextInPlanePosition(Vector3f& pos);
     bool     nextInPlaneExplorablePosition(Vector3f &pos);
     bool     nextPosition(Vector3f& pos);
+    bool     nextInPlaneQuery(Vector3f &pos,uint32_t attrmask,uint32_t attr);
 
     bool     nextSearchPosition(int iplane, int ntimes, Vector3f &pos,TileSearchContext **ctx);     ///< *ctx should be NULL on the first call.  It will be internally managed.
+    void     tileSearchCleanup(TileSearchContext *ctx);
 
     void     markDone(bool success);
     void     markActive(); // used by gui to explicitly set tiles to image
@@ -109,6 +111,45 @@ namespace device {
     const Vector3f computeCursorPos();
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  };
+
+  // ERMAHGERD C++
+  // THESE ARE PRIVATE CLASSES - DONT USE
+  // Need these in the header so their destructors will be called properly?  GROSS
+  struct tile_search_parent_t;
+  struct tile_search_history_t
+  { tile_search_parent_t *history;
+    size_t i,n;
+    tile_search_history_t();
+    ~tile_search_history_t();
+    int push(uint32_t *c,int dir,int n);    
+    int pop(uint32_t **pc, uint32_t *pdir, uint32_t* pn);
+    int pop(uint32_t **pc, int *pdir, int *pn);
+    int request(size_t  i_);
+    void flush();
+  };
+
+  struct TileSearchContext
+  { StageTiling *tiling;
+    uint32_t *c, 
+              n,        // the next neighbor to look at
+              dir,      // the direction of the last move
+              mode,     // 0 - hunt mode, 1 - outline mode
+              radius;   // radius for dilation of explorable area post-detection
+    size_t line, plane; // strides in elements
+    tile_search_history_t history;
+    TileSearchContext(StageTiling *t,int radius=0);
+    ~TileSearchContext();
+    void sync();
+    void set_outline_mode(bool tf=true);
+    bool is_outline_mode();
+    bool is_hunt_mode();
+    uint32_t *next_neighbor();
+    void flush();
+    int push(uint32_t* p);
+    int pop();
+    bool detected();
+    void reserve();
   };
 
 }} //end namespace fetch

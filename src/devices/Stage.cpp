@@ -835,7 +835,7 @@ Error:
       _config->CopyFrom(cfg);
   }
 
-  float myroundf(float x) {return floorf(x/*+0.5f*/);}
+  float myroundf(float x) {return floorf(x+0.5f);}
 
   Vector3z Stage::getPosInLattice()
   { StageTiling::TTransform l2s(_tiling->latticeToStageTransform());
