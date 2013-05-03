@@ -202,10 +202,10 @@ Error:
           tiling->markDetected(classify(im,cfg.ichan(),cfg.intensity_threshold(),cfg.area_threshold()));
           mylib::Free_Array(im);
         }
-        if(!any_explorable)                      // if no explorable tiles were found then
-        { WARN("No explorable tiles found.\n");  // if not, the user probably forgot to set the exploration zone.
-          goto Error;
-        }
+        //if(!any_explorable)                      // if no explorable tiles were found then
+        //{ WARN("No explorable tiles found.\n");  // if not, the user probably forgot to set the exploration zone.
+        //  goto Error;
+        //}
         if(!tiling->updateActive(iplane))
         { WARN("No tiles found to image.\n");
           goto Error;
