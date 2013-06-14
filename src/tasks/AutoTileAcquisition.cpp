@@ -199,6 +199,7 @@ Error:
           CHKJMP(dc->stage()->setPos(tilepos*0.001)); // convert um to mm
           CHKJMP(im=dc->snapshot(cfg.z_um(),cfg.timeout_ms()));
           tiling->markExplored();
+
           tiling->markDetected(classify(im,cfg.ichan(),cfg.intensity_threshold(),cfg.area_threshold()));
           mylib::Free_Array(im);
         }
