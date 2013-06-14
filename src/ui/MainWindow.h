@@ -16,6 +16,7 @@ class VibratomeDockWidget;
 class VibratomeGeometryDockWidget;
 class AutoTileDockWidget;
 class StageDockWidget;
+class SurfaceScanDockWidget;
 class HistogramDockWidget;
 class Figure;
 class IPlayerThread;
@@ -85,6 +86,7 @@ public: // semi-private
   VibratomeGeometryDockWidget  *_vibratomeGeometryDockWidget;
   QDockWidget                  *_cutTaskDockWidget;
   StageDockWidget              *_stageDockWidget;
+  SurfaceScanDockWidget        *_surfaceScanDockWidget;
   AutoTileDockWidget           *_autoTileDockWidget;
   HistogramDockWidget          *_histogramDockWidget;
   Figure                       *_display;

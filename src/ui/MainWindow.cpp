@@ -8,6 +8,7 @@
 #include "Player.h"
 #include "StackAcquisitionDockWidget.h"
 #include "MicroscopeStateDockWidget.h"
+#include "SurfaceScanDockWidget.h"
 #include "VibratomeDockWidget.h"
 #include "StageDockWidget.h"
 #include "AutoTileDockWidget.h"
@@ -105,6 +106,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,_vibratomeDockWidget(0)
   ,_cutTaskDockWidget(0)
   ,_stageDockWidget(0)
+  ,_surfaceScanDockWidget(0)
   ,_autoTileDockWidget(0)
   ,_histogramDockWidget(0)
   ,_display(0)
@@ -332,6 +334,11 @@ void fetch::ui::MainWindow::createDockWidgets()
   addDockWidget(Qt::LeftDockWidgetArea,_vibratomeDockWidget);
   viewMenu->addAction(_vibratomeDockWidget->toggleViewAction());
   _vibratomeDockWidget->setObjectName("_vibratomeStateDockWidget");
+
+  _surfaceScanDockWidget = new SurfaceScanDockWidget(_dc,this);
+  addDockWidget(Qt::LeftDockWidgetArea,_surfaceScanDockWidget);
+  viewMenu->addAction(_surfaceScanDockWidget->toggleViewAction());
+  _surfaceScanDockWidget->setObjectName("_surfaceScanDockWidget");
 
   _vibratomeGeometryDockWidget = new VibratomeGeometryDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_vibratomeGeometryDockWidget);

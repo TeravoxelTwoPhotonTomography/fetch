@@ -6,6 +6,7 @@ import "vibratome.proto";
 import "workers.proto";
 import "file.proto";
 import "tasks.proto";
+import "probe.proto";
 
 message FieldOfViewGeometry
 {
@@ -24,6 +25,7 @@ message Microscope
   required Stage                       stage                 = 2;
   optional Vibratome                   vibratome             = 3;
   optional FieldOfViewGeometry         fov                   = 4;
+  optional Probe                       surface_probe         =15;
   optional worker.Pipeline             pipeline              = 5;
   required FileSeries                  file_series           = 8;
   optional string                      file_prefix           = 9 [default="default"];
