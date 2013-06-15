@@ -38,7 +38,9 @@ namespace fetch
     {
     public:
       virtual float read() = 0;
-    }; 
+      virtual void  Bind() = 0;
+      virtual void  UnBind() = 0;
+    };
 
     template<class T>
     class ProbeBase:public IProbe,public IConfigurableDevice<T>
@@ -48,21 +50,23 @@ namespace fetch
       ProbeBase(Agent *agent, Config *cfg) :IConfigurableDevice<T>(agent,cfg) {}
     };
 
-    class NIDAQProbe:public ProbeBase<cfg::device::NIDAQProbe>      
+    class NIDAQProbe:public ProbeBase<cfg::device::NIDAQProbe>
     {
       NIDAQChannel daq;
       IDAQPhysicalChannel _ai;
     public:
       NIDAQProbe(Agent *agent);
       NIDAQProbe(Agent *agent, Config *cfg);
+      ~NIDAQProbe();
 
       unsigned int on_attach();
       unsigned int on_detach();
-      
+
       virtual void _set_config(Config IN *cfg) {_ai.set(cfg->ai_channel()); Bind();}
 
       float read();
-      void Bind         (void);   // Binds the analog input channel to the daq task. - called by on_attach()
+      void  Bind (void);   // Binds the analog input channel to the daq task. - called by on_attach()
+      void  UnBind(void);
     };
 
     class SimulatedProbe:public ProbeBase<cfg::device::SimulatedProbe>
@@ -75,7 +79,8 @@ namespace fetch
       unsigned int on_detach() {return 0;}
 
       void update(void) {}
-
+      void Bind() {}
+      void UnBind() {}
       float read() {return 0.0f;}
     };
 
@@ -97,6 +102,8 @@ namespace fetch
 
       void setKind(Config::ProbeType kind);
 
+      void  Bind() { return _iprobe->Bind();}
+      void  UnBind() { return _iprobe->UnBind();}
       float read() {return _iprobe->read();}
     };
 

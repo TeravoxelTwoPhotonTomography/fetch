@@ -38,7 +38,7 @@ namespace fetch
     { unsigned int status=1; //success 0, failure 1
 
       if(daqtask)
-      { debug("%s: Attempting to detach DAQ AO channel. handle 0x%p\r\n",_daqtaskname,daqtask);
+      { debug("%s: Attempting to detach DAQ channel. handle 0x%p\r\n",_daqtaskname,daqtask);
         DAQJMP(DAQmxStopTask(daqtask));
         DAQJMP(DAQmxClearTask(daqtask));
       }

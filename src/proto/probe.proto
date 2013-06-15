@@ -3,8 +3,8 @@ package fetch.cfg.device;
 message NIDAQProbe
 { 
   optional string ai_channel = 1 [default="/Dev1/ai0"]; // control channel
-  optional float       v_min = 2 [default=-1.0];
-  optional float       v_max = 3 [default= 1.0];
+  optional float       v_min = 2 [default=-10.0];
+  optional float       v_max = 3 [default= 10.0];
 }                                   
 
 message SimulatedProbe
