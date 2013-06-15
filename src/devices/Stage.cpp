@@ -440,7 +440,7 @@ Error:
   \todo  better error handling in case I hit limits
   \todo  what is behavior around limits?
 */
-  int C843Stage::setPos( float x, float y, float z )
+  int C843Stage::setPos( float x, float y, float z, int sleep_ms/*=500*/)
   { double t[3] = {x,y,z};
     BOOL ontarget[] = {0,0,0};
     { StageTravel t;
@@ -460,9 +460,8 @@ Error:
     { C843JMP( C843_qONT(handle_,"123",ontarget) );    // Ensure controller is on-target (if there was an error before, will repeat here?)
       Sleep(20);  
     }
-    //Sleep(500); // let the bath soln settle. commented by Vadim on 6/15/13
-    //if(!all(ontarget,3))
-    //  goto Error;
+    if(sleep_ms>0)
+      Sleep(sleep_ms); // let the bath soln settle. commented by Vadim on 6/15/13
 
     { double a[3];
       C843JMP( C843_qMOV(handle_,"123",a) );
@@ -713,7 +712,7 @@ Error:
   { return (cfg.axis(iaxis).min_mm()<=v) && (v<=cfg.axis(iaxis).max_mm());
   }
 
-  int SimulatedStage::setPos( float x, float y, float z )
+  int SimulatedStage::setPos( float x, float y, float z,int sleep_ms )
   {
     if( is_in_bounds(*_config,0,x)
       &&is_in_bounds(*_config,1,y)
@@ -932,7 +931,7 @@ Error:
     return eflag;
   }
 
-  int  Stage::setPos(float  x,float  y,float  z)
+  int  Stage::setPos(float  x,float  y,float  z,int sleep_ms)
   {
     int out = _istage->setPos(x,y,z);
     _config->mutable_last_target_mm()->set_x(x);

@@ -8,6 +8,11 @@ import "file.proto";
 import "tasks.proto";
 import "probe.proto";
 
+message TiledSurfaceScan
+{ optional string filename        = 1 [default="surface_scan.csv"];
+  optional float  setting_time_ms = 2 [default=0]; 
+}
+
 message FieldOfViewGeometry
 {
   optional float x_size_um        = 1 [ default = 100.0];
@@ -33,4 +38,5 @@ message Microscope
   optional string                      config_extension      =11 [default=".microscope"];
   optional string                      metadata_extension    =12 [default=".acquisition"];
   required tasks.AutoTile              autotile              =14;
+  required TiledSurfaceScan            surface_scan          =16;
 }

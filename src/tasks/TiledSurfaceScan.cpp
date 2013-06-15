@@ -82,12 +82,8 @@ Error:
         FILE *fp=0;
         Vector3f tilepos;
         size_t iplane=dc->stage()->getPosInLattice().z();
-        TS_OPEN(1,"timer-probe_all.f32");
-        TS_OPEN(2,"timer-probe_move.f32");
-        TS_OPEN(3,"timer-probe_read.f32");
-        TS_OPEN(4,"timer-probe_qpos.f32");
 
-        CHKJMP(fp=fopen("surface_scan.csv","w"));
+        CHKJMP(fp=fopen(dc->_config->surface_scan().filename().c_str(),"w"));
         fprintf(fp,"stagex_mm\tstagey_mm\tstagez_mm\tprobe_V\n");
 
         device::StageTiling* tiling = dc->stage()->tiling();
@@ -96,35 +92,18 @@ Error:
         dc->surfaceProbe()->Bind();
 
         while(eflag==0 && !dc->_agent->is_stopping() && tiling->nextInPlaneExplorablePosition(tilepos))
-        { TS_TIC(1);
-          debug("%s(%d)"ENDL "\t[Surface Scan Task] tilepos: %5.1f %5.1f %5.1f"ENDL,__FILE__,__LINE__,tilepos[0],tilepos[1],tilepos[2]);
-
+        { debug("%s(%d)"ENDL "\t[Surface Scan Task] tilepos: %5.1f %5.1f %5.1f"ENDL,__FILE__,__LINE__,tilepos[0],tilepos[1],tilepos[2]);
           // Move stage
-          TS_TIC(2);
           Vector3f curpos = dc->stage()->getTarget(); // use current target z for tilepos z
           tilepos[2] = curpos[2]*1000.0f;             // unit conversion here is a bit awkward
-          dc->stage()->setPos(0.001f*tilepos);        // convert um to mm
-          TS_TOC(2);
-
-          TS_TIC(3);
+          dc->stage()->setPos(0.001f*tilepos,dc->_config->surface_scan().setting_time_ms()/*post move delay in ms - settling time*/);
           float x,y,z,v=dc->surfaceProbe()->read();
-          TS_TOC(3);
-          TS_TIC(4);
           dc->stage()->getPos(&x,&y,&z);
-          TS_TOC(4);
           fprintf(fp,"%f\t%f\t%f\t%f\n",x,y,z,v);
-//debug("%f\n",v);
-          TS_TOC(1);
         } // end loop over tiles
 Finalize:
-/*TODO*/// Close output file.
-
         dc->surfaceProbe()->UnBind();
         if(fp) fclose(fp);
-        TS_CLOSE(1);
-        TS_CLOSE(2);
-        TS_CLOSE(3);
-        TS_CLOSE(4);
         return eflag;
 Error:
         eflag=1;
