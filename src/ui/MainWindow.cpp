@@ -13,6 +13,7 @@
 #include "StageDockWidget.h"
 #include "AutoTileDockWidget.h"
 #include "HistogramDockWidget.h"
+#include "TimeSeriesDockWidget.h"
 #include "StageController.h"
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/io/tokenizer.h>
@@ -30,7 +31,7 @@ const char fetch::ui::MainWindow::defaultConfigPathKey[] = "Microscope/Config/De
 fetch::ui::ConfigFileNameDisplay::
   ConfigFileNameDisplay(const QString& filename, QWidget *parent)
   : QLabel(parent)
-{             
+{
   setOpenExternalLinks(true);
   setTextFormat(Qt::RichText);
   setTextInteractionFlags(Qt::NoTextInteraction
@@ -40,7 +41,7 @@ fetch::ui::ConfigFileNameDisplay::
   update(filename);
 }
 
-void 
+void
   fetch::ui::ConfigFileNameDisplay::
   update(const QString& filename)
 { QString link = QString("Config: <a href=\"file:///%1\">%1</a>").arg(filename);
@@ -54,7 +55,7 @@ void
 fetch::ui::FileSeriesNameDisplay::
   FileSeriesNameDisplay(const QString& filename, QWidget *parent)
   : QLabel(parent)
-{             
+{
   setOpenExternalLinks(true);
   setTextFormat(Qt::RichText);
   setTextInteractionFlags(Qt::NoTextInteraction
@@ -68,22 +69,22 @@ fetch::ui::FileSeriesNameDisplay::
     Qt::QueuedConnection);
 }
 
-void 
+void
   fetch::ui::FileSeriesNameDisplay::
   update(const QString& filename)
-{ 
-  // Link to each folder in the path individually  
+{
+  // Link to each folder in the path individually
   QString sep = QDir::separator();
   QStringList names = filename.split(sep,QString::SkipEmptyParts);
-  QString text = "FileSeries: ";  
+  QString text = "FileSeries: ";
   QString path;
   foreach(QString n,names)
   { n += sep;
     path += n;
     // qDebug() << n << " " << path;
     QString link = QString("<a href=\"file:///%1\">%2</a> ").arg(path,n);
-    text += link;    
-  }     
+    text += link;
+  }
   setText(text);
 }
 
@@ -108,6 +109,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,_stageDockWidget(0)
   ,_surfaceScanDockWidget(0)
   ,_autoTileDockWidget(0)
+  ,_timeSeriesDockWidget(0)
   ,_histogramDockWidget(0)
   ,_display(0)
   ,_player(0)
@@ -118,7 +120,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,_lsm_vert_range_controller(NULL)
   ,_pockels_controller(NULL)
   ,_defered_update(0)
-{  
+{
 
   _resonant_turn_controller = new ResonantTurnController(dc,"&Turn (px)",this);
   _vlines_controller        = new LinesController(dc,"Y &Lines (px)",this);
@@ -154,7 +156,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   _autotile_chan_control             = new AutoTileChanController(dc,"Channel to threshold",this);
   _autotile_intensity_thresh_control = new AutoTileIntensityThresholdController(dc,"Intensity threshold",this);
   _autotile_area_thresh_control      = new AutoTileAreaThresholdController(dc,"Area threshold (0-1)",this);
-    
+
   connect(_stageController,SIGNAL(moved()),          _stage_pos_x_control,SIGNAL(configUpdated()));
   connect(_stageController,SIGNAL(moved()),          _stage_pos_y_control,SIGNAL(configUpdated()));
   connect(_stageController,SIGNAL(moved()),          _stage_pos_z_control,SIGNAL(configUpdated()));
@@ -172,7 +174,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   createDockWidgets();
   createViews();
   load_settings_();
-   
+
   connect(&_poller,SIGNAL(timeout()),&_scope_state_controller,SLOT(poll()));
   connect(&_scope_state_controller,SIGNAL(onArm()),this,SLOT(startVideo()));
   connect(&_scope_state_controller,SIGNAL(onDisarm()),this,SLOT(stopVideo()));
@@ -180,9 +182,9 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
 
   { QStatusBar *bar = statusBar();
     { QString f("Default");
-      if(!_config_watcher->files().isEmpty()) 
+      if(!_config_watcher->files().isEmpty())
         f = _config_watcher->files().at(0);
-      ConfigFileNameDisplay *w = new ConfigFileNameDisplay(f);    
+      ConfigFileNameDisplay *w = new ConfigFileNameDisplay(f);
       bar->addPermanentWidget(w);
       connect(this,SIGNAL(configFileChanged(const QString&)),w,SLOT(update(const QString&)));
     }
@@ -190,14 +192,14 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
       QString f(s.c_str());
       FileSeriesNameDisplay *w = new FileSeriesNameDisplay(f);
       _dc->file_series.addListener(w->listener());
-      bar->addWidget(w);      
+      bar->addWidget(w);
     }
 
     bar->setSizeGripEnabled(true);
   }
 
-  _defered_update = new internal::mainwindow_defered_update(this);  
-}    
+  _defered_update = new internal::mainwindow_defered_update(this);
+}
 
 #define SAFE_DELETE(expr) if(expr) delete (expr)
 #define SAFE_DELETE_THREAD(expr) if(expr) { (expr)->wait(); delete (expr); }
@@ -216,7 +218,7 @@ fetch::ui::MainWindow::~MainWindow()
   SAFE_DELETE(_zpiezo_step_control);
 
   SAFE_DELETE(_defered_update);
-  
+
 }
 
 void fetch::ui::MainWindow::createActions()
@@ -230,7 +232,7 @@ void fetch::ui::MainWindow::createActions()
   {
     quitAct = new QAction(QIcon(":/icons/quit"),"&Quit",this);
     QList<QKeySequence> quitShortcuts;
-    quitShortcuts 
+    quitShortcuts
       << QKeySequence::Close
       << QKeySequence::Quit
       << (Qt::CTRL+Qt::Key_Q);
@@ -249,14 +251,14 @@ void fetch::ui::MainWindow::createActions()
   {
     saveAct = new QAction(QIcon(":/icons/save"),"&Save",this);
     saveAct->setShortcut(QKeySequence::Save);
-    saveAct->setStatusTip("Save the configuration to the last loaded location."); 
+    saveAct->setStatusTip("Save the configuration to the last loaded location.");
     connect(saveAct,SIGNAL(triggered()),this,SLOT(saveMicroscopeConfigToLastGoodLocation()));
   }
 
   {
     saveToAct = new QAction(QIcon(":/icons/saveas"),"Save &As",this);
     saveToAct->setShortcut(QKeySequence::SaveAs);
-    saveToAct->setStatusTip("Save the configuration to a file."); 
+    saveToAct->setStatusTip("Save the configuration to a file.");
     connect(saveToAct,SIGNAL(triggered()),this,SLOT(saveMicroscopeConfigViaFileDialog()));
   }
 }
@@ -268,12 +270,12 @@ void fetch::ui::MainWindow::createMenus()
   assert(openAct);
   assert(saveAct);
   assert(saveToAct);
-  
+
   fileMenu = menuBar()->addMenu("&File");
   fileMenu->addAction(openAct);
   fileMenu->addAction(saveAct);
   fileMenu->addAction(saveToAct);
-  fileMenu->addAction(quitAct);                                                                                                                                                                                                                                           
+  fileMenu->addAction(quitAct);
 
   viewMenu = menuBar()->addMenu("&View");
   viewMenu->addAction(fullscreenAct);
@@ -292,10 +294,10 @@ void fetch::ui::MainWindow::createStateMachines()
     fullscreenStateOn  = new QState();
     fullscreenStateOff = new QState();
     connect(fullscreenStateOn, SIGNAL(entered()),this,SLOT(showFullScreen()));
-    connect(fullscreenStateOff,SIGNAL(entered()),this,SLOT(showNormal()));  
+    connect(fullscreenStateOff,SIGNAL(entered()),this,SLOT(showNormal()));
     fullscreenStateOn->addTransition( fullscreenAct,SIGNAL(triggered()),fullscreenStateOff);
     fullscreenStateOff->addTransition(fullscreenAct,SIGNAL(triggered()),fullscreenStateOn);
-  
+
     fullscreenStateMachine.addState(fullscreenStateOff);
     fullscreenStateMachine.addState(fullscreenStateOn);
     fullscreenStateMachine.setInitialState(fullscreenStateOff);
@@ -323,7 +325,7 @@ void fetch::ui::MainWindow::createDockWidgets()
   _microscopesStateDockWidget = new MicroscopeStateDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_microscopesStateDockWidget);
   viewMenu->addAction(_microscopesStateDockWidget->toggleViewAction());
-  _microscopesStateDockWidget->setObjectName("_microscopesStateDockWidget");   
+  _microscopesStateDockWidget->setObjectName("_microscopesStateDockWidget");
 
   _stageDockWidget = new StageDockWidget(_dc,this);             // has to come before the _vibratomeDockWidget
   addDockWidget(Qt::LeftDockWidgetArea,_stageDockWidget);
@@ -340,6 +342,11 @@ void fetch::ui::MainWindow::createDockWidgets()
   viewMenu->addAction(_surfaceScanDockWidget->toggleViewAction());
   _surfaceScanDockWidget->setObjectName("_surfaceScanDockWidget");
 
+  _timeSeriesDockWidget = new TimeSeriesDockWidget(_dc,this);
+  addDockWidget(Qt::LeftDockWidgetArea,_timeSeriesDockWidget);
+  viewMenu->addAction(_timeSeriesDockWidget->toggleViewAction());
+  _timeSeriesDockWidget->setObjectName("_timeSeriesDockWidget");
+
   _vibratomeGeometryDockWidget = new VibratomeGeometryDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_vibratomeGeometryDockWidget);
   viewMenu->addAction(_vibratomeGeometryDockWidget->toggleViewAction());
@@ -354,20 +361,20 @@ void fetch::ui::MainWindow::createDockWidgets()
   addDockWidget(Qt::LeftDockWidgetArea,_autoTileDockWidget);
   viewMenu->addAction(_autoTileDockWidget->toggleViewAction());
   _autoTileDockWidget->setObjectName("_autoTileDockWidget");
-  
+
   { HistogramDockWidget *w = new HistogramDockWidget(this);
     addDockWidget(Qt::LeftDockWidgetArea,w);
     viewMenu->addAction(w->toggleViewAction());
     w->setObjectName("_histogramDockWidget");
     _histogramDockWidget=w;
   }
-    
+
 }
 
 void fetch::ui::MainWindow::createViews()
 {
   _display = new Figure(_stageController);
-  
+
   setCentralWidget(_display);
   TRY(connect(_videoAcquisitionDockWidget,SIGNAL(onRun()),
               _display,                   SLOT(fitNext())));
@@ -383,13 +390,13 @@ void fetch::ui::MainWindow::createViews()
 }
 
 int fetch::ui::MainWindow::maybeSave()
-{ 
+{
   int ret = QMessageBox::warning(this,
     "Fetch",
     "Save configuration data before closing?",
     QMessageBox::Save|QMessageBox::Discard|QMessageBox::Cancel);
   switch(ret)
-  { 
+  {
   case QMessageBox::Save:
     saveToAct->trigger();
     tilingController()->saveDialogAction()->trigger();
@@ -404,7 +411,7 @@ int fetch::ui::MainWindow::maybeSave()
 }
 
 void fetch::ui::MainWindow::closeEvent( QCloseEvent *event )
-{ 
+{
   if(!maybeSave())
   { event->ignore(); // cancel the close
     return;
@@ -415,7 +422,7 @@ void fetch::ui::MainWindow::closeEvent( QCloseEvent *event )
   _dc->stage()->delListener(_stageController->listener());
   _dc->stage()->delListener(_stageController->tiling()->listener());
   _poller.stop();
-  save_settings_();  
+  save_settings_();
 }
 
 void fetch::ui::MainWindow::load_settings_()
@@ -432,7 +439,7 @@ void fetch::ui::MainWindow::load_settings_()
   { QString filename = settings.value(defaultConfigPathKey,":/config/microscope").toString();
     QStringList files = _config_watcher->files();
     if(!files.isEmpty())
-      _config_watcher->removePaths(files);  
+      _config_watcher->removePaths(files);
     _config_watcher->addPath(filename);
   }
 }
@@ -441,13 +448,13 @@ void fetch::ui::MainWindow::save_settings_()
 {
   QSettings settings;
   settings.setValue("MainWindow/geometry",saveGeometry());
-  settings.setValue("MainWindow/state",saveState(version__));  
+  settings.setValue("MainWindow/state",saveState(version__));
 }
 
 #define CHKJMP(expr,lbl) if(!(expr)) goto lbl;
 class MainWindowProtobufErrorCollector:public google::protobuf::io::ErrorCollector
 { public:
- 
+
   virtual void AddError(int line, int col, const std::string & message)    {warning("Protobuf: Error   - at line %d(%d):"ENDL"\t%s"ENDL,line,col,message.c_str());}
   virtual void AddWarning(int line, int col, const std::string & message)  {warning("Protobuf: Warning - at line %d(%d):"ENDL"\t%s"ENDL,line,col,message.c_str());}
 };
@@ -464,10 +471,10 @@ void fetch::ui::MainWindow::openMicroscopeConfigViaFileDialog()
   openMicroscopeConfig(filename);
 }
 
-void 
+void
   fetch::ui::MainWindow::
   openMicroscopeConfigDelayed(const QString& filename)
-{ 
+{
   HERE;
   qDebug() << _config_watcher->files();
 
@@ -476,18 +483,18 @@ void
   _config_delayed_load_mapper.disconnect();
   _config_delayed_load_mapper.removeMappings(&_config_delayed_load_timer);
   // init the new ones
-  _config_delayed_load_mapper.setMapping(&_config_delayed_load_timer,filename);         // Use a signal mapper to 
-  connect(&_config_delayed_load_timer , SIGNAL(timeout()),                              // send the string after 
+  _config_delayed_load_mapper.setMapping(&_config_delayed_load_timer,filename);         // Use a signal mapper to
+  connect(&_config_delayed_load_timer , SIGNAL(timeout()),                              // send the string after
           &_config_delayed_load_mapper, SLOT(map()));                                   // a specified delay.
-  connect(&_config_delayed_load_mapper, SIGNAL(mapped(const QString&)),                 
-                                  this, SLOT(openMicroscopeConfig(const QString&)));    
+  connect(&_config_delayed_load_mapper, SIGNAL(mapped(const QString&)),
+                                  this, SLOT(openMicroscopeConfig(const QString&)));
 
   _config_delayed_load_timer.setSingleShot(true);
   _config_delayed_load_timer.setInterval(100/*ms*/);
   _config_delayed_load_timer.start();
 }
 
-void 
+void
   fetch::ui::MainWindow::
   openMicroscopeConfig(const QString& filename)
 { QFile cfgfile(filename);
@@ -500,13 +507,13 @@ void
     MainWindowProtobufErrorCollector e;
     fetch::cfg::device::Microscope cfg;
     parser.RecordErrorsTo(&e);
-  
+
     CHKJMP(parser.ParseFromString(cfgfile.readAll().constData(),&cfg),ParseError);
 
-    // commit    
+    // commit
     if(_defered_update)
       _defered_update->update(cfg); // set_config_nowait won't work here.
-  }  
+  }
 
   update_active_config_location_(filename);
 
@@ -544,7 +551,7 @@ void
   saveMicroscopeConfig(filename);
 }
 
-void 
+void
   fetch::ui::MainWindow::
   saveMicroscopeConfigToLastGoodLocation()
 { QSettings s;
@@ -558,41 +565,41 @@ void
 void
   fetch::ui::MainWindow::
   saveMicroscopeConfig(const QString& filename)
-{    
+{
   QFile file(filename);
   CHKJMP(file.open(QIODevice::WriteOnly|QIODevice::Truncate),ErrorFileAccess);
-    
-  { QTextStream fout(&file);  
+
+  { QTextStream fout(&file);
     std::string s;
     google::protobuf::TextFormat::PrintToString(_dc->get_config(),&s);
     fout << s.c_str();
   }
 
   update_active_config_location_(filename);
-  
+
   return;
 ErrorFileAccess:
   warning("(%d:%s) MainWindow - could not open file for writing."ENDL,__FILE__,__LINE__);
   return;
 }
 
-void 
+void
   fetch::ui::MainWindow::
   update_active_config_location_(const QString& filename)
 {
   // store location back to settings - use as default next time GUI is opened
   { QFileInfo info(filename);
     QSettings settings;
-    settings.setValue(defaultConfigPathKey,info.absoluteFilePath());  
+    settings.setValue(defaultConfigPathKey,info.absoluteFilePath());
     //settings.setValue("Microscope/Config/DefaultFilename",info.absoluteFilePath());
   }
 
   // Update watcher
   QStringList files = _config_watcher->files();
   if(!files.isEmpty())
-    _config_watcher->removePaths(files);  
+    _config_watcher->removePaths(files);
   _config_watcher->addPath(filename);
-  
+
   emit configFileChanged(filename);
 }
 
@@ -606,7 +613,7 @@ void
   TRY(connect(
       _player             ,SIGNAL(imageReady(mylib::Array*)),
       _histogramDockWidget,SLOT  (set(mylib::Array*)),
-      Qt::BlockingQueuedConnection));  
+      Qt::BlockingQueuedConnection));
 Error:
   _player->start();
 }
@@ -614,15 +621,15 @@ Error:
 void
   fetch::ui::MainWindow::
   stopVideo()
-{ if(!_player) return; 
+{ if(!_player) return;
   _dead_players.enqueue(_player);
   _player->disconnect();
-  _display->disconnect(); 
+  _display->disconnect();
   _histogramDockWidget->disconnect(_player,SIGNAL(imageReady(mylib::Array*)));
   connect(_player,SIGNAL(finished()),this,SLOT(clearDeadPlayers()));//,Qt::DirectConnection);
   //connect(_player,SIGNAL(terminated()),this,SLOT(clearDeadPlayers())); //,Qt::DirectConnection);
   _player->stop();
-  
+
   _player = NULL;
 
 #if 0 // Block below deadlocks occasionally
@@ -649,10 +656,10 @@ void
 }
 
 
-void 
+void
   fetch::ui::MainWindow::clearDeadPlayers()
 { while(!_dead_players.isEmpty())
   { IPlayerThread* p = _dead_players.dequeue();
     delete p;
-  } 
-} 
+  }
+}

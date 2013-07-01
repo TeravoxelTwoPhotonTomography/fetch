@@ -18,6 +18,7 @@ class AutoTileDockWidget;
 class StageDockWidget;
 class SurfaceScanDockWidget;
 class HistogramDockWidget;
+class TimeSeriesDockWidget;
 class Figure;
 class IPlayerThread;
 
@@ -33,14 +34,14 @@ public:
 
   TilingController *tilingController() {return _stageController->tiling();}
 
-  static const char defaultConfigPathKey[];       
+  static const char defaultConfigPathKey[];
 
 signals:
   void configUpdated();
   void configFileChanged(const QString& filename);
 
 protected:
-  void closeEvent(QCloseEvent *event); 
+  void closeEvent(QCloseEvent *event);
 
 protected slots:
   void openMicroscopeConfigViaFileDialog();
@@ -51,7 +52,7 @@ protected slots:
   void saveMicroscopeConfig(const QString& filename);
 
   void startVideo();
-  void stopVideo(); 
+  void stopVideo();
 
   int maybeSave();
 
@@ -88,14 +89,15 @@ public: // semi-private
   StageDockWidget              *_stageDockWidget;
   SurfaceScanDockWidget        *_surfaceScanDockWidget;
   AutoTileDockWidget           *_autoTileDockWidget;
+  TimeSeriesDockWidget         *_timeSeriesDockWidget;
   HistogramDockWidget          *_histogramDockWidget;
   Figure                       *_display;
   IPlayerThread                *_player;
-                                                             
-  QTimer _poller;                                            
+
+  QTimer _poller;
   AgentController               _scope_state_controller;
   PlanarStageController        *_stageController;
-  
+
   // Property controllers
   ResonantTurnController       *_resonant_turn_controller;
   LinesController              *_vlines_controller;
@@ -119,7 +121,7 @@ public: // semi-private
   StageVelYController          *_stage_vel_y_control;
   StageVelZController          *_stage_vel_z_control;
   FOVOverlapZController        *_fov_overlap_z_controller;
-  
+
   AutoTileZOffController               *_autotile_zoffum_control;
   AutoTileZMaxController               *_autotile_zmaxmm_control;
   AutoTileTimeoutMsController          *_autotile_timeoutms_control;
@@ -129,7 +131,7 @@ public: // semi-private
 
   QFileSystemWatcher           *_config_watcher;
 
-private:  
+private:
   void update_active_config_location_(const QString& path);
   void load_settings_();
   void save_settings_();
@@ -184,7 +186,7 @@ namespace internal
   // Helper that updates the microscope config from another thread (so GUI thread won't block)
   // then notifies the GUI when it's done.  See: MainWindow::openMicroscopeConfig
   class mainwindow_defered_update : public QThread
-  { 
+  {
     Q_OBJECT
 
     MainWindow *w_;

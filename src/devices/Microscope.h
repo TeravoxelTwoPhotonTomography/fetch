@@ -33,6 +33,7 @@
 #include "tasks/Vibratome.h"
 #include "tasks/AutoTileAcquisition.h"
 #include "tasks/TiledSurfaceScan.h"
+#include "tasks/TimeSeries.h"
 
 #include <string>
 #include <set>
@@ -138,6 +139,7 @@ namespace fetch
       task::microscope::Cut                 cut_task;
       task::microscope::AutoTileAcquisition auto_tile_task;
       task::microscope::TiledSurfacescan    surface_scan_task;
+      task::microscope::TimeSeries          time_series_task;
 
       mylib::Array* snapshot(float dz_um,unsigned timeout_ms);
 
