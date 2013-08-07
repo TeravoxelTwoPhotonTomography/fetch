@@ -521,7 +521,11 @@ Error:
                            specified timeout (in milliseconds), the acquisition
                            will fail.
 */
+#if 0
 #define FUDGE ((i>0)?92:0)
+#else
+#define FUDGE (0)
+#endif
 int alazar_fetch (alazar_t ctx, void **buf, unsigned timeout_ms)
 { unsigned i,j,j0;
   size_t o=0;

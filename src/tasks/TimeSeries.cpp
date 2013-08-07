@@ -81,13 +81,10 @@ Error:
       {
           return_val_if( result == WAIT_OBJECT_0  , 0 );
           return_val_if( result == WAIT_OBJECT_0+1, 1 );
-          Guarded_Assert_WinErr( result != WAIT_FAILED );
+          Guarded_Assert_WinErr__NoPanic( result != WAIT_FAILED );
           if(result == WAIT_ABANDONED_0)   warning("%s(%d)"ENDL "\tTimeSeries: Wait 0 abandoned"ENDL "\t%s"ENDL, __FILE__, __LINE__, msg);
           if(result == WAIT_ABANDONED_0+1) warning("%s(%d)"ENDL "\tTimeSeries: Wait 1 abandoned"ENDL "\t%s"ENDL, __FILE__, __LINE__, msg);
           if(result == WAIT_TIMEOUT)       warning("%s(%d)"ENDL "\tTimeSeries: Wait timeout"ENDL     "\t%s"ENDL, __FILE__, __LINE__, msg);
-
-          Guarded_Assert_WinErr( result != WAIT_FAILED );
-
           return -1;
       }
 

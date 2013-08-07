@@ -84,7 +84,7 @@ Error:
         size_t iplane=dc->stage()->getPosInLattice().z();
 
         CHKJMP(fp=fopen(dc->_config->surface_scan().filename().c_str(),"w"));
-        fprintf(fp,"stagex_mm\tstagey_mm\tstagez_mm\tprobe_V\n");
+        //fprintf(fp,"stagex_mm\tstagey_mm\tstagez_mm\tprobe_V\n");
 
         device::StageTiling* tiling = dc->stage()->tiling();
         tiling->setCursorToPlane(iplane);
@@ -99,7 +99,7 @@ Error:
           dc->stage()->setPos(0.001f*tilepos,dc->_config->surface_scan().setting_time_ms()/*post move delay in ms - settling time*/);
           float x,y,z,v=dc->surfaceProbe()->read();
           dc->stage()->getPos(&x,&y,&z);
-          fprintf(fp,"%f\t%f\t%f\t%f\n",x,y,z,v);
+          fprintf(fp,"%f,%f,%f,%f\n",x,y,z,v);
         } // end loop over tiles
 Finalize:
         dc->surfaceProbe()->UnBind();
