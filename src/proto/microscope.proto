@@ -6,6 +6,12 @@ import "vibratome.proto";
 import "workers.proto";
 import "file.proto";
 import "tasks.proto";
+import "probe.proto";
+
+message TiledSurfaceScan
+{ optional string filename        = 1 [default="surface_scan.csv"];
+  optional float  setting_time_ms = 2 [default=0];
+}
 
 message FieldOfViewGeometry
 {
@@ -24,6 +30,7 @@ message Microscope
   required Stage                       stage                 = 2;
   optional Vibratome                   vibratome             = 3;
   optional FieldOfViewGeometry         fov                   = 4;
+  optional Probe                       surface_probe         =15;
   optional worker.Pipeline             pipeline              = 5;
   required FileSeries                  file_series           = 8;
   optional string                      file_prefix           = 9 [default="default"];
@@ -31,4 +38,6 @@ message Microscope
   optional string                      config_extension      =11 [default=".microscope"];
   optional string                      metadata_extension    =12 [default=".acquisition"];
   required tasks.AutoTile              autotile              =14;
+  required TiledSurfaceScan            surface_scan          =16;
+  optional tasks.TimeSeries            time_series           =17;
 }

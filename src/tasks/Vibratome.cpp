@@ -80,6 +80,16 @@ namespace microscope {
             (a)--->(b)                  |_| thick    ___ Knife
                 Cut
   */
+  /* MOTION v2
+     ====== ==                         (c*)<-- New Image Plane -----          -
+     In-Plane:  (c)        Vertical:                               |          |
+                / ^                    (c) Old Image Plane         |<-> 0.5mm |dz
+               /   \                    |                          | thick    |
+              /     \                dz |(a)--------------------->(b)         -
+            (a)--->(b)                  |_| thick    ___ Knife
+                Cut
+  */
+
   unsigned int Cut::run(device::Microscope* dc)
   {
     float cx,cy,cz,vx,vy,vz,ax,ay,bx,by,bz,v,dz,thick;
@@ -106,12 +116,13 @@ namespace microscope {
     CHK( dc->vibratome()->start());
     CHK( dc->stage()->setVelocity(v));              // set feed velocity
     CHK( dc->stage()->setPos(bx,by,bz));            // feed
+    CHK( dc->stage()->setPos(bx,by+(bz-0.5),0.5));  // Drop to safe z first, come up at an angle -- Note: vibratome still running!
+                                  //(0 to 12)   
     CHK( dc->stage()->setVelocity(vx,vy,vz));       // set back to default velocity
     CHK( dc->vibratome()->stop());
     CHK( dc->stage()->doneWithCut(feedaxis));       // reset stage parameters
 
     // Move back
-    CHK( dc->stage()->setPos(bx,by,0.5));           // Drop to safe z first
     CHK( dc->stage()->setPos(cx,cy,0.5));           // Move on safe z plane
     CHK( dc->stage()->setPos(cx,cy,cz+thick));
 

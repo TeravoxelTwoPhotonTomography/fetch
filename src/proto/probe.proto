@@ -1,0 +1,24 @@
+package fetch.cfg.device;
+
+message NIDAQProbe
+{ 
+  optional string ai_channel = 1 [default="/Dev1/ai0"]; // control channel
+  optional float       v_min = 2 [default=-10.0];
+  optional float       v_max = 3 [default= 10.0];
+}                                   
+
+message SimulatedProbe
+{ optional bool state = 1 [default=false];
+}
+
+message Probe
+{
+  enum ProbeType
+  {
+    Simulated = 0;
+    NIDAQ     = 1;
+  }
+  required ProbeType      kind  = 1 [default=NIDAQ];
+  optional NIDAQProbe     nidaq = 2;
+  optional SimulatedProbe simulated = 3;
+}

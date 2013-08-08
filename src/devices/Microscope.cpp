@@ -49,6 +49,7 @@ namespace fetch
       ,stage_(&__self_agent)
       ,vibratome_(&__vibratome_agent)
       ,fov_(_config->fov())
+      ,surface_probe_(&__scan_agent)
       ,disk(&__io_agent)
       ,pipeline()
       ,trash("Trash")
@@ -71,6 +72,7 @@ namespace fetch
       ,stage_(&__self_agent)
       ,vibratome_(&__vibratome_agent)
       ,fov_(cfg.fov())
+      ,surface_probe_(&__scan_agent)
       ,disk(&__io_agent)
       ,pipeline()
       ,trash("Trash")
@@ -93,6 +95,7 @@ namespace fetch
       ,stage_(&__self_agent,cfg->mutable_stage())
       ,vibratome_(&__vibratome_agent,cfg->mutable_vibratome())
       ,fov_(cfg->fov())
+      ,surface_probe_(&__scan_agent,cfg->mutable_surface_probe())
       ,pipeline(cfg->mutable_pipeline())
       ,disk(&__io_agent)
       ,trash("Trash")
@@ -211,6 +214,7 @@ ESCAN:
       pipeline._set_config(cfg->mutable_pipeline());
       vibratome_._set_config(cfg->mutable_vibratome());
       fov_.update(_config->fov());
+      surface_probe_._set_config(cfg->mutable_surface_probe());
       stage_._set_config(cfg->mutable_stage());
 
       pipeline.set_scan_rate_Hz(_config->scanner3d().scanner2d().frequency_hz());
@@ -229,6 +233,7 @@ ESCAN:
       vibratome_.onUpdate();
       fov_.update(_config->fov());
       stage_.setFOV(&fov_);
+      surface_probe_.onUpdate();
       pipeline.set_scan_rate_Hz(_config->scanner3d().scanner2d().frequency_hz());
       pipeline.set_sample_rate_MHz(scanner.get2d()->_digitizer.sample_rate_MHz());
 

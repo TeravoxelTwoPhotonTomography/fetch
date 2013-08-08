@@ -26,11 +26,14 @@
 #include "devices/Stage.h"
 #include "devices/FieldOfViewGeometry.h"
 #include "devices/Vibratome.h"
+#include "devices/Probe.h"
 #include "tasks/microscope-interaction.h"
 #include "tasks/StackAcquisition.h"
 #include "tasks/TiledAcquisition.h"
 #include "tasks/Vibratome.h"
 #include "tasks/AutoTileAcquisition.h"
+#include "tasks/TiledSurfaceScan.h"
+#include "tasks/TimeSeries.h"
 
 #include <string>
 #include <set>
@@ -123,6 +126,7 @@ namespace fetch
       device::Stage                         stage_;
       device::Vibratome                     vibratome_;
       device::FieldOfViewGeometry           fov_;
+      device::Probe                         surface_probe_;
 
       worker::PipelineAgent                 pipeline;
 
@@ -134,6 +138,8 @@ namespace fetch
       task::microscope::TiledAcquisition    tiling_task;
       task::microscope::Cut                 cut_task;
       task::microscope::AutoTileAcquisition auto_tile_task;
+      task::microscope::TiledSurfacescan    surface_scan_task;
+      task::microscope::TimeSeries          time_series_task;
 
       mylib::Array* snapshot(float dz_um,unsigned timeout_ms);
 
@@ -143,6 +149,7 @@ namespace fetch
       inline ZPiezo*         zpiezo()    {return &scanner._zpiezo;}
       inline Stage*           stage()    {return &stage_;}
       inline Vibratome*   vibratome()    {return &vibratome_;}
+      inline Probe*    surfaceProbe()    {return &surface_probe_;}
 
       int updateFovFromStackDepth(int nowait=0);  // These also account for cut thickness, returns 0 if overlap is not positive.
       int updateStackDepthFromFov(int nowait=0);
