@@ -40,4 +40,5 @@ message Microscope
   required tasks.AutoTile              autotile              =14;
   required TiledSurfaceScan            surface_scan          =16;
   optional tasks.TimeSeries            time_series           =17;
+  optional tasks.SurfaceFind           surface_find          =18;
 }

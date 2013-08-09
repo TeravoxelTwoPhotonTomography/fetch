@@ -13,3 +13,20 @@ message AutoTile
 message TimeSeries
 { optional double interval_ms         = 1 [default = 0.0];
 }
+
+message SurfaceFind
+{
+	optional double backup_frac  = 1 [default = 0.1]; // step stage out by stack depth * backup_frac
+
+	optional double min_um       = 3 [default = 0];   // 
+	optional double max_um       = 4 [default = 100]; // scan a stack from min to max by dz, inclusive
+	optional double dz_um        = 5 [default = 5];   // 
+  
+  	optional uint32 ichan               = 6 [default = 0];    //
+  	optional double intensity_threshold = 7 [default = 1000]; // Classify as in or out
+  	optional double area_threshold      = 8 [default = 0.1];  //
+
+  	optional double response            = 9 [default = 2.0]; // correct stage z by response * measured error
+  	optional double response_limit_frac = 10[default = 0.1]; // response is limited to response_limit_frac * stack depth
+
+}
