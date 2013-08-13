@@ -13,13 +13,8 @@
 
 
 #include "common.h"
-#include "TimeSeriesDockWidget.h"
-#include "StackAcquisition.h"
-#include "Video.h"
-#include "frame.h"
-#include "devices\digitizer.h"
 #include "devices\Microscope.h"
-#include "devices\tiling.h"
+#include "tasks\SurfaceFind.h"
 
 #if 1 // PROFILING
 #define TS_OPEN(name)   timestream_t ts__=timestream_open(name)
@@ -120,41 +115,85 @@ TODO:
 
 */
       unsigned int SurfaceFind::run(device::Microscope *dc)
-      {
-        unsigned int eflag = 0; // success
+      { unsigned timeout_ms=10000;
+        unsigned int eflag = 0;                                   // success
+        cfg::device::Microscope       scope(dc->get_config());      // mutable copy of the config
+        const cfg::device::Microscope original(dc->get_config()); // make a copy in order to restore settings later
+        const cfg::tasks::SurfaceFind cfg=dc->get_config().surface_find();
+        double range_um=cfg.max_um()-cfg.min_um();        
+        Task* oldtask;
+        static task::scanner::ScanStack<u16> scan;
+
+        dc->transaction_lock();
+
         TS_OPEN("surface-find.f32");
         CHKJMP(dc->__scan_agent.is_runnable());
 
-        while(eflag==0 && !dc->_agent->is_stopping())
-        { TS_TIC;
-          
-          // Move stage
-          { Vector3f curpos_mm = dc->stage()->getTarget(); // use current target z for tilepos z
-            double range_um=dc->surface_find().max_z()-dc->surface_find().min_z();
-            curpos_mm[2] -= 0.001f*dc->surface_find().backup_frac()*range_um;// convert um to mm
+        // 1. Set up the stack acquisition
+        { int nframes = scope.pipeline().frame_average_count();
+          float step = cfg.dz_um()/(float)nframes;
+          // z-scan range is inclusive
+          scope.mutable_scanner3d()->mutable_zpiezo()->set_um_min(cfg.min_um());
+          scope.mutable_scanner3d()->mutable_zpiezo()->set_um_max(cfg.max_um()); //ensure n frames are aquired
+          scope.mutable_scanner3d()->mutable_zpiezo()->set_um_step(step);
+        }
+        dc->scanner.set_config(scope.scanner3d());
+
+        // 2. [ ] setup pipeline
+
+        while(eflag==0 && !dc->_agent->is_stopping() && !dc->surface_finder.any())
+        { 
+
+          TS_TIC;
+
+
+          // 3. Move stage
+          // [ ]: FIXME!  LIMIT TOTAL DISPLACEMENT
+          { Vector3f curpos_mm = dc->stage()->getTarget(); // use current target z for tilepos z            
+            curpos_mm[2] -= 0.001f*cfg.backup_frac()*range_um;// convert um to mm
             dc->stage()->setPos(curpos_mm);
           }
 
+          // 4. Start the acquisition
+          oldtask = dc->__scan_agent._task;
+          CHKJMP(0==dc->__scan_agent.disarm(timeout_ms));
+          CHKJMP(0==dc->__scan_agent.arm(&scan,&dc->scanner));
+
           eflag |= dc->runPipeline();
-          eflag |= run_and_wait(dc->__self_agent,dc->__scan_agent); // perform the scan
+          eflag |= run_and_wait(&dc->__self_agent,&dc->__scan_agent,NULL,NULL); // perform the scan
           eflag |= dc->stopPipeline();         // wait till everything stops
+          // [ ] readout
+          if(dc->surface_finder.any())
+          { float z_stack_um=dc->surface_finder.which()*cfg.dz_um()+cfg.min_um(); // stack displacement
+            float z_stage_mm=dc->stage()->getTarget()[2]+1e-3*z_stack_um; //[ ] CHECK: double check sign
+            // What to do with the answer?
+            // - update stage position (lock to surface) and done.
+            // - store somewhere.  Something else will get the data and update the stage position.
+            //   That component would receive this data.  This is probably going to be the microscope.    
 ///////HERE
-          // [ ] readout 
+          }
           // [ ] continue search?
           TS_TOC;
-        } // end loop over tiles
-        eflag |= dc->stopPipeline();           // wait till the  pipeline stops
+        } // end - loop until surface found
         
         if(!eflag)
         {
           // [ ] respond?  
         }
 
+
+        CHKJMP(dc->__scan_agent.stop());
+        CHKJMP(0==dc->__scan_agent.disarm(timeout_ms));
+Finalize:
+        dc->stopPipeline(); //- redundant?
+        dc->scanner.set_config(original.scanner3d());
+        dc->__scan_agent._task=oldtask;
+        dc->transaction_unlock();
         TS_CLOSE;
         return eflag;
 Error:
-        TS_CLOSE;
-        return 1;
+        eflag=1;
+        goto Finalize;
       }
 
 }}}  // namespace fetch::task::microscope

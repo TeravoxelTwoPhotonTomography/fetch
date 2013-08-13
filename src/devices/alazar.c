@@ -1,6 +1,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include "config.h"
-#ifdef HAVE_ALAZAR;
+#ifdef HAVE_ALAZAR
 #include <Windows.h>
 #include <stdlib.h>
 #include <stdio.h> //for logging

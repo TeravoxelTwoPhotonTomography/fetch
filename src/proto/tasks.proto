@@ -28,5 +28,4 @@ message SurfaceFind
 
   	optional double response            = 9 [default = 2.0]; // correct stage z by response * measured error
   	optional double response_limit_frac = 10[default = 0.1]; // response is limited to response_limit_frac * stack depth
-
 }

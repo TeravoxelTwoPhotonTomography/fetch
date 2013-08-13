@@ -18,6 +18,7 @@
 
 #include "workers/Pipeline.h"
 #include "workers/Terminator.h"
+#include "workers/SurfaceFindWorker.h"
 
 #include "devices/scanner3D.h"
 #include "devices/DiskStream.h"
@@ -129,6 +130,7 @@ namespace fetch
       device::Probe                         surface_probe_;
 
       worker::PipelineAgent                 pipeline;
+      worker::SurfaceFindWorkerAgent        surface_finder;
 
       worker::TerminalAgent		              trash;
       device::TiffGroupStream               disk;
@@ -140,6 +142,7 @@ namespace fetch
       task::microscope::AutoTileAcquisition auto_tile_task;
       task::microscope::TiledSurfacescan    surface_scan_task;
       task::microscope::TimeSeries          time_series_task;
+
 
       mylib::Array* snapshot(float dz_um,unsigned timeout_ms);
 

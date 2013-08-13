@@ -52,6 +52,7 @@ namespace fetch
       ,surface_probe_(&__scan_agent)
       ,disk(&__io_agent)
       ,pipeline()
+      ,surface_finder()
       ,trash("Trash")
       ,_end_of_pipeline(0)
     {
@@ -75,6 +76,7 @@ namespace fetch
       ,surface_probe_(&__scan_agent)
       ,disk(&__io_agent)
       ,pipeline()
+      ,surface_finder()
       ,trash("Trash")
       ,file_series()
       ,_end_of_pipeline(0)
@@ -97,6 +99,7 @@ namespace fetch
       ,fov_(cfg->fov())
       ,surface_probe_(&__scan_agent,cfg->mutable_surface_probe())
       ,pipeline(cfg->mutable_pipeline())
+      ,surface_finder(cfg->mutable_surface_find())
       ,disk(&__io_agent)
       ,trash("Trash")
       ,file_series(cfg->mutable_file_series())

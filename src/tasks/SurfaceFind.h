@@ -27,7 +27,7 @@ namespace fetch
     {
       typedef Task MicroscopeTask;
 
-      class StageFind : public MicroscopeTask
+      class SurfaceFind : public MicroscopeTask
       {
         public:
           unsigned int config(IDevice *d);
