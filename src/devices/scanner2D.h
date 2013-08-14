@@ -64,6 +64,8 @@
 #include "scanner2d.pb.h"
 #include "object.h"
 #include "daq.h"
+#include <map>
+#include <string>
 
 #define SCANNER2D_DEFAULT_TIMEOUT               INFINITE // ms
 
@@ -97,11 +99,14 @@ namespace fetch
     class Scanner2D : public IScanner, public IConfigurableDevice<cfg::device::Scanner2D>
     {
     public:
-      Digitizer _digitizer;
-      DAQ       _daq;
-      Shutter   _shutter;
-      LinearScanMirror _LSM;
-      Pockels   _pockels;
+      Digitizer            _digitizer;
+      DAQ                  _daq;
+      Shutter              _shutter;
+      LinearScanMirror     _LSM;
+      Pockels              _pockels1,
+                           _pockels2;
+
+      std::map<cfg::device::Pockels::LaserLineIdentifier,Pockels*> _pockels_map;
 
     public:
       Scanner2D(Agent *agent);
@@ -117,7 +122,7 @@ namespace fetch
       virtual int  onConfigTask();
       virtual void onUpdate() {_digitizer.onUpdate(); generateAO();}
       virtual void generateAO();
-      virtual int writeAO();            ///< \returns 0 on success, 1 on failure
+      virtual int  writeAO();            ///< \returns 0 on success, 1 on failure
       virtual int  writeLastAOSample();
 
       virtual Scanner2D* get2d() {return this;}

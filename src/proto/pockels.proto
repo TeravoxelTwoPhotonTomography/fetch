@@ -1,5 +1,11 @@
 package fetch.cfg.device;
 
+message PockelsCalibration
+{ optional bool   calibrated = 1 [default=false];
+  optional double v_zero     = 2 [default=0.0];
+  optional double v_max      = 3 [default=0.0];
+}
+
 message NIDAQPockels
 { 
   optional  double    v_lim_max   = 1 [default=2.0];          // safety limit - high value
@@ -21,7 +27,15 @@ message Pockels
     Simulated = 0;
     NIDAQ     = 1;
   }
-  optional PockelsType      kind      = 1 [default=NIDAQ];
-  optional NIDAQPockels     nidaq     = 2;
-  optional SimulatedPockels simulated = 3;
+  enum LaserLineIdentifier
+  { Chameleon = 0;
+    Fianium   = 1;
+  }
+  optional PockelsType         kind        = 1 [default=NIDAQ];
+  optional NIDAQPockels        nidaq       = 2;
+  optional SimulatedPockels    simulated   = 3;
+
+  optional string              name        = 4 [default="default"];
+  required LaserLineIdentifier laser       = 5;
+  optional PockelsCalibration  calibration = 6;
 }
