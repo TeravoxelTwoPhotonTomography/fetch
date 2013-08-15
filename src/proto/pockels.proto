@@ -32,10 +32,11 @@ message Pockels
     Fianium   = 1;
   }
   optional PockelsType         kind        = 1 [default=Simulated];
-  optional NIDAQPockels        nidaq       = 2;
-  optional SimulatedPockels    simulated   = 3;
 
-  optional string              name        = 4 [default="default"];
-  required LaserLineIdentifier laser       = 5;
-  optional PockelsCalibration  calibration = 6;
+  required LaserLineIdentifier laser       = 2;
+  optional string              name        = 3 [default="default"];
+  optional PockelsCalibration  calibration = 4;
+
+  optional NIDAQPockels        nidaq       = 5;
+  optional SimulatedPockels    simulated   = 6;
 }

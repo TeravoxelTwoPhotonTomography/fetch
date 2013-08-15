@@ -15,6 +15,9 @@
 #include "Pockels.h"
 #include "task.h"
 
+#include <cmath>
+const double PI  = 3.141592653589793238462;
+
 #define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, warning))
 #define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, error  ))
 #define DAQJMP( expr )        goto_if_fail( 0==DAQWRN(expr), Error)
@@ -233,7 +236,60 @@ namespace device {
     Guarded_Assert(_ipockels);
     return _ipockels->isValidOpenVolts(volts);
   }
+  
+  f64 Pockels::_calibrated_voltage(f64 frac, bool *is_calibrated)
+  { f64 arg=1-2*frac;
+    if     (arg<-1.0) arg=-1.0; // clamp
+    else if(arg>1.0)  arg= 1.0;
+    if( (*is_calibrated=(int)_config->calibration().calibrated()) )
+    { double mx=_config->calibration().v_max(),
+             mn=_config->calibration().v_zero(),
+             r = mx-mn;
+      return (acos(arg)/PI)*r+mn;
+    }
+    *is_calibrated=0;
+    return 0.0;
+  }
 
+  /** 
+    This is the inverse of _calibrated_voltage().
+    \returns fraction (0 to 1) corresponding to the input volage.
+  */
+  f64 Pockels::_calibrated_frac(f64 v, bool *is_calibrated)
+  { if( (*is_calibrated=(int)_config->calibration().calibrated()) )
+    { double mx=_config->calibration().v_max(),
+             mn=_config->calibration().v_zero(),
+             r = mx-mn,
+             arg = (r>1e-3)?((v-mn)/r):0; // if range is zero, just return 0.
+      return 0.5*(1-cos(PI*arg));
+    }
+    *is_calibrated=0;
+    return 0.0;
+  }
+
+  int Pockels::setOpenPercent(f64 pct)
+  { bool iscal=0;
+    double v=_calibrated_voltage(pct/100.0,&iscal);
+    if(iscal)
+      return setOpenVolts(v);
+    return setOpenVolts(0);
+  }
+
+  f64 Pockels::getOpenPercent()
+  { bool iscal=0;
+    double f=_calibrated_frac(getOpenVolts(),&iscal);
+    if(iscal) return f*100;
+    return 0;
+  }
+  
+  int Pockels::setOpenPercentNoWait(f64 pct)
+  { bool iscal=0;
+    double v=_calibrated_voltage(pct/100.0,&iscal);
+    if(iscal)
+      return setOpenVoltsNoWait(v);
+    else return setOpenVoltsNoWait(0);
+  }
+  
   int Pockels::setOpenVolts( f64 volts )
   {
     Guarded_Assert(_ipockels);
