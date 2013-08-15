@@ -106,7 +106,8 @@ namespace fetch
       Pockels              _pockels1,
                            _pockels2;
 
-      std::map<cfg::device::Pockels::LaserLineIdentifier,Pockels*> _pockels_map;
+      std::map<cfg::device::Pockels::LaserLineIdentifier,Pockels*>    _pockels_map;
+      std::map<std::string,cfg::device::Pockels::LaserLineIdentifier> _laser_line_map;
 
     public:
       Scanner2D(Agent *agent);
@@ -129,6 +130,9 @@ namespace fetch
 
       Digitizer* digitizer() { return &_digitizer; }
       Chan *getVideoChannel() { return _out->contents[0]; }
+      Pockels* pockels(const std::string& name);
+      Pockels* pockels(unsigned idx);
+      Pockels* pockels(cfg::device::Pockels::LaserLineIdentifier id);
 
     private:
       void __common_setup();

@@ -15,6 +15,8 @@
 #include "frame.h"
 #include <algorithm>    // std::for_each
 
+#define countof(e) (sizeof(e)/sizeof(*e))
+
 #define DIGWRN( expr )  (niscope_chk( vi, expr, #expr, __FILE__, __LINE__, warning ))
 #define DIGERR( expr )  (niscope_chk( vi, expr, #expr __FILE__, __LINE__, error   ))
 #define DIGJMP( expr )  goto_if_fail(VI_SUCCESS == niscope_chk( vi, expr, #expr, warning ), Error)
@@ -75,8 +77,8 @@ namespace fetch
     }
 
     unsigned int Scanner2D::on_attach()
-    {
-
+    
+{
       CHKJMP(_shutter.on_attach()==0   ,ESHUTTER);
       CHKJMP(_digitizer.on_attach()==0 ,EDIGITIZER);
       CHKJMP(_daq.on_attach()==0       ,EDAQ);
@@ -178,7 +180,7 @@ ESHUTTER:
       _daq.setKind(_config->daq().kind());
       _shutter.setKind(_config->shutter().kind());
       _LSM.setKind(_config->linear_scan_mirror().kind());
-      for(int i=0;i<cfg->pockels_size();++i) // At this point the mapping is required to exist
+      for(int i=0;i<_config->pockels_size();++i) // At this point the mapping is required to exist
         _pockels_map.at(_config->pockels(i).laser())
                     ->setKind(_config->pockels(i).kind());
     }
@@ -221,7 +223,18 @@ ESHUTTER:
 
     void Scanner2D::__common_setup()
     {
-      _ao_workspace = vector_f64_alloc(_daq.samplesPerRecordAO()*3); 
+      _ao_workspace = vector_f64_alloc(_daq.samplesPerRecordAO()*3);
+
+      // setup name mapping
+      { const char* names[]={"Chameleon","chameleon","800nm"};
+        for(int i=0;i<countof(names);++i)
+          _laser_line_map[names[i]]=cfg::device::Pockels::Chameleon;
+      }
+
+      { const char* names[]={"Fianium","fianium","1064nm"};
+        for(int i=0;i<countof(names);++i)
+          _laser_line_map[names[i]]=cfg::device::Pockels::Fianium;
+      }
     }
 
     int Scanner2D::writeAO()
@@ -232,9 +245,42 @@ ESHUTTER:
     int Scanner2D::writeLastAOSample()
     { int N = _daq.samplesPerRecordAO();
       f64 *m = _ao_workspace->contents;
-      float64 last[] = {m[N-1],m[2*N-1]};
+      float64 last[] = {m[N-1],m[2*N-1],m[3*N-1]};
       return _daq.writeOneToAO(last);
     }
+
+    Pockels* Scanner2D::pockels(const std::string& name)
+    {
+      try
+      { return _pockels_map.at(_laser_line_map.at(name));
+      } catch(std::out_of_range& err)
+      { warning("%s(%d):"ENDL
+                "\tCould not find pockels cell by name."ENDL
+                "\tName: %s"ENDL,
+                __FILE__,__LINE__,name.c_str());
+      }
+      return NULL;
+    }
+
+    Pockels* Scanner2D::pockels(unsigned idx)
+    { Pockels *ps[]={&_pockels1,&_pockels2};
+      if(idx<countof(ps))
+        return ps[idx];
+      return NULL;
+    }
+
+    Pockels* Scanner2D::pockels(cfg::device::Pockels::LaserLineIdentifier id)
+    { try
+      { return _pockels_map.at(id);
+      } catch(std::out_of_range& err)
+      { error("%s(%d):"ENDL
+                "\tCould not find pockels cell by LaserLineIdentifier."ENDL
+                "\tID: %d"ENDL,
+                __FILE__,__LINE__,(int)id);
+      }
+      return NULL;
+    }
+
 
   }
 }

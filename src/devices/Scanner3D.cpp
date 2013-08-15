@@ -16,6 +16,7 @@
 #include "Scanner3D.h"
 #include "Scanner2D.h"
 
+#define countof(e) (sizeof(e)/sizeof(*e))
 
 #define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, warning))
 #define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, error  ))
@@ -118,7 +119,7 @@ ESCAN2D:
       IDAQPhysicalChannel *chans[] = {
         _scanner2d._LSM.physicalChannel(),
         _scanner2d._pockels1.physicalChannel(),
-        _scanner2d._pockels1.physicalChanne2(),
+        _scanner2d._pockels2.physicalChannel(),
         _zpiezo.physicalChannel()
       };
       _scanner2d._daq.setupCLK(nscans,scan_freq_Hz);

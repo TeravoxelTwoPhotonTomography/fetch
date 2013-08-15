@@ -603,7 +603,7 @@ Error:
   bool C843Stage::isReferenced(bool *isok/*=NULL*/)
   { BOOL isrefd[3] ={0,0,0};
     if(isok) *isok=1;
-    C843JMP(C843_IsReferenceOK(handle_,"123",isrefd));
+    C843JMPSILENT(C843_IsReferenceOK(handle_,"123",isrefd));
     return all(isrefd,3);
 Error:
     if(isok) *isok=0;

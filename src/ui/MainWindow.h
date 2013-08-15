@@ -102,7 +102,7 @@ public: // semi-private
   ResonantTurnController       *_resonant_turn_controller;
   LinesController              *_vlines_controller;
   LSMVerticalRangeController   *_lsm_vert_range_controller;
-  PockelsController            *_pockels_controller;
+  PockelsController            *_pockels_controllers[2];
   VibratomeAmplitudeController *_vibratome_amp_controller;
   VibratomeFeedDisController   *_vibratome_feed_distance_controller;
   VibratomeFeedVelController   *_vibratome_feed_velocity_controller;

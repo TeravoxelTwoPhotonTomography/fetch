@@ -31,7 +31,7 @@ message Pockels
   { Chameleon = 0;
     Fianium   = 1;
   }
-  optional PockelsType         kind        = 1 [default=NIDAQ];
+  optional PockelsType         kind        = 1 [default=Simulated];
   optional NIDAQPockels        nidaq       = 2;
   optional SimulatedPockels    simulated   = 3;
 

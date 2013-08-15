@@ -145,7 +145,11 @@ namespace fetch
 
       inline Chan*  getVideoChannel()    {if(_end_of_pipeline && _end_of_pipeline->_out) return _end_of_pipeline->_out->contents[0]; else return NULL;}
       inline LinearScanMirror*  LSM()    {return &scanner._scanner2d._LSM;}
-      inline Pockels*       pockels()    {return &scanner._scanner2d._pockels;}
+
+      Pockels* pockels(const std::string& k)                        {return scanner.get2d()->pockels(k);}
+      Pockels* pockels(unsigned k)                                  {return scanner.get2d()->pockels(k);}
+      Pockels* pockels(cfg::device::Pockels::LaserLineIdentifier k) {return scanner.get2d()->pockels(k);}
+
       inline ZPiezo*         zpiezo()    {return &scanner._zpiezo;}
       inline Stage*           stage()    {return &stage_;}
       inline Vibratome*   vibratome()    {return &vibratome_;}

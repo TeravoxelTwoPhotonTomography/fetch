@@ -117,6 +117,8 @@ namespace fetch
     public:
       NIDAQPockels(Agent *agent);
       NIDAQPockels(Agent *agent, Config *cfg);
+      NIDAQPockels(const char* name, Agent *agent);
+      NIDAQPockels(const char* name, Agent *agent, Config *cfg );
 
       virtual ~NIDAQPockels();
 

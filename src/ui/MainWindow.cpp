@@ -118,14 +118,14 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,_resonant_turn_controller(NULL)
   ,_vlines_controller(NULL)
   ,_lsm_vert_range_controller(NULL)
-  ,_pockels_controller(NULL)
   ,_defered_update(0)
 {
 
   _resonant_turn_controller = new ResonantTurnController(dc,"&Turn (px)",this);
   _vlines_controller        = new LinesController(dc,"Y &Lines (px)",this);
   _lsm_vert_range_controller= new LSMVerticalRangeController(dc->LSM(),"&Y Range (Vpp)",this);
-  _pockels_controller       = new PockelsController(dc->pockels(),"&Pockels (mV)",this);
+  _pockels_controllers[0]    = new PockelsController(dc->pockels("Chameleon"),"&Chameleon Pockels (mV)",this);
+  _pockels_controllers[1]    = new PockelsController(dc->pockels("Fianium"),"&Fianium Pockels (mV)",this);
 
   _zpiezo_max_control       = new ZPiezoMaxController(dc->zpiezo(), "Z Ma&x (um)",this);
   _zpiezo_min_control       = new ZPiezoMinController(dc->zpiezo(), "Z Mi&n (um)",this);
@@ -211,7 +211,8 @@ fetch::ui::MainWindow::~MainWindow()
   SAFE_DELETE(_resonant_turn_controller);
   SAFE_DELETE(_vlines_controller);
   SAFE_DELETE(_lsm_vert_range_controller);
-  SAFE_DELETE(_pockels_controller);
+  SAFE_DELETE(_pockels_controllers[0]);
+  SAFE_DELETE(_pockels_controllers[1]);
 
   SAFE_DELETE(_zpiezo_max_control);
   SAFE_DELETE(_zpiezo_min_control);

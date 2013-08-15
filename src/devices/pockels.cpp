@@ -42,7 +42,19 @@ namespace device {
 
   NIDAQPockels::NIDAQPockels(Agent *agent, Config *cfg )
     :PockelsBase<cfg::device::NIDAQPockels>(agent,cfg)
-    ,daq(agent,"fetch_NIDAQPockels")
+    ,daq(agent,"fetch_Pockels")
+    ,_ao(cfg->ao_channel())
+  {}
+
+  NIDAQPockels::NIDAQPockels(const char *name, Agent *agent)
+    :PockelsBase<cfg::device::NIDAQPockels>(agent)
+    ,daq(agent,(char*)name)
+    ,_ao(_config->ao_channel())
+  {}
+
+  NIDAQPockels::NIDAQPockels(const char* name, Agent *agent, Config *cfg )
+    :PockelsBase<cfg::device::NIDAQPockels>(agent,cfg)
+    ,daq(agent,(char*)name)
     ,_ao(cfg->ao_channel())
   {}
 
@@ -171,7 +183,11 @@ namespace device {
     {
     case cfg::device::Pockels_PockelsType_NIDAQ:
       if(!_nidaq)
-        _nidaq = new NIDAQPockels(_agent,_config->mutable_nidaq());
+      { std::map<cfg::device::Pockels::LaserLineIdentifier,std::string> names; // tasks need distinct names
+        names[cfg::device::Pockels::Chameleon]="Chameleon";
+        names[cfg::device::Pockels::Fianium]="Fianium";
+        _nidaq = new NIDAQPockels(names.at(_config->laser()).c_str(),_agent,_config->mutable_nidaq());
+      }
       _idevice  = _nidaq;
       _ipockels = _nidaq;
       break;
@@ -187,12 +203,11 @@ namespace device {
   }
 
   void Pockels::_set_config( Config IN *cfg )
-  {
+  { _config = cfg;
     setKind(cfg->kind());
     Guarded_Assert(_nidaq||_simulated); // at least one device was instanced
     if(_nidaq)     _nidaq->_set_config(cfg->mutable_nidaq());
-    if(_simulated) _simulated->_set_config(cfg->mutable_simulated());
-    _config = cfg;
+    if(_simulated) _simulated->_set_config(cfg->mutable_simulated());    
   }
 
   void Pockels::_set_config( const Config &cfg )
