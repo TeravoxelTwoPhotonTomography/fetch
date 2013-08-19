@@ -64,6 +64,8 @@
 #include "scanner2d.pb.h"
 #include "object.h"
 #include "daq.h"
+#include <map>
+#include <string>
 
 #define SCANNER2D_DEFAULT_TIMEOUT               INFINITE // ms
 
@@ -97,11 +99,15 @@ namespace fetch
     class Scanner2D : public IScanner, public IConfigurableDevice<cfg::device::Scanner2D>
     {
     public:
-      Digitizer _digitizer;
-      DAQ       _daq;
-      Shutter   _shutter;
-      LinearScanMirror _LSM;
-      Pockels   _pockels;
+      Digitizer            _digitizer;
+      DAQ                  _daq;
+      Shutter              _shutter;
+      LinearScanMirror     _LSM;
+      Pockels              _pockels1,
+                           _pockels2;
+
+      std::map<cfg::device::Pockels::LaserLineIdentifier,Pockels*>    _pockels_map;
+      std::map<std::string,cfg::device::Pockels::LaserLineIdentifier> _laser_line_map;
 
     public:
       Scanner2D(Agent *agent);
@@ -117,13 +123,16 @@ namespace fetch
       virtual int  onConfigTask();
       virtual void onUpdate() {_digitizer.onUpdate(); generateAO();}
       virtual void generateAO();
-      virtual int writeAO();            ///< \returns 0 on success, 1 on failure
+      virtual int  writeAO();            ///< \returns 0 on success, 1 on failure
       virtual int  writeLastAOSample();
 
       virtual Scanner2D* get2d() {return this;}
 
       Digitizer* digitizer() { return &_digitizer; }
       Chan *getVideoChannel() { return _out->contents[0]; }
+      Pockels* pockels(const std::string& name);
+      Pockels* pockels(unsigned idx);
+      Pockels* pockels(cfg::device::Pockels::LaserLineIdentifier id);
 
     private:
       void __common_setup();

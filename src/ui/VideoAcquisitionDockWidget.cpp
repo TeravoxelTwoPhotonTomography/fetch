@@ -18,7 +18,8 @@ namespace ui {
     parent->_resonant_turn_controller->createLineEditAndAddToLayout(form);
     parent->_vlines_controller->createLineEditAndAddToLayout(form);
     parent->_lsm_vert_range_controller->createLineEditAndAddToLayout(form);
-    parent->_pockels_controller->createLineEditAndAddToLayout(form);
+    parent->_pockels_controllers[0]->createLineEditAndAddToLayout(form);
+    parent->_pockels_controllers[1]->createLineEditAndAddToLayout(form);
 
     AgentControllerButtonPanel *btns = new AgentControllerButtonPanel(&parent->_scope_state_controller,&dc->interaction_task);
     form->addRow(btns);      

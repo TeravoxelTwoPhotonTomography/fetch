@@ -14,7 +14,7 @@ message Scanner2D
 
   required DAQ              daq                = 4;
   required Digitizer        digitizer          = 5;
-  required Pockels          pockels            = 6;
+  repeated Pockels          pockels            = 6;
   required Shutter          shutter            = 7;
   required LinearScanMirror linear_scan_mirror = 8;
 }

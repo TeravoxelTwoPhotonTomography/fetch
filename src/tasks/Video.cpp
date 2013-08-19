@@ -463,6 +463,7 @@ Finalize:
         return ecode; // ecode == 0 implies success, error otherwise
 Error:
         warning("Error occurred during ScanStack<%s> task."ENDL,TypeStr<TPixel>());
+        d->writeAO(); // try one more just in case
         ctx.ok=0; // signal fetch thread to stop early
         while(fetch_thread && ctx.running)
           Guarded_Assert_WinErr__NoPanic(WAIT_FAILED!=WaitForSingleObject(fetch_thread,100)); // need to make sure thread is stopped before exiting this function so ctx remains live

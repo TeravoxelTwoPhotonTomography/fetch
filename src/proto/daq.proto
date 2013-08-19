@@ -30,7 +30,7 @@ message DAQ
     Simulated = 0;
     NIDAQ     = 1;
   }
-  optional DAQKind                kind      = 1 [default=NIDAQ];
+  optional DAQKind                kind      = 1 [default=Simulated];
   optional NationalInstrumentsDAQ nidaq     = 2;
   optional SimulatedDAQ           simulated = 3;
 }

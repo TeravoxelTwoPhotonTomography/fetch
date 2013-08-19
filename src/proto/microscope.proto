@@ -9,8 +9,8 @@ import "tasks.proto";
 import "probe.proto";
 
 message TiledSurfaceScan
-{ optional string filename        = 1 [default="surface_scan.csv"];
-  optional float  setting_time_ms = 2 [default=0];
+{ optional string filename         = 1 [default="surface_scan.csv"];
+  optional float  settling_time_ms = 2 [default=0];
 }
 
 message FieldOfViewGeometry

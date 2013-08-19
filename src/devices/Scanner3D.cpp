@@ -16,6 +16,7 @@
 #include "Scanner3D.h"
 #include "Scanner2D.h"
 
+#define countof(e) (sizeof(e)/sizeof(*e))
 
 #define DAQWRN( expr )        (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, warning))
 #define DAQERR( expr )        (Guarded_DAQmx( (expr), #expr, __FILE__, __LINE__, error  ))
@@ -117,12 +118,13 @@ ESCAN2D:
       int isok=1;
       IDAQPhysicalChannel *chans[] = {
         _scanner2d._LSM.physicalChannel(),
-        _scanner2d._pockels.physicalChannel(),
+        _scanner2d._pockels1.physicalChannel(),
+        _scanner2d._pockels2.physicalChannel(),
         _zpiezo.physicalChannel()
       };
       _scanner2d._daq.setupCLK(nscans,scan_freq_Hz);
       _scanner2d._daq.setupAO(nscans,scan_freq_Hz);
-      _scanner2d._daq.setupAOChannels(nscans,scan_freq_Hz,-10,10,chans,3);
+      _scanner2d._daq.setupAOChannels(nscans,scan_freq_Hz,-10,10,chans,countof(chans));
 
       _scanner2d._shutter.Shut();
       isok &= _scanner2d._digitizer.setup((int)nscans,scan_freq_Hz,_scanner2d._config->line_duty_cycle());
@@ -151,12 +153,14 @@ ESCAN2D:
       transaction_lock();
       N = _scanner2d._daq.samplesPerRecordAO();
       f = _scanner2d._daq.flybackSampleIndex(_config->scanner2d().nscans());
-      vector_f64_request(_ao_workspace,3*N-1/*max index*/);
-      f64 *m = _ao_workspace->contents,
-          *p = m+N,
-          *z = p+N;
+      vector_f64_request(_ao_workspace,4*N-1/*max index*/);
+      f64 *m  = _ao_workspace->contents,
+          *p1 = m+N,
+          *p2 =p1+N,
+          *z  =p2+N;
       _scanner2d._LSM.computeSawtooth(m,f,N);
-      _scanner2d._pockels.computeVerticalBlankWaveform(p,f,N);
+      _scanner2d._pockels1.computeVerticalBlankWaveform(p1,f,N);
+      _scanner2d._pockels2.computeVerticalBlankWaveform(p2,f,N);
       _zpiezo.computeConstWaveform(z_um,z,f,N);
       transaction_unlock();
     }
@@ -172,12 +176,14 @@ ESCAN2D:
       transaction_lock();
       N = _scanner2d._daq.samplesPerRecordAO();
       f = _scanner2d._daq.flybackSampleIndex(_config->scanner2d().nscans());
-      vector_f64_request(_ao_workspace,3*N-1/*max index*/);
-      f64 *m = _ao_workspace->contents,
-        *p = m+N,
-        *z = p+N;
+      vector_f64_request(_ao_workspace,4*N-1/*max index*/);
+      f64 *m  = _ao_workspace->contents,
+          *p1 = m+N,
+          *p2 =p1+N,
+          *z  =p2+N;
       _scanner2d._LSM.computeSawtooth(m,f,N);
-      _scanner2d._pockels.computeVerticalBlankWaveform(p,f,N);
+      _scanner2d._pockels1.computeVerticalBlankWaveform(p1,f,N);
+      _scanner2d._pockels2.computeVerticalBlankWaveform(p2,f,N);
       _zpiezo.computeRampWaveform(z_um,z,f,N);
       transaction_unlock();
 #if 0
@@ -193,7 +199,7 @@ ESCAN2D:
     int Scanner3D::writeLastAOSample()
     { int N = _scanner2d._daq.samplesPerRecordAO();
       f64 *m = _ao_workspace->contents;
-      float64 last[] = {m[N-1],m[2*N-1],m[3*N-1]};
+      float64 last[] = {m[N-1],m[2*N-1],m[3*N-1],m[4*N-1]};
       return _scanner2d._daq.writeOneToAO(last);
     }
 

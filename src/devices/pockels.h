@@ -117,6 +117,8 @@ namespace fetch
     public:
       NIDAQPockels(Agent *agent);
       NIDAQPockels(Agent *agent, Config *cfg);
+      NIDAQPockels(const char* name, Agent *agent);
+      NIDAQPockels(const char* name, Agent *agent, Config *cfg );
 
       virtual ~NIDAQPockels();
 
@@ -174,13 +176,21 @@ class SimulatedPockels:public PockelsBase<cfg::device::SimulatedPockels>
       void _set_config( Config IN *cfg );
       void _set_config( const Config &cfg );
 
-      virtual int isValidOpenVolts(f64 volts);
-      virtual int setOpenVolts(f64 volts);
-      virtual int setOpenVoltsNoWait(f64 volts);
+      virtual int isValidOpenVolts(f64 volts);      
       virtual f64 getOpenVolts() {return _ipockels->getOpenVolts();}
+      f64 getOpenPercent();
+
+
+      int setOpenPercent(f64 pct);        // returns 0 if no calibration is set or if invalid voltage.  Otherwise 1.
+      int setOpenPercentNoWait(f64 pct);  // returns 0 if no calibration is set or if invalid voltage.  Otherwise 1.
 
       virtual void computeVerticalBlankWaveform(float64 *data, int flyback, int n) {_ipockels->computeVerticalBlankWaveform(data,flyback,n);}
       virtual IDAQPhysicalChannel* physicalChannel() {return _ipockels->physicalChannel();}
+    private:
+      f64 _calibrated_voltage(f64 frac, bool *is_calibrated);
+      f64 _calibrated_frac(f64 volts, bool *is_calibrated);
+      virtual int setOpenVolts(f64 volts);
+      virtual int setOpenVoltsNoWait(f64 volts);
     };
 
   } // end namespace device
