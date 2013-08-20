@@ -53,8 +53,10 @@ namespace device {
       sz_plane_nelem_(0),
       latticeToStage_(),
       fov_(fov),
+      z_offset_um_(0.0),
       travel_(travel),
-      lock_(0)
+      lock_(0),
+      mode_(alignment)
   {
     PANIC(lock_=Mutex_Alloc());
     computeLatticeToStageTransform_(fov,alignment);
@@ -101,6 +103,15 @@ namespace device {
         return;
     }
   }
+
+ void StageTiling::set_z_offset_um(f64 z_um)
+ { z_offset_um_=z_um;
+   computeLatticeToStageTransform_(fov_,mode_);
+ }
+ void StageTiling::inc_z_offset_um(f64 z_um)
+ { z_offset_um_+=z_um;
+   computeLatticeToStageTransform_(fov_,mode_);
+ }
 
   //  computeLatticeExtents_  //////////////////////////////////////////
   //

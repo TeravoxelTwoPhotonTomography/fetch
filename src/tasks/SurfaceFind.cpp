@@ -165,8 +165,9 @@ TODO:
           // [ ] readout
           if(dc->surface_finder.any())
           { float z_stack_um=dc->surface_finder.which()*cfg.dz_um()+cfg.min_um(); // stack displacement
-            float z_stage_mm=dc->stage()->getTarget()[2]+1e-3*z_stack_um; //[ ] CHECK: double check sign
+            // float z_stage_mm=dc->stage()->getTarget()[2]+1e-3*z_stack_um; //[ ] CHECK: double check sign
             // What to do with the answer?
+/**/        dc->stage()->inc_tiling_z_offset_um(z_stack_um /* ADJUST FOR BACKUP */); // doesn't move stage, just offsets tiling and notifies view, etc...
             // - update stage position (lock to surface) and done.
             // - store somewhere.  Something else will get the data and update the stage position.
             //   That component would receive this data.  This is probably going to be the microscope.    

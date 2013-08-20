@@ -37,9 +37,10 @@ namespace device {
     TTransform                 latticeToStage_;                            ///< Transforms lattice coordinates to the tiles anchor point on the stage
     TListeners                 listeners_;                                 ///< set of objects to be notified of tiling events
     FieldOfViewGeometry        fov_;                                       ///< the geometry used to generate the tiling
+    f64                        z_offset_um_;
     device::StageTravel        travel_;                                    ///< the travel used to generate the tiling
     Mutex*                     lock_;                                      ///< protects access to attribute data.
-
+    Mode                       mode_;
   public:
 
     enum Flags
@@ -59,6 +60,13 @@ namespace device {
                          const FieldOfViewGeometry& fov,
                          const Mode                 alignment);
     virtual ~StageTiling();
+
+    void     set_z_offset_um(f64 z_um);
+    void     inc_z_offset_um(f64 z_um);
+    f64          z_offset_um();
+    void     set_z_offset_mm(f64 z_mm) {set_z_offset_um(1000.0*z_mm);}
+    void     inc_z_offset_mm(f64 z_mm) {inc_z_offset_um(1000.0*z_mm);}
+    f64          z_offset_mm()         {return z_offset_um()*1e-3;}
 
     void     resetCursor();
     void     setCursorToPlane(size_t iplane);

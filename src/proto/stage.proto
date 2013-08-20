@@ -46,7 +46,8 @@ message Stage
   optional StageType            kind                        = 1;
   optional C843StageController  c843                        = 2;
   optional SimulatedStage       simulated                   = 3;
-  optional TilingMode           tilemode                    = 5;
-  optional Point3d              default_velocity_mm_per_sec = 6;
-  optional Point3d              last_target_mm              = 7;
+  optional Point3d              default_velocity_mm_per_sec = 4;
+  optional Point3d              last_target_mm              = 5;
+  optional TilingMode           tilemode                    = 6;
+  optional double               tile_z_offset_mm            = 7 [default=0.0];
 }
