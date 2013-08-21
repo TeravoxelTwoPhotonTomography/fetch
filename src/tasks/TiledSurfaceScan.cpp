@@ -96,7 +96,7 @@ Error:
           // Move stage
           Vector3f curpos = dc->stage()->getTarget(); // use current target z for tilepos z
           tilepos[2] = curpos[2]*1000.0f;             // unit conversion here is a bit awkward
-          dc->stage()->setPos(0.001f*tilepos,dc->_config->surface_scan().setting_time_ms()/*post move delay in ms - settling time*/);
+          dc->stage()->setPos(0.001f*tilepos,dc->_config->surface_scan().settling_time_ms()/*post move delay in ms - settling time*/);
           float x,y,z,v=dc->surfaceProbe()->read();
           dc->stage()->getPos(&x,&y,&z);
           fprintf(fp,"%f,%f,%f,%f\n",x,y,z,v);
