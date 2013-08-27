@@ -51,7 +51,7 @@
 # (To distributed this file outside of CMake, substitute the full
 #  License text for the above reference.)
 
-set(PROTOBUF_VERSION 2.4.1)
+set(PROTOBUF_VERSION 2.5.0)
 set(PROTOBUF_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty/protobuf-${PROTOBUF_VERSION}")
 set(PROTOBUF_PATH_SUFFIX vsprojects/Debug /vsprojects/Release)
 
@@ -133,7 +133,9 @@ endfunction()
 
 message("** Using custom FindProtobuf.cmake ")
 
-find_path(PROTOBUF_INCLUDE_DIR google/protobuf/service.h)
+find_path(PROTOBUF_INCLUDE_DIR google/protobuf/service.h
+             DOC "The Google Protocol Buffers Library"
+             PATHS ${PROTOBUF_PATH}/src)
 
 # Google's provided vcproj files generate libraries with a "lib"
 # prefix on Windows
@@ -142,12 +144,12 @@ if(WIN32)
     set(CMAKE_FIND_LIBRARY_PREFIXES "lib" "")
 endif()
 
-find_library(PROTOBUF_LIBRARY NAMES protobuf
+find_library(PROTOBUF_LIBRARY NAMES libprotobuf
              DOC "The Google Protocol Buffers Library"
              PATHS ${PROTOBUF_PATH}
              PATH_SUFFIXES ${PROTOBUF_PATH_SUFFIX}
 )
-find_library(PROTOBUF_PROTOC_LIBRARY NAMES protoc
+find_library(PROTOBUF_PROTOC_LIBRARY NAMES libprotoc
              DOC "The Google Protocol Buffers Compiler Library"
              PATHS ${PROTOBUF_PATH}
              PATH_SUFFIXES ${PROTOBUF_PATH_SUFFIX}
