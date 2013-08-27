@@ -13,7 +13,7 @@
 #define INIT_EXTENSIONS
 #endif
 
-#include <QtGui>
+#include <QtWidgets>
 #include <QtOpenGL>
 #include <assert.h>
 #include "util/util-gl.h"
@@ -77,13 +77,15 @@ void Init(void)
   QSettings settings;
   { QFile cfgfile(settings.value(fetch::ui::MainWindow::defaultConfigPathKey,":/config/microscope").toString());
     
-    if(  cfgfile.open(QIODevice::ReadOnly) 
-      && cfgfile.isReadable() 
-      && parser.ParseFromString(cfgfile.readAll().constData(),&g_config))
-    {
-      qDebug() << "Config file loaded from " << cfgfile.fileName();
-      goto Success;
-    }      
+    if(  cfgfile.open(QIODevice::ReadOnly) && cfgfile.isReadable() )
+	  { QByteArray contents=cfgfile.readAll();      
+      qDebug() << contents;
+      if(parser.ParseFromString(contents.constData(),&g_config))
+		  {
+		    qDebug() << "Config file loaded from " << cfgfile.fileName();
+		    goto Success;
+		  }      
+    }
   }
   
   {
@@ -102,7 +104,7 @@ Success:
 }
 
 int main(int argc, char *argv[])
-{ QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
+{ //[deprecated] -- QGL::setPreferredPaintEngine(QPaintEngine::OpenGL);
   QCoreApplication::setOrganizationName("Howard Hughes Medical Institute");
   QCoreApplication::setOrganizationDomain("janelia.hhmi.org");
   QCoreApplication::setApplicationName("Fetch");

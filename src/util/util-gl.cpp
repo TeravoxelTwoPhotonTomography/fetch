@@ -2,7 +2,7 @@
 #ifdef _WIN32
 #include <GL/glew.h>
 #endif
-#include <QtGui>
+#include <QtWidgets>
 
 // On windows need to init glew library
 #ifdef _WIN32

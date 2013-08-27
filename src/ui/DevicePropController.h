@@ -1,5 +1,5 @@
 #pragma once
-#include <QtGui>
+#include <QtWidgets>
 #include "devices\Microscope.h"
 #include "devices\LinearScanMirror.h"
 #include "devices\pockels.h"

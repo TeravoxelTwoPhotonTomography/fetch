@@ -1,4 +1,4 @@
-#include <QtGui>
+#include <QtWidgets>
 #include "devices/Microscope.h"
 #include "AgentController.h"
 #include "MainWindow.h"

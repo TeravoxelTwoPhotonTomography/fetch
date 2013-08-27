@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include <QtGui>
+#include <QtWidgets>
 #include <QGraphicsSimpleTextItem>
 #include <QGLShaderProgram>
 
@@ -12,7 +12,7 @@ namespace mylib {
 namespace fetch {
 namespace ui {
 
-class ImItem: public QGraphicsItem
+class ImItem: public QGraphicsItem, protected QOpenGLFunctions
 {
 public:
   ImItem();

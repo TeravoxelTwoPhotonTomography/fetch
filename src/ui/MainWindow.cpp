@@ -17,7 +17,7 @@
 #include "StageController.h"
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/io/tokenizer.h>
-#include <QtGui>
+#include <QtWidgets>
 
 #define ENDL "\r\n"
 #define TRY(e) if (!(e)) qFatal("%s(%d): "ENDL "\tExpression evaluated as false."ENDL "\t%s",__FILE__,__LINE__,#e)
@@ -139,7 +139,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   _vibratome_feed_pos_x_controller    = new VibratomeFeedPosXController(dc->vibratome(),"Cut Pos X (mm)", this);
   _vibratome_feed_pos_y_controller    = new VibratomeFeedPosYController(dc->vibratome(),"Cut Pos Y (mm)", this);
   _vibratome_z_offset_controller      = new VibratomeZOffsetController(dc->vibratome(),"Z Offset (mm)", this);
-  _vibratome_thick_controller         = new VibratomeThickController(dc->vibratome(),"Slice Thickness (µm)", this);
+  _vibratome_thick_controller         = new VibratomeThickController(dc->vibratome(),"Slice Thickness (um)", this);
 
   _stage_pos_x_control = new StagePosXController(dc->stage(),"Pos X (mm)",this);
   _stage_pos_y_control = new StagePosYController(dc->stage(),"Pos Y (mm)",this);
@@ -148,9 +148,9 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   _stage_vel_y_control = new StageVelYController(dc->stage(),"Vel Y (mm)",this);
   _stage_vel_z_control = new StageVelZController(dc->stage(),"Vel Z (mm)",this);
 
-  _fov_overlap_z_controller = new FOVOverlapZController(&dc->fov_,"Overlap Z (µm)", this);
+  _fov_overlap_z_controller = new FOVOverlapZController(&dc->fov_,"Overlap Z (um)", this);
 
-  _autotile_zoffum_control           = new AutoTileZOffController(dc,"Z Offset (µm)",this);
+  _autotile_zoffum_control           = new AutoTileZOffController(dc,"Z Offset (um)",this);
   _autotile_zmaxmm_control           = new AutoTileZMaxController(dc,"Cut to Max Z (mm)",this);
   _autotile_timeoutms_control        = new AutoTileTimeoutMsController(dc,"Timeout (ms)",this);
   _autotile_chan_control             = new AutoTileChanController(dc,"Channel to threshold",this);

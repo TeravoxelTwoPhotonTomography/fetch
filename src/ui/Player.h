@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QtGui>
+#include <QtWidgets>
 #include "Figure.h"
 #include "Chan.h"
 namespace mylib {

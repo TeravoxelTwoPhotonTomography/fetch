@@ -148,6 +148,7 @@
 #include "qcustomplot.h"
 #include <cmath>
 #include <limits>
+#include <qprinter>
 
 // ================================================================================
 // =================== QCPData
@@ -4140,7 +4141,7 @@ void QCPAxis::setNumberFormat(const QString &formatCode)
   QString allowedFormatChars = "eEfgG";
   if (allowedFormatChars.contains(formatCode.at(0)))
   {
-    mNumberFormatChar = formatCode.at(0).toAscii();
+    mNumberFormatChar = formatCode.at(0).toLatin1();
   } else
   {
     qDebug() << FUNCNAME << "Invalid number format code (first char not in 'eEfgG'):" << formatCode;

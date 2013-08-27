@@ -1,8 +1,11 @@
-#ifdef _WIN32
+#if _MSC_VER
 #include <GL/glew.h>
 #endif
+#include <QtWidgets>
+//#include <QtOpenGLExtensions\qopenglextensions.h>
 
-#include <QtGui>
+
+
 #include "ui/uiunits.h"
 #include "ImItem.h"
 #include <util/util-mylib.h>
@@ -52,6 +55,9 @@ ImItem::ImItem()
   _cmap_ctrl_t(NULL)
 {
   _text.setBrush(Qt::yellow);
+  //  m_context->makeCurrent(this);
+  //initializeOpenGLFunctions();
+  initializeOpenGLFunctions();
   //_bbox_px = _text.boundingRect();
   _common_setup();
 }

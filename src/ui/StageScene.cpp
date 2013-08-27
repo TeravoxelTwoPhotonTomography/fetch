@@ -1,5 +1,6 @@
-#include <QtGui>
+#include <QtWidgets>
 #include <QtDebug>
+#include <QAction>
 #include "StageScene.h"
 #include "common.h"
 
@@ -193,7 +194,7 @@ void StageScene::mousePressEvent( QGraphicsSceneMouseEvent *event )
   case DrawRect:
   case Pick:
     { 
-      SelectionRectGraphicsWidget *pick = dynamic_cast<SelectionRectGraphicsWidget*>(itemAt(event->scenePos()));
+      SelectionRectGraphicsWidget *pick = dynamic_cast<SelectionRectGraphicsWidget*>(itemAt(event->scenePos(),QTransform()));
       if(pick)
       {
         //HERE;

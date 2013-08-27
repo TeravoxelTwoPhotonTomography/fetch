@@ -308,6 +308,7 @@ namespace ui {
         form->addRow(row);
       }
 
+#if 0 // turns out this tableview is completely useless.
       // Add TableView
       t_ = new QTableView(this);
       VibratomeBoundsModel *m = new VibratomeBoundsModel(dc,this);
@@ -319,8 +320,8 @@ namespace ui {
       connect(parent,SIGNAL(configUpdated()),m,SLOT(revert()));
       connect(parent,SIGNAL(configUpdated()),t_,SLOT(reset()));      
       connect(parent,SIGNAL(configUpdated()),m,SIGNAL(layoutChanged()));
-
       form->addRow(t_);
+#endif
     }
 
     void

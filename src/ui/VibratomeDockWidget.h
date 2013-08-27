@@ -1,4 +1,4 @@
-#include <QtGui>
+#include <QtWidgets>
 #include "AgentController.h"
 #include "MainWindow.h"
 

@@ -34,7 +34,7 @@
 #include <QPixmap>
 #include <QVector>
 #include <QString>
-#include <QPrinter>
+//#include <QPrinter>
 #include <QDateTime>
 #include <QMultiMap>
 #include <QFlags>

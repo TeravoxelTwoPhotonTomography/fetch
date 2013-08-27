@@ -1,5 +1,5 @@
 #pragma once
-#include <QtGui>
+#include <QtWidgets>
 #include "ui/AgentController.h"
 #include "ui/StageController.h"
 #include "DevicePropController.h"

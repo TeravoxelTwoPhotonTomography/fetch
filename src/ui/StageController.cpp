@@ -8,7 +8,8 @@ namespace mylib {
 
 #include <google\protobuf\text_format.h>
 
-#include <QtGui>
+#include <QtWidgets>
+#include <qaction>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <functional>

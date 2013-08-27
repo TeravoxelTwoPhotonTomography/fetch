@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.9)
 ##
 # NOTES:
 #
@@ -128,19 +128,26 @@ if(C843_FOUND)
 endif(C843_FOUND)
 
 #Qt
-SET(QTLIBLIST
-  QtMain
-  QtCore
-  QtGui
-  QtOpenGL
-)
-SET(QT_USE_IMPORTED_TARGETS TRUE)
-find_package(Qt4 4.7
-  COMPONENTS ${QTLIBLIST}
-  REQUIRED
-)
-include(${QT_USE_FILE})
-include_directories(${QT_INCLUDE_DIRS})
+#set(CMAKE_AUTOMOC ON)
+find_package(Qt5Core)
+find_package(Qt5Widgets)
+find_package(Qt5OpenGL)
+find_package(Qt5OpenGLExtensions)
+find_package(Qt5PrintSupport)
+#SET(QTLIBLIST
+#  QtMain
+#  QtCore
+#  QtGui
+#  QtOpenGL
+#)
+#SET(QT_USE_IMPORTED_TARGETS TRUE)
+#find_package(Qt4 4.7
+#  COMPONENTS ${QTLIBLIST}
+#  REQUIRED
+#)
+#include(${QT_USE_FILE})
+#include_directories(${QT_INCLUDE_DIRS})
+
 
 #CUDA
 find_package(CUDA 4.0)
@@ -225,7 +232,7 @@ source_group("DirectX Shaders" REGULAR_EXPRESSION \\.fx$)
 source_group("GLSL Shaders\\Vertex Programs" REGULAR_EXPRESSION \\.vert$)
 source_group("GLSL Shaders\\Fragments Programs" REGULAR_EXPRESSION \\.frag$)
 
-qt4_wrap_cpp(MOC_SRCS
+qt5_wrap_cpp(MOC_SRCS
   src/ui/MainWindow.h
   src/ui/Player.h
   src/ui/Figure.h
@@ -245,7 +252,7 @@ qt4_wrap_cpp(MOC_SRCS
   src/ui/qcustomplot.h
   src/ui/HistogramDockWidget.h
 )
-qt4_add_resources(RCC_SRCS
+qt5_add_resources(RCC_SRCS
   src/ui/icons.qrc
   src/ui/shaders.qrc
   src/ui/colormaps.qrc
@@ -315,6 +322,7 @@ target_link_libraries(fetch
   Ws2_32.lib           # automatically include
   Winmm.lib
 )
+qt5_use_modules(fetch Core OpenGL Widgets PrintSupport OpenGLExtensions)
 
 ##
 # Apps

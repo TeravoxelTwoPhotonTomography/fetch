@@ -1,5 +1,5 @@
 #pragma once
-#include <QtGui>
+#include <QtWidgets>
 #include <devices/stage.h>
 #include <ui/uiunits.h>
 

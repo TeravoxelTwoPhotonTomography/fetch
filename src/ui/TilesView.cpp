@@ -2,7 +2,7 @@
 //#include <GL/glew.h>
 //#endif
 #include <iostream>
-#include <QtGui>
+#include <QtWidgets>
 
 #include <util/util-gl.h>
 #include "TilesView.h"

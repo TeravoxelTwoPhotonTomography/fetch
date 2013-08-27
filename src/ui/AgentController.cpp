@@ -1,6 +1,8 @@
 #include "AgentController.h"
 #include <assert.h>
 
+#include <QtWidgets>
+
 namespace fetch {
 namespace ui {
 

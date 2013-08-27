@@ -18,7 +18,7 @@ message Probe
     Simulated = 0;
     NIDAQ     = 1;
   }
-  required ProbeType      kind  = 1 [default=NIDAQ];
+  optional ProbeType      kind  = 1 [default=Simulated];
   optional NIDAQProbe     nidaq = 2;
   optional SimulatedProbe simulated = 3;
 }

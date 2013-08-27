@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QtGui>
+#include <QtWidgets>
 #include <QtOpenGL>
 
 #define GOLDENRATIO 1.61803399

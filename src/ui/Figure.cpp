@@ -1,5 +1,5 @@
 #include <util/util-gl.h>
-#include <QtGui>
+#include <QtWidgets>
 #include <QtDebug>
 #include <assert.h>
 #include <math.h>

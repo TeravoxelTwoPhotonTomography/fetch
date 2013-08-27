@@ -1,5 +1,5 @@
 #pragma once
-#include <QtGui>
+#include <QtWidgets>
 
 namespace fetch {
 namespace device { class Microscope; }

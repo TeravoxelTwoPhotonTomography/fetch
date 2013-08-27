@@ -1,6 +1,6 @@
 #pragma once
 #include "units.h"
-#include <QtGui>
+#include <QtWidgets>
 
 #include <Eigen\Core>
 using namespace Eigen;
