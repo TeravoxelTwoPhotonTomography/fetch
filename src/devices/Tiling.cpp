@@ -112,6 +112,9 @@ namespace device {
  { z_offset_um_+=z_um;
    computeLatticeToStageTransform_(fov_,mode_);
  }
+ f64 StageTiling::z_offset_um() 
+ { return z_offset_um_;
+ }
 
   //  computeLatticeExtents_  //////////////////////////////////////////
   //

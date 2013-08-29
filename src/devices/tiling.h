@@ -64,9 +64,9 @@ namespace device {
     void     set_z_offset_um(f64 z_um);
     void     inc_z_offset_um(f64 z_um);
     f64          z_offset_um();
-    void     set_z_offset_mm(f64 z_mm) {set_z_offset_um(1000.0*z_mm);}
-    void     inc_z_offset_mm(f64 z_mm) {inc_z_offset_um(1000.0*z_mm);}
-    f64          z_offset_mm()         {return z_offset_um()*1e-3;}
+    inline void     set_z_offset_mm(f64 z_mm) {set_z_offset_um(1000.0*z_mm);}
+    inline void     inc_z_offset_mm(f64 z_mm) {inc_z_offset_um(1000.0*z_mm);}
+    inline f64          z_offset_mm()         {return z_offset_um()*1e-3;}
 
     void     resetCursor();
     void     setCursorToPlane(size_t iplane);

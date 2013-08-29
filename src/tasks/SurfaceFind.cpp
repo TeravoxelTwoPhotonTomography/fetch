@@ -15,6 +15,7 @@
 #include "common.h"
 #include "devices\Microscope.h"
 #include "tasks\SurfaceFind.h"
+#include "devices\tiling.h"
 
 #if 1 // PROFILING
 #define TS_OPEN(name)   timestream_t ts__=timestream_open(name)
@@ -27,6 +28,9 @@
 #define TS_TOC
 #define TS_CLOSE
 #endif
+
+#define LOG(sev,...)          sev(__VA_ARGS__)
+#define REPORT(sev,msg1,msg2) LOG(sev,"%s(%d)-%s()"ENDL "\t%s"ENDL "\t%s"ENDL,msg1,msg2)
 
 #define CHKJMP(expr) if(!(expr)) {warning("%s(%d)"ENDL"\tExpression indicated failure:"ENDL"\t%s"ENDL,__FILE__,__LINE__,#expr); goto Error;}
 
@@ -121,10 +125,11 @@ TODO:
         const cfg::device::Microscope original(dc->get_config()); // make a copy in order to restore settings later
         const cfg::tasks::SurfaceFind cfg=dc->get_config().surface_find();
         double range_um=cfg.max_um()-cfg.min_um();        
-        Task* oldtask;
+        Task* oldtask = dc->__scan_agent._task;
         static task::scanner::ScanStack<u16> scan;
 
         dc->transaction_lock();
+        Vector3f starting_pos=dc->stage()->getTarget();
 
         TS_OPEN("surface-find.f32");
         CHKJMP(dc->__scan_agent.is_runnable());
@@ -140,55 +145,72 @@ TODO:
         dc->scanner.set_config(scope.scanner3d());
 
         // 2. [ ] setup pipeline
+        { IDevice* c=dc->configPipeline();
+          c=dc->surface_finder.apply(c);
+          dc->trash.apply(c);
+        }
 
-        while(eflag==0 && !dc->_agent->is_stopping() && !dc->surface_finder.any())
+        double delta_um=0.0;
+        while( eflag==0 
+            && !dc->_agent->is_stopping() 
+            && !dc->surface_finder.any()
+            && ( ((dc->stage()->getTarget() - starting_pos).norm()*1000.0) < cfg.max_backup_um() )
+            )
         { 
 
           TS_TIC;
-
-
-          // 3. Move stage
-          // [ ]: FIXME!  LIMIT TOTAL DISPLACEMENT
-          { Vector3f curpos_mm = dc->stage()->getTarget(); // use current target z for tilepos z            
-            curpos_mm[2] -= 0.001f*cfg.backup_frac()*range_um;// convert um to mm
-            dc->stage()->setPos(curpos_mm);
-          }
 
           // 4. Start the acquisition
           oldtask = dc->__scan_agent._task;
           CHKJMP(0==dc->__scan_agent.disarm(timeout_ms));
           CHKJMP(0==dc->__scan_agent.arm(&scan,&dc->scanner));
 
+          eflag |= (dc->trash._agent->run()!=1);
+          eflag |= (dc->surface_finder._agent->run()!=1);
           eflag |= dc->runPipeline();
           eflag |= run_and_wait(&dc->__self_agent,&dc->__scan_agent,NULL,NULL); // perform the scan
           eflag |= dc->stopPipeline();         // wait till everything stops
+          
           // [ ] readout
-          if(dc->surface_finder.any())
-          { float z_stack_um=dc->surface_finder.which()*cfg.dz_um()+cfg.min_um(); // stack displacement
-            // float z_stage_mm=dc->stage()->getTarget()[2]+1e-3*z_stack_um; //[ ] CHECK: double check sign
-            // What to do with the answer?
-/**/        dc->stage()->inc_tiling_z_offset_um(z_stack_um /* ADJUST FOR BACKUP */); // doesn't move stage, just offsets tiling and notifies view, etc...
-            // - update stage position (lock to surface) and done.
-            // - store somewhere.  Something else will get the data and update the stage position.
-            //   That component would receive this data.  This is probably going to be the microscope.    
-///////HERE
+          if(dc->surface_finder.too_inside())
+          {
+            // Move stage - drop sample down
+            Vector3f pos_mm = dc->stage()->getTarget(); // use current target z for tilepos z            
+            double dz = 0.001f*cfg.backup_frac()*range_um;// convert um to mm
+            pos_mm[2] -= dz;
+            delta_um -= dz*1e3;
+            dc->stage()->setPos(pos_mm);            
+          } else if(dc->surface_finder.too_outside())
+          {
+            // Move stage - move sample up
+            Vector3f pos_mm = dc->stage()->getTarget(); // use current target z for tilepos z
+            double dz = 0.001f*cfg.backup_frac()*range_um;// convert um to mm
+            pos_mm[2] += dz;
+            delta_um += dz*1e3;
+            dc->stage()->setPos(pos_mm);
+          } else
+          { // Surface found, commit to tiling
+            float z_stack_um=delta_um+dc->surface_finder.which()*cfg.dz_um()+cfg.min_um(); // stack displacement
+            // [ ] FIXME/CHECK: effect of averaging??
+            // doesn't move stage, just offsets tiling and notifies view, etc...
+/**/        dc->stage()->inc_tiling_z_offset_mm(1e-3*z_stack_um /* ADJUST FOR BACKUP */);            
+            debug("---"ENDL "\twhich: %f"ENDL "\tz_stack_um: %f"ENDL "\ttiling_z_offset_mm: %f"ENDL "..."ENDL,
+              (double) (dc->surface_finder.which()),
+              (double) z_stack_um,
+              (double) dc->stage()->tiling()->z_offset_mm());
           }
           // [ ] continue search?
           TS_TOC;
         } // end - loop until surface found
         
-        if(!eflag)
-        {
-          // [ ] respond?  
-        }
-
-
+// [ ] FIXME task is not restartable...had a bug at one point        
+Finalize:
         CHKJMP(dc->__scan_agent.stop());
         CHKJMP(0==dc->__scan_agent.disarm(timeout_ms));
-Finalize:
         dc->stopPipeline(); //- redundant?
         dc->scanner.set_config(original.scanner3d());
         dc->__scan_agent._task=oldtask;
+        dc->stage()->setPos(starting_pos); // Restore Old Stage Position
         dc->transaction_unlock();
         TS_CLOSE;
         return eflag;

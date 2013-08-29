@@ -15,6 +15,7 @@
 #include "HistogramDockWidget.h"
 #include "TimeSeriesDockWidget.h"
 #include "StageController.h"
+#include "SurfaceFindDockWidget.h"
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/io/tokenizer.h>
 #include <QtGui>
@@ -342,6 +343,13 @@ void fetch::ui::MainWindow::createDockWidgets()
   addDockWidget(Qt::LeftDockWidgetArea,_surfaceScanDockWidget);
   viewMenu->addAction(_surfaceScanDockWidget->toggleViewAction());
   _surfaceScanDockWidget->setObjectName("_surfaceScanDockWidget");
+
+  {
+    QDockWidget *w = new SurfaceFindDockWidget(_dc,this);
+    addDockWidget(Qt::LeftDockWidgetArea,w);
+    viewMenu->addAction(w->toggleViewAction());
+    w->setObjectName("_surfaceFindDockWidget");
+  }
 
   _timeSeriesDockWidget = new TimeSeriesDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_timeSeriesDockWidget);

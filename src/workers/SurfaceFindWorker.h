@@ -34,6 +34,8 @@ namespace fetch
         void set(unsigned i);
         unsigned which();
         unsigned any();
+        unsigned too_inside();   // every plan trips threshold
+        unsigned too_outside();  // no planes trip threshold
 
         void reset();
     };

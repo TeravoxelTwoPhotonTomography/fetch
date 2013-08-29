@@ -177,9 +177,12 @@ Error:
       ,any_found_(0)
     {}
 
-    void     SurfaceFindWorkerAgent::set(unsigned i)     {any_found_=1; last_found_=i;}
+    void     SurfaceFindWorkerAgent::set(unsigned i)     {if(!any_found_) {any_found_=1; last_found_=i;}}
     unsigned SurfaceFindWorkerAgent::which()             {return last_found_;}
-    unsigned SurfaceFindWorkerAgent::any()               {return any_found_;}
-    void     SurfaceFindWorkerAgent::reset()   {any_found_=0;last_found_=0;}
+    unsigned SurfaceFindWorkerAgent::any()               {return !(too_inside()||too_outside());}
+    void     SurfaceFindWorkerAgent::reset()             {any_found_=0;last_found_=0;}
+    unsigned SurfaceFindWorkerAgent::too_inside()        { return any_found_ && (which()<=1); }
+    unsigned SurfaceFindWorkerAgent::too_outside()       { return !any_found_; }
+
   } //fetch::worker
 }   // fetch

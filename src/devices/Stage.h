@@ -230,6 +230,7 @@ namespace device {
       virtual bool doneWithCut       ( unsigned axis)                       {return _istage->doneWithCut(axis);}             ///< Return axis to normal. \returns true on success, otherwise false.
 
       Vector3z getPosInLattice();
+      void     set_tiling_z_offset_mm(float dz_mm);
       void     inc_tiling_z_offset_mm(float dz_mm);
       void     getLastTarget         ( float *x, float *y, float *z)        { cfg::device::Point3d r=_config->last_target_mm(); *x=r.x();*y=r.y();*z=r.z(); }
 
