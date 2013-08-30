@@ -160,7 +160,7 @@ TODO:
 
           TS_TIC;
 
-          // 4. Start the acquisition
+          // Start the acquisition
           oldtask = dc->__scan_agent._task;
           CHKJMP(0==dc->__scan_agent.disarm(timeout_ms));
           CHKJMP(0==dc->__scan_agent.arm(&scan,&dc->scanner));
@@ -171,7 +171,7 @@ TODO:
           eflag |= run_and_wait(&dc->__self_agent,&dc->__scan_agent,NULL,NULL); // perform the scan
           eflag |= dc->stopPipeline();         // wait till everything stops
           
-          // [ ] readout
+          // readout
           if(dc->surface_finder.too_inside())
           {
             // Move stage - drop sample down
@@ -193,7 +193,7 @@ TODO:
             float z_stack_um=delta_um+dc->surface_finder.which()*cfg.dz_um()+cfg.min_um(); // stack displacement
             // [ ] FIXME/CHECK: effect of averaging??
             // doesn't move stage, just offsets tiling and notifies view, etc...
-/**/        dc->stage()->inc_tiling_z_offset_mm(1e-3*z_stack_um /* ADJUST FOR BACKUP */);            
+/**/        dc->stage()->set_tiling_z_offset_mm(1e-3*z_stack_um /* ADJUST FOR BACKUP */);            
             debug("---"ENDL "\twhich: %f"ENDL "\tz_stack_um: %f"ENDL "\ttiling_z_offset_mm: %f"ENDL "..."ENDL,
               (double) (dc->surface_finder.which()),
               (double) z_stack_um,
@@ -205,6 +205,7 @@ TODO:
         
 // [ ] FIXME task is not restartable...had a bug at one point        
 Finalize:
+        dc->surface_finder.reset();
         CHKJMP(dc->__scan_agent.stop());
         CHKJMP(0==dc->__scan_agent.disarm(timeout_ms));
         dc->stopPipeline(); //- redundant?
