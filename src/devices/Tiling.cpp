@@ -13,7 +13,7 @@ namespace mylib
 #include <functional>
 
 //#define DEBUG__WRITE_IMAGES
-#define DEBUG__SHOW
+//#define DEBUG__SHOW
 
 #ifdef DEBUG__SHOW
 #define SHOW(e) std::cout << "---" << std::endl << #e << " is " << std::endl << (e) << std::endl << "~~~"  << std::endl;

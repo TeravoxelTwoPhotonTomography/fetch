@@ -1,11 +1,11 @@
 /** 
   \file
-  Microscope task.  Searches for the tissue surface and adjusts the z stage to make sure it's imaged
+  Microscope task.  Acquire stacks for each marked tile in a plane.
 
   \author Nathan Clack <clackn@janelia.hhmi.org>
 
   \copyright
-  Copyright 2013 Howard Hughes Medical Institute.
+  Copyright 2010 Howard Hughes Medical Institute.
   All rights reserved.
   Use is subject to Janelia Farm Research Campus Software Copyright 1.1
   license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
@@ -19,24 +19,35 @@ namespace fetch {
 namespace device {
   class Scanner3D;
   class Microscope;
-}}
+}
+}
+
+// #include "devices\Scanner3d.h"
+// #include "devices\Microscope.h"
+#include "devices\Stage.h"
 
 namespace fetch
-{ namespace task
-  { namespace microscope 
-    {
+{
+
+  namespace task
+  {
+    namespace microscope {
+
       typedef Task MicroscopeTask;
 
-      class SurfaceFind : public MicroscopeTask
-      { unsigned hit_;
+      class AdaptiveTiledAcquisition : public MicroscopeTask
+      {        
+        typedef device::Stage::TilePosList::iterator TileIterator;
+        TileIterator _cursor;
         public:
           unsigned int config(IDevice *d);
           unsigned int    run(IDevice *d);
 
           unsigned int config(device::Microscope *agent);
           unsigned int    run(device::Microscope *agent);
-
-          unsigned hit() {return hit_;}
       };
 
-}}}  // namespace fetch::task::microscope
+    }  // namespace microscope
+
+  }
+}

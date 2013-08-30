@@ -39,6 +39,7 @@ message Microscope
   optional string                      metadata_extension    =12 [default=".acquisition"];
   required tasks.AutoTile              autotile              =14;
   required TiledSurfaceScan            surface_scan          =16;
-  optional tasks.TimeSeries            time_series           =17;
+  optional tasks.TimeSeries            time_series           =17;  
   optional tasks.SurfaceFind           surface_find          =18;
+  optional int32                       adaptive_tiling_every =19 [default=100]; // recheck surface location every n tiles
 }

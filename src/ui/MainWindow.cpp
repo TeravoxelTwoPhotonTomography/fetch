@@ -14,6 +14,7 @@
 #include "AutoTileDockWidget.h"
 #include "HistogramDockWidget.h"
 #include "TimeSeriesDockWidget.h"
+#include "AdaptiveTilingdockWidget.h"
 #include "StageController.h"
 #include "SurfaceFindDockWidget.h"
 #include <google/protobuf/text_format.h>
@@ -349,6 +350,13 @@ void fetch::ui::MainWindow::createDockWidgets()
     addDockWidget(Qt::LeftDockWidgetArea,w);
     viewMenu->addAction(w->toggleViewAction());
     w->setObjectName("_surfaceFindDockWidget");
+  }
+
+  {
+    QDockWidget *w = new AdaptiveTilingDockWidget(_dc,this);
+    addDockWidget(Qt::LeftDockWidgetArea,w);
+    viewMenu->addAction(w->toggleViewAction());
+    w->setObjectName("_AdaptiveTiledAcquisition");
   }
 
   _timeSeriesDockWidget = new TimeSeriesDockWidget(_dc,this);

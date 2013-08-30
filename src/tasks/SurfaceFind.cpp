@@ -127,6 +127,9 @@ TODO:
         double range_um=cfg.max_um()-cfg.min_um();        
         Task* oldtask = dc->__scan_agent._task;
         static task::scanner::ScanStack<u16> scan;
+        int scan_agent_was_armed = dc->__scan_agent.is_armed();
+
+        hit_=0;
 
         dc->transaction_lock();
         Vector3f starting_pos=dc->stage()->getTarget();
@@ -195,6 +198,14 @@ TODO:
             // [ ] FIXME/CHECK: effect of averaging??
             // doesn't move stage, just offsets tiling and notifies view, etc...
 /**/        dc->stage()->set_tiling_z_offset_mm(1e-3*z_stack_um);
+
+            // move stage by offset
+            // - this ensures that we end up on the same plane in the iling lattice
+            // - the motion will happen on the way out of the task
+            { starting_pos[2]+=1e-3*z_stack_um; // mm
+            }
+
+            hit_=1;
             debug("---"ENDL "\twhich: %f"ENDL "\tz_stack_um: %f"ENDL "\ttiling_z_offset_mm: %f"ENDL "..."ENDL,
               (double) (dc->surface_finder.which()),
               (double) z_stack_um,
@@ -207,12 +218,14 @@ TODO:
 Finalize:
         dc->surface_finder.reset();
         CHKJMP(dc->__scan_agent.stop());
-        CHKJMP(0==dc->__scan_agent.disarm(timeout_ms));
+        CHKJMP(0==dc->__scan_agent.disarm(timeout_ms)); 
+        dc->__scan_agent._task=oldtask;
         dc->stopPipeline(); //- redundant?
         dc->scanner.set_config(original.scanner3d());
-        dc->__scan_agent._task=oldtask;
         dc->stage()->setPos(starting_pos); // Restore Old Stage Position
-        dc->transaction_unlock();
+        dc->transaction_unlock();      
+        if(scan_agent_was_armed)
+          dc->__scan_agent.arm(oldtask,&dc->scanner);
         TS_CLOSE;
         return eflag;
 Error:
