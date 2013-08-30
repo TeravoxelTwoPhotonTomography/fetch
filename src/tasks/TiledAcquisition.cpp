@@ -118,8 +118,12 @@ Error:
 
           // Move stage
           Vector3f curpos = dc->stage()->getTarget(); // use current target z for tilepos z
-          tilepos[2] = curpos[2]*1000.0f;             // unit conversion here is a bit awkward
+          debug("%s(%d)"ENDL "\t[Tiling Task] curpos: %5.1f %5.1f %5.1f"ENDL,__FILE__,__LINE__,curpos[0]*1000.0f,curpos[1]*1000.0f,curpos[2]*1000.0f);
+          //tilepos[2] = curpos[2]*1000.0f;             // unit conversion here is a bit awkward
           dc->stage()->setPos(0.001f*tilepos);        // convert um to mm
+
+          curpos = dc->stage()->getTarget(); // use current target z for tilepos z
+          debug("%s(%d)"ENDL "\t[Tiling Task] curpos: %5.1f %5.1f %5.1f"ENDL,__FILE__,__LINE__,curpos[0]*1000.0f,curpos[1]*1000.0f,curpos[2]*1000.0f);
 
           eflag |= dc->runPipeline();
           eflag |= dc->__scan_agent.run() != 1;

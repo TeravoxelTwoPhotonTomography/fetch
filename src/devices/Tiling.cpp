@@ -13,7 +13,7 @@ namespace mylib
 #include <functional>
 
 //#define DEBUG__WRITE_IMAGES
-//#define DEBUG__SHOW
+#define DEBUG__SHOW
 
 #ifdef DEBUG__SHOW
 #define SHOW(e) std::cout << "---" << std::endl << #e << " is " << std::endl << (e) << std::endl << "~~~"  << std::endl;
@@ -84,12 +84,16 @@ namespace device {
     Vector3f sc = fov.field_size_um_ - fov.overlap_um_;
     switch(alignment)
     {
+// should probably do the zoffset before rotate/shear but 
+// they're orthogonal to z so it doesn't matter.
     case Mode::Stage_TilingMode_PixelAligned:
         // Rotate the lattice
         latticeToStage_
           .rotate( AngleAxis<float>(fov.rotation_radians_,Vector3f::UnitZ()) )
-          .scale(sc);
-        //SHOW(latticeToStage_.matrix());
+          .translate(Vector3f(0,0,z_offset_um_))
+          .scale(sc)
+          ;
+        SHOW(latticeToStage_.matrix());
         return;
     case Mode::Stage_TilingMode_StageAligned:
         // Shear the lattice
@@ -99,7 +103,9 @@ namespace device {
             1.0f/cos(th), -sin(th), 0,
                        0,  cos(th), 0,
                        0,        0, 1).finished();
-        latticeToStage_.scale(sc);
+        latticeToStage_.translate(Vector3f(0,0,z_offset_um_))
+                       .scale(sc)
+                       ;
         return;
     }
   }

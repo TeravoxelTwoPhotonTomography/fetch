@@ -136,6 +136,7 @@ namespace fetch
       device::TiffGroupStream               disk;
 
       task::microscope::Interaction         interaction_task;
+      //char spacer[256];
       task::microscope::StackAcquisition    stack_task;
       task::microscope::TiledAcquisition    tiling_task;
       task::microscope::Cut                 cut_task;

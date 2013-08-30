@@ -152,8 +152,8 @@ TODO:
 
         double delta_um=0.0;
         while( eflag==0 
-            && !dc->_agent->is_stopping() 
-            && !dc->surface_finder.any()
+            && !dc->_agent->is_stopping()  // running?
+            && !dc->surface_finder.any()   // search complete?   \/---search in bounds?
             && ( ((dc->stage()->getTarget() - starting_pos).norm()*1000.0) < cfg.max_backup_um() )
             )
         { 
@@ -189,17 +189,17 @@ TODO:
             delta_um += dz*1e3;
             dc->stage()->setPos(pos_mm);
           } else
-          { // Surface found, commit to tiling
+          { 
+            // Surface found, commit to tiling
             float z_stack_um=delta_um+dc->surface_finder.which()*cfg.dz_um()+cfg.min_um(); // stack displacement
             // [ ] FIXME/CHECK: effect of averaging??
             // doesn't move stage, just offsets tiling and notifies view, etc...
-/**/        dc->stage()->set_tiling_z_offset_mm(1e-3*z_stack_um /* ADJUST FOR BACKUP */);            
+/**/        dc->stage()->set_tiling_z_offset_mm(1e-3*z_stack_um);
             debug("---"ENDL "\twhich: %f"ENDL "\tz_stack_um: %f"ENDL "\ttiling_z_offset_mm: %f"ENDL "..."ENDL,
               (double) (dc->surface_finder.which()),
               (double) z_stack_um,
               (double) dc->stage()->tiling()->z_offset_mm());
           }
-          // [ ] continue search?
           TS_TOC;
         } // end - loop until surface found
         
