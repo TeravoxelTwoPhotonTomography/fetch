@@ -8,6 +8,7 @@ message AutoTile
   optional uint32 ichan               = 4 [default = 0];
   optional double intensity_threshold = 5 [default = 1000];
   optional double area_threshold      = 6 [default = 0.1];
+  optional bool   use_adaptive_tiling = 7 [default = false];
 }
 
 message TimeSeries

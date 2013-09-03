@@ -20,6 +20,7 @@
 #include "devices\digitizer.h"
 #include "devices\Microscope.h"
 #include "devices\tiling.h"
+#include "AdaptiveTiledAcquisition.h"
 
 #define CHKJMP(expr) if(!(expr)) {warning("%s(%d)"ENDL"\tExpression indicated failure:"ENDL"\t%s"ENDL,__FILE__,__LINE__,#expr); goto Error;}
 #define WARN(msg)    warning("%s(%d)"ENDL"\t%s"ENDL,__FILE__,__LINE__,msg)
@@ -223,14 +224,18 @@ Error:
       unsigned int AutoTileAcquisition::run(device::Microscope *dc)
       { unsigned eflag=0; //success
         cfg::tasks::AutoTile cfg=dc->get_config().autotile();
-        TiledAcquisition tile;
+        TiledAcquisition         nonadaptive_tiling;
+        AdaptiveTiledAcquisition adaptive_tiling;
+        MicroscopeTask *tile=0;
         Cut cut;
+
+        tile=cfg.use_adaptive_tiling()?((MicroscopeTask*)&adaptive_tiling):((MicroscopeTask*)&nonadaptive_tiling);
 
         while(!dc->_agent->is_stopping() && PlaneInBounds(dc,cfg.maxz_mm()))
         //if(!dc->_agent->is_stopping() && PlaneInBounds(dc,cfg.maxz_mm()))
         { CHKJMP(explore(dc));       // will return an error if no explorable tiles found on the plane
-          CHKJMP(   tile.config(dc));
-          CHKJMP(0==tile.run(dc));
+          CHKJMP(   tile->config(dc));
+          CHKJMP(0==tile->run(dc));
           CHKJMP(   cut.config(dc));
           CHKJMP(0==cut.run(dc));
         }
