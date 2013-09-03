@@ -197,7 +197,7 @@ TODO:
             float z_stack_um=delta_um+dc->surface_finder.which()*cfg.dz_um()+cfg.min_um(); // stack displacement
             // [ ] FIXME/CHECK: effect of averaging??
             // doesn't move stage, just offsets tiling and notifies view, etc...
-/**/        dc->stage()->set_tiling_z_offset_mm(1e-3*z_stack_um);
+/**/        dc->stage()->inc_tiling_z_offset_mm(1e-3*z_stack_um);
 
             // move stage by offset
             // - this ensures that we end up on the same plane in the iling lattice
