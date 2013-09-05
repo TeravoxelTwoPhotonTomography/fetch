@@ -191,7 +191,7 @@ Error:
 
         device::TileSearchContext *ctx=0;
         while(  !dc->_agent->is_stopping()
-              && tiling->nextSearchPosition(iplane,3/*radius - tiles*/,tilepos,&ctx))
+              && tiling->nextSearchPosition(iplane,0/*radius - tiles*/,tilepos,&ctx))
               //&& tiling->nextInPlaneExplorablePosition(tilepos))
         { mylib::Array *im;
           any_explorable=1;

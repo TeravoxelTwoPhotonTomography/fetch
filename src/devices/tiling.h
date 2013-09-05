@@ -105,7 +105,11 @@ namespace device {
     void lock()                                                            {Mutex_Lock(lock_);}
     void unlock()                                                          {Mutex_Unlock(lock_);}
 
-    bool on_plane(uint32_t *p); //used by TileSearch
+    bool on_plane(uint32_t *p); //used by TileSearch    
+
+    int minDistTo( // used by adaptive tiling
+      uint32_t search_mask,uint32_t search_flags,   // area to search 
+      uint32_t query_mask ,uint32_t query_flags);  // tile to find
   protected:
     void computeLatticeToStageTransform_
                         (const FieldOfViewGeometry& fov,
@@ -117,6 +121,8 @@ namespace device {
     void notifyNext(size_t i, const Vector3f& pos);
 
     const Vector3f computeCursorPos();
+
+
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   };

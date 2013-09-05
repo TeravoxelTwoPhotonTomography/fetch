@@ -789,6 +789,90 @@ DoneOutlining:
       *c = c[0]&~Reserved;
   }
 
+
+  // minDistTo ///////////////////////////////////////////////////////////////
+  //
+  // returns -1 on error, otherwise
+  //         the lattice distance from the current tile to the nearest tile 
+  //         in plane satisfying the query.
+  //
+  // Algorithm is breadth first search.  So it requires a FIFO queue.
+  //
+
+  class q_t
+  { typedef struct e_t_ {int dist; uint32_t *tile; struct e_t_* next;}* e_t;
+    e_t head,tail;
+    static e_t bind(uint32_t* v,int dist) {
+      e_t e=(e_t)malloc(sizeof(struct e_t_));
+      if(!e) return 0;
+      e->tile=v; e->next=NULL; e->dist=dist;
+      return e;
+    }
+  public:
+    q_t():head(0),tail(0) {}
+    ~q_t() {e_t e=head; while(e) {e_t t=e->next; free(e); e=t; }}
+    q_t* push(uint32_t* v, int dist) throw(const char*) {
+      e_t e=0;
+      if(!v) return this; // no-op -- to allow implicit filtering of inputs
+      e=bind(v,dist);
+      if(!e) throw "allocation error";    // memory allocation error
+      if(!head) { head=tail=e; }          // first elem. must test head bc of how I pop
+      else      { tail->next=e; tail=e;}
+      return this;
+    }
+    uint32_t* pop(int *dist) {
+      uint32_t* v=0;
+      int d=-1;
+      e_t e=head;
+      if(head) { head=head->next; v=e->tile; d=e->dist; free(e);}
+      if(dist) *dist=d;
+      return v;
+    }
+  };
+
+
+  int StageTiling::minDistTo(
+    uint32_t search_mask,uint32_t search_flags, // area to search 
+    uint32_t query_mask,uint32_t query_flags)  // tile to find
+  { 
+    int dist=0;
+    const unsigned w=attr_->dims[0],
+                   h=attr_->dims[1];
+    const int offsets[] = {-w-1,-w,-w+1,-1,1,w-1,w,w+1}; // moves
+    uint32_t *c = AUINT32(attr_)+cursor_,
+             *beg = AUINT32(attr_)+current_plane_offset_,
+             *end = beg+sz_plane_nelem_;    
+    q_t q;
+    
+    for(uint32_t *t=(uint32_t*)beg;t<end;++t) // Reset Reserved
+      *t = t[0]&~Reserved;
+
+    #define isvalid(p)    ((*(p)&(search_mask|Reserved)) == search_flags)
+    #define isinbounds(p) (beg<=(p) && (p)<end)
+    #define maybe(p)      ( (isvalid(p)&&isinbounds(p)) ?(p):NULL)
+    try
+    { q.push(maybe(c),0);
+      while(c=q.pop(&dist))
+      { *c |= Reserved; // mark it as looked at
+        if((*c&query_mask)==query_flags) {goto Finalize;}
+        for(int i=0;i<countof(offsets);++i)
+          q.push(maybe(c+offsets[i]),dist+1);
+      }
+      dist=0; // - no tiles found or started in a bad spot
+    }
+    catch(const char* msg)
+    { debug("%s(%d): %s()\r\n\t%s\r\n",__FILE__,__LINE__,__FUNCTION__,msg);
+      dist = -1;
+    }
+    #undef isvalid
+    #undef isinbounds
+    #undef maybe
+  Finalize:
+    for(uint32_t *t=(uint32_t*)beg;t<end;++t) // Reset Reserved
+      *t = t[0]&~Reserved;
+    return dist;
+  }
+
   void StageTiling::notifyDone(size_t index, const Vector3f& pos, uint32_t sts)
   { TListeners::iterator i;
     for(i=listeners_.begin();i!=listeners_.end();++i)

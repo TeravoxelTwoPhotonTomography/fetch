@@ -101,7 +101,8 @@ Error:
         unsigned int eflag = 0; // success
         Vector3f tilepos;
         int adapt_count=0;
-        int adapt_thresh=dc->get_config().adaptive_tiling_every();
+        int adapt_thresh=dc->get_config().adaptive_tiling().every();
+        int adapt_mindist=dc->get_config().adaptive_tiling().mindist();
         TS_OPEN("timer-tiles.f32");
         CHKJMP(dc->__scan_agent.is_runnable());
 
@@ -165,21 +166,24 @@ Error:
           eflag |= dc->stopPipeline();         // wait till everything stops
 
           // A D A P T I V E 
-          if(++adapt_count>adapt_thresh)
-          { 
-            if (adapt_count> 2*adapt_thresh)
-            { warning("Could not track surface.  Giving up.\n");
-              goto Error;
+          if(adapt_mindist<=tiling->minDistTo( 0,0,  // domain query -- do not restrict
+                     device::StageTiling::Active,0)) // boundary query
+          {        
+            if(++adapt_count>adapt_thresh)
+            { 
+              if (adapt_count> 2*adapt_thresh)
+              { warning("Could not track surface.  Giving up.\n");
+                goto Error;
+              }
+
+              //surface_find.config();  -- arms stack task as scan agent...redundant
+              eflag |= surface_find.run(dc);
+              if(surface_find.hit())
+                adapt_count=0;
+
+              // retore connection between end of pipeline and disk 
+              IDevice::connect(&dc->disk,0,dc->_end_of_pipeline,0);
             }
-
-            //surface_find.config();  -- arms stack task as scan agent...redundant
-            eflag |= surface_find.run(dc);
-            if(surface_find.hit())
-              adapt_count=0;
-
-            // retore connection between end of pipeline and disk 
-// [ ] CHECK that this works
-            IDevice::connect(&dc->disk,0,dc->_end_of_pipeline,0);
           }
 
           TS_TOC;          
