@@ -279,7 +279,7 @@ Error:
       alazar_set_line_trigger_lvl_volts(cfg,_config->trigger_lvl_volts());
       alazar_set_image_size(cfg,record_frequency_Hz,nrecords,&duty);
       alazar_set_aux_out_board(cfg,_config->aux_out_board_id());
-      debug("[ ]Duty (aligned): %f\n",duty);
+      //debug("[ ]Duty (aligned): %f\n",duty);
       { int i;
         for(i=0;i<_config->channels_size();++i)
         { const int iboard=_config->channels(i).board_id(),

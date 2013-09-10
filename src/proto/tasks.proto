@@ -8,7 +8,9 @@ message AutoTile
   optional uint32 ichan               = 4 [default = 0];
   optional double intensity_threshold = 5 [default = 1000];
   optional double area_threshold      = 6 [default = 0.1];
-  optional bool   use_adaptive_tiling = 7 [default = false];
+  
+  optional int32  search_radius       = 7 [default = 3];    // search radius in tiles
+  optional bool   use_adaptive_tiling = 8 [default = false];
 }
 
 message TimeSeries
@@ -28,8 +30,8 @@ message SurfaceFind
   optional double intensity_threshold = 7 [default = 1000]; // Classify as in or out
   optional double area_threshold      = 8 [default = 0.1];  //
 
-  optional double response            = 9 [default = 2.0]; // correct stage z by response * measured error
-  optional double response_limit_frac = 10[default = 0.1]; // response is limited to response_limit_frac * stack depth
+  optional double response            = 10[default = 2.0]; // correct stage z by response * measured error
+  optional double response_limit_frac = 11[default = 0.1]; // response is limited to response_limit_frac * stack depth
 }
 
 message AdaptiveTiling {

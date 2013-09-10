@@ -70,6 +70,7 @@
   license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
 */
 
+#include <iostream>
 
 #include <list>
 #include <string>
@@ -450,7 +451,7 @@ Error:
 
     { float vx,vy,vz;
       getVelocity(&vx,&vy,&vz);
-      debug("(%s:%d): C843 Velocity %f %f %f"ENDL,__FILE__,__LINE__,vx,vy,vz);
+      //debug("(%s:%d): C843 Velocity %f %f %f"ENDL,__FILE__,__LINE__,vx,vy,vz);
     }
     C843JMP( C843_HLT(handle_,"123") );              // Stop any motion in progress
     C843JMP( C843_MOV(handle_,"123",t) );            // Move!
@@ -837,11 +838,12 @@ Error:
   }
 
   float myroundf(float x) {return floorf(x+0.5f);}
-
   Vector3z Stage::getPosInLattice()
   { StageTiling::TTransform l2s(_tiling->latticeToStageTransform());
     Vector3f r(getTarget()*1000.0); // convert to um
-    return Vector3z((l2s.inverse() * r).unaryExpr(std::ptr_fun<float,float>(myroundf)).cast<size_t>());
+    Vector3z out=Vector3z((l2s.inverse() * r).unaryExpr(std::ptr_fun<float,float>(myroundf)).cast<size_t>());
+    std::cout << __FILE__ << "(" << __LINE__ << ")\r\n\t" << out << std::endl;
+    return out;
   }
 
   void Stage::set_tiling_z_offset_mm(float dz_mm)
