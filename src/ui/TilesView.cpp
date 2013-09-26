@@ -361,7 +361,7 @@ void TilesView::updateVBO()
           z = verts(2,ivert);
         for(unsigned i=0;i<w*h;++i)
         {
-          *d++ = x;
+          *d++ = x;        // [ngc][2013-09] FIXME ug here, verts array must be out of sink w tiling
           *d++ = y;
           *d++ = z;
         }

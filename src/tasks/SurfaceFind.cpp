@@ -108,15 +108,10 @@ Error:
       }
 /*
 NOTE:
-  - This guy changes the stage position in a way that might not be super controlled.  Need to be sure all stage motions are limited.
   - This is set as it's own task for testing, but will probably be called as part of another task for production use.
     So state changes (to the pipeline,etc) need to be controlled.
 TODO:
-  1. Assemble pipeline
-     Pipeline needs to have the classify worker at the end that keeps track of where the surface is.
-     After a stack is run, the context for that worker will have the threshold or a "none found" indicator.
-
-
+  1. Allow a response offset
 */
       unsigned int SurfaceFind::run(device::Microscope *dc)
       { unsigned timeout_ms=10000;
@@ -191,10 +186,12 @@ TODO:
             pos_mm[2] += dz;
             delta_um += dz*1e3;
             dc->stage()->setPos(pos_mm);
-          } else
+          } else // just right
           { 
             // Surface found, commit to tiling
-            float z_stack_um=delta_um+dc->surface_finder.which()*cfg.dz_um()+cfg.min_um(); // stack displacement
+            float z_stack_um=delta_um
+                            +cfg.offset_um()
+                            +dc->surface_finder.which()*cfg.dz_um()+cfg.min_um(); // stack displacement
             // [ ] FIXME/CHECK: effect of averaging??
             // doesn't move stage, just offsets tiling and notifies view, etc...
 /**/        dc->stage()->inc_tiling_z_offset_mm(1e-3*z_stack_um);
