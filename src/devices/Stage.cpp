@@ -846,6 +846,10 @@ Error:
     return out;
   }
 
+  float Stage::tiling_z_offset_mm()
+  { return _tiling->z_offset_mm();
+  }
+
   void Stage::set_tiling_z_offset_mm(float dz_mm)
   {
     Mutex_Lock(_tiling_lock);

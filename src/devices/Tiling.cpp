@@ -798,19 +798,41 @@ DoneOutlining:
   //
   // Algorithm is breadth first search.  So it requires a FIFO queue.
   //
+  // NOT THREAD SAFE
+  // - right now this is only called by AdaptiveTilingTask
+  // - to make it thread safe
+  //   - make estore and friends non-static
+  //   or
+  //   - protext estore and friends
+  //   - deallocation has to track which elements are used and which are free
+  //   - occasionally repack estore
+  //
 
   class q_t
   { typedef struct e_t_ {int dist; uint32_t *tile; struct e_t_* next;}* e_t;
     e_t head,tail;
-    static e_t bind(uint32_t* v,int dist) {
-      e_t e=(e_t)malloc(sizeof(struct e_t_));
+
+    // block allocate elements
+    // - have to do this or lock's during free (called by ~q_t()) get too time consuming
+    e_t estore;
+    size_t estore_sz;
+    size_t estore_i;
+    e_t elem() { // alloc new element
+      estore_i++;
+      if(estore_i>=estore_sz)
+        return 0;
+      return estore+(estore_i-1);
+    }
+    void free_elem(e_t e) { /* release element -- no op */ }
+    e_t bind(uint32_t* v,int dist) {
+      e_t e=elem();
       if(!e) return 0;
       e->tile=v; e->next=NULL; e->dist=dist;
       return e;
     }
   public:
-    q_t():head(0),tail(0) {}
-    ~q_t() {e_t e=head; while(e) {e_t t=e->next; free(e); e=t; }}
+    q_t(size_t n):head(0),tail(0),estore(0),estore_sz(n),estore_i(0) {estore=(e_t)calloc(n,sizeof(struct e_t_));}
+    ~q_t() { free(estore); } //e_t e=head; while(e) {e_t t=e->next; free_elem(e); e=t; } estore_i=0;}
     q_t* push(uint32_t* v, int dist) throw(const char*) {
       e_t e=0;
       if(!v) return this; // no-op -- to allow implicit filtering of inputs
@@ -824,12 +846,11 @@ DoneOutlining:
       uint32_t* v=0;
       int d=-1;
       e_t e=head;
-      if(head) { head=head->next; v=e->tile; d=e->dist; free(e);}
+      if(head) { head=head->next; v=e->tile; d=e->dist; free_elem(e);}
       if(dist) *dist=d;
       return v;
     }
   };
-
 
   int StageTiling::minDistTo(
     uint32_t search_mask,uint32_t search_flags, // area to search 
@@ -842,7 +863,7 @@ DoneOutlining:
     uint32_t *c = AUINT32(attr_)+cursor_,
              *beg = AUINT32(attr_)+current_plane_offset_,
              *end = beg+sz_plane_nelem_;    
-    q_t q;
+    q_t q(w*h);
     
     for(uint32_t *t=(uint32_t*)beg;t<end;++t) // Reset Reserved
       *t = t[0]&~Reserved;
