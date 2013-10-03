@@ -349,6 +349,15 @@ bool fetch::ui::TilingController::latticeAttrImage(QImage *out)
     *lattice = t->attributeArray(),
      plane   = *lattice;
   Vector3z ir = stage_->getPosInLattice();
+// HACK [ngc oct 2013] 
+// bc of tiling offset it's possible for stage position to translate to something outside the bounds of the tiling array
+// here, I just clamp oob values.  This is mostly a problem when markAddressible is called when the stage moves to the
+// safety position (z=0.5 mm).
+// - proper solution would be to resize the tiling array appropriately
+// - another solution would be for this routine to return false when oob, but then I'd need to make sure the error was
+//   handled correctly, and I don't have the ability to test that at the moment. (sample is on)
+  if(   0 > ir[2]           ) ir[2]=0;
+  if(ir[2]>=lattice->dims[2]) ir[2]=lattice->dims[2]-1;
   mylib::Get_Array_Plane(&plane,ir[2]);  
   *out = QImage(AUINT8(&plane),w,h,QImage::Format_ARGB32_Premultiplied); //QImage requires a uchar* for the data  
   //stage_->tilingUnlock(); DONT unlock here...the QImage still references the tiling data...need to unlock in caller
