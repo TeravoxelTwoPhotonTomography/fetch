@@ -119,7 +119,7 @@ Error:
                      device::StageTiling::Active,0)) // boundary query -- this is defines what is "outside"
           {        
             if(++adapt_count>adapt_thresh) // is it time to try?
-            { 
+            { adapt_count=0;
               // M O V E
               Vector3f curpos = dc->stage()->getTarget(); // use current target z for tilepos z
               debug("%s(%d)"ENDL "\t[Adaptive Tiling Task] curpos: %5.1f %5.1f %5.1f"ENDL,__FILE__,__LINE__,curpos[0]*1000.0f,curpos[1]*1000.0f,curpos[2]*1000.0f);          
@@ -134,12 +134,10 @@ Error:
                 goto Error;
               }
 #endif
-
               //surface_find.config();  -- arms stack task as scan agent...redundant
               eflag |= surface_find.run(dc);
               if(surface_find.hit())
-              { adapt_count=0;
-                tiling_offset_acc_mm+=dc->stage()->tiling_z_offset_mm();
+              { tiling_offset_acc_mm+=dc->stage()->tiling_z_offset_mm();
                 ++nsamp;
               }
 
