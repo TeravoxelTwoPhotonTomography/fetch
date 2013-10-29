@@ -32,6 +32,7 @@ message Microscope
   optional FieldOfViewGeometry         fov                   = 4;
   optional Probe                       surface_probe         =15;
   optional worker.Pipeline             pipeline              = 5;
+  optional worker.TripDetect           trip_detect           =20;
   required FileSeries                  file_series           = 8;
   optional string                      file_prefix           = 9 [default="default"];
   optional string                      stack_extension       =10 [default=".tif"];

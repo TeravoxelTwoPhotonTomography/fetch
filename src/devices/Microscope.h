@@ -18,6 +18,7 @@
 
 #include "workers/Pipeline.h"
 #include "workers/Terminator.h"
+#include "workers/TripDetect.h"
 #include "workers/SurfaceFindWorker.h"
 
 #include "devices/scanner3D.h"
@@ -130,6 +131,7 @@ namespace fetch
       device::Probe                         surface_probe_;
 
       worker::PipelineAgent                 pipeline;
+      worker::TripDetectWorkerAgent         trip_detect;        
       worker::SurfaceFindWorkerAgent        surface_finder;
 
       worker::TerminalAgent		              trash;

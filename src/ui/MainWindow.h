@@ -50,6 +50,7 @@ protected slots:
   void saveMicroscopeConfigViaFileDialog();
   void saveMicroscopeConfigToLastGoodLocation();
   void saveMicroscopeConfig(const QString& filename);
+  void resetTripDetector();
 
   void startVideo();
   void stopVideo();

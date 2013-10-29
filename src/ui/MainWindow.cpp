@@ -287,6 +287,12 @@ void fetch::ui::MainWindow::createMenus()
   t->addAction(tilingController()->loadDialogAction());
   t->addAction(tilingController()->saveDialogAction());
   t->addAction(tilingController()->autosaveAction());
+
+  { QMenu *t = menuBar()->addMenu("&Actions");
+    QAction *a = new QAction("&Reset Trip Detector.",this);
+    t->addAction(a);
+    connect(a,SIGNAL(triggered()),this,SLOT(resetTripDetector()));
+  }
 }
 
 void fetch::ui::MainWindow::createStateMachines()
@@ -566,6 +572,12 @@ void
     return;
 
   saveMicroscopeConfig(filename);
+}
+
+void 
+  fetch::ui::MainWindow::
+  resetTripDetector()
+{ _dc->trip_detect.reset();
 }
 
 void

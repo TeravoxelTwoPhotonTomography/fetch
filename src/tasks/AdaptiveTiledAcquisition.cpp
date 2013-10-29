@@ -146,11 +146,12 @@ Error:
           }
         }
         if(nsamp==0)
-        { warning("Could not track surface.  Giving up.\n");
-          goto Error;
+        { warning("Could not track surface because no candidate sampling points were found.\n");
+          //goto Error;
+        } else {
+          debug("%s(%d)"ENDL "\t[Adaptive Tiling Task] Average tile offset (samples: %5d) %f"ENDL,__FILE__,__LINE__,(int)nsamp,tiling_offset_acc_mm/nsamp);
+          dc->stage()->set_tiling_z_offset_mm(tiling_offset_acc_mm/nsamp);
         }
-        debug("%s(%d)"ENDL "\t[Adaptive Tiling Task] Average tile offset (samples: %5d) %f"ENDL,__FILE__,__LINE__,(int)nsamp,tiling_offset_acc_mm/nsamp);
-        dc->stage()->set_tiling_z_offset_mm(tiling_offset_acc_mm/nsamp);
 
         // retore connection between end of pipeline and disk 
         IDevice::connect(&dc->disk,0,dc->_end_of_pipeline,0);
