@@ -145,12 +145,12 @@ namespace fetch
         }
         TS_TOC;
         //REMIND(fdst->totif("TripDetectWorker-dst.tif"));
+        TRY(CHAN_SUCCESS(Chan_Next(writer,(void**)&fsrc,fsrc->size_bytes())));  
         
         if(!dc->ok())
         { LOG("[TripDetectWorker] Too many dark frames.  Stopping."); 
           goto Error;
-        }
-        TRY(CHAN_SUCCESS(Chan_Next(writer,(void**)&fsrc,fsrc->size_bytes())));        
+        }      
       }
 Finalize:
       TS_CLOSE;

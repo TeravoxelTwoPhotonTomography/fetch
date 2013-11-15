@@ -233,7 +233,9 @@ Error:
 
         while(!dc->_agent->is_stopping() && PlaneInBounds(dc,cfg.maxz_mm()))
         //if(!dc->_agent->is_stopping() && PlaneInBounds(dc,cfg.maxz_mm()))
-        { CHKJMP(explore(dc));       // will return an error if no explorable tiles found on the plane
+        { 
+          if(cfg.use_explore())
+            CHKJMP(explore(dc));       // will return an error if no explorable tiles found on the plane
           CHKJMP(   tile->config(dc));
           CHKJMP(0==tile->run(dc));
           CHKJMP(   cut.config(dc));
