@@ -125,25 +125,20 @@ QDockWidget* AgentController::createTaskDockWidget(const QString & title, Task *
 }
 
 /**
-  class AgentControllerButtonPanel : public QWidget
-  {
-    Q_OBJECT
+NOTE:
+  
+  I've disabled the attach and detach buttons (by not adding them to the widget layout).
+  They were not tremendously useful.  When I was tempted to use them, usually it was better
+  just to close and reopen the application.  With the buttons present, there was a chance 
+  for a misclick.
 
-    QStateMachine stateMachine_;
-    Task         *armTarget_;
-    AgentController  *ac_;
-  public:
-    AgentControllerButtonPanel(AgentController *ac, Task *task=NULL);
-
-  public slots:
-    void onArmFilter(Task* t);
-  };
+  Perhaps one day, it will be prudent to remove associated code, but for now, they live on
+  in purgatory.
 **/
 AgentControllerButtonPanel::AgentControllerButtonPanel(AgentController *ac, Task *task)
   : armTarget_(task)
   , ac_(ac)
 {
-     
     btnDetach = new QPushButton("Detach");
     btnAttach = new QPushButton("Attach");
     btnArm    = new QPushButton("Arm");
@@ -190,6 +185,7 @@ AgentControllerButtonPanel::AgentControllerButtonPanel(AgentController *ac, Task
 
     {
       QState *c = taskDetached;
+
       c->assignProperty(btnDetach,"enabled",false);
       c->assignProperty(btnAttach,"enabled",true);
       c->assignProperty(btnArm,   "enabled",false);
@@ -232,11 +228,11 @@ AgentControllerButtonPanel::AgentControllerButtonPanel(AgentController *ac, Task
 
     QGridLayout *layout;
     layout = new QGridLayout;
-    layout->addWidget(btnAttach,0,0);
+    //layout->addWidget(btnAttach,0,0);
     layout->addWidget(btnArm,0,1);
     layout->addWidget(btnRun,0,2);
     
-    layout->addWidget(btnDetach,1,0);
+    //layout->addWidget(btnDetach,1,0);
     layout->addWidget(btnDisarm,1,1);
     layout->addWidget(btnStop,1,2);
     setLayout(layout);    
