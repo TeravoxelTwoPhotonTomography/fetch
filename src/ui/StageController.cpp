@@ -409,7 +409,7 @@ static void zero_alpha(QImage &im)
     d[4*i]=0;                            // zero out the alpha component
 }
 
-bool fetch::ui::TilingController::mark( const QPainterPath& path, device::StageTiling::Flags attr, QPainter::CompositionMode mode )
+bool fetch::ui::TilingController::mark( const QPainterPath& path, int attr, QPainter::CompositionMode mode )
 { 
   QColor color((QRgb)attr);
   QImage im;
@@ -543,6 +543,36 @@ bool fetch::ui::TilingController::markNotExplorable(const QPainterPath& path)
   return mark(
     path,
     device::StageTiling::Explorable,
+    QPainter::RasterOp_NotSourceAndDestination);
+}
+
+bool fetch::ui::TilingController::markSafe(const QPainterPath& path)
+{  
+  return mark(
+    path,
+    device::StageTiling::Safe,
+    QPainter::RasterOp_SourceOrDestination);
+}
+
+bool fetch::ui::TilingController::markNotSafe(const QPainterPath& path)
+{  
+  return mark(
+    path,
+    device::StageTiling::Safe,
+    QPainter::RasterOp_NotSourceAndDestination);
+}
+
+bool fetch::ui::TilingController::markUserReset(const QPainterPath& path)
+{  
+  return mark(
+    path,    
+       device::StageTiling::Active
+      |device::StageTiling::Detected
+      |device::StageTiling::Explored
+      |device::StageTiling::Explorable
+      |device::StageTiling::Safe
+      |device::StageTiling::Done
+    ,
     QPainter::RasterOp_NotSourceAndDestination);
 }
 

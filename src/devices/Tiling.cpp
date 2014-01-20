@@ -190,8 +190,8 @@ namespace device {
     cursor_ = 0;
 
     uint32_t* mask     = AUINT32(attr_);
-    uint32_t  attrmask = Addressable | Active | Done,
-              attr     = Addressable | Active;
+    uint32_t  attrmask = Addressable | Safe | Active | Done,
+              attr     = Addressable | Safe | Active;
 
     while( (mask[cursor_] & attrmask) != attr
         && ON_LATTICE(cursor_) )
@@ -222,8 +222,8 @@ namespace device {
   bool StageTiling::nextInPlanePosition(Vector3f &pos)
   { lock();
     uint32_t* mask = AUINT32(attr_);
-    uint32_t attrmask = Addressable | Active | Done,
-             attr     = Addressable | Active;
+    uint32_t attrmask = Addressable | Safe | Active | Done,
+             attr     = Addressable | Safe | Active;
 
     do{++cursor_;}
     while( (mask[cursor_] & attrmask) != attr
@@ -273,8 +273,8 @@ namespace device {
   bool StageTiling::nextInPlaneExplorablePosition(Vector3f &pos)
   { lock();
     uint32_t* mask = AUINT32(attr_);
-    uint32_t attrmask = Explorable | Explored | Addressable | Active | Done,
-             attr     = Explorable | Addressable;
+    uint32_t attrmask = Explorable | Safe | Explored | Addressable | Active | Done,
+             attr     = Explorable | Safe | Addressable;
 
     do{++cursor_;}
     while( (mask[cursor_] & attrmask) != attr
@@ -296,8 +296,8 @@ namespace device {
   bool StageTiling::nextPosition(Vector3f &pos)
   { lock();
     uint32_t* mask    = AUINT32(attr_);
-    uint32_t attrmask = Addressable | Active | Done,
-             attr     = Addressable | Active;
+    uint32_t attrmask = Addressable | Safe | Active | Done,
+             attr     = Addressable | Safe | Active;
 
     do {++cursor_;}
     while( (mask[cursor_] & attrmask) != attr
@@ -440,8 +440,8 @@ namespace device {
 
   /* Sorry for the goto's.  don't hate. */
   bool StageTiling::nextSearchPosition(int iplane, int radius, Vector3f &pos,TileSearchContext **pctx)
-  { const uint32_t eligable_mask = Addressable | Explorable | Explored /*| Active | Done*/, // Active/Done do not imply detection and we don't want them to
-                   eligable      = Addressable | Explorable,
+  { const uint32_t eligable_mask = Addressable | Safe | Explorable | Explored /*| Active | Done*/, // Active/Done do not imply detection and we don't want them to
+                   eligable      = Addressable | Safe | Explorable,
                   *beg = AUINT32(attr_)+current_plane_offset_,
                   *end = beg+sz_plane_nelem_;
     if(!pctx) return 0;
@@ -485,8 +485,8 @@ Hunt:
     if(ctx->is_hunt_mode())
     { unlock(); // FIXME: racy
       return nextInPlaneQuery(pos,
-        Addressable|Explorable|Explored|Detected|Active|Done,  // skip explored,detected,active or done tiles.
-        Addressable|Explorable                              );
+        Addressable|Safe|Explorable|Explored|Detected|Active|Done,  // skip explored,detected,active or done tiles.
+        Addressable|Safe|Explorable                              );
       lock();
     }
     // ALL DONE
@@ -516,6 +516,19 @@ DoneOutlining:
     { AutoLock lock(lock_);
       m = AUINT32(attr_) + cursor_;
       *m |= Done;
+      if(!success)
+        *m |= TileError;
+    }
+    notifyDone(cursor_,computeCursorPos(),*m);
+  }
+
+  //  markSafe  ////////////////////////////////////////////////////////
+  //
+  void StageTiling::markSafe(bool success)
+  { uint32_t *m=0;
+    { AutoLock lock(lock_);
+      m = AUINT32(attr_) + cursor_;
+      *m |= Safe;
       if(!success)
         *m |= TileError;
     }
@@ -557,6 +570,17 @@ DoneOutlining:
     { AutoLock lock(lock_);
       m = AUINT32(attr_) + cursor_;
       *m |= Active;
+    }
+    notifyDone(cursor_,computeCursorPos(),*m);
+  }
+
+  //  markUserReset  /////////////////////////////////////////////////////
+  //
+  void StageTiling::markUserReset()
+  { uint32_t *m=0;
+    { AutoLock lock(lock_);
+      m = AUINT32(attr_) + cursor_;
+      *m &= ~( Active|Detected|Explored|Explorable|Safe|Done );
     }
     notifyDone(cursor_,computeCursorPos(),*m);
   }
@@ -758,8 +782,8 @@ DoneOutlining:
     const unsigned top=1,left=2,bot=4,right=8; // bit flags
 #define MAYBE_EXPLORABLE ((explorable_only)?Explorable:0)
     const unsigned masks[]   = {top|left,top,top|right,left,right,bot|left,bot,bot|right};
-    const unsigned attrmask = Reserved|Addressable|Done|MAYBE_EXPLORABLE,            // attr is the neighbor query
-                   attr     = Reserved|Addressable     |MAYBE_EXPLORABLE,
+    const unsigned attrmask = Reserved|Safe|Addressable|Done|MAYBE_EXPLORABLE,            // attr is the neighbor query
+                   attr     = Reserved|Safe|Addressable     |MAYBE_EXPLORABLE,
                    lblmask  = Addressable|MAYBE_EXPLORABLE;                          // lblmask selects for valid write points
 #undef MAYBE_EXPLORABLE
     for(c=beg;c<end;++c)                             // mark original active tiles as reserved

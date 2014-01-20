@@ -52,18 +52,15 @@ QColor SelectionRectGraphicsWidget::getBaseColor()
 {
   switch(op_)
   {
-  case Add:
-    return Qt::green;
-  case Remove:
-    return Qt::red;
-  case Done:
-    return Qt::blue;
-  case UnDone:
-    return Qt::magenta; 
-  case Explorable:
-    return Qt::cyan;
-  case UnExplorable:
-    return Qt::yellow;
+  case Add:          return Qt::green;
+  case Remove:       return Qt::red;
+  case Done:         return Qt::blue;
+  case UnDone:       return Qt::magenta; 
+  case Explorable:   return Qt::cyan;
+  case UnExplorable: return Qt::yellow;
+  case Safe:         return Qt::darkGreen;
+  case UnSafe:       return Qt::darkRed;
+  case Reset:        return Qt::gray;
   default:
     UNREACHABLE;
   }
@@ -73,12 +70,15 @@ void SelectionRectGraphicsWidget::commit()
 {  
   switch(op_)
   {
-  case Add:    emit addSelectedArea(mapToScene(shape()));           break;
-  case Remove: emit removeSelectedArea(mapToScene(shape()));        break;
-  case Done:   emit markSelectedAreaAsDone(mapToScene(shape()));    break;
-  case UnDone: emit markSelectedAreaAsNotDone(mapToScene(shape())); break;
-  case Explorable:   emit markSelectedAreaAsExplorable(mapToScene(shape()));    break;
+  case Add:          emit addSelectedArea                (mapToScene(shape())); break;
+  case Remove:       emit removeSelectedArea             (mapToScene(shape())); break;
+  case Done:         emit markSelectedAreaAsDone         (mapToScene(shape())); break;
+  case UnDone:       emit markSelectedAreaAsNotDone      (mapToScene(shape())); break;
+  case Explorable:   emit markSelectedAreaAsExplorable   (mapToScene(shape())); break;
   case UnExplorable: emit markSelectedAreaAsNotExplorable(mapToScene(shape())); break;
+  case Safe:         emit markSelectedAreaAsSafe         (mapToScene(shape())); break;
+  case UnSafe:       emit markSelectedAreaAsNotSafe      (mapToScene(shape())); break;  
+  case Reset:        emit markSelectedAreaUserReset      (mapToScene(shape())); break;
   }
   scene()->removeItem(this);
   deleteLater();
@@ -93,8 +93,7 @@ void SelectionRectGraphicsWidget::cancel()
 void SelectionRectGraphicsWidget::createActions()
 {
   QAction *c;
-  {
-    c = new QAction(tr("Commit"),this);
+  { c = new QAction(tr("Commit"),this);
     QList<QKeySequence> shortcuts;
     shortcuts.push_back( QKeySequence(Qt::Key_Return));
     shortcuts.push_back( QKeySequence(Qt::Key_Enter ));
@@ -103,15 +102,13 @@ void SelectionRectGraphicsWidget::createActions()
     connect(c,SIGNAL(triggered()),this,SLOT(commit()));
     addAction(c);
   }
-  {
-    c = new QAction(tr("Cancel"),this);
+  { c = new QAction(tr("Cancel"),this);
     c->setShortcut(Qt::Key_Backspace);
     c->setShortcutContext(Qt::WidgetShortcut);
     connect(c,SIGNAL(triggered()),this,SLOT(cancel()));
     addAction(c);
   }
-  {
-    c = new QAction(tr("Add"),this);
+  { c = new QAction(tr("Mark Active"),this);
     QList<QKeySequence> shortcuts;
     shortcuts.push_back( QKeySequence(tr("+")));
     shortcuts.push_back( QKeySequence(tr("=")));
@@ -120,15 +117,13 @@ void SelectionRectGraphicsWidget::createActions()
     connect(c,SIGNAL(triggered()),this,SLOT(setOpAdd()));
     addAction(c);
   }
-  {
-    c = new QAction(tr("Remove"),this);
+  { c = new QAction(tr("Mark Not Active"),this);
     c->setShortcut(Qt::Key_Minus);
     c->setShortcutContext(Qt::WidgetShortcut);
     connect(c,SIGNAL(triggered()),this,SLOT(setOpRemove()));
     addAction(c);
   }
-  {
-    c = new QAction(tr("Mark Done"),this);        
+  { c = new QAction(tr("Mark Done"),this);        
     connect(c,SIGNAL(triggered()),this,SLOT(setOpDone()));
     addAction(c);
   }  
@@ -143,6 +138,18 @@ void SelectionRectGraphicsWidget::createActions()
   }
   { c = new QAction(tr("Mark Not Explorable"),this);
     connect(c,SIGNAL(triggered()),this,SLOT(setOpUnExplorable()));
+    addAction(c);
+  }
+  { c = new QAction(tr("Mark Safe"),this);
+    connect(c,SIGNAL(triggered()),this,SLOT(setOpSafe()));
+    addAction(c);
+  }
+  { c = new QAction(tr("Mark Not Safe"),this);
+    connect(c,SIGNAL(triggered()),this,SLOT(setOpUnSafe()));
+    addAction(c);
+  }
+  { c = new QAction(tr("Reset"),this);
+    connect(c,SIGNAL(triggered()),this,SLOT(setOpUserReset()));
     addAction(c);
   }
 }
@@ -219,7 +226,13 @@ void StageScene::mousePressEvent( QGraphicsSceneMouseEvent *event )
       connect(w,SIGNAL(   markSelectedAreaAsExplorable(const QPainterPath&)),
            this,SIGNAL(   markSelectedAreaAsExplorable(const QPainterPath&)));
       connect(w,SIGNAL(markSelectedAreaAsNotExplorable(const QPainterPath&)),
-           this,SIGNAL(markSelectedAreaAsNotExplorable(const QPainterPath&)));
+           this,SIGNAL(markSelectedAreaAsNotExplorable(const QPainterPath&)));      
+      connect(w,SIGNAL(markSelectedAreaAsSafe(const QPainterPath&)),
+           this,SIGNAL(markSelectedAreaAsSafe(const QPainterPath&)));
+      connect(w,SIGNAL(markSelectedAreaAsNotSafe(const QPainterPath&)),
+           this,SIGNAL(markSelectedAreaAsNotSafe(const QPainterPath&)));
+      connect(w,SIGNAL(markSelectedAreaUserReset(const QPainterPath&)),
+           this,SIGNAL(markSelectedAreaUserReset(const QPainterPath&)));
 
       w->setPos(event->scenePos());
       addItem(w);

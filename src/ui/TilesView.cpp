@@ -234,9 +234,33 @@ void TilesView::removeSelection( const QPainterPath& path )
   update();
 }
 
+void TilesView::markSelectedAreaUserReset(const QPainterPath& path)
+{
+  tc_->markUserReset(path);
+  paint_lattice_attribute_image_();
+  updateCBO();
+  update();
+}
+
 void TilesView::markSelectedAreaAsDone(const QPainterPath& path)
 {
   tc_->markDone(path);
+  paint_lattice_attribute_image_();
+  updateCBO();
+  update();
+}
+
+void TilesView::markSelectedAreaAsSafe(const QPainterPath& path)
+{
+  tc_->markSafe(path);
+  paint_lattice_attribute_image_();
+  updateCBO();
+  update();
+}
+
+void TilesView::markSelectedAreaAsNotSafe(const QPainterPath& path)
+{
+  tc_->markNotSafe(path);
   paint_lattice_attribute_image_();
   updateCBO();
   update();
@@ -493,7 +517,9 @@ void TilesView::show( bool tf )
       TileError   = 16,                                                    ///< indicates there was some error moving to or imaging this tile
       Explored    = 32,                                                    ///< indicates area has already been looked at
       Detected    = 64,                                                    ///< indicates some signal was found at the bootom of this tile
-      Reserved    = 128                                                    ///< used internally to temporarily mark tiles
+      Safe        = 512,
+      Reserved    = 128,                                                   ///< used internally to temporarily mark tiles
+      Reserved2   = 256                                                    ///< used internally to temporarily mark tiles
     };
 */
 void TilesView::init_color_tables()
@@ -511,19 +537,27 @@ void TilesView::init_color_tables()
     // base color
 
     if(i>fetch::device::StageTiling::Addressable)
-    { sat=0.3; val=0.5, alpha=0.7; }
+    { sat=0.7; val=0.7, alpha=0.7; }
 
 #define FLAG(e) ((i&e)==e)
+#if 0 // distribute flags trhough the hues
     { unsigned char huebits=0;
-      huebits |= FLAG(fetch::device::StageTiling::Explored  )<<0;
-      huebits |= FLAG(fetch::device::StageTiling::Detected  )<<1;
-      huebits |= FLAG(fetch::device::StageTiling::Active    )<<2;
-      huebits |= FLAG(fetch::device::StageTiling::Done      )<<3;
-      huebits |= FLAG(fetch::device::StageTiling::TileError )<<4;
-      if(huebits==0)
-        sat=0.0;
-      hue=(qreal)huebits/(qreal)(1<<5);
+    huebits |= FLAG(fetch::device::StageTiling::Explored  )<<0;
+    huebits |= FLAG(fetch::device::StageTiling::Detected  )<<1;
+    huebits |= FLAG(fetch::device::StageTiling::Active    )<<2;
+    huebits |= FLAG(fetch::device::StageTiling::Done      )<<3;
+    huebits |= FLAG(fetch::device::StageTiling::TileError )<<4;
+    if(huebits==0)
+      sat=0.0;
+    hue=(qreal)huebits/(qreal)(1<<5);
     }
+#else // Layered colors
+         if(FLAG(fetch::device::StageTiling::Done))       hue=120.0/360.0; // green
+    else if(FLAG(fetch::device::StageTiling::Active))     hue= 60.0/360.0; // yellow
+    else if(FLAG(fetch::device::StageTiling::Detected))   hue= 30.0/360.0; // orange
+    else if(FLAG(fetch::device::StageTiling::Explorable)) hue=  0.0/360.0; // red
+    else if(FLAG(fetch::device::StageTiling::Safe))       hue=180.0/360.0; // lt blue
+#endif
 #undef FLAG
 
     if(!(i & fetch::device::StageTiling::Addressable))

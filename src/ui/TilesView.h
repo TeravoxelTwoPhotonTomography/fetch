@@ -34,7 +34,10 @@ public:
 public slots:
   void addSelection(const QPainterPath& path);
   void removeSelection(const QPainterPath& path);
+  void markSelectedAreaUserReset(const QPainterPath& path);
   void markSelectedAreaAsDone(const QPainterPath& path);
+  void markSelectedAreaAsSafe(const QPainterPath& path);
+  void markSelectedAreaAsNotSafe(const QPainterPath& path);
   void markSelectedAreaAsNotDone(const QPainterPath& path);
   void markSelectedAreaAsExplorable(const QPainterPath& path);
   void markSelectedAreaAsNotExplorable(const QPainterPath& path);

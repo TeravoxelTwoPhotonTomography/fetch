@@ -121,6 +121,14 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
   connect(&_scene,SIGNAL(markSelectedAreaAsNotExplorable(const QPainterPath&)),
               _tv,SLOT(  markSelectedAreaAsNotExplorable(const QPainterPath&)));
 
+  connect(&_scene,SIGNAL(   markSelectedAreaAsSafe   (const QPainterPath&)),
+              _tv,SLOT(     markSelectedAreaAsSafe   (const QPainterPath&)));
+  connect(&_scene,SIGNAL(   markSelectedAreaAsNotSafe (const QPainterPath&)),
+              _tv,SLOT(     markSelectedAreaAsNotSafe (const QPainterPath&)));
+  connect(&_scene,SIGNAL(   markSelectedAreaUserReset(const QPainterPath&)),
+              _tv,SLOT(     markSelectedAreaUserReset(const QPainterPath&)));
+
+
   QGridLayout *layout = new QGridLayout;
   layout->setContentsMargins(0,0,0,0);
   layout->addWidget(_view, 0, 0);

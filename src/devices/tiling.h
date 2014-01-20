@@ -52,7 +52,8 @@ namespace device {
       TileError   = 16,                                                    ///< indicates there was some error moving to or imaging this tile
       Explored    = 32,                                                    ///< indicates area has already been looked at
       Detected    = 64,                                                    ///< indicates some signal was found at the bootom of this tile
-      Reserved    = 128,                                                   ///< used internally to temporarily mark tiles
+      Safe        = 128,                                                   ///< indicates a tile is safe to image; it is within the allowed travel of the stages
+      Reserved    = 512,                                                   ///< used internally to temporarily mark tiles
       Reserved2   = 256                                                    ///< used internally to temporarily mark tiles
     };
 
@@ -80,9 +81,11 @@ namespace device {
 
     void     markDone(bool success);
     void     markActive(); // used by gui to explicitly set tiles to image
+    void     markSafe(bool tf=true);
     void     markExplored(bool tf=true);
     void     markDetected(bool tf=true);
     void     markAddressable(size_t iplane); ///< Marks the indicated plane as addressable according to the travel.
+    void     markUserReset(); ///< Resets user-settable flags to default
 
     int      anyExplored(int iplane);                                      //   2d
     int      updateActive(size_t iplane);                                  //   2d - returns 1 if any tiles were marked active, otherwise 0.

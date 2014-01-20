@@ -62,6 +62,9 @@ namespace ui {
     bool markNotDone(const QPainterPath& path);                            /// \returns false if tiling is invalid
     bool markExplorable(const QPainterPath& path);                         /// \returns false if tiling is invalid
     bool markNotExplorable(const QPainterPath& path);                      /// \returns false if tiling is invalid
+    bool markSafe(const QPainterPath& path);                               /// \returns false if tiling is invalid
+    bool markNotSafe(const QPainterPath& path);                            /// \returns false if tiling is invalid
+    bool markUserReset(const QPainterPath& path);                          /// \returns false if tiling is invalid
     
     bool markAllPlanesExplorable(const QPainterPath& path);                /// \returns false if tiling is invalid
     bool markAllPlanesNotExplorable(const QPainterPath& path);             /// \returns false if tiling is invalid
@@ -109,7 +112,7 @@ namespace ui {
     QTimer              autosave_timer_;
 
     bool mark(            const QPainterPath& path,                               ///< path should be in scene coords (um)
-                          device::StageTiling::Flags attr, 
+                          int attr, 
                           QPainter::CompositionMode mode );
     bool mark_all_planes( const QPainterPath& path,                               ///< path should be in scene coords (um)
                           device::StageTiling::Flags attr, 
