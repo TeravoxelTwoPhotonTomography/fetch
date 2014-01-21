@@ -324,7 +324,7 @@ namespace fetch {
   Tcfg IConfigurableDevice<Tcfg>::get_config(void)
   {
     transaction_lock();
-    Tcfg cfg = _get_config();
+    Tcfg cfg(_get_config());
     transaction_unlock();
     return cfg;
   }
