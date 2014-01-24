@@ -598,9 +598,10 @@ void
   QFile file(filename);
   CHKJMP(file.open(QIODevice::WriteOnly|QIODevice::Truncate),ErrorFileAccess);
 
-  { QTextStream fout(&file);
+  { device::Microscope::Config cfg(_dc->get_config());
+    QTextStream fout(&file);
     std::string s;
-    google::protobuf::TextFormat::PrintToString(_dc->get_config(),&s);
+    google::protobuf::TextFormat::PrintToString(cfg,&s);
     fout << s.c_str();
   }
 

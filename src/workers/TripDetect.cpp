@@ -13,6 +13,7 @@
 #include "config.h"
 #include "TripDetect.h"
 #include "util/util-mylib.h"
+#include "devices/Microscope.h"
 
 //#define PROFILE
 #if 0 //def PROFILE // PROFILING
@@ -148,8 +149,10 @@ namespace fetch
         TRY(CHAN_SUCCESS(Chan_Next(writer,(void**)&fsrc,fsrc->size_bytes())));  
         
         if(!dc->ok())
-        { LOG("[TripDetectWorker] Too many dark frames.  Stopping."); 
-          goto Error;
+        { warning("[TripDetectWorker] Too many dark frames.  Stopping.");
+          dc->reset();
+          dc->sig_stop();
+          //goto Error;
         }      
       }
 Finalize:
@@ -168,17 +171,18 @@ Error:
 
   namespace worker
   {
-    TripDetectWorkerAgent::TripDetectWorkerAgent(): WorkAgent<TaskType,Config>("TripDetectWorkerAgent")
+    TripDetectWorkerAgent::TripDetectWorkerAgent(device::Microscope* dc): microscope_(dc), WorkAgent<TaskType,Config>("TripDetectWorkerAgent")
       ,number_dark_frames_(0)
     {}
 
-    TripDetectWorkerAgent::TripDetectWorkerAgent(Config *config): WorkAgent<TaskType,Config>(config,"TripDetectWorkerAgent")
+    TripDetectWorkerAgent::TripDetectWorkerAgent(device::Microscope* dc,Config *config): microscope_(dc), WorkAgent<TaskType,Config>(config,"TripDetectWorkerAgent")
       ,number_dark_frames_(0)
     {}
 
     void TripDetectWorkerAgent::reset() {number_dark_frames_=0;}
     void TripDetectWorkerAgent::inc() {number_dark_frames_++;}
     unsigned TripDetectWorkerAgent::ok() {return number_dark_frames_<_config->frame_threshold();}
+    void TripDetectWorkerAgent::sig_stop() {microscope_->__scan_agent.stop_nowait();}
 
   } //fetch::worker
 }   // fetch
