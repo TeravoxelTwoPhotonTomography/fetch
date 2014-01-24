@@ -35,7 +35,7 @@ void	ZoomableView::wheelEvent(QWheelEvent *event)
 {
   float s,d;
   d = event->delta()/MOUSEWHEEL_SCALE;
-  s = powf(MOUSEWHEEL_POW,-d);
+  s = powf(MOUSEWHEEL_POW,d);
   scale(s,s);
   notifyZoomChanged();
 }

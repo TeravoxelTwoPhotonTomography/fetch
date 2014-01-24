@@ -443,7 +443,7 @@ Error:
   return false;
 }
 
-bool fetch::ui::TilingController::mark_all_planes( const QPainterPath& path, device::StageTiling::Flags attr, QPainter::CompositionMode mode )
+bool fetch::ui::TilingController::mark_all_planes( const QPainterPath& path, int attr, QPainter::CompositionMode mode )
 { if(!is_valid()) return false;  
   QColor color((QRgb)attr);
   // 1. Path is in scene coords.  transform to lattice coords
@@ -548,7 +548,7 @@ bool fetch::ui::TilingController::markNotExplorable(const QPainterPath& path)
 
 bool fetch::ui::TilingController::markSafe(const QPainterPath& path)
 {  
-  return mark(
+  return mark_all_planes(
     path,
     device::StageTiling::Safe,
     QPainter::RasterOp_SourceOrDestination);
@@ -556,7 +556,7 @@ bool fetch::ui::TilingController::markSafe(const QPainterPath& path)
 
 bool fetch::ui::TilingController::markNotSafe(const QPainterPath& path)
 {  
-  return mark(
+  return mark_all_planes(
     path,
     device::StageTiling::Safe,
     QPainter::RasterOp_NotSourceAndDestination);
@@ -569,11 +569,16 @@ bool fetch::ui::TilingController::markUserReset(const QPainterPath& path)
        device::StageTiling::Active
       |device::StageTiling::Detected
       |device::StageTiling::Explored
-      |device::StageTiling::Explorable
-      |device::StageTiling::Safe
       |device::StageTiling::Done
     ,
+    QPainter::RasterOp_NotSourceAndDestination) 
+    &&
+    mark_all_planes(
+    path,
+       device::StageTiling::Explorable      
+      |device::StageTiling::Safe,
     QPainter::RasterOp_NotSourceAndDestination);
+    ;
 }
 
 bool fetch::ui::TilingController::markAllPlanesExplorable(const QPainterPath& path)

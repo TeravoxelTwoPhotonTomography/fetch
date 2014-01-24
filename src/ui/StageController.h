@@ -115,7 +115,7 @@ namespace ui {
                           int attr, 
                           QPainter::CompositionMode mode );
     bool mark_all_planes( const QPainterPath& path,                               ///< path should be in scene coords (um)
-                          device::StageTiling::Flags attr, 
+                          int attr, 
                           QPainter::CompositionMode mode );
     bool mark_all( device::StageTiling::Flags attr,                               ///< marks the whole plane with the attribute
                    QPainter::CompositionMode mode );

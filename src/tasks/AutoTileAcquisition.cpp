@@ -112,7 +112,10 @@ Error:
 #if 0
         mylib::Write_Image("classify.tif",image,mylib::DONT_PRESS);
 #endif
-        DBG("Fraction above thresh: %f",count/((double)image->size));
+        DBG("Fraction above thresh: %f\n\t\tintensity thresh: %f\n\t\tarea_thresh: %f\n",
+          count/((double)image->size),
+          intensity_thresh,
+          area_thresh);        
         return (count/((double)image->size))>area_thresh;
       }
       #define CLASSIFY(type_id,type) case type_id: return _classify<type>(image,ichan,intensity_thresh,area_thresh); break
