@@ -1,18 +1,16 @@
 
-#include <QtWidgets>
+#include <QtGui>
 #include "devices/Microscope.h"
 #include "AgentController.h"
 #include "MainWindow.h"
 namespace fetch{
 
-  
-
   namespace ui{
 
-    class SurfaceScanDockWidget:public QDockWidget
+    class AdaptiveTilingDockWidget:public QDockWidget
     {
     public:
-      SurfaceScanDockWidget(device::Microscope *dc, MainWindow* parent);
+      AdaptiveTilingDockWidget(device::Microscope *dc, MainWindow* parent);
     };
 
     //end namespace fetch::ui

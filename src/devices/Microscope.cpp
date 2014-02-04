@@ -52,6 +52,8 @@ namespace fetch
       ,surface_probe_(&__scan_agent)
       ,disk(&__io_agent)
       ,pipeline()
+      ,trip_detect(this)
+      ,surface_finder()
       ,trash("Trash")
       ,_end_of_pipeline(0)
     {
@@ -75,6 +77,8 @@ namespace fetch
       ,surface_probe_(&__scan_agent)
       ,disk(&__io_agent)
       ,pipeline()
+      ,trip_detect(this)
+      ,surface_finder()
       ,trash("Trash")
       ,file_series()
       ,_end_of_pipeline(0)
@@ -97,6 +101,8 @@ namespace fetch
       ,fov_(cfg->fov())
       ,surface_probe_(&__scan_agent,cfg->mutable_surface_probe())
       ,pipeline(cfg->mutable_pipeline())
+      ,trip_detect(this,cfg->mutable_trip_detect())
+      ,surface_finder(cfg->mutable_surface_find())
       ,disk(&__io_agent)
       ,trash("Trash")
       ,file_series(cfg->mutable_file_series())
@@ -251,6 +257,7 @@ ESCAN:
       IDevice *cur;
       cur = &scanner;
       cur =  pipeline.apply(cur);
+      cur =  trip_detect.apply(cur);
       _end_of_pipeline=cur;
       return cur;
     }
@@ -269,6 +276,7 @@ ESCAN:
     { int sts = 1;
       transaction_lock();
       sts &= pipeline._agent->run();
+      sts &= trip_detect._agent->run();
       transaction_unlock();
       return (sts!=1); // returns 1 on fail and 0 on success
     }
@@ -277,6 +285,7 @@ ESCAN:
     { int sts = 1;
       transaction_lock();
       sts &= pipeline._agent->stop();
+      sts &= trip_detect._agent->stop();
       transaction_unlock();
       return (sts!=1); // returns 1 on fail and 0 on success
     }

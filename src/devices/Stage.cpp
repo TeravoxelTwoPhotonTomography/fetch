@@ -70,6 +70,7 @@
   license terms (http://license.janelia.org/license/jfrc_copyright_1_1.html).
 */
 
+#include <iostream>
 
 #include <list>
 #include <string>
@@ -450,7 +451,7 @@ Error:
 
     { float vx,vy,vz;
       getVelocity(&vx,&vy,&vz);
-      debug("(%s:%d): C843 Velocity %f %f %f"ENDL,__FILE__,__LINE__,vx,vy,vz);
+      //debug("(%s:%d): C843 Velocity %f %f %f"ENDL,__FILE__,__LINE__,vx,vy,vz);
     }
     C843JMP( C843_HLT(handle_,"123") );              // Stop any motion in progress
     C843JMP( C843_MOV(handle_,"123",t) );            // Move!
@@ -813,11 +814,12 @@ Error:
     _config = cfg;
 
     setVelocity(_config->default_velocity_mm_per_sec());
+    set_tiling_z_offset_mm(_config->tile_z_offset_mm());
   }
 
   void Stage::_set_config( const Config &cfg )
   {
-      cfg::device::Stage_StageType kind = cfg.kind();
+      cfg::device::Stage_StageType kind = cfg.kind();      
       _config->set_kind(kind);
       setKind(kind);
       switch(kind)
@@ -832,15 +834,41 @@ Error:
         error("Unrecognized kind() for SimulatedStage.  Got: %u\r\n",(unsigned)kind);
       }
       _config->CopyFrom(cfg);
+      set_tiling_z_offset_mm(cfg.tile_z_offset_mm());
   }
 
   float myroundf(float x) {return floorf(x+0.5f);}
-
   Vector3z Stage::getPosInLattice()
   { StageTiling::TTransform l2s(_tiling->latticeToStageTransform());
     Vector3f r(getTarget()*1000.0); // convert to um
-    return Vector3z((l2s.inverse() * r).unaryExpr(std::ptr_fun<float,float>(myroundf)).cast<size_t>());
+    Vector3z out=Vector3z((l2s.inverse() * r).unaryExpr(std::ptr_fun<float,float>(myroundf)).cast<size_t>());
+    std::cout << __FILE__ << "(" << __LINE__ << ")\r\n\t" << out << std::endl;
+    return out;
   }
+
+  float Stage::tiling_z_offset_mm()
+  { return _tiling->z_offset_mm();
+  }
+
+  void Stage::set_tiling_z_offset_mm(float dz_mm)
+  {
+    Mutex_Lock(_tiling_lock);
+    _tiling->set_z_offset_mm(dz_mm);
+    Mutex_Unlock(_tiling_lock);
+    _config->set_tile_z_offset_mm(_tiling->z_offset_mm());
+    _notifyTilingChanged();
+  }
+
+
+  void Stage::inc_tiling_z_offset_mm(float dz_mm)
+  {
+    Mutex_Lock(_tiling_lock);
+    _tiling->inc_z_offset_mm(dz_mm);
+    Mutex_Unlock(_tiling_lock);
+    _config->set_tile_z_offset_mm(_tiling->z_offset_mm());
+    _notifyTilingChanged();
+  }
+
 
   // Only use when attached but disarmed.
   void Stage::_createTiling()

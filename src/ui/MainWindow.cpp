@@ -14,7 +14,9 @@
 #include "AutoTileDockWidget.h"
 #include "HistogramDockWidget.h"
 #include "TimeSeriesDockWidget.h"
+#include "AdaptiveTilingdockWidget.h"
 #include "StageController.h"
+#include "SurfaceFindDockWidget.h"
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/io/tokenizer.h>
 #include <QtWidgets>
@@ -285,6 +287,12 @@ void fetch::ui::MainWindow::createMenus()
   t->addAction(tilingController()->loadDialogAction());
   t->addAction(tilingController()->saveDialogAction());
   t->addAction(tilingController()->autosaveAction());
+
+  { QMenu *t = menuBar()->addMenu("&Actions");
+    QAction *a = new QAction("&Reset Trip Detector.",this);
+    t->addAction(a);
+    connect(a,SIGNAL(triggered()),this,SLOT(resetTripDetector()));
+  }
 }
 
 void fetch::ui::MainWindow::createStateMachines()
@@ -342,6 +350,20 @@ void fetch::ui::MainWindow::createDockWidgets()
   addDockWidget(Qt::LeftDockWidgetArea,_surfaceScanDockWidget);
   viewMenu->addAction(_surfaceScanDockWidget->toggleViewAction());
   _surfaceScanDockWidget->setObjectName("_surfaceScanDockWidget");
+
+  {
+    QDockWidget *w = new SurfaceFindDockWidget(_dc,this);
+    addDockWidget(Qt::LeftDockWidgetArea,w);
+    viewMenu->addAction(w->toggleViewAction());
+    w->setObjectName("_surfaceFindDockWidget");
+  }
+
+  {
+    QDockWidget *w = new AdaptiveTilingDockWidget(_dc,this);
+    addDockWidget(Qt::LeftDockWidgetArea,w);
+    viewMenu->addAction(w->toggleViewAction());
+    w->setObjectName("_AdaptiveTiledAcquisition");
+  }
 
   _timeSeriesDockWidget = new TimeSeriesDockWidget(_dc,this);
   addDockWidget(Qt::LeftDockWidgetArea,_timeSeriesDockWidget);
@@ -552,6 +574,12 @@ void
   saveMicroscopeConfig(filename);
 }
 
+void 
+  fetch::ui::MainWindow::
+  resetTripDetector()
+{ _dc->trip_detect.reset();
+}
+
 void
   fetch::ui::MainWindow::
   saveMicroscopeConfigToLastGoodLocation()
@@ -570,9 +598,10 @@ void
   QFile file(filename);
   CHKJMP(file.open(QIODevice::WriteOnly|QIODevice::Truncate),ErrorFileAccess);
 
-  { QTextStream fout(&file);
+  { device::Microscope::Config cfg(_dc->get_config());
+    QTextStream fout(&file);
     std::string s;
-    google::protobuf::TextFormat::PrintToString(_dc->get_config(),&s);
+    google::protobuf::TextFormat::PrintToString(cfg,&s);
     fout << s.c_str();
   }
 

@@ -37,9 +37,10 @@ namespace device {
     TTransform                 latticeToStage_;                            ///< Transforms lattice coordinates to the tiles anchor point on the stage
     TListeners                 listeners_;                                 ///< set of objects to be notified of tiling events
     FieldOfViewGeometry        fov_;                                       ///< the geometry used to generate the tiling
+    f64                        z_offset_um_;
     device::StageTravel        travel_;                                    ///< the travel used to generate the tiling
     Mutex*                     lock_;                                      ///< protects access to attribute data.
-
+    Mode                       mode_;
   public:
 
     enum Flags
@@ -51,7 +52,8 @@ namespace device {
       TileError   = 16,                                                    ///< indicates there was some error moving to or imaging this tile
       Explored    = 32,                                                    ///< indicates area has already been looked at
       Detected    = 64,                                                    ///< indicates some signal was found at the bootom of this tile
-      Reserved    = 128,                                                   ///< used internally to temporarily mark tiles
+      Safe        = 128,                                                   ///< indicates a tile is safe to image; it is within the allowed travel of the stages
+      Reserved    = 512,                                                   ///< used internally to temporarily mark tiles
       Reserved2   = 256                                                    ///< used internally to temporarily mark tiles
     };
 
@@ -59,6 +61,13 @@ namespace device {
                          const FieldOfViewGeometry& fov,
                          const Mode                 alignment);
     virtual ~StageTiling();
+
+    void     set_z_offset_um(f64 z_um);
+    void     inc_z_offset_um(f64 z_um);
+    f64          z_offset_um();
+    inline void     set_z_offset_mm(f64 z_mm) {set_z_offset_um(1000.0*z_mm);}
+    inline void     inc_z_offset_mm(f64 z_mm) {inc_z_offset_um(1000.0*z_mm);}
+    inline f64          z_offset_mm()         {return z_offset_um()*1e-3;}
 
     void     resetCursor();
     void     setCursorToPlane(size_t iplane);
@@ -72,9 +81,11 @@ namespace device {
 
     void     markDone(bool success);
     void     markActive(); // used by gui to explicitly set tiles to image
+    void     markSafe(bool tf=true);
     void     markExplored(bool tf=true);
     void     markDetected(bool tf=true);
     void     markAddressable(size_t iplane); ///< Marks the indicated plane as addressable according to the travel.
+    void     markUserReset(); ///< Resets user-settable flags to default
 
     int      anyExplored(int iplane);                                      //   2d
     int      updateActive(size_t iplane);                                  //   2d - returns 1 if any tiles were marked active, otherwise 0.
@@ -97,7 +108,11 @@ namespace device {
     void lock()                                                            {Mutex_Lock(lock_);}
     void unlock()                                                          {Mutex_Unlock(lock_);}
 
-    bool on_plane(uint32_t *p); //used by TileSearch
+    bool on_plane(uint32_t *p); //used by TileSearch    
+
+    int minDistTo( // used by adaptive tiling
+      uint32_t search_mask,uint32_t search_flags,   // area to search 
+      uint32_t query_mask ,uint32_t query_flags);  // tile to find
   protected:
     void computeLatticeToStageTransform_
                         (const FieldOfViewGeometry& fov,
@@ -109,6 +124,8 @@ namespace device {
     void notifyNext(size_t i, const Vector3f& pos);
 
     const Vector3f computeCursorPos();
+
+
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   };

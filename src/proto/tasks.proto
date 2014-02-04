@@ -8,8 +8,35 @@ message AutoTile
   optional uint32 ichan               = 4 [default = 0];
   optional double intensity_threshold = 5 [default = 1000];
   optional double area_threshold      = 6 [default = 0.1];
+  
+  optional int32  search_radius       = 7 [default = 3];    // search radius in tiles
+  optional bool   use_adaptive_tiling = 8 [default = false];
+  optional bool   use_explore         = 9 [default = true];
 }
 
 message TimeSeries
 { optional double interval_ms         = 1 [default = 0.0];
+}
+
+message SurfaceFind
+{
+  optional double backup_frac  = 1 [default = 0.1]; // step stage out by stack depth * backup_frac
+  optional double max_backup_um =2 [default = 500]; // limit the total search space
+
+  optional double min_um       = 3 [default = 0];   // 
+  optional double max_um       = 4 [default = 100]; // scan a stack from min to max by dz, inclusive
+  optional double dz_um        = 5 [default = 5];   // 
+  
+  optional uint32 ichan               = 6 [default = 0];    //
+  optional double intensity_threshold = 7 [default = 1000]; // Classify as in or out
+  optional double area_threshold      = 8 [default = 0.1];  //
+
+  optional double offset_um           =10 [default = 0];    // adjust tile offset to image this many microns below the cut
+  //optional double response            = 10[default = 2.0]; // correct stage z by response * measured error
+  //optional double response_limit_frac = 11[default = 0.1]; // response is limited to response_limit_frac * stack depth
+}
+
+message AdaptiveTiling {
+  optional int32 every   = 1 [default=100]; // check every "every" tiles
+  optional int32 mindist = 2 [default=3];   // avoid tiles where the edge of the active area is within mindist tiles
 }

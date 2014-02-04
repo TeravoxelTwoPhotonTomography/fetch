@@ -53,8 +53,10 @@ namespace device {
       sz_plane_nelem_(0),
       latticeToStage_(),
       fov_(fov),
+      z_offset_um_(0.0),
       travel_(travel),
-      lock_(0)
+      lock_(0),
+      mode_(alignment)
   {
     PANIC(lock_=Mutex_Alloc());
     computeLatticeToStageTransform_(fov,alignment);
@@ -82,12 +84,16 @@ namespace device {
     Vector3f sc = fov.field_size_um_ - fov.overlap_um_;
     switch(alignment)
     {
+// should probably do the zoffset before rotate/shear but 
+// they're orthogonal to z so it doesn't matter.
     case Mode::Stage_TilingMode_PixelAligned:
         // Rotate the lattice
         latticeToStage_
           .rotate( AngleAxis<float>(fov.rotation_radians_,Vector3f::UnitZ()) )
-          .scale(sc);
-        //SHOW(latticeToStage_.matrix());
+          .translate(Vector3f(0,0,z_offset_um_))
+          .scale(sc)
+          ;
+        SHOW(latticeToStage_.matrix());
         return;
     case Mode::Stage_TilingMode_StageAligned:
         // Shear the lattice
@@ -97,10 +103,24 @@ namespace device {
             1.0f/cos(th), -sin(th), 0,
                        0,  cos(th), 0,
                        0,        0, 1).finished();
-        latticeToStage_.scale(sc);
+        latticeToStage_.translate(Vector3f(0,0,z_offset_um_))
+                       .scale(sc)
+                       ;
         return;
     }
   }
+
+ void StageTiling::set_z_offset_um(f64 z_um)
+ { z_offset_um_=z_um;
+   computeLatticeToStageTransform_(fov_,mode_);
+ }
+ void StageTiling::inc_z_offset_um(f64 z_um)
+ { z_offset_um_+=z_um;
+   computeLatticeToStageTransform_(fov_,mode_);
+ }
+ f64 StageTiling::z_offset_um() 
+ { return z_offset_um_;
+ }
 
   //  computeLatticeExtents_  //////////////////////////////////////////
   //
@@ -170,8 +190,8 @@ namespace device {
     cursor_ = 0;
 
     uint32_t* mask     = AUINT32(attr_);
-    uint32_t  attrmask = Addressable | Active | Done,
-              attr     = Addressable | Active;
+    uint32_t  attrmask = Addressable | Safe | Active | Done,
+              attr     = Addressable | Safe | Active;
 
     while( (mask[cursor_] & attrmask) != attr
         && ON_LATTICE(cursor_) )
@@ -202,8 +222,8 @@ namespace device {
   bool StageTiling::nextInPlanePosition(Vector3f &pos)
   { lock();
     uint32_t* mask = AUINT32(attr_);
-    uint32_t attrmask = Addressable | Active | Done,
-             attr     = Addressable | Active;
+    uint32_t attrmask = Addressable | Safe | Active | Done,
+             attr     = Addressable | Safe | Active;
 
     do{++cursor_;}
     while( (mask[cursor_] & attrmask) != attr
@@ -253,8 +273,8 @@ namespace device {
   bool StageTiling::nextInPlaneExplorablePosition(Vector3f &pos)
   { lock();
     uint32_t* mask = AUINT32(attr_);
-    uint32_t attrmask = Explorable | Explored | Addressable | Active | Done,
-             attr     = Explorable | Addressable;
+    uint32_t attrmask = Explorable | Safe | Explored | Addressable | Active | Done,
+             attr     = Explorable | Safe | Addressable;
 
     do{++cursor_;}
     while( (mask[cursor_] & attrmask) != attr
@@ -276,8 +296,8 @@ namespace device {
   bool StageTiling::nextPosition(Vector3f &pos)
   { lock();
     uint32_t* mask    = AUINT32(attr_);
-    uint32_t attrmask = Addressable | Active | Done,
-             attr     = Addressable | Active;
+    uint32_t attrmask = Addressable | Safe | Active | Done,
+             attr     = Addressable | Safe | Active;
 
     do {++cursor_;}
     while( (mask[cursor_] & attrmask) != attr
@@ -420,8 +440,8 @@ namespace device {
 
   /* Sorry for the goto's.  don't hate. */
   bool StageTiling::nextSearchPosition(int iplane, int radius, Vector3f &pos,TileSearchContext **pctx)
-  { const uint32_t eligable_mask = Addressable | Explorable | Explored /*| Active | Done*/, // Active/Done do not imply detection and we don't want them to
-                   eligable      = Addressable | Explorable,
+  { const uint32_t eligable_mask = Addressable | Safe | Explorable | Explored /*| Active | Done*/, // Active/Done do not imply detection and we don't want them to
+                   eligable      = Addressable | Safe | Explorable,
                   *beg = AUINT32(attr_)+current_plane_offset_,
                   *end = beg+sz_plane_nelem_;
     if(!pctx) return 0;
@@ -465,8 +485,8 @@ Hunt:
     if(ctx->is_hunt_mode())
     { unlock(); // FIXME: racy
       return nextInPlaneQuery(pos,
-        Addressable|Explorable|Explored|Detected|Active|Done,  // skip explored,detected,active or done tiles.
-        Addressable|Explorable                              );
+        Addressable|Safe|Explorable|Explored|Detected|Active|Done,  // skip explored,detected,active or done tiles.
+        Addressable|Safe|Explorable                              );
       lock();
     }
     // ALL DONE
@@ -496,6 +516,19 @@ DoneOutlining:
     { AutoLock lock(lock_);
       m = AUINT32(attr_) + cursor_;
       *m |= Done;
+      if(!success)
+        *m |= TileError;
+    }
+    notifyDone(cursor_,computeCursorPos(),*m);
+  }
+
+  //  markSafe  ////////////////////////////////////////////////////////
+  //
+  void StageTiling::markSafe(bool success)
+  { uint32_t *m=0;
+    { AutoLock lock(lock_);
+      m = AUINT32(attr_) + cursor_;
+      *m |= Safe;
       if(!success)
         *m |= TileError;
     }
@@ -537,6 +570,17 @@ DoneOutlining:
     { AutoLock lock(lock_);
       m = AUINT32(attr_) + cursor_;
       *m |= Active;
+    }
+    notifyDone(cursor_,computeCursorPos(),*m);
+  }
+
+  //  markUserReset  /////////////////////////////////////////////////////
+  //
+  void StageTiling::markUserReset()
+  { uint32_t *m=0;
+    { AutoLock lock(lock_);
+      m = AUINT32(attr_) + cursor_;
+      *m &= ~( Active|Detected|Explored|Explorable|Safe|Done );
     }
     notifyDone(cursor_,computeCursorPos(),*m);
   }
@@ -738,8 +782,8 @@ DoneOutlining:
     const unsigned top=1,left=2,bot=4,right=8; // bit flags
 #define MAYBE_EXPLORABLE ((explorable_only)?Explorable:0)
     const unsigned masks[]   = {top|left,top,top|right,left,right,bot|left,bot,bot|right};
-    const unsigned attrmask = Reserved|Addressable|Done|MAYBE_EXPLORABLE,            // attr is the neighbor query
-                   attr     = Reserved|Addressable     |MAYBE_EXPLORABLE,
+    const unsigned attrmask = Reserved|Safe|Addressable|Done|MAYBE_EXPLORABLE,            // attr is the neighbor query
+                   attr     = Reserved|Safe|Addressable     |MAYBE_EXPLORABLE,
                    lblmask  = Addressable|MAYBE_EXPLORABLE;                          // lblmask selects for valid write points
 #undef MAYBE_EXPLORABLE
     for(c=beg;c<end;++c)                             // mark original active tiles as reserved
@@ -767,6 +811,111 @@ DoneOutlining:
     }
     for(c=beg;c<end;++c)                       // mark all unreserved
       *c = c[0]&~Reserved;
+  }
+
+
+  // minDistTo ///////////////////////////////////////////////////////////////
+  //
+  // returns -1 on error, otherwise
+  //         the lattice distance from the current tile to the nearest tile 
+  //         in plane satisfying the query.
+  //
+  // Algorithm is breadth first search.  So it requires a FIFO queue.
+  //
+  // NOT THREAD SAFE
+  // - right now this is only called by AdaptiveTilingTask
+  // - to make it thread safe
+  //   - make estore and friends non-static
+  //   or
+  //   - protext estore and friends
+  //   - deallocation has to track which elements are used and which are free
+  //   - occasionally repack estore
+  //
+
+  class q_t
+  { typedef struct e_t_ {int dist; uint32_t *tile; struct e_t_* next;}* e_t;
+    e_t head,tail;
+
+    // block allocate elements
+    // - have to do this or lock's during free (called by ~q_t()) get too time consuming
+    e_t estore;
+    size_t estore_sz;
+    size_t estore_i;
+    e_t elem() { // alloc new element
+      estore_i++;
+      if(estore_i>=estore_sz)
+        return 0;
+      return estore+(estore_i-1);
+    }
+    void free_elem(e_t e) { /* release element -- no op */ }
+    e_t bind(uint32_t* v,int dist) {
+      e_t e=elem();
+      if(!e) return 0;
+      e->tile=v; e->next=NULL; e->dist=dist;
+      return e;
+    }
+  public:
+    q_t(size_t n):head(0),tail(0),estore(0),estore_sz(n),estore_i(0) {estore=(e_t)calloc(n,sizeof(struct e_t_));}
+    ~q_t() { free(estore); } //e_t e=head; while(e) {e_t t=e->next; free_elem(e); e=t; } estore_i=0;}
+    q_t* push(uint32_t* v, int dist) throw(const char*) {
+      e_t e=0;
+      if(!v) return this; // no-op -- to allow implicit filtering of inputs
+      e=bind(v,dist);
+      if(!e) throw "allocation error";    // memory allocation error
+      if(!head) { head=tail=e; }          // first elem. must test head bc of how I pop
+      else      { tail->next=e; tail=e;}
+      return this;
+    }
+    uint32_t* pop(int *dist) {
+      uint32_t* v=0;
+      int d=-1;
+      e_t e=head;
+      if(head) { head=head->next; v=e->tile; d=e->dist; free_elem(e);}
+      if(dist) *dist=d;
+      return v;
+    }
+  };
+
+  int StageTiling::minDistTo(
+    uint32_t search_mask,uint32_t search_flags, // area to search 
+    uint32_t query_mask,uint32_t query_flags)  // tile to find
+  { 
+    int dist=0;
+    const unsigned w=attr_->dims[0],
+                   h=attr_->dims[1];
+    const int offsets[] = {-w-1,-w,-w+1,-1,1,w-1,w,w+1}; // moves
+    uint32_t *c = AUINT32(attr_)+cursor_,
+             *beg = AUINT32(attr_)+current_plane_offset_,
+             *end = beg+sz_plane_nelem_;    
+    q_t q(w*h);
+    
+    for(uint32_t *t=(uint32_t*)beg;t<end;++t) // Reset Reserved
+      *t = t[0]&~Reserved;
+
+    #define isvalid(p)    ((*(p)&(search_mask|Reserved)) == search_flags)
+    #define isinbounds(p) (beg<=(p) && (p)<end)
+    #define maybe(p)      ( (isvalid(p)&&isinbounds(p)) ?(p):NULL)
+    try
+    { q.push(maybe(c),0);
+      while(c=q.pop(&dist))
+      { *c |= Reserved; // mark it as looked at
+        if((*c&query_mask)==query_flags) {goto Finalize;}
+        for(int i=0;i<countof(offsets);++i)
+          q.push(maybe(c+offsets[i]),dist+1);
+      }
+      dist=0; // - no tiles found or started in a bad spot
+    }
+    catch(const char* msg)
+    { debug("%s(%d): %s()\r\n\t%s\r\n",__FILE__,__LINE__,__FUNCTION__,msg);
+      dist = -1;
+    }
+    #undef isvalid
+    #undef isinbounds
+    #undef maybe
+  Finalize:
+    for(uint32_t *t=(uint32_t*)beg;t<end;++t) // Reset Reserved
+      *t = t[0]&~Reserved;
+    return dist;
   }
 
   void StageTiling::notifyDone(size_t index, const Vector3f& pos, uint32_t sts)

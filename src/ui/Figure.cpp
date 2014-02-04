@@ -35,7 +35,7 @@ void	ZoomableView::wheelEvent(QWheelEvent *event)
 {
   float s,d;
   d = event->delta()/MOUSEWHEEL_SCALE;
-  s = powf(MOUSEWHEEL_POW,-d);
+  s = powf(MOUSEWHEEL_POW,d);
   scale(s,s);
   notifyZoomChanged();
 }
@@ -120,6 +120,14 @@ Figure::Figure(PlanarStageController *stageController, QWidget *parent/*=0*/)
               _tv,SLOT(     markSelectedAreaAsExplorable(const QPainterPath&)));
   connect(&_scene,SIGNAL(markSelectedAreaAsNotExplorable(const QPainterPath&)),
               _tv,SLOT(  markSelectedAreaAsNotExplorable(const QPainterPath&)));
+
+  connect(&_scene,SIGNAL(   markSelectedAreaAsSafe   (const QPainterPath&)),
+              _tv,SLOT(     markSelectedAreaAsSafe   (const QPainterPath&)));
+  connect(&_scene,SIGNAL(   markSelectedAreaAsNotSafe (const QPainterPath&)),
+              _tv,SLOT(     markSelectedAreaAsNotSafe (const QPainterPath&)));
+  connect(&_scene,SIGNAL(   markSelectedAreaUserReset(const QPainterPath&)),
+              _tv,SLOT(     markSelectedAreaUserReset(const QPainterPath&)));
+
 
   QGridLayout *layout = new QGridLayout;
   layout->setContentsMargins(0,0,0,0);

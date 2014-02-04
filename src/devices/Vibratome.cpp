@@ -192,7 +192,8 @@ Error:
   }
 
   int SerialControlVibratome::getAmplitude_ControllerUnits()
-  { return _config->amplitude();
+  { Config c = get_config();
+    return c.amplitude();
   }
 
   double SerialControlVibratome::getAmplitude_mm()
@@ -343,20 +344,21 @@ Error:
   void Vibratome::_set_config( const Config &cfg )
   {
     cfg::device::Vibratome_VibratomeType kind = cfg.kind();
+    _config->CopyFrom(cfg);
     _config->set_kind(kind);
     setKind(kind);
     switch(kind)
     {    
     case cfg::device::Vibratome_VibratomeType_Serial:
-      _serial->_set_config(const_cast<Config&>(cfg).mutable_serial());
+      //_serial->_set_config(const_cast<Config&>(cfg).mutable_serial());
+      _serial->_set_config(_config->mutable_serial());
       break;
     case cfg::device::Vibratome_VibratomeType_Simulated:    
-      _simulated->_set_config(cfg.simulated());
+      _simulated->_set_config(_config->mutable_simulated());
       break;
     default:
       error("Unrecognized kind() for Vibratome.  Got: %u\r\n",(unsigned)kind);
     }
-    _config->CopyFrom(cfg);
   }
 
   unsigned int Vibratome::on_attach()

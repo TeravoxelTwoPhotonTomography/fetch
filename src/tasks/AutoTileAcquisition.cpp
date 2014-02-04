@@ -20,6 +20,7 @@
 #include "devices\digitizer.h"
 #include "devices\Microscope.h"
 #include "devices\tiling.h"
+#include "AdaptiveTiledAcquisition.h"
 
 #define CHKJMP(expr) if(!(expr)) {warning("%s(%d)"ENDL"\tExpression indicated failure:"ENDL"\t%s"ENDL,__FILE__,__LINE__,#expr); goto Error;}
 #define WARN(msg)    warning("%s(%d)"ENDL"\t%s"ENDL,__FILE__,__LINE__,msg)
@@ -111,7 +112,10 @@ Error:
 #if 0
         mylib::Write_Image("classify.tif",image,mylib::DONT_PRESS);
 #endif
-        DBG("Fraction above thresh: %f",count/((double)image->size));
+        DBG("Fraction above thresh: %f\n\t\tintensity thresh: %f\n\t\tarea_thresh: %f\n",
+          count/((double)image->size),
+          intensity_thresh,
+          area_thresh);        
         return (count/((double)image->size))>area_thresh;
       }
       #define CLASSIFY(type_id,type) case type_id: return _classify<type>(image,ichan,intensity_thresh,area_thresh); break
@@ -190,7 +194,7 @@ Error:
 
         device::TileSearchContext *ctx=0;
         while(  !dc->_agent->is_stopping()
-              && tiling->nextSearchPosition(iplane,3/*radius - tiles*/,tilepos,&ctx))
+              && tiling->nextSearchPosition(iplane,cfg.search_radius()/*radius - tiles*/,tilepos,&ctx))
               //&& tiling->nextInPlaneExplorablePosition(tilepos))
         { mylib::Array *im;
           any_explorable=1;
@@ -223,14 +227,20 @@ Error:
       unsigned int AutoTileAcquisition::run(device::Microscope *dc)
       { unsigned eflag=0; //success
         cfg::tasks::AutoTile cfg=dc->get_config().autotile();
-        TiledAcquisition tile;
+        TiledAcquisition         nonadaptive_tiling;
+        AdaptiveTiledAcquisition adaptive_tiling;
+        MicroscopeTask *tile=0;
         Cut cut;
+
+        tile=cfg.use_adaptive_tiling()?((MicroscopeTask*)&adaptive_tiling):((MicroscopeTask*)&nonadaptive_tiling);
 
         while(!dc->_agent->is_stopping() && PlaneInBounds(dc,cfg.maxz_mm()))
         //if(!dc->_agent->is_stopping() && PlaneInBounds(dc,cfg.maxz_mm()))
-        { CHKJMP(explore(dc));       // will return an error if no explorable tiles found on the plane
-          CHKJMP(   tile.config(dc));
-          CHKJMP(0==tile.run(dc));
+        { 
+          if(cfg.use_explore())
+            CHKJMP(explore(dc));       // will return an error if no explorable tiles found on the plane
+          CHKJMP(   tile->config(dc));
+          CHKJMP(0==tile->run(dc));
           CHKJMP(   cut.config(dc));
           CHKJMP(0==cut.run(dc));
         }

@@ -6,7 +6,7 @@ class SelectionRectGraphicsWidget : public QGraphicsWidget
   Q_OBJECT
 
 public:
-  enum RectOp {Add,Remove,Done,UnDone,Explorable,UnExplorable};
+  enum RectOp {Add,Remove,Done,UnDone,Explorable,UnExplorable,Safe,UnSafe,Reset};
 
   SelectionRectGraphicsWidget(QGraphicsItem *parent=0);
 
@@ -20,6 +20,9 @@ public slots:
   void setOpRemove()       {lastop_=op_=Remove; update();}
   void setOpExplorable()   {lastop_=op_=Explorable; update();}
   void setOpUnExplorable() {lastop_=op_=UnExplorable; update();}
+  void setOpSafe()         {lastop_=op_=Safe; update();}
+  void setOpUnSafe()       {lastop_=op_=UnSafe; update();}
+  void setOpUserReset()    {lastop_=op_=Reset; update();}
   void commit();
   void cancel();
 
@@ -29,7 +32,10 @@ signals:
   void markSelectedAreaAsDone(const QPainterPath& path);
   void markSelectedAreaAsNotDone(const QPainterPath& path);  
   void markSelectedAreaAsExplorable(const QPainterPath& path);
-  void markSelectedAreaAsNotExplorable(const QPainterPath& path);
+  void markSelectedAreaAsNotExplorable(const QPainterPath& path);  
+  void markSelectedAreaAsSafe(const QPainterPath& path);
+  void markSelectedAreaAsNotSafe(const QPainterPath& path);
+  void markSelectedAreaUserReset(const QPainterPath& path);
 
 protected:
   virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event);
@@ -71,6 +77,9 @@ signals:
   void markSelectedAreaAsNotDone(const QPainterPath& path);
   void markSelectedAreaAsExplorable(const QPainterPath& path);
   void markSelectedAreaAsNotExplorable(const QPainterPath& path);
+  void markSelectedAreaAsSafe(const QPainterPath& path);
+  void markSelectedAreaAsNotSafe(const QPainterPath& path);
+  void markSelectedAreaUserReset(const QPainterPath& path);
 
 private:
   QGraphicsWidget *current_item_;

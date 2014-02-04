@@ -226,7 +226,7 @@ Error:
         config(device::Scanner3D *d)
         {
           d->onConfigTask();
-          debug("%s(%d)"ENDL "\tScanner3D configured for StackAcquisition<%s>"ENDL,__FILE__,__LINE__, TypeStr<TPixel> ());
+          //debug("%s(%d)"ENDL "\tScanner3D configured for StackAcquisition<%s>"ENDL,__FILE__,__LINE__, TypeStr<TPixel> ());
           return 1; //success
         }
 

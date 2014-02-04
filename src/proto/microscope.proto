@@ -32,6 +32,7 @@ message Microscope
   optional FieldOfViewGeometry         fov                   = 4;
   optional Probe                       surface_probe         =15;
   optional worker.Pipeline             pipeline              = 5;
+  optional worker.TripDetect           trip_detect           =20;
   required FileSeries                  file_series           = 8;
   optional string                      file_prefix           = 9 [default="default"];
   optional string                      stack_extension       =10 [default=".tif"];
@@ -39,5 +40,7 @@ message Microscope
   optional string                      metadata_extension    =12 [default=".acquisition"];
   required tasks.AutoTile              autotile              =14;
   required TiledSurfaceScan            surface_scan          =16;
-  optional tasks.TimeSeries            time_series           =17;
+  optional tasks.TimeSeries            time_series           =17;  
+  optional tasks.SurfaceFind           surface_find          =18;
+  optional tasks.AdaptiveTiling        adaptive_tiling       =19;
 }
