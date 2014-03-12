@@ -116,7 +116,7 @@ namespace microscope {
     CHK( dc->vibratome()->start());
     CHK( dc->stage()->setVelocity(v));              // set feed velocity
     CHK( dc->stage()->setPos(bx,by,bz));            // feed
-    CHK( dc->stage()->setPos(bx,by+(bz-0.5),0.5));  // Drop to safe z first, come up at an angle -- Note: vibratome still running!
+    CHK( dc->stage()->setPos(bx,by,0.5));  // Drop to safe z first, come up at an angle -- Note: vibratome still running!
                                   //(0 to 12)   
     CHK( dc->stage()->setVelocity(vx,vy,vz));       // set back to default velocity
     CHK( dc->vibratome()->stop());

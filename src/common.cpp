@@ -441,6 +441,21 @@ void ReportLastWindowsError(void)
   LeaveCriticalSection( _get_reporting_critical_section() );
 }
 
+/* HAX
+[ngc] adding timestamp
+
+The logging functions exactly allocate the required string length.
+To quickly add a timestamp, I ignore this and just add fixed space.
+*/
+#include <time.h>
+static void timestamp(char *str)
+{   char buf[1024]={0};
+    time_t ltime; /* calendar time */
+    ltime=time(NULL); /* get current cal time */
+    sprintf(buf,"\t%s\n",asctime( localtime(&ltime) ) );
+    strcat(str,buf);
+}
+
 void error(const char* fmt, ...)
 { EnterCriticalSection( _get_reporting_critical_section() );
   { static const char prefix[] = "*** ERROR: ";
@@ -450,7 +465,7 @@ void error(const char* fmt, ...)
     
     // render formated string
     va_start( argList, fmt );
-      len = sizeof(prefix) + _vscprintf(fmt,argList) + 1;
+      len = sizeof(prefix) + _vscprintf(fmt,argList) + 1 +1024;
       vector_char_request( &vbuf, len );
       memset  ( vbuf.contents, 0, len );
   #pragma warning( push )
@@ -458,6 +473,7 @@ void error(const char* fmt, ...)
   #pragma warning( disable:4995 )
       sprintf ( vbuf.contents, prefix );
       vsprintf( vbuf.contents+sizeof(prefix)-1, fmt, argList);
+      timestamp(vbuf.contents);
   #pragma warning( pop )
     va_end( argList );
 
@@ -494,7 +510,7 @@ void warning(const char* fmt, ...)
 
     // render formated string
     va_start( argList, fmt );
-      len = sizeof(prefix) + _vscprintf(fmt,argList) + 1;
+      len = sizeof(prefix) + _vscprintf(fmt,argList) + 1+1024;
       vector_char_request( &vbuf, len );
       memset  ( vbuf.contents, 0, len );
   #pragma warning( push )
@@ -502,6 +518,7 @@ void warning(const char* fmt, ...)
   #pragma warning( disable:4995 )
       sprintf ( vbuf.contents, prefix );
       vsprintf( vbuf.contents+sizeof(prefix)-1, fmt, argList);
+      timestamp(vbuf.contents);
   #pragma warning( pop )
     va_end( argList );
 
@@ -531,13 +548,14 @@ void debug(const char* fmt, ...)
 
     // render formated string
     va_start( argList, fmt );
-      len = _vscprintf(fmt,argList) + 1;
+      len = _vscprintf(fmt,argList) + 1+1024;
       vector_char_request( &vbuf, len );
       memset  ( vbuf.contents, 0, len );
   #pragma warning( push )
   #pragma warning( disable:4996 )
   #pragma warning( disable:4995 )
       vsprintf( vbuf.contents, fmt, argList);
+      timestamp(vbuf.contents);
   #pragma warning( pop )
     va_end( argList );
 

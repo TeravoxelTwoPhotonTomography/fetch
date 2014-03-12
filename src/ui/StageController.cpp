@@ -192,7 +192,7 @@ void
   QDir path(finfo.absolutePath());
   QString attrname;
   mylib::Array *attr = 0;
-  int Bpp[] = {1,2,3,4,1,2,3,4,4,8};
+  const int Bpp[] = {1,2,4,8,1,2,4,8,4,8};
 
   // Read in the data
   if(!metafile.open(QFile::ReadOnly)) goto ErrorOpenMetafile;
