@@ -39,11 +39,15 @@ namespace ui {
     , x_(HINT_NBINS)
     , pdf_(HINT_NBINS)
     , cdf_(HINT_NBINS)
+	, minX_(99999)
+	, maxX_(0)
+	, perct_(0.5)
   { QBoxLayout *layout = new QVBoxLayout;
     { QWidget *w = new QWidget(this);    
       w->setLayout(layout);
       setWidget(w);
     }
+
     QFormLayout *form = new QFormLayout;
     // channel selector
     { QComboBox *c=new QComboBox;
@@ -55,21 +59,73 @@ namespace ui {
                        c,SLOT(setCurrentIndex(int))));
       form->addRow(tr("Channel:"),c);
     }
-    // Live update button
-    { QPushButton *b=new QPushButton("Live update");
-      b->setCheckable(true);      
-      PANIC(connect(   b,SIGNAL(toggled(bool)),
+
+    { QHBoxLayout *row = new QHBoxLayout();
+		QPushButton *b;
+		// Live update button
+		b=new QPushButton("Live update");
+		b->setCheckable(true);      
+		PANIC(connect(  b,SIGNAL(toggled(bool)),
                     this,SLOT(set_live(bool))));
-      b->setChecked(true);
-      form->addRow(b);
-    }    
-    // Rescale button
-    { QPushButton *b=new QPushButton("Rescale");     
-      PANIC(connect(   b,SIGNAL(pressed()),
+		b->setChecked(true);
+		row->addWidget(b);
+
+		// Rescale button
+		b=new QPushButton("Rescale");     
+		PANIC(connect(   b,SIGNAL(pressed()),
                     this,SLOT(rescale_axes())));
-      b->setChecked(true);
-      form->addRow(b);
+		b->setChecked(true);
+		row->addWidget(b);
+		form->addRow(row);
     }
+
+	{
+		QHBoxLayout *row = new QHBoxLayout();
+		QPushButton *b;
+		//percentile label
+		QLabel *perctLabel = new QLabel(tr("Percentile:"));
+		row->addWidget(perctLabel);
+		///// Line Edit Control - Gamma
+		QLineEdit *lePerct= new QLineEdit("0.5");    
+		QCompleter *c = new QCompleter(new QStringListModel(lePerct),lePerct);// Add completion based on history
+		c->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
+		c->setModelSorting(QCompleter::UnsortedModel);
+		lePerct->setCompleter(c);
+		lePerct->setValidator(new QDoubleValidator(0.01,1.00,2,lePerct));      // Add validated input
+		PANIC(connect(lePerct,SIGNAL(textEdited(QString)),
+                this,  SLOT(set_percentile(QString))));
+		row->addWidget(lePerct);
+
+		// Reset button
+		b=new QPushButton("Reset");     
+		PANIC(connect(   b,SIGNAL(pressed()),
+                    this,SLOT(reset_minmax())));
+		row->addWidget(b);
+		form->addRow(row);
+	}
+
+	{
+		QHBoxLayout *row = new QHBoxLayout();
+		//min label
+		QLabel *lbMin = new QLabel(tr("Minimum:"));
+		row->addWidget(lbMin);
+		///// Line Edit Control - Minimum
+		QLineEdit *leMin= new QLineEdit("99999");    
+		//PANIC(connect(le,SIGNAL(editingFinished()),
+        //        this,  SLOT(minEditingFinshed())));
+		row->addWidget(leMin);
+
+		//max label
+		QLabel *lbMax = new QLabel(tr("Maximum:"));
+		row->addWidget(lbMax);
+		///// Line Edit Control - Maximum
+		QLineEdit *leMax= new QLineEdit("0");    
+		//PANIC(connect(le,SIGNAL(editingFinished()),
+        //        this,  SLOT(maxEditingFinshed())));
+		row->addWidget(leMax);
+		form->addRow(row);
+	}
+
     layout->addLayout(form);
 
     // plot
@@ -162,7 +218,20 @@ namespace ui {
   { for(size_t i=0;i<n;++i) x[i] = i/dy+min;
   }
 
+  static size_t findIndex(size_t n, double *restrict cdf, double perct)
+  {
+	  size_t index = n;
+	  double diff=1.0, minDiff = 1.0;
 
+	  for (size_t i=0; i<n; ++i)
+	  {
+		  diff = cdf[i] - perct;
+		  if (diff <= minDiff) index = i;
+	  }
+
+	  return index;
+  }
+		  
   static void histogram(QVector<double> &x, QVector<double> &pdf, QVector<double> &cdf, mylib::Array *a)
   { double min,max,dy;
     unsigned n;
@@ -213,6 +282,18 @@ static int g_inited=0;
       g_inited=1;
     }
     plot_->replot(); 
+
+    //find intensity value for the input CDF percentile 
+	int index;
+	index = findIndex(sizeof(cdf_.data()),cdf_.data(), perct_);
+	double xValue;
+	xValue = x_.data()[index];
+	if (xValue < minX_)  minX_ = xValue;
+	if (xValue > maxX_)  maxX_ = xValue;
+
+	leMin->setText(QString::number(minX_));
+	leMax->setText(QString::number(maxX_));
+
  Error:
     ; // memory error or oob channel, should never get here.    
   }
@@ -229,10 +310,22 @@ static int g_inited=0;
       compute(last_);
     }
   }
+
   void HistogramDockWidget::set_live(bool is_live)
   { is_live_=is_live;
   }
-  
+
+	void HistogramDockWidget::reset_minmax()
+	{
+		minX_ = 99999;
+		maxX_ = 0;
+	}
+
+	void HistogramDockWidget::set_percentile(QString text)
+	{
+		perct_ = text.toDouble();
+	}
+
   /** updates the last_ array with a new one. */
   void HistogramDockWidget::swap(mylib::Array *im)
   { 
