@@ -430,7 +430,7 @@ Error:
         goto Finalize;
       }
 
-      template<class TPixel>
+      template<class TPixel>                     
       unsigned int fetch::task::scanner::Video<TPixel>::run_alazar( device::IScanner *d )
       { int ecode = 0; // ecode == 0 implies success, error otherwise
         HANDLE fetch_thread=0;

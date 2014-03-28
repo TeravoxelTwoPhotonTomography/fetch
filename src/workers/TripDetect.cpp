@@ -182,7 +182,10 @@ Error:
     void TripDetectWorkerAgent::reset() {number_dark_frames_=0;}
     void TripDetectWorkerAgent::inc() {number_dark_frames_++;}
     unsigned TripDetectWorkerAgent::ok() {return number_dark_frames_<_config->frame_threshold();}
-    void TripDetectWorkerAgent::sig_stop() {microscope_->__scan_agent.stop_nowait();}
+    void TripDetectWorkerAgent::sig_stop() {
+      microscope_->__scan_agent.stop_nowait();
+      microscope_->__self_agent.stop_nowait();
+    }
 
   } //fetch::worker
 }   // fetch
