@@ -52,9 +52,19 @@ using namespace fetch::worker;
 namespace fetch
 {
   bool operator==(const cfg::worker::TripDetect& a, const cfg::worker::TripDetect& b)
-  { return  (a.ichan()==b.ichan()) &&
-            (a.intensity_threshold()==b.intensity_threshold()) &&
-            (a.area_threshold()==b.area_threshold());
+  { 
+    if( a.frame_threshold() != b.frame_threshold() )
+      return 0;
+    if( a.threshold_size() != b.threshold_size() )
+      return 0;
+    int i;
+    for(i=0;i<a.threshold_size();++i) {
+      if( (a.threshold(i).ichan()==b.threshold(i).ichan()) &&
+          (a.threshold(i).intensity_threshold()==b.threshold(i).intensity_threshold()) &&
+          (a.threshold(i).area_threshold()==b.threshold(i).area_threshold()) )
+          return 0;
+    }
+    return 1;
   }
   bool operator!=(const cfg::worker::TripDetect& a, const cfg::worker::TripDetect& b)
   { return !(a==b);
@@ -141,8 +151,11 @@ namespace fetch
         TS_TIC;          
         mylib::castFetchFrameToDummyArray(&im,fsrc,dims);
         dc->inc();
-        if(classify(&im,dc->_config->ichan(),dc->_config->intensity_threshold(),dc->_config->area_threshold()))
-        { dc->reset();         
+        for(int i=0;i<dc->_config->threshold_size();++i) {
+          const cfg::worker::Threshold t=dc->_config->threshold(i);
+          if(classify(&im,t.ichan(),t.intensity_threshold(),t.area_threshold()))
+          { dc->reset();
+          }
         }
         TS_TOC;
         //REMIND(fdst->totif("TripDetectWorker-dst.tif"));
