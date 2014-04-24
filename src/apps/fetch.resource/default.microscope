@@ -4,15 +4,15 @@ scanner3d {
     nscans: 256
     line_duty_cycle: 0.95
     daq {
-      kind: Simulated #NIDAQ #NIDAQ #Simulated
-      nidaq {
+      kind: Simulated #NIDAQ #Simulated
+      nidaq { # 6259
         ao_samples_per_waveform: 16384
         trigger:  "APFI0"
         clock:    "Ctr1InternalOutput"
         ctr:      "ctr0"
         ctr_alt:  "ctr1"
         armstart: "PFI15"
-        name:     "Dev1"
+        name:     "Dev2"
         frame_trigger_out: "PFI1"
       }
       simulated {
@@ -21,9 +21,9 @@ scanner3d {
       }
     }
     digitizer {
-      kind: Simulated #Simulated #NIScope #Alazar
+      kind: NIScope #Simulated #NIScope #Alazar
       niscope {
-        name: "Dev2"
+        name: "Dev3" # PCI-5105
         sample_rate: 60000000
         record_size: 7196
         num_records: 256

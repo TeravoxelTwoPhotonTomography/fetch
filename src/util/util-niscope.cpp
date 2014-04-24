@@ -185,7 +185,7 @@ ViStatus Fetch<u16> ( ViSession vi,
                       ViInt32 numsamples,
                       u16* data,
                       struct niScope_wfmInfo *info) 
-{ error("Unsupported.\n");
+{ error("%s(%d)-%s()\n\tUnsupported by NIScope.  Try signed 16 bit.\n",__FILE__,__LINE__,__FUNCTION__);
   return 0;
 } 
 

@@ -9,6 +9,7 @@
 #include "HistogramDockWidget.h"
 #include "qcustomplot.h"
 #include "common.h"
+#include <cmath>  
 
 namespace mylib {
 #include "image.h"
@@ -39,92 +40,99 @@ namespace ui {
     , x_(HINT_NBINS)
     , pdf_(HINT_NBINS)
     , cdf_(HINT_NBINS)
-	, minX_(99999)
-	, maxX_(0)
-	, perct_(0.5)
-  { QBoxLayout *layout = new QVBoxLayout;
-    { QWidget *w = new QWidget(this);    
+    , minX_(99999)
+    , maxX_(0)
+    , perct_(0.5)
+    , leMin_(0)
+    , leMax_(0)
+    , lePerct_(0)
+  {
+    QBoxLayout *layout = new QVBoxLayout;
+    {
+      QWidget *w = new QWidget(this);    
       w->setLayout(layout);
       setWidget(w);
     }
 
     QFormLayout *form = new QFormLayout;
     // channel selector
-    { QComboBox *c=new QComboBox;
+    { 
+      QComboBox *c=new QComboBox;
       for(int i=0;i<4;++i) // initially add 4 channels to select
         c->addItem(QString("%1").arg(i),QVariant());
       PANIC(connect(   c,SIGNAL(currentIndexChanged(int)),
-                    this,SLOT(set_ichan(int))));
+        this,SLOT(set_ichan(int))));
       PANIC(connect(this,SIGNAL(change_chan(int)),
-                       c,SLOT(setCurrentIndex(int))));
+        c,SLOT(setCurrentIndex(int))));
       form->addRow(tr("Channel:"),c);
     }
 
-    { QHBoxLayout *row = new QHBoxLayout();
-		QPushButton *b;
-		// Live update button
-		b=new QPushButton("Live update");
-		b->setCheckable(true);      
-		PANIC(connect(  b,SIGNAL(toggled(bool)),
-                    this,SLOT(set_live(bool))));
-		b->setChecked(true);
-		row->addWidget(b);
+    { 
+      QHBoxLayout *row = new QHBoxLayout();
+      QPushButton *b;
+      // Live update button
+      b=new QPushButton("Live update");
+      b->setCheckable(true);      
+      PANIC(connect(  b,SIGNAL(toggled(bool)),
+        this,SLOT(set_live(bool))));
+      b->setChecked(true);
+      row->addWidget(b);
 
-		// Rescale button
-		b=new QPushButton("Rescale");     
-		PANIC(connect(   b,SIGNAL(pressed()),
-                    this,SLOT(rescale_axes())));
-		b->setChecked(true);
-		row->addWidget(b);
-		form->addRow(row);
+      // Rescale button
+      b=new QPushButton("Rescale");     
+      PANIC(connect(   b,SIGNAL(pressed()),
+        this,SLOT(rescale_axes())));
+      b->setChecked(true);
+      row->addWidget(b);
+      form->addRow(row);
     }
 
-	{
-		QHBoxLayout *row = new QHBoxLayout();
-		QPushButton *b;
-		//percentile label
-		QLabel *perctLabel = new QLabel(tr("Percentile:"));
-		row->addWidget(perctLabel);
-		///// Line Edit Control - Gamma
-		QLineEdit *lePerct= new QLineEdit("0.5");    
-		QCompleter *c = new QCompleter(new QStringListModel(lePerct),lePerct);// Add completion based on history
-		c->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
-		c->setModelSorting(QCompleter::UnsortedModel);
-		lePerct->setCompleter(c);
-		lePerct->setValidator(new QDoubleValidator(0.01,1.00,2,lePerct));      // Add validated input
-		PANIC(connect(lePerct,SIGNAL(textEdited(QString)),
-                this,  SLOT(set_percentile(QString))));
-		row->addWidget(lePerct);
+    {
+      QHBoxLayout *row = new QHBoxLayout();
+      QPushButton *b;
+      //percentile label
+      QLabel *perctLabel = new QLabel(tr("Percentile:"));
+      row->addWidget(perctLabel);
+      ///// Line Edit Control - Gamma
+      lePerct_= new QLineEdit("0.5");    
+      QCompleter *c = new QCompleter(new QStringListModel(lePerct_),lePerct_);// Add completion based on history
+      c->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
+      c->setModelSorting(QCompleter::UnsortedModel);
+      lePerct_->setCompleter(c);
+      lePerct_->setValidator(new QDoubleValidator(0.0001,1.0000,4,lePerct_));      // Add validated input
+      PANIC(connect(lePerct_,SIGNAL(textEdited(QString)),
+        this,  SLOT(set_percentile(QString))));
+      row->addWidget(lePerct_);
 
-		// Reset button
-		b=new QPushButton("Reset");     
-		PANIC(connect(   b,SIGNAL(pressed()),
-                    this,SLOT(reset_minmax())));
-		row->addWidget(b);
-		form->addRow(row);
-	}
+      // Reset button
+      b=new QPushButton("Reset");     
+      PANIC(connect(   b,SIGNAL(pressed()),
+        this,SLOT(reset_minmax())));
+      row->addWidget(b);
+      form->addRow(row);
+    }
 
-	{
-		QHBoxLayout *row = new QHBoxLayout();
-		//min label
-		QLabel *lbMin = new QLabel(tr("Minimum:"));
-		row->addWidget(lbMin);
-		///// Line Edit Control - Minimum
-		QLineEdit *leMin= new QLineEdit("99999");    
-		//PANIC(connect(le,SIGNAL(editingFinished()),
-        //        this,  SLOT(minEditingFinshed())));
-		row->addWidget(leMin);
+    {
+      QHBoxLayout *row = new QHBoxLayout();
+      //min label
+      QLabel *lbMin = new QLabel(tr("Minimum:"));
+      row->addWidget(lbMin);
+      ///// Line Edit Control - Minimum
+      leMin_= new QLineEdit("99999");
+      //PANIC(connect(le,SIGNAL(editingFinished()),
+      //        this,  SLOT(minEditingFinshed())));
+      row->addWidget(leMin_);
 
-		//max label
-		QLabel *lbMax = new QLabel(tr("Maximum:"));
-		row->addWidget(lbMax);
-		///// Line Edit Control - Maximum
-		QLineEdit *leMax= new QLineEdit("0");    
-		//PANIC(connect(le,SIGNAL(editingFinished()),
-        //        this,  SLOT(maxEditingFinshed())));
-		row->addWidget(leMax);
-		form->addRow(row);
-	}
+      //max label
+      QLabel *lbMax = new QLabel(tr("Maximum:"));
+      row->addWidget(lbMax);
+      ///// Line Edit Control - Maximum
+      leMax_= new QLineEdit("0");
+      //PANIC(connect(le,SIGNAL(editingFinished()),
+      //        this,  SLOT(maxEditingFinshed())));
+      row->addWidget(leMax_);
+      form->addRow(row);
+    }
 
     layout->addLayout(form);
 
@@ -218,20 +226,25 @@ namespace ui {
   { for(size_t i=0;i<n;++i) x[i] = i/dy+min;
   }
 
-  static size_t findIndex(size_t n, double *restrict cdf, double perct)
+  static size_t findIndex(QVector<double> &cdf, double perct)
   {
-	  size_t index = n;
-	  double diff=1.0, minDiff = 1.0;
+    size_t index;
+    double * cdfdata = cdf.data();
+    double diff=1.0, minDiff = 1.0;
 
-	  for (size_t i=0; i<n; ++i)
-	  {
-		  diff = cdf[i] - perct;
-		  if (diff <= minDiff) index = i;
-	  }
+    for (size_t i=0; i<cdf.size(); ++i)
+    {
+      diff = abs(cdfdata[i] - perct);
+      if (diff <= minDiff) 
+      {
+        minDiff = diff;
+        index = i;
+      }
+    }
 
-	  return index;
+    return index;
   }
-		  
+      
   static void histogram(QVector<double> &x, QVector<double> &pdf, QVector<double> &cdf, mylib::Array *a)
   { double min,max,dy;
     unsigned n;
@@ -257,7 +270,7 @@ namespace ui {
   }
  // histogram utilities END
 
-  void HistogramDockWidget::set(mylib::Array *im)
+ void HistogramDockWidget::set(mylib::Array *im)
   { if(!is_live_) return;
     TRY(check_chan(im));
     swap(im);
@@ -269,9 +282,10 @@ namespace ui {
 static int g_inited=0;
 
   /** Presumes channels are on different planes */
-  void HistogramDockWidget::compute(mylib::Array *im)
+ void HistogramDockWidget::compute(mylib::Array *im)
   { 
     mylib::Array t,*ch;    
+    QString tempStr;
     TRY(ch=mylib::Get_Array_Plane(&(t=*im),ichan_)); //select channel    
     histogram(x_,pdf_,cdf_,ch);
     plot_->graph(0)->setData(x_,pdf_);
@@ -284,26 +298,28 @@ static int g_inited=0;
     plot_->replot(); 
 
     //find intensity value for the input CDF percentile 
-	int index;
-	index = findIndex(sizeof(cdf_.data()),cdf_.data(), perct_);
-	double xValue;
-	xValue = x_.data()[index];
-	if (xValue < minX_)  minX_ = xValue;
-	if (xValue > maxX_)  maxX_ = xValue;
-
-	leMin->setText(QString::number(minX_));
-	leMax->setText(QString::number(maxX_));
+  int index;
+  index = findIndex(cdf_, perct_);
+  double xValue;
+  xValue = x_.data()[index];
+  if (xValue < minX_)  minX_ = xValue;
+  if (xValue > maxX_)  maxX_ = xValue;
+  
+  tempStr.setNum(minX_);
+  leMin_->setText(tempStr);
+  tempStr.setNum(maxX_);
+  leMax_->setText(tempStr);
 
  Error:
-    ; // memory error or oob channel, should never get here.    
+  ; // memory error or oob channel, should never get here.    
   }
 
-  void HistogramDockWidget::rescale_axes()
+ void HistogramDockWidget::rescale_axes()
   { plot_->graph(0)->rescaleAxes();
     plot_->graph(1)->rescaleAxes();
   }
 
-  void HistogramDockWidget::set_ichan(int ichan)
+void HistogramDockWidget::set_ichan(int ichan)
   { ichan_=ichan;   
     if(last_)
     { check_chan(last_);
@@ -311,23 +327,24 @@ static int g_inited=0;
     }
   }
 
-  void HistogramDockWidget::set_live(bool is_live)
+void HistogramDockWidget::set_live(bool is_live)
   { is_live_=is_live;
   }
 
-	void HistogramDockWidget::reset_minmax()
-	{
-		minX_ = 99999;
-		maxX_ = 0;
-	}
+void HistogramDockWidget::reset_minmax()
+  {
+    minX_ = 99999;
+    maxX_ = 0;
+  }
 
-	void HistogramDockWidget::set_percentile(QString text)
-	{
-		perct_ = text.toDouble();
-	}
+void HistogramDockWidget::set_percentile(QString text)
+  {
+    perct_ = text.toDouble();
+    reset_minmax();
+  }
 
   /** updates the last_ array with a new one. */
-  void HistogramDockWidget::swap(mylib::Array *im)
+void HistogramDockWidget::swap(mylib::Array *im)
   { 
     mylib::Array *t=last_;
     TRY(last_=mylib::Copy_Array(im));
@@ -336,7 +353,7 @@ static int g_inited=0;
     ; // presumably a memory error...not sure what to do, should be rare    
   }
 
-  int HistogramDockWidget::check_chan(mylib::Array *im)
+ int HistogramDockWidget::check_chan(mylib::Array *im)
   { int oc=ichan_;
     TRY(im->ndims<=3);
     if( (im->ndims==2) && (ichan_!=0) )

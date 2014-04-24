@@ -21,7 +21,8 @@
 #include "util/util-mylib.h"
 #include "DiskStream.h"
 #include "tasks/File.h"
-#include "Chan.h"         
+#include "Chan.h"
+#include <Windows.h>
 
 #include "frame.h"
 #include "types.h"
@@ -75,7 +76,14 @@ namespace fetch
 
     unsigned int IDiskStream::open(const std::string& filename, const std::string& mode)
     {
-      int   eflag = 0; //success
+      int   eflag = 0; //success	
+    BOOL test;
+
+    // 64 bits integer, low and high bytes
+    __int64 lpFreeBytesAvailable, lpTotalNumberOfBytes, lpTotalNumberOfFreeBytes; 
+
+    std::string stemp = std::string(filename.begin(), filename.begin()+3);
+    LPCTSTR pszDrive = stemp.c_str();
 
       Guarded_Assert(filename.length()<DISKSTREAM_MAX_PATH);
       Guarded_Assert(mode.length()<DISKSTREAM_MAX_MODE);
@@ -99,8 +107,24 @@ namespace fetch
         Guarded_Assert( _agent->arm(_reader,this,DISKSTREAM_DEFAULT_TIMEOUT)==0 );
         break;
       case 'w':
-        Guarded_Assert( _agent->arm(_writer,this,DISKSTREAM_DEFAULT_TIMEOUT)==0 );
+        // If the function succeeds, the return value is nonzero. If the function fails, the return value is 0 (zero).
+        test = GetDiskFreeSpaceEx(
+          pszDrive,
+          (PULARGE_INTEGER)&lpFreeBytesAvailable,
+          (PULARGE_INTEGER)&lpTotalNumberOfBytes,
+          (PULARGE_INTEGER)&lpTotalNumberOfFreeBytes
+          );
+
+        // JL03212014 Check whether the free diskspace is larger than 10G, if not, report error
+        if (test==0 || lpTotalNumberOfFreeBytes < DISKSTREAM_CURRENT_FREEBYTES) {
+          warning("IDiskStream::open() -- The free diskspace is less than 10G, stop writing.");
+          eflag = 1;
+        }
+        else 
+          Guarded_Assert( _agent->arm(_writer,this,DISKSTREAM_DEFAULT_TIMEOUT)==0 );
+
         break;
+
       default:
         error("IDiskStream::open() -- Couldn't interpret mode.  Got %s\r\n",mode);
       }

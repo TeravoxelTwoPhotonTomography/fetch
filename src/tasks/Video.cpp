@@ -35,7 +35,7 @@
 
 #define SCANNER_VIDEO_TASK_FETCH_TIMEOUT  10.0  //10.0, //(-1=infinite) (0.0=immediate)
                                                 // Setting this to infinite can sometimes make the application difficult to quit
-#if 0
+#if 1
 #define DBG(...) debug(__VA_ARGS__)
 #else
 #define DBG(...)
@@ -50,7 +50,7 @@
 #define CHKERR( expr )  {if(expr) {error("Expression indicated failure:\r\n\t%s\r\n",#expr);}} 0 //( (expr), #expr, error  ))
 #define CHKJMP( expr )  goto_if((expr),Error)
 
-#if 0 // PROFILING
+#if 1 // PROFILING
 #define TS_OPEN(name)   timestream_t ts__=timestream_open(name)
 #define TS_TIC          timestream_tic(ts__)
 #define TS_TOC          timestream_toc(ts__)
@@ -223,6 +223,7 @@ namespace fetch
             status = 1; // status == 0 implies success, error otherwise
         size_t nbytes,
                nbytes_info;
+		TS_OPEN("timer-video_acq-niscope.f32");
 
         TicTocTimer outer_clock = tic(),
                     inner_clock = tic();
@@ -247,7 +248,7 @@ namespace fetch
         //
         ref.format(frm);
 
-        d->get2d()->_shutter.Open();
+        //d->get2d()->_shutter.Open();
         d->writeAO();
         CHKJMP(d->get2d()->_daq.startAO());
         do
@@ -257,6 +258,7 @@ namespace fetch
 
           dt_out = toc(&outer_clock);
           toc(&inner_clock);
+		  TS_TIC;
 #if 1
           DIGJMP( Fetch<TPixel>(vi,
                                 chan,
@@ -265,6 +267,7 @@ namespace fetch
                                 (TPixel*) frm->data,
                                 wfm));
 #endif
+		  TS_TOC;
 
            // Push the acquired data down the output pipes
           DBG("Task: Video<%s>: pushing wfm\r\n",TypeStr<TPixel>());
@@ -287,7 +290,8 @@ namespace fetch
         status = 0;
         DBG("Scanner - Video task completed normally.\r\n");
 Finalize:
-        d->get2d()->_shutter.Shut();
+		TS_CLOSE;
+        //d->get2d()->_shutter.Shut();
         free( frm );
         free( wfm );
         Chan_Close(qdata);
@@ -322,6 +326,7 @@ Error:
         size_t nbytes;
         int status = 1; // status == 0 implies success, error otherwise
         size_t count = 0;
+		TS_OPEN("timer-video_acq-simulated.f32");
 
         nbytes = ref.size_bytes();
         Chan_Resize(qdata, nbytes);
@@ -329,12 +334,13 @@ Error:
         ref.format(frm);
 
         DBG("Simulated Video!\r\n");
+		
         while(!d->get2d()->_agent->is_stopping())
         { size_t pitch[4];
           size_t n[3];
           frm->compute_pitches(pitch);
           frm->get_shape(n);
-
+		  TS_TIC;
 #if 1
           //Fill frame w random colors.
           { TPixel *c,*e;
@@ -366,7 +372,7 @@ Error:
           DBG("Task: Video<%s>: pushing frame\r\n",TypeStr<TPixel>());
 
           //frm->dump("simulated.%s",TypeStr<TPixel>());
-
+		  TS_TOC;
           if(CHAN_FAILURE( SCANNER_PUSH(qdata,(void**)&frm,nbytes) ))
           { warning("Scanner output frame queue overflowed.\r\n\tAborting acquisition task.\r\n");
             goto Error;
@@ -375,6 +381,7 @@ Error:
           ++count;
         }
 Finalize:
+		TS_CLOSE;
         Chan_Close(qdata);
         free( frm );
         return status; // status == 0 implies success, error otherwise

@@ -237,11 +237,13 @@ Error:
     }
 
     size_t NIScopeDigitizer::record_size( double record_frequency_Hz, double duty )
-    {
+    { size_t d;
 #pragma warning(push)
 #pragma warning(disable:4244) // type cast
-      return duty*_config->sample_rate()/record_frequency_Hz;
+      d=duty*_config->sample_rate()/record_frequency_Hz;
+	  d=(d/256)*256;//align to 256
 #pragma warning(pop)
+	  return d;
     }
 
     bool NIScopeDigitizer::aux_info(int *n, size_t **sizes)
@@ -392,11 +394,13 @@ Error:
     //
 
     size_t SimulatedDigitizer::record_size( double record_frequency_Hz, double duty )
-    {
+	{ size_t d;
 #pragma warning(push)
 #pragma warning(disable:4244) // type cast
-      return duty*_config->sample_rate()/record_frequency_Hz;
+      d=duty*_config->sample_rate()/record_frequency_Hz;
+	  d=(d/256)*256;//align to 256
 #pragma warning(pop)
+	  return d;
     }
 
 

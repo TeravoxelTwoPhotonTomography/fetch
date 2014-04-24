@@ -16,7 +16,7 @@
 #include "algo/pipeline-image-frame.h"
 
 //#define PROFILE
-#if 0 //def PROFILE // PROFILING
+#if 1 //def PROFILE // PROFILING
 #define TS_OPEN(...)    timestream_t ts__=timestream_open(__VA_ARGS__)
 #define TS_TIC          timestream_tic(ts__)
 #define TS_TOC          timestream_toc(ts__)
