@@ -40,7 +40,7 @@ namespace ui {
     , x_(HINT_NBINS)
     , pdf_(HINT_NBINS)
     , cdf_(HINT_NBINS)
-    , minX_(99999)
+    , minX_(DBL_MAX)
     , maxX_(0)
     , perct_(0.5)
     , leMin_(0)
@@ -114,22 +114,20 @@ namespace ui {
 
     {
       QHBoxLayout *row = new QHBoxLayout();
-      //min label
+ 
       QLabel *lbMin = new QLabel(tr("Minimum:"));
       row->addWidget(lbMin);
       ///// Line Edit Control - Minimum
-      leMin_= new QLineEdit("99999");
-      //PANIC(connect(le,SIGNAL(editingFinished()),
-      //        this,  SLOT(minEditingFinshed())));
+      leMin_= new QLineEdit("DBL_MAX");
+      leMin_->setReadOnly(true);
       row->addWidget(leMin_);
 
-      //max label
+ 
       QLabel *lbMax = new QLabel(tr("Maximum:"));
       row->addWidget(lbMax);
       ///// Line Edit Control - Maximum
       leMax_= new QLineEdit("0");
-      //PANIC(connect(le,SIGNAL(editingFinished()),
-      //        this,  SLOT(maxEditingFinshed())));
+      leMax_->setReadOnly(true);;
       row->addWidget(leMax_);
       form->addRow(row);
     }
@@ -333,7 +331,7 @@ void HistogramDockWidget::set_live(bool is_live)
 
 void HistogramDockWidget::reset_minmax()
   {
-    minX_ = 99999;
+    minX_ = DBL_MAX;
     maxX_ = 0;
   }
 

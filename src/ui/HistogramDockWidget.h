@@ -1,6 +1,5 @@
 #pragma once
 #include <QtGui>
-#include <QtWidgets>
 namespace mylib{
 #include "array.h"
 }
