@@ -26,10 +26,15 @@ message Pipeline
   optional bool   invert_intensity    = 3 [default=false];
 }
 
-message TripDetect
+message Threshold
 {
   optional uint32 ichan               = 1 [default=0];
   optional uint32 intensity_threshold = 2 [default=0];
-  optional float  area_threshold      = 3 [default=0.5];
-  optional uint32 frame_threshold     = 4 [default=5000];
+  optional float  area_threshold      = 3 [default=0.5];  
+}
+
+message TripDetect
+{
+  repeated Threshold threshold        = 1;
+  optional uint32    frame_threshold  = 2 [default=5000];
 }

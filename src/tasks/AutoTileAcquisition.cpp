@@ -238,6 +238,13 @@ Error:
             CHKJMP(explore(dc));       // will return an error if no explorable tiles found on the plane
           CHKJMP(   tile->config(dc));
           CHKJMP(0==tile->run(dc));
+
+          /* Assert the trip detector hasn't gone off.  
+           * Trip detector will signal acq task and microscope tasks to stop, but 
+           * we double check here as extra insurance against any extra cuts.
+           */
+          CHKJMP(dc->trip_detect.ok());
+
           CHKJMP(   cut.config(dc));
           CHKJMP(0==cut.run(dc));
         }

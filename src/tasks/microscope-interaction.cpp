@@ -32,14 +32,24 @@ namespace fetch
 
       unsigned int Interaction::config(device::Microscope *dc)
       {
-        static task::scanner::Video<u16> focus;
+        static task::scanner::Video<u16> focus_u16;
+		static task::scanner::Video<i16> focus_i16;
 
         //Assemble pipeline here
         IDevice *cur;
         cur =  dc->configPipeline();
         cur =  dc->trash.apply(cur);
+		
+		const device::Microscope::Config cfg=dc->get_config();
+		switch(cfg.scanner3d().scanner2d().digitizer().kind()) {
+			case cfg::device::Digitizer::NIScope:
+				return dc->__scan_agent.arm(&focus_i16,&dc->scanner)==0;
+			case cfg::device::Digitizer::Alazar:
+			default:				
+				return dc->__scan_agent.arm(&focus_u16,&dc->scanner)==0;
+		}
 
-        return dc->__scan_agent.arm(&focus,&dc->scanner)==0;
+        
         //dc->__scan_agent.arm_nowait(&focus,&dc->scanner._scanner2d,INFINITE);
 
         //return 1; //success

@@ -78,13 +78,13 @@ void Init(void)
   { QFile cfgfile(settings.value(fetch::ui::MainWindow::defaultConfigPathKey,":/config/microscope").toString());
     
     if(  cfgfile.open(QIODevice::ReadOnly) && cfgfile.isReadable() )
-	  { QByteArray contents=cfgfile.readAll();      
-      qDebug() << contents;
+    { QByteArray contents=cfgfile.readAll();      
+      //qDebug() << contents;
       if(parser.ParseFromString(contents.constData(),&g_config))
-		  {
-		    qDebug() << "Config file loaded from " << cfgfile.fileName();
-		    goto Success;
-		  }      
+      { QByteArray buf=cfgfile.fileName().toLocal8Bit();
+        debug("Config file loaded from %s\n",buf.data());
+        goto Success;
+      }      
     }
   }
   
@@ -94,7 +94,9 @@ void Init(void)
     Guarded_Assert(cfgfile.open(QIODevice::ReadOnly));
     Guarded_Assert(cfgfile.isReadable());
     Guarded_Assert(parser.ParseFromString(cfgfile.readAll().constData(),&g_config));
-    qDebug() << "Config file loaded from " << cfgfile.fileName();
+	{ QByteArray buf=cfgfile.fileName().toLocal8Bit();
+	  debug("Config file loaded from %s\n",buf.data());
+	}
     settings.setValue(fetch::ui::MainWindow::defaultConfigPathKey,":/config/microscope");
   }
   //cfgfile.setTextModeEnabled(true);
