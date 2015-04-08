@@ -110,8 +110,7 @@ void GetSetResonantTurn::Set_(device::Microscope *dc, f64 &v)
   Guarded_Assert(dc->set_config_nowait(c));
 }
 f64 GetSetResonantTurn::Get_(device::Microscope *dc)
-{ device::Microscope::Config c = dc->get_config(); 
-  return 0.0; // DEPRECATED c.resonant_wrap().turn_px();
+{  return 0.0; // DEPRECATED c.resonant_wrap().turn_px();
 }
 QValidator* GetSetResonantTurn::createValidator_(QObject* parent)
 { return new QDoubleValidator (0.0, 2048.0, 1, parent);

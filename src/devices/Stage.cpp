@@ -81,7 +81,9 @@
 #include "tiling.h"
 #include "thread.h"
 
+#ifdef HAVE_C843
 #include "C843_GCS_DLL.H"
+#endif
 
 
 namespace fetch  {
@@ -116,6 +118,7 @@ namespace device {
   \def C843JMP2(expr)
   Same as \ref C843JMP but for use outside of a C843Stage member function.  A valid C843Stage *self must be in scope.
 */
+#ifdef HAVE_C843
 #define C843WRN( expr )  {BOOL _v; lock_(); _v=(expr); unlock_(); (c843_error_handler( handle_, _v, #expr, __FILE__, __LINE__, warning ));}
 #define C843ERR( expr )  {BOOL _v; lock_(); _v=(expr); unlock_(); (c843_error_handler( handle_, _v, #expr, __FILE__, __LINE__, error   ));}
 #define C843JMP( expr )  {BOOL _v; lock_(); _v=(expr); unlock_(); if(c843_error_handler( handle_, _v, #expr, __FILE__, __LINE__, warning)) goto Error;}
@@ -124,6 +127,21 @@ namespace device {
 #define C843WRN2( expr )  {BOOL _v; self->lock_(); _v=(expr); self->unlock_(); (c843_error_handler( self->handle_, _v, #expr, __FILE__, __LINE__, warning ));}
 #define C843ERR2( expr )  {BOOL _v; self->lock_(); _v=(expr); self->unlock_(); (c843_error_handler( self->handle_, _v, #expr, __FILE__, __LINE__, error   ));}
 #define C843JMP2( expr )  {BOOL _v; self->lock_(); _v=(expr); self->unlock_(); if(c843_error_handler( self->handle_, _v, #expr, __FILE__, __LINE__, warning)) goto Error;}
+
+#define C843WRAP( expr )  expr
+#else
+#define NOTINCLUDED(expr) error("(%s:%d) Software was configured without C843 controller support."ENDL "\t%s"ENDL,__FILE__,__LINE__,#expr)
+#define C843WRN( expr )   NOTINCLUDED(expr)
+#define C843ERR( expr )   NOTINCLUDED(expr)
+#define C843JMP( expr )   NOTINCLUDED(expr)
+#define C843JMPSILENT( expr )  NOTINCLUDED(expr)
+
+#define C843WRN2( expr )  NOTINCLUDED(expr)
+#define C843ERR2( expr )  NOTINCLUDED(expr)
+#define C843JMP2( expr )  NOTINCLUDED(expr)
+
+#define C843WRAP( expr )  NOTINCLUDED(expr)
+#endif
 
 #define  CHKJMP( expr )  if(!(expr)) {warning("C843:"ENDL "%s(%d): %s"ENDL "Expression evaluated as false"ENDL,__FILE__,__LINE__,#expr); goto Error;}
 #define  CHKWRN( expr )  if(!(expr)) {warning("C843:"ENDL "%s(%d): %s"ENDL "Expression evaluated as false"ENDL,__FILE__,__LINE__,#expr); }
@@ -144,6 +162,7 @@ namespace device {
   static
   bool c843_error_handler(long handle, BOOL ok, const char* expr, const char* file, const int line, pf_reporter report)
   {
+  #ifdef HAVE_C843
     char buf[1024];
     long e;
     if(handle<0)
@@ -172,6 +191,11 @@ namespace device {
       return true;
     }
     return false; //this should be something corresponding to "no error"...guessing zero
+#else
+      error("(%s:%d) Software was configured without C843 controller support."ENDL,
+            "\t%s"ENDL
+            __FILE__,__LINE__,expr);
+#endif
   }
 
 #pragma warning(push)
@@ -338,7 +362,7 @@ Error:
     Thread_Free(logger_);
 Finalize:
     lock_();
-    C843_CloseConnection(handle_); // always succeeds
+    C843WRAP(C843_CloseConnection(handle_)); // always succeeds
     unlock_();
     handle_=-1;                    // set to invalid value.  Required for position logging thread to exit.
     return ecode;
@@ -469,7 +493,7 @@ Error:
       if(!same(a,t,3))
       { double b[3]={0.0,0.0,0.0};
         lock_();
-        C843_qPOS(handle_,"123",b);
+        C843WRAP(C843_qPOS(handle_,"123",b));
         unlock_();
         warning(
           "%s(%d): C843 Move command was interupted for a new destination."ENDL
@@ -647,6 +671,7 @@ Error:
     return false;
   }
 #pragma warning(pop)
+
 
   //
   // Simulated

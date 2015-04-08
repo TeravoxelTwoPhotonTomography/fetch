@@ -33,7 +33,6 @@
  */
 
 fetch::device::Microscope*           gp_microscope;
-fetch::cfg::device::Microscope       g_config;
 fetch::task::microscope::Interaction g_microscope_default_task;
 
 /*
@@ -61,6 +60,7 @@ class MyErrorCollector:public google::protobuf::io::ErrorCollector
 void Init(void)
 {
   gp_microscope = NULL;
+  fetch::cfg::device::Microscope* g_config=new fetch::cfg::device::Microscope();  // Don't free, should have application lifetime
 
   //Shutdown
   Register_New_Shutdown_Callback(KillMicroscopeCallback);
@@ -79,8 +79,8 @@ void Init(void)
     
     if(  cfgfile.open(QIODevice::ReadOnly) && cfgfile.isReadable() )
     { QByteArray contents=cfgfile.readAll();      
-      //qDebug() << contents;
-      if(parser.ParseFromString(contents.constData(),&g_config))
+      qDebug() << contents;
+      if(parser.ParseFromString(contents.constData(),g_config))
       { QByteArray buf=cfgfile.fileName().toLocal8Bit();
         debug("Config file loaded from %s\n",buf.data());
         goto Success;
@@ -93,16 +93,16 @@ void Init(void)
     QFile cfgfile(":/config/microscope");
     Guarded_Assert(cfgfile.open(QIODevice::ReadOnly));
     Guarded_Assert(cfgfile.isReadable());
-    Guarded_Assert(parser.ParseFromString(cfgfile.readAll().constData(),&g_config));
-	{ QByteArray buf=cfgfile.fileName().toLocal8Bit();
-	  debug("Config file loaded from %s\n",buf.data());
-	}
+    Guarded_Assert(parser.ParseFromString(cfgfile.readAll().constData(),g_config));
+    { QByteArray buf=cfgfile.fileName().toLocal8Bit();
+      debug("Config file loaded from %s\n",buf.data());
+    }
     settings.setValue(fetch::ui::MainWindow::defaultConfigPathKey,":/config/microscope");
   }
   //cfgfile.setTextModeEnabled(true);
 
 Success:
-  gp_microscope = new fetch::device::Microscope(&g_config);
+  gp_microscope = new fetch::device::Microscope(g_config);
 }
 
 int main(int argc, char *argv[])
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
   QCoreApplication::setOrganizationDomain("janelia.hhmi.org");
   QCoreApplication::setApplicationName("Fetch");
 
-  QApplication app(argc,argv);
+  QApplication app(argc,argv);  
   Init();
   fetch::ui::MainWindow mainwindow(gp_microscope);  
   gp_microscope->onUpdate(); // force update so gui gets notified - have to do this mostly for stage listeners ...

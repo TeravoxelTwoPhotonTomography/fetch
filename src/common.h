@@ -1,6 +1,7 @@
 #pragma once
 #pragma warning(disable:4996) // CRT security warning
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #define WIN32_LEAN_AND_MEAN
@@ -64,7 +65,9 @@ inline u32    _next_pow2_u32   (u32 v);
 inline u64    _next_pow2_u64   (u64 v);
 inline size_t _next_pow2_size_t(size_t v);
 
+#if _MSC_VER < 1800
 long int lroundf(float x);
+#endif
 
 //void Copy_Lines          ( void *dst, size_t dst_stride,                            // DEPRICATED - see util-image.h copy functions
 //                           void *src, size_t src_stride,

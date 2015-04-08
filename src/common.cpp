@@ -89,12 +89,14 @@ inline size_t _next_pow2_size_t(size_t v)
   return v;
 }
 
+#if _MSC_VER < 1800
 long int lroundf(float x)
 {
    if (x - (long int)x >= 0.5)
       return (long int)(x + 1);
    return (long int)x;
 }
+#endif
 
 void Copy_Lines( void *dst, size_t dst_stride, void *src, size_t src_stride, size_t nlines )
 { u8 *dst_cur = (u8*)dst + nlines * dst_stride,

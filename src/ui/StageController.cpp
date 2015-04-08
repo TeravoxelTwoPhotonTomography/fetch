@@ -599,7 +599,10 @@ bool fetch::ui::TilingController::markAllPlanesNotExplorable(const QPainterPath&
 }
 
 // returns false if tiling is invalid or if stage_coord is oob
-float roundf(float x) {return floor(0.5f+x);}
+#if _MSC_VER<1800
+static float roundf(float x) {return floor(0.5f+x);}
+#endif
+
 bool fetch::ui::TilingController::mapToIndex(const Vector3f & stage_coord, unsigned *index)
 {
   TTransform t;  
