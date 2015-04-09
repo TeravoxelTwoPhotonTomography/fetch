@@ -1,4 +1,4 @@
-#include "ui/StageView.h"
+#inlude "ui/StageView.h"
 #include "ui/uiunits.h"
 
 namespace fetch {
@@ -23,6 +23,11 @@ StageView::StageView(PlanarStageController *stageControl, QGraphicsItem *parent)
   pos_meters_  = cvt<M,PlanarStageController::Unit>(control_->pos());
   //bbox_meters_.moveCenter(pos_meters_);
 
+  // draw 1-pixel wide no matter what the view transform is
+  pen_.setWidth(0);
+  target_pen_.setWidth(0);
+
+
   stage_poll_timer_.setInterval(100/*ms*/);
   connect(&stage_poll_timer_,SIGNAL(timeout()),this,SLOT(poll_stage()));
   
@@ -43,17 +48,18 @@ StageView::boundingRect() const
 
 void
 StageView::paint(QPainter *p, const QStyleOptionGraphicsItem *o, QWidget *widget)
-{ 
+{   
+
   p->setPen(pen_);
   p->setBrush(brush_);
   QRectF bbox = cvt<PIXEL_SCALE,M>(bbox_meters_);
   p->drawRect(bbox);
 
   QPointF r = cvt<PIXEL_SCALE,PlanarStageController::Unit>(control_->pos());
-  p->drawLine(QPointF(bbox.left(),r.y()),
-              QPointF(bbox.right(),r.y()));
-  p->drawLine(QPointF(r.x(),bbox.top() ),
-              QPointF(r.x(),bbox.bottom()));
+  p->drawLine(QPointF(bbox.left()+10.0,r.y()),
+              QPointF(bbox.right()-10.0,r.y()));
+  p->drawLine(QPointF(r.x(),bbox.top()+10.0 ),
+              QPointF(r.x(),bbox.bottom()-10.0));
               
   p->setPen(target_pen_);
   r = cvt<PIXEL_SCALE,PlanarStageController::Unit>(control_->target());
