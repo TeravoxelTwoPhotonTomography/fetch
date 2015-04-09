@@ -1,4 +1,4 @@
-#inlude "ui/StageView.h"
+#include "ui/StageView.h"
 #include "ui/uiunits.h"
 
 namespace fetch {
