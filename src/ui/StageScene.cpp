@@ -35,7 +35,9 @@ void SelectionRectGraphicsWidget::paint( QPainter *painter, const QStyleOptionGr
 {
   QColor basecolor(getBaseColor());
 
-  painter->setPen(getPenColor());
+  QPen pen(getPenColor());
+  pen.setWidth(0);
+  painter->setPen(pen);
   basecolor.setAlphaF(0.2);
   painter->setBrush(basecolor);
 
