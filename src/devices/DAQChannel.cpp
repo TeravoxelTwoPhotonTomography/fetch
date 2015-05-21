@@ -51,10 +51,6 @@ namespace fetch
     unsigned int NIDAQChannel::on_attach(void)
     { unsigned int status = 1; //success 0, failure 1;
       Guarded_Assert(daqtask==NULL);      
-      //{ char buf[2048];
-      //  memset(buf,0,sizeof(buf));        
-      //  DAQmxGetSysTasks(buf,sizeof(buf));
-      //}
       DAQJMP(status=DAQmxCreateTask(_daqtaskname,&daqtask))
       status = 0;
     Error:

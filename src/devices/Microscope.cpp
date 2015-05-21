@@ -48,6 +48,7 @@ namespace fetch
       ,scanner(&__scan_agent)
       ,stage_(&__self_agent)
       ,vibratome_(&__vibratome_agent)
+      ,pmt_(&__self_agent)
       ,fov_(_config->fov())
       ,surface_probe_(&__scan_agent)
       ,disk(&__io_agent)
@@ -73,6 +74,7 @@ namespace fetch
       ,scanner(&__scan_agent)
       ,stage_(&__self_agent)
       ,vibratome_(&__vibratome_agent)
+      ,pmt_(&__self_agent)
       ,fov_(cfg.fov())
       ,surface_probe_(&__scan_agent)
       ,disk(&__io_agent)
@@ -98,6 +100,7 @@ namespace fetch
       ,scanner(&__scan_agent,cfg->mutable_scanner3d())
       ,stage_(&__self_agent,cfg->mutable_stage())
       ,vibratome_(&__vibratome_agent,cfg->mutable_vibratome())
+      ,pmt_(&__self_agent,cfg->mutable_pmt())
       ,fov_(cfg->fov())
       ,surface_probe_(&__scan_agent,cfg->mutable_surface_probe())
       ,pipeline(cfg->mutable_pipeline())
@@ -134,11 +137,13 @@ namespace fetch
       CHKJMP(     __scan_agent.attach()==0,ESCAN);
       CHKJMP(        stage_.on_attach()==0,ESTAGE);
       CHKJMP(__vibratome_agent.attach()==0,EVIBRATOME);
+      CHKJMP(          pmt_.on_attach()==0,EPMT);
 
       stackname = _config->file_prefix()+_config->stack_extension();
-      //file_series.ensurePathExists();
 
       return 0;   // success
+EPMT:
+      __vibratome_agent.detach();
 EVIBRATOME:
       stage_.on_detach();
 ESTAGE:
@@ -159,6 +164,7 @@ ESCAN:
       eflag |= disk._agent->detach();
       eflag |= stage_.on_detach();
       eflag |= vibratome_._agent->detach();
+      eflag |= pmt_.on_detach();
       return eflag;
     }
 
@@ -222,6 +228,7 @@ ESCAN:
       fov_.update(_config->fov());
       surface_probe_._set_config(cfg->mutable_surface_probe());
       stage_._set_config(cfg->mutable_stage());
+      pmt_._set_config(cfg->mutable_pmt());
 
       pipeline.set_scan_rate_Hz(_config->scanner3d().scanner2d().frequency_hz());
       pipeline.set_sample_rate_MHz(scanner.get2d()->_digitizer.sample_rate_MHz());

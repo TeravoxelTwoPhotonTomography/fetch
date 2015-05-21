@@ -42,6 +42,7 @@
 
 #define MICROSCOPE_MAX_WORKERS     10
 #define MICROSCOPE_DEFAULT_TIMEOUT INFINITE
+#include "pmt.h"
 
 
 namespace fetch
@@ -127,11 +128,12 @@ namespace fetch
       device::Scanner3D                     scanner;
       device::Stage                         stage_;
       device::Vibratome                     vibratome_;
+      device::PMT                           pmt_;
       device::FieldOfViewGeometry           fov_;
       device::Probe                         surface_probe_;
 
       worker::PipelineAgent                 pipeline;
-      worker::TripDetectWorkerAgent         trip_detect;        
+      worker::TripDetectWorkerAgent         trip_detect;
       worker::SurfaceFindWorkerAgent        surface_finder;
 
       worker::TerminalAgent		              trash;

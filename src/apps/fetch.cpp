@@ -71,16 +71,15 @@ void Init(void)
   {
       bool ok=0;
       char buf[1024]={0};
-      int last_session_id=settings.value("session_id").toInt(&ok);
+      int session_id=settings.value("session_id").toInt(&ok);
       if(!ok)
-        last_session_id=0;
-      settings.setValue("session_id",last_session_id+1);
-      snprintf(buf,sizeof(buf),"Session-%05d",last_session_id+1);
+        session_id=0;
+      session_id=(session_id+1)&0xffff; // limit to 65k sessions
+      settings.setValue("session_id",session_id);
+      snprintf(buf,sizeof(buf),"Session-%05d",session_id);
       CreateDirectoryA(buf,0);
       SetCurrentDirectoryA(buf);
   }
-
-
 
   //Logging
   Reporting_Setup_Log_To_VSDebugger_Console();

@@ -176,7 +176,7 @@ class SimulatedPockels:public PockelsBase<cfg::device::SimulatedPockels>
       void _set_config( Config IN *cfg );
       void _set_config( const Config &cfg );
 
-      virtual int isValidOpenVolts(f64 volts);      
+      virtual int isValidOpenVolts(f64 volts);
       virtual f64 getOpenVolts() {return _ipockels->getOpenVolts();}
       f64 getOpenPercent();
 

@@ -148,7 +148,7 @@ namespace fetch
         mylib::Dimn_Type dims[3]={0};
 
         //REMIND(fsrc->totif("TripDetectWorker-src.tif"));
-        TS_TIC;          
+        TS_TIC;
         mylib::castFetchFrameToDummyArray(&im,fsrc,dims);
         dc->inc();
         for(int i=0;i<dc->_config->threshold_size();++i) {
@@ -166,7 +166,7 @@ namespace fetch
           dc->reset();
           dc->sig_stop();
           //goto Error;
-        }      
+        }
       }
 Finalize:
       TS_CLOSE;

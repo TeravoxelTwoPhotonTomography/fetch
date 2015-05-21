@@ -1,0 +1,22 @@
+package fetch.cfg.device;
+
+message NIDAQPMT
+{
+    optional string do_channel  = 1 [default="/Dev1/port0/line0"];  // control channel
+}
+
+message SimulatedPMT
+{
+  optional double val = 1 [default=0.0];
+}
+
+message PMT
+{ enum PMTType
+  {
+    Simulated = 0;
+    NIDAQ     = 1;
+  }
+  optional PMTType         kind        = 1 [default=Simulated];
+  optional NIDAQPMT        nidaq       = 2;
+  optional SimulatedPMT    simulated   = 3;
+}
