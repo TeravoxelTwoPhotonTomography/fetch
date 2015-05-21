@@ -16,12 +16,14 @@ namespace fetch
     namespace device
     {
         NIDAQPMT::NIDAQPMT(Agent* agent)
-            : PMTBase<cfg::device::NIDAQPMT>(agent)
+            : PMTBase<cfg::device::NIDAQPMT>(agent),
+            htask_(0)
         {
         }
 
         NIDAQPMT::NIDAQPMT(Agent* agent, NIDAQPMT::Config* cfg)
-            :PMTBase<cfg::device::NIDAQPMT>(agent, cfg)
+            :PMTBase<cfg::device::NIDAQPMT>(agent,cfg),
+            htask_(0)
         {
         }
 

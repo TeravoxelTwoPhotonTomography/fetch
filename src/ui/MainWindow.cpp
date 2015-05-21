@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include "MainWindow.h"
 #include <assert.h>
 #include "common.h"
 #include "devices/Microscope.h"
@@ -289,9 +290,13 @@ void fetch::ui::MainWindow::createMenus()
   t->addAction(tilingController()->autosaveAction());
 
   { QMenu *t = menuBar()->addMenu("&Actions");
-    QAction *a = new QAction("&Reset Trip Detector.",this);
+    QAction *a = new QAction("&Reset Trip Detector",this);
     t->addAction(a);
     connect(a,SIGNAL(triggered()),this,SLOT(resetTripDetector()));
+
+    a=new QAction("Reset &PMT Controller",this);
+    t->addAction(a);
+    connect(a,SIGNAL(triggered()),this,SLOT(resetPMTController()));
   }
 }
 
@@ -578,6 +583,12 @@ void
   fetch::ui::MainWindow::
   resetTripDetector()
 { _dc->trip_detect.reset();
+}
+
+void
+  fetch::ui::MainWindow::
+  resetPMTController()
+{ _dc->pmt_.reset();
 }
 
 void

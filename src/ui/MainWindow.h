@@ -51,7 +51,7 @@ protected slots:
   void saveMicroscopeConfigToLastGoodLocation();
   void saveMicroscopeConfig(const QString& filename);
   void resetTripDetector();
-
+  void resetPMTController();
   void startVideo();
   void stopVideo();
 
