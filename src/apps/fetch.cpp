@@ -59,12 +59,28 @@ class MyErrorCollector:public google::protobuf::io::ErrorCollector
 
 void Init(void)
 {
+  QSettings settings;
   gp_microscope = NULL;
   fetch::cfg::device::Microscope* g_config=new fetch::cfg::device::Microscope();  // Don't free, should have application lifetime
 
   //Shutdown
   Register_New_Shutdown_Callback(KillMicroscopeCallback);
   Register_New_Shutdown_Callback(QtShutdownCallback);
+
+  //Set Session Directory
+  {
+      bool ok=0;
+      char buf[1024]={0};
+      int last_session_id=settings.value("session_id").toInt(&ok);
+      if(!ok)
+        last_session_id=0;
+      settings.setValue("session_id",last_session_id+1);
+      snprintf(buf,sizeof(buf),"Session-%05d",last_session_id+1);
+      CreateDirectoryA(buf,0);
+      SetCurrentDirectoryA(buf);
+  }
+
+
 
   //Logging
   Reporting_Setup_Log_To_VSDebugger_Console();
@@ -74,7 +90,7 @@ void Init(void)
   google::protobuf::TextFormat::Parser parser;
   MyErrorCollector e;
   parser.RecordErrorsTo(&e);
-  QSettings settings;
+  
   { QFile cfgfile(settings.value(fetch::ui::MainWindow::defaultConfigPathKey,":/config/microscope").toString());
     
     if(  cfgfile.open(QIODevice::ReadOnly) && cfgfile.isReadable() )
