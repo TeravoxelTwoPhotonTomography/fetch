@@ -162,10 +162,13 @@ namespace fetch
         TRY(CHAN_SUCCESS(Chan_Next(writer,(void**)&fsrc,fsrc->size_bytes())));  
         
         if(!dc->ok())
-        { warning("[TripDetectWorker] Too many dark frames.  Stopping.");
+        { 
+          warning("[TripDetectWorker] Too many dark frames.  Will cycle power to the PMTs.");
           dc->reset();
-          dc->sig_stop();
-          //goto Error;
+          if(!dc->cycle_pmts()) {
+            warning("[TripDetectWorker] Too many PMT trips detected.  Stopping.");
+            dc->sig_stop();
+          }
         }
       }
 Finalize:
@@ -186,16 +189,20 @@ Error:
   {
     TripDetectWorkerAgent::TripDetectWorkerAgent(device::Microscope* dc): microscope_(dc), WorkAgent<TaskType,Config>("TripDetectWorkerAgent")
       ,number_dark_frames_(0)
+      ,number_resets_(0)
     {}
 
     TripDetectWorkerAgent::TripDetectWorkerAgent(device::Microscope* dc,Config *config): microscope_(dc), WorkAgent<TaskType,Config>(config,"TripDetectWorkerAgent")
       ,number_dark_frames_(0)
+      ,number_resets_(0)
     {}
 
-    void TripDetectWorkerAgent::reset() {number_dark_frames_=0;}
-    void TripDetectWorkerAgent::inc() {number_dark_frames_++;}
-    unsigned TripDetectWorkerAgent::ok() {return number_dark_frames_<_config->frame_threshold();}
-    void TripDetectWorkerAgent::sig_stop() {
+    void     TripDetectWorkerAgent::reset()      {number_dark_frames_=0;}
+    void     TripDetectWorkerAgent::inc()        {number_dark_frames_++;}
+    unsigned TripDetectWorkerAgent::cycle_pmts() {return number_resets_<_config->max_reset_count();}
+    unsigned TripDetectWorkerAgent::ok()         {return number_dark_frames_<_config->frame_threshold();}
+    void     TripDetectWorkerAgent::sig_stop()   {
+      number_resets_=0;
       microscope_->__scan_agent.stop_nowait();
       microscope_->__self_agent.stop_nowait();
     }
