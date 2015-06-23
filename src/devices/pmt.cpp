@@ -170,6 +170,7 @@ namespace fetch
         void PMT::reset()
         {
             Guarded_Assert(_ipmt);
+            debug("Resetting PMT controller\n");
             _ipmt->reset();
         }
 

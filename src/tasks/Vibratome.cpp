@@ -106,8 +106,8 @@ namespace microscope {
 
     // Move to the start of the cut
     bz = cz-dz+thick;
-    CHK( dc->stage()->setPos(cx,cy,0.5));           // Drop to safe z first
-    CHK( dc->stage()->setPos(ax,ay,0.5));           // Move on safe z plane
+    CHK( dc->stage()->setPos(cx,cy,12));           // Drop to safe z first
+    CHK( dc->stage()->setPos(ax,ay,12));           // Move on safe z plane
     CHK( dc->stage()->setPos(ax,ay,bz));            // Move to final plane
 
     // do the cut
@@ -116,14 +116,14 @@ namespace microscope {
     CHK( dc->vibratome()->start());
     CHK( dc->stage()->setVelocity(v));              // set feed velocity
     CHK( dc->stage()->setPos(bx,by,bz));            // feed
-    CHK( dc->stage()->setPos(bx,by,0.5));  // Drop to safe z first, come up at an angle -- Note: vibratome still running!
+    CHK( dc->stage()->setPos(bx,by,12));  // Drop to safe z first, come up at an angle -- Note: vibratome still running!
                                   //(0 to 12)   
     CHK( dc->stage()->setVelocity(vx,vy,vz));       // set back to default velocity
     CHK( dc->vibratome()->stop());
     CHK( dc->stage()->doneWithCut(feedaxis));       // reset stage parameters
 
     // Move back
-    CHK( dc->stage()->setPos(cx,cy,0.5));           // Move on safe z plane
+    CHK( dc->stage()->setPos(cx,cy,12));           // Move on safe z plane
     CHK( dc->stage()->setPos(cx,cy,cz+thick));
 
     return 0;

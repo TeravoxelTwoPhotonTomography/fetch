@@ -151,12 +151,13 @@ namespace fetch
         TS_TIC;
         mylib::castFetchFrameToDummyArray(&im,fsrc,dims);
         dc->inc();
-        for(int i=0;i<dc->_config->threshold_size();++i) {
-          const cfg::worker::Threshold t=dc->_config->threshold(i);
-          if(classify(&im,t.ichan(),t.intensity_threshold(),t.area_threshold()))
-          { dc->reset();
-          }
+        int all=1;
+        for(int i=0;i<dc->_config->threshold_size();++i)
+        { const cfg::worker::Threshold t=dc->_config->threshold(i);
+          all &= classify(&im,t.ichan(),t.intensity_threshold(),t.area_threshold());
         }
+        if(all)
+            dc->reset();
         TS_TOC;
         //REMIND(fdst->totif("TripDetectWorker-dst.tif"));
         TRY(CHAN_SUCCESS(Chan_Next(writer,(void**)&fsrc,fsrc->size_bytes())));  
@@ -164,7 +165,7 @@ namespace fetch
         if(!dc->ok())
         { 
           warning("[TripDetectWorker] Too many dark frames.  Will cycle power to the PMTs.");
-          dc->reset();
+          dc->reset(); // reset dark frame count
           if(!dc->cycle_pmts()) {
             warning("[TripDetectWorker] Too many PMT trips detected.  Stopping.");
             dc->sig_stop();
@@ -199,7 +200,7 @@ Error:
 
     void     TripDetectWorkerAgent::reset()      {number_dark_frames_=0;}
     void     TripDetectWorkerAgent::inc()        {number_dark_frames_++;}
-    unsigned TripDetectWorkerAgent::cycle_pmts() {return number_resets_<_config->max_reset_count();}
+    unsigned TripDetectWorkerAgent::cycle_pmts() {number_resets_++; microscope_->pmt_.reset(); return number_resets_<_config->max_reset_count(); }
     unsigned TripDetectWorkerAgent::ok()         {return number_dark_frames_<_config->frame_threshold();}
     void     TripDetectWorkerAgent::sig_stop()   {
       number_resets_=0;

@@ -201,7 +201,7 @@ namespace device {
 #pragma warning(push)
 #pragma warning(disable:4244) // lots of float <-- double conversions
 
-  static const char c843_stage_position_log_file[] =  "stage_position.f64";  ///< The polled stage position gets cached here.
+  static const char c843_stage_position_log_file[] =  "../stage_position.f64";  ///< The polled stage position gets cached here.
 
   /** Writes current position and velocity to a cache file with a time since last log.
 
