@@ -147,7 +147,7 @@ namespace fetch
       task::microscope::AutoTileAcquisition auto_tile_task;
       task::microscope::TiledSurfacescan    surface_scan_task;
       task::microscope::TimeSeries          time_series_task;
-
+      int _auto_tile_cut_count;
 
       mylib::Array* snapshot(float dz_um,unsigned timeout_ms);
 

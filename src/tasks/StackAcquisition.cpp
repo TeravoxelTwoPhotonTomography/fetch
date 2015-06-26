@@ -90,8 +90,8 @@ namespace fetch
       unsigned int StackAcquisition::config(device::Microscope *d)
       {
         static task::scanner::ScanStack<u16> grabstack_u16;
-		static task::scanner::ScanStack<i16> grabstack_i16;
-		const device::Microscope::Config cfg=d->get_config();
+        static task::scanner::ScanStack<i16> grabstack_i16;
+        const device::Microscope::Config cfg=d->get_config();
         std::string filename;
 
         Guarded_Assert(d);
@@ -108,14 +108,14 @@ namespace fetch
         Guarded_Assert( d->disk.close()==0 );
         //Guarded_Assert( d->disk.open(filename,"w")==0);
 
-		
-		switch(cfg.scanner3d().scanner2d().digitizer().kind()) {
-			case cfg::device::Digitizer::NIScope:
-				return d->__scan_agent.arm(&grabstack_i16,&d->scanner)==0;
-			case cfg::device::Digitizer::Alazar:
-			default:				
-				return d->__scan_agent.arm(&grabstack_u16,&d->scanner)==0;
-		}
+        
+        switch(cfg.scanner3d().scanner2d().digitizer().kind()) {
+            case cfg::device::Digitizer::NIScope:
+                return d->__scan_agent.arm(&grabstack_i16,&d->scanner)==0;
+            case cfg::device::Digitizer::Alazar:
+            default:				
+                return d->__scan_agent.arm(&grabstack_u16,&d->scanner)==0;
+        }
 
         
 Error:

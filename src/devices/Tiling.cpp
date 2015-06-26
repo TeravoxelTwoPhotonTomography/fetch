@@ -941,6 +941,16 @@ DoneOutlining:
     return pos;
   }
 
+  void StageTiling::getCursorLatticePosition(int *x,int *y,int *z)
+  {
+      mylib::Coordinate *c=mylib::Idx2CoordA(attr_,cursor_);
+      mylib::Dimn_Type *d=(mylib::Dimn_Type*)ADIMN(c);
+      if(x) *x=d[0];
+      if(y) *y=d[1];
+      if(z) *z=d[2];
+      Free_Array(c);      
+  }
+
   float StageTiling::plane_mm()
   {
     Vector3f r(0,0,(float)plane());

@@ -30,6 +30,7 @@
   }
 
 #define DO_UNWARP
+#include <ui/StageController.h>
 
 namespace fetch
 {
@@ -196,27 +197,41 @@ ESCAN:
 
     void Microscope::write_stack_metadata()
     {
-      //{ std::ofstream fout(config_filename(),std::ios::out|std::ios::trunc|std::ios::binary);
-      //  get_config().SerializePartialToOstream(&fout);
-      //}
       { std::ofstream fout(config_filename().c_str(),std::ios::out|std::ios::trunc);
         std::string s;
         Config c = get_config();
         google::protobuf::TextFormat::PrintToString(c,&s);
         fout << s;
-        //get_config().SerializePartialToOstream(&fout);
       }
       { float x,y,z;
         std::ofstream fout(metadata_filename().c_str(),std::ios::out|std::ios::trunc);
         fetch::cfg::data::Acquisition data;
         stage_.getPos(&x,&y,&z);
+        //StageTiling *t=stage_.tiling();
+        //t->computeCursorPos()
         data.set_x_mm(x);
         data.set_y_mm(y);
         data.set_z_mm(z);
+        
+        #if 0 // one method -- the last cursor position
+        {
+            int x,y,z;
+            stage_.tiling()->getCursorLatticePosition(&x,&y,&z);
+            data.mutable_current_lattice_position()->set_x(x);
+            data.mutable_current_lattice_position()->set_y(y);
+            data.mutable_current_lattice_position()->set_z(z);
+        }
+        #else // other method -- project the current stage position to the lattice
+        Vector3z r=stage_.getPosInLattice();
+        data.mutable_current_lattice_position()->set_x(r(0));
+        data.mutable_current_lattice_position()->set_y(r(1));
+        data.mutable_current_lattice_position()->set_z(r(2));
+        #endif
+        
+        data.set_auto_tile_cut_count(_auto_tile_cut_count);
         std::string s;
         google::protobuf::TextFormat::PrintToString(data,&s);
         fout << s;
-        //get_config().SerializePartialToOstream(&fout);
       }
     }
 

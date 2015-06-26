@@ -1,8 +1,17 @@
 package fetch.cfg.data;
 
+message TilingCursor 
+{ 
+  optional uint32 x=1;
+  optional uint32 y=2;
+  optional uint32 z=3;
+}
+
 message Acquisition
 { 
   optional float x_mm = 1;
   optional float y_mm = 2;
   optional float z_mm = 3;
+  optional TilingCursor current_lattice_position = 4;
+  optional uint32 auto_tile_cut_count = 5;
 }

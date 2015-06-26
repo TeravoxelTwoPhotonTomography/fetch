@@ -65,8 +65,8 @@
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#define usleep(e) Sleep((unsigned long)((e)/1000.0)) // us -> ms
-#define  sleep(e) Sleep((unsigned long)((e)*1000.0)) //  s -> ms
+#define fetch_usleep(e) Sleep((unsigned long)((e)/1000.0)) // us -> ms
+#define fetch_sleep(e) Sleep((unsigned long)((e)*1000.0)) //  s -> ms
 #else
 // Not windows and missing usleep (not *nix?)
 #error "Can't find replacement for usleep(), etc.."

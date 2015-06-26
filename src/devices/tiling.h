@@ -111,8 +111,9 @@ namespace device {
     bool on_plane(uint32_t *p); //used by TileSearch    
 
     int minDistTo( // used by adaptive tiling
-      uint32_t search_mask,uint32_t search_flags,   // area to search 
-      uint32_t query_mask ,uint32_t query_flags);  // tile to find
+    uint32_t search_mask,uint32_t search_flags,   // area to search 
+    uint32_t query_mask ,uint32_t query_flags);  // tile to find
+    void getCursorLatticePosition(int* x,int* y,int* z);
   protected:
     void computeLatticeToStageTransform_
                         (const FieldOfViewGeometry& fov,
@@ -124,7 +125,7 @@ namespace device {
     void notifyNext(size_t i, const Vector3f& pos);
 
     const Vector3f computeCursorPos();
-
+    
 
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
