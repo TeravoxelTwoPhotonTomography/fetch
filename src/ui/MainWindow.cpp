@@ -77,14 +77,14 @@ void
   update(const QString& filename)
 {
   // Link to each folder in the path individually
-  QString sep = QDir::separator();
+  QString sep = QDir::separator(); // FIXME: for consistency, should get/update this from the file_series.path_sep value in the microscope config.
   QStringList names = filename.split(sep,QString::SkipEmptyParts);
   QString text = "FileSeries: ";
   QString path;
   foreach(QString n,names)
-  { n += sep;
+  {
+    n+="/"; // Needs to be this slash for specifying the url (Qt5+)
     path += n;
-    // qDebug() << n << " " << path;
     QString link = QString("<a href=\"file:///%1\">%2</a> ").arg(path,n);
     text += link;
   }
