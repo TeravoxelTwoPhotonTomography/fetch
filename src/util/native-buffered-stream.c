@@ -21,7 +21,7 @@ TODO
 #else
 #define ECHO(estr)
 #endif
-#define LOG(...)     printf(__VA_ARGS__)
+#define LOG(...)     debug(__VA_ARGS__)
 #define REPORT(estr,msg) LOG("%s(%d): %s()\n\t%s\n\t%s\n",__FILE__,__LINE__,__FUNCTION__,estr,msg)
 #define TRY(e)       do{ECHO(#e);if(!(e)){REPORT(#e,"Evaluated to false.");goto Error;}}while(0)
 #define FAIL(msg)    do{ REPORT("Something went wrong.",msg); goto Error; }while(0)
@@ -32,7 +32,7 @@ TODO
 #define NBS_NEW(T,e,N)     TRY((e)=(T*)(ctx)->malloc(sizeof(T)*(N)))
 #define NBS_REALLOC(T,e,N) TRY((e)=(T*)(ctx)->realloc((e),sizeof(T)*(N)))
 
-/** Global error flag will record if a defered write fails.
+/** Global error flag will record if a deferred write fails.
     A failure causes future nbs_open calls to fail.
 */
 static struct nbs_error_t
