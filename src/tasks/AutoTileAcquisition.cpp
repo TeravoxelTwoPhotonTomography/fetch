@@ -231,9 +231,7 @@ Error:
 
         tile=cfg.use_adaptive_tiling()?((MicroscopeTask*)&adaptive_tiling):((MicroscopeTask*)&nonadaptive_tiling);
 
-        dc->_auto_tile_cut_count=0;
         while(!dc->_agent->is_stopping() && PlaneInBounds(dc,cfg.maxz_mm()))
-        //if(!dc->_agent->is_stopping() && PlaneInBounds(dc,cfg.maxz_mm()))
         { 
           if(cfg.use_explore())
             CHKJMP(explore(dc));       // will return an error if no explorable tiles found on the plane
@@ -248,7 +246,6 @@ Error:
 
           CHKJMP(   cut.config(dc));
           CHKJMP(0==cut.run(dc));
-          dc->_auto_tile_cut_count++;
         }
 
 Finalize:

@@ -71,6 +71,16 @@ namespace microscope {
     goto Error;     \
   }
 
+  static void save_cut_count(const int cut_count) {
+      const char *path[]={"Software","Howard Hughes Medical Institute","Fetch","Microscope"};
+      HKEY key=HKEY_CURRENT_USER;
+      for(int i=0;i<_countof(path);++i)
+        RegCreateKey(key,path[i],&key);      
+      Guarded_Assert_WinErr(ERROR_SUCCESS==(
+        RegSetValueEx(key,"cut_count",0,REG_DWORD,
+                      (const BYTE*)&cut_count,sizeof(cut_count))));
+  }
+
   /* MOTION
      ======                            (c*)<-- New Image Plane -----
      In-Plane:  (c)        Vertical:                               |
@@ -125,12 +135,17 @@ namespace microscope {
     // Move back
     CHK( dc->stage()->setPos(cx,cy,12));           // Move on safe z plane
     CHK( dc->stage()->setPos(cx,cy,cz+thick));
+    
+    dc->_cut_count++;
+    save_cut_count(dc->_cut_count);
 
     return 0;
 Error:
     dc->vibratome()->stop();
     return 1;
   }
+    
+
 
 } // end fetch::task::microscope
 

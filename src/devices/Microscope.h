@@ -136,18 +136,17 @@ namespace fetch
       worker::TripDetectWorkerAgent         trip_detect;
       worker::SurfaceFindWorkerAgent        surface_finder;
 
-      worker::TerminalAgent		              trash;
+      worker::TerminalAgent		            trash;
       device::TiffGroupStream               disk;
 
       task::microscope::Interaction         interaction_task;
-      //char spacer[256];
       task::microscope::StackAcquisition    stack_task;
       task::microscope::TiledAcquisition    tiling_task;
       task::microscope::Cut                 cut_task;
       task::microscope::AutoTileAcquisition auto_tile_task;
       task::microscope::TiledSurfacescan    surface_scan_task;
       task::microscope::TimeSeries          time_series_task;
-      int _auto_tile_cut_count;
+      int _cut_count;
 
       mylib::Array* snapshot(float dz_um,unsigned timeout_ms);
 

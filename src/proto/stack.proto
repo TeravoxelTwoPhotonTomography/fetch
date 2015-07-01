@@ -13,5 +13,5 @@ message Acquisition
   optional float y_mm = 2;
   optional float z_mm = 3;
   optional TilingCursor current_lattice_position = 4;
-  optional uint32 auto_tile_cut_count = 5;
+  optional uint32 cut_count = 5;
 }

@@ -228,7 +228,7 @@ ESCAN:
         data.mutable_current_lattice_position()->set_z(r(2));
         #endif
         
-        data.set_auto_tile_cut_count(_auto_tile_cut_count);
+        data.set_cut_count(_cut_count);
         std::string s;
         google::protobuf::TextFormat::PrintToString(data,&s);
         fout << s;
@@ -284,12 +284,35 @@ ESCAN:
       return cur;
     }
 
+    static void load_cut_count(int* cut_count) 
+    {
+        LONG ecode;
+        DWORD nbytes=sizeof(*cut_count);
+        const char *path[]={"Software","Howard Hughes Medical Institute","Fetch","Microscope"};
+        HKEY key=HKEY_CURRENT_USER;
+        for(int i=0;i<_countof(path);++i)
+            RegCreateKey(key,path[i],&key);
+        
+        ecode=RegQueryValueEx(key,"cut_count",0,0,(BYTE*)cut_count,&nbytes);
+        if(ecode==ERROR_FILE_NOT_FOUND) 
+        {
+            *cut_count=0;
+            Guarded_Assert_WinErr(ERROR_SUCCESS==(
+                RegSetValueEx(key,"cut_count",0,REG_DWORD,
+                    (const BYTE*)cut_count,nbytes)));
+        } else
+        {
+            Guarded_Assert_WinErr(ecode==ERROR_SUCCESS);
+        }
+    }
+
     void Microscope::__common_setup()
     {
       __self_agent._owner = this;
       stage_.setFOV(&fov_);
       CHKJMP(_agent->attach()==0,Error);
       CHKJMP(_agent->arm(&interaction_task,this,INFINITE)==0,Error);
+      load_cut_count(&this->_cut_count);
     Error:
       return;
     }
