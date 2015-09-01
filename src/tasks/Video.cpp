@@ -448,7 +448,7 @@ Error:
         TRY(!d->get2d()->_daq.startCLK());
         d->get2d()->_shutter.Open();
         TRY(!d->get2d()->_daq.startAO());
-        Guarded_Assert_WinErr(fetch_thread=CreateThread(NULL,0,alazar_fetch_video_thread,&ctx,0,NULL));
+        Guarded_Assert_WinErr(fetch_thread=CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)alazar_fetch_video_thread,&ctx,0,NULL));
         TS_TIC;
         while(ctx.running)
         { TRY(!d->writeAO());

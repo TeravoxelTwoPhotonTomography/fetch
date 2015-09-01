@@ -125,6 +125,7 @@ int main(int argc, char *argv[])
   QCoreApplication::setOrganizationName("Howard Hughes Medical Institute");
   QCoreApplication::setOrganizationDomain("janelia.hhmi.org");
   QCoreApplication::setApplicationName("Fetch");
+  qDebug()<<QCoreApplication::libraryPaths();
 
   QApplication app(argc,argv);  
   Init();
