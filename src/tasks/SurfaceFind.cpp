@@ -123,6 +123,8 @@ TODO:
         Task* oldtask = dc->__scan_agent._task;
         static task::scanner::ScanStack<u16> scan;
         int scan_agent_was_armed = dc->__scan_agent.is_armed();
+        const int maxiter=20;
+        int iters=0;
 
         hit_=0;
 
@@ -153,10 +155,11 @@ TODO:
             && !dc->_agent->is_stopping()  // running?
             && !dc->surface_finder.any()   // search complete?   \/---search in bounds?
             && ( ((dc->stage()->getTarget() - starting_pos).norm()*1000.0) < cfg.max_backup_um() )
+            && (iters<maxiter)
             )
-        { 
-
+        {     
           TS_TIC;
+          iters++;
 
           // Start the acquisition
           oldtask = dc->__scan_agent._task;
@@ -210,6 +213,11 @@ TODO:
           }
           TS_TOC;
         } // end - loop until surface found
+        if(iters>=maxiter) {
+            REPORT(warning,"maxiter exceeded on SurfaceFind","Reporting no hit for tile");
+            hit_=0;
+        }
+            
         
 // [ ] FIXME task is not restartable...had a bug at one point        
 Finalize:
