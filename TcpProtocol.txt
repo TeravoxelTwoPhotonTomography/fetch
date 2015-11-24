@@ -27,4 +27,4 @@ tasks        -- The list of armable tasks.
 
 ## More information
 
-Currently, the entire implementation is in MicroscopeTcpServerDockWidget.cpp
+Currently, the entire implementation is in src/ui/MicroscopeTcpServerDockWidget.cpp
