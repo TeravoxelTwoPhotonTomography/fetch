@@ -116,7 +116,7 @@ namespace fetch
       unsigned int runPipeline();
       unsigned int stopPipeline();
 
-      //inline IDevice* pipelineEnd() {return &wrap;}
+      // inline IDevice* pipelineEnd() {return &wrap;}
 
     public:
       const std::string stack_filename();                                  // get the current file

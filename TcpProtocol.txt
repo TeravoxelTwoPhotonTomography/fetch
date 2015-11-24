@@ -1,0 +1,30 @@
+# Tcp Protocol for controlling fetch
+
+## Basics
+
+The server read/writes Utf8 encoded strings terminated with `\r\n`.
+
+A command looks like:
+
+    <cmd> <arg0> <arg1> ... <argn>
+
+Most commands have no arguments.
+
+The system will not respond to any commands until the "version0" command is specified.
+
+That command is intended to select for a command set.  Currently there is only one,
+but one can imaging that might change in the future.
+
+## Commands
+
+version0     -- enables processing of commands on the connection
+help         -- returns the list of commands
+status       -- returns a string indicating the currently armed task and the state (running or stopped)
+run          -- commands the microscope to start the current task
+stop         -- commands the microscope to stop                                                     
+arm <task>   -- commands the microscope to arm a new task
+tasks        -- The list of armable tasks.
+
+## More information
+
+Currently, the entire implementation is in MicroscopeTcpServerDockWidget.cpp

@@ -46,6 +46,7 @@ extern const Condition CONDITION_INITIALIZER_INSTANCE = CONDITION_INITIALIZER;
 #include <strsafe.h>
 #define return_val_if(cond,val)    { if( (cond)) return (val); }
 #define thread_assert_win32(e)     if(!(e)) {ReportLastWindowsError(); thread_error("Assert failed in thread module" ENDL \
+                                                                                    "\t%s" ENDL \
                                                                                     "\tAt %s:%d" ENDL,#e,__FILE__,__LINE__ );}
 
 static void ReportLastWindowsError(void) 

@@ -9,6 +9,7 @@
 #include "Player.h"
 #include "StackAcquisitionDockWidget.h"
 #include "MicroscopeStateDockWidget.h"
+#include "MicroscopeTcpServerDockWidget.h"
 #include "SurfaceScanDockWidget.h"
 #include "VibratomeDockWidget.h"
 #include "StageDockWidget.h"
@@ -107,6 +108,7 @@ fetch::ui::MainWindow::MainWindow(device::Microscope *dc)
   ,_cmapDockWidget(0)
   ,_videoAcquisitionDockWidget(0)
   ,_microscopesStateDockWidget(0)
+  ,_microscopeTcpServer(0)
   ,_vibratomeDockWidget(0)
   ,_cutTaskDockWidget(0)
   ,_stageDockWidget(0)
@@ -340,6 +342,12 @@ void fetch::ui::MainWindow::createDockWidgets()
   addDockWidget(Qt::LeftDockWidgetArea,_microscopesStateDockWidget);
   viewMenu->addAction(_microscopesStateDockWidget->toggleViewAction());
   _microscopesStateDockWidget->setObjectName("_microscopesStateDockWidget");
+
+  _microscopeTcpServer=new MicroscopeTcpServerDockWidget(_dc,&_scope_state_controller,this);
+  addDockWidget(Qt::LeftDockWidgetArea,_microscopeTcpServer);
+  viewMenu->addAction(_microscopeTcpServer->toggleViewAction());
+  _microscopeTcpServer->setObjectName("_microscopeTcpServer");
+
 
   _stageDockWidget = new StageDockWidget(_dc,this);             // has to come before the _vibratomeDockWidget
   addDockWidget(Qt::LeftDockWidgetArea,_stageDockWidget);

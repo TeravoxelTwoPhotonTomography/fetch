@@ -131,6 +131,7 @@ endif(C843_FOUND)
 #set(CMAKE_AUTOMOC ON)
 find_package(Qt5Core)
 find_package(Qt5Widgets)
+find_package(Qt5Network)
 find_package(Qt5OpenGL)
 find_package(Qt5OpenGLExtensions)
 find_package(Qt5PrintSupport)
@@ -322,7 +323,7 @@ target_link_libraries(fetch
   Ws2_32.lib           # automatically include
   Winmm.lib
 )
-qt5_use_modules(fetch Core OpenGL Widgets PrintSupport OpenGLExtensions)
+qt5_use_modules(fetch Core OpenGL Widgets PrintSupport OpenGLExtensions Network)
 
 ##
 # Apps

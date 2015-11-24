@@ -94,6 +94,9 @@ namespace device {
   { debug("Vibratome: on_attach"ENDL);
     Config c = get_config();
     unsigned int sts = 0;
+    COMMTIMEOUTS timeouts={0};                      // all times are in ms
+    DCB dcb={0};
+
     CHKLBL( INVALID_HANDLE_VALUE!=( 
         _h=CreateFile(c.port().c_str()              // file name
                      ,GENERIC_READ | GENERIC_WRITE  // desired access
@@ -104,7 +107,6 @@ namespace device {
                      ,0)                            // template file
         ),ESERIAL);
 
-    DCB dcb = {0};
     dcb.DCBlength=sizeof(dcb);
 
     Guarded_Assert_WinErr( GetCommState(_h,&dcb) );
@@ -113,8 +115,7 @@ namespace device {
     dcb.Parity   = NOPARITY;                        //  parity bit              
     dcb.StopBits = ONESTOPBIT;                      //  stop bit                
     Guarded_Assert_WinErr( SetCommState(_h,&dcb) );
-
-    COMMTIMEOUTS timeouts={0};                      // all times are in ms
+    
     timeouts.ReadIntervalTimeout         =50;
     timeouts.ReadTotalTimeoutMultiplier  =10;
     timeouts.ReadTotalTimeoutConstant    =50;
@@ -238,7 +239,7 @@ Error:
     DWORD nn;
     CHK(ok=_write(cmd,ncmd));
     Guarded_Assert_WinErr__NoPanic( ok&= ReadFile(_h,(void*)resp,*nresp,&nn,NULL) );
-    CHK(nn<*nresp);
+    CHK(nn<(unsigned) *nresp);
     *nresp=nn;
     return ok;
 Error:

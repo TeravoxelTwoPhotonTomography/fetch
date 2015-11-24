@@ -87,7 +87,7 @@ namespace fetch
 
       Frame_With_Interleaved_Planes *fsrc = (Frame_With_Interleaved_Planes*) Chan_Token_Buffer_Alloc(qsrc),
                                     *fdst = (Frame_With_Interleaved_Planes*) Chan_Token_Buffer_Alloc(qdst);
-      f32 *buf, *acc = NULL;
+      f32 *acc = NULL;
       { // init fdst
         size_t dst_bytes = Chan_Buffer_Size_Bytes(qdst);
         Frame_With_Interleaved_Planes ref(dst_bytes,1,1,id_u8); // just a 1d array with the right number of bytes. dst will get formated correctly later.

@@ -293,6 +293,7 @@ DWORD WINAPI defered_close(LPVOID p)
   for(i=0;i<NTHREADS;++i) CloseHandle(ctx->evts[i]);
   if(ctx->fd) CloseHandle(ctx->fd);
   free(ctx);
+  return 0;
 }
 
 void   nbs_close   (stream_t stream)

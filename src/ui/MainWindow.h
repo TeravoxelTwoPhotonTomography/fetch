@@ -12,6 +12,7 @@ class ColormapDockWidget;
 class VideoAcquisitionDockWidget;
 class StackAcquisitionDockWidget;
 class MicroscopeStateDockWidget;
+class MicroscopeTcpServerDockWidget;
 class VibratomeDockWidget;
 class VibratomeGeometryDockWidget;
 class AutoTileDockWidget;
@@ -84,6 +85,7 @@ public: // semi-private
   VideoAcquisitionDockWidget   *_videoAcquisitionDockWidget;
   StackAcquisitionDockWidget   *_stackAcquisitionDockWidget;
   MicroscopeStateDockWidget    *_microscopesStateDockWidget;
+  MicroscopeTcpServerDockWidget*_microscopeTcpServer;
   VibratomeDockWidget          *_vibratomeDockWidget;
   VibratomeGeometryDockWidget  *_vibratomeGeometryDockWidget;
   QDockWidget                  *_cutTaskDockWidget;
