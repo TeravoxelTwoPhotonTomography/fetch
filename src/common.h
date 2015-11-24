@@ -8,6 +8,11 @@
 #include <windows.h>
 #include "config.h"
 
+#ifdef min
+    #undef min
+    #undef max
+#endif
+
 #define HAVE_QT4 // TODO move this to a config.h or something
 
 // -----------------

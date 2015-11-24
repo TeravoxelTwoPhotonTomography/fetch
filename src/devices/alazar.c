@@ -36,11 +36,16 @@
 #define TS_CLOSE
 #endif
 
-//#define DEBUG
-#ifdef DEBUG
-#define DBG(...) LOG(__VA_ARGS__)
+#define DEBUG 1
+#if DEBUG==0
+    #define DBG(...)
+    #define DBG_VERBOSE(...)
+#elif DEBUG==1
+    #define DBG(...) LOG(__VA_ARGS__)
+    #define DBG_VERBOSE(...)
 #else
-#define DBG(...)
+    #define DBG(...) LOG(__VA_ARGS__)
+    #define DBG_VERBOSE(...) LOG(__VA_ARGS__)
 #endif
 
 #define LOG(...)          printf(__VA_ARGS__)
@@ -147,7 +152,7 @@ static size_t buffer_size_bytes(alazar_t ctx)
 { size_t out;
   VALIDATE(ctx);
   out=active_channel_count(ctx)*ctx->cfg->nrecords*ctx->cfg->nsamples*2;
-  DBG("Buffer Size Bytes: %d"ENDL
+  DBG_VERBOSE("Buffer Size Bytes: %d"ENDL
       "\tActive Channel Count: %d"ENDL
       "\tRecords             : %d"ENDL
       "\tSamples             : %d"ENDL

@@ -143,7 +143,7 @@ Error:
       unsigned int StackAcquisition::run(device::Microscope *dc)
       {
         std::string filename;
-        unsigned int eflag = 0; // success
+        unsigned int eflag = 1; // 0 = success
 
         Guarded_Assert(dc->__scan_agent.is_runnable());
         //Guarded_Assert(dc->__io_agent.is_running());
@@ -152,44 +152,49 @@ Error:
         filename = dc->stack_filename();
         dc->file_series.ensurePathExists();
         dc->disk.set_nchan(dc->scanner.get2d()->digitizer()->nchan());
-        eflag |= dc->disk.open(filename,"w");
-        if(eflag)
-          return eflag;
-        eflag |= dc->runPipeline();
-        eflag |= dc->__scan_agent.run() != 1;
+
+        for(unsigned ntry=0;eflag&&(ntry<3);++ntry) { // retry X times until success (eflag==0)
+
+            eflag=0;
+            eflag |= dc->disk.open(filename,"w");
+            if(eflag)
+              return eflag;
+            eflag |= dc->runPipeline();
+            eflag |= dc->__scan_agent.run() != 1;
 
 
-        //Chan_Wait_For_Writer_Count(dc->__scan_agent._owner->_out->contents[0],1);
+            //Chan_Wait_For_Writer_Count(dc->__scan_agent._owner->_out->contents[0],1);
 
-        { HANDLE hs[] = {dc->__scan_agent._thread,
-                         dc->__self_agent._notify_stop};
-          DWORD res;
-          int   t;
+            { HANDLE hs[] = {dc->__scan_agent._thread,
+                             dc->__self_agent._notify_stop};
+              DWORD res;
+              int   t;
 
-          // wait for scan to complete (or cancel)
-          dc->transaction_unlock();
-          res = WaitForMultipleObjects(2,hs,FALSE,INFINITE);
-          dc->transaction_lock();
-          t = _handle_wait_for_result(res,"StackAcquisition::run - Wait for scanner to finish.");
-          switch(t)
-          { case 0:       // in this case, the scanner thread stopped.  Nothing left to do.
-              eflag |= dc->__scan_agent.last_run_result();
-              //break;
-            case 1:       // in this case, the stop event triggered and must be propagated.
-              eflag |= dc->__scan_agent.stop(SCANNER2D_DEFAULT_TIMEOUT) != 1;
-              break;
-            default:      // in this case, there was a timeout or abandoned wait
-              eflag |= 1; //failure
-          }
+              // wait for scan to complete (or cancel)
+              dc->transaction_unlock();
+              res = WaitForMultipleObjects(2,hs,FALSE,INFINITE);
+              dc->transaction_lock();
+              t = _handle_wait_for_result(res,"StackAcquisition::run - Wait for scanner to finish.");
+              switch(t)
+              { case 0:       // in this case, the scanner thread stopped.  Nothing left to do.
+                  eflag |= dc->__scan_agent.last_run_result();
+                  //break;
+                case 1:       // in this case, the stop event triggered and must be propagated.
+                  eflag |= dc->__scan_agent.stop(SCANNER2D_DEFAULT_TIMEOUT) != 1;
+                  break;
+                default:      // in this case, there was a timeout or abandoned wait
+                  eflag |= 1; //failure
+              }
+            }
+
+            // Output metadata and Increment file
+            eflag |= dc->disk.close();
+            dc->write_stack_metadata();
+            
+            //dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
+            eflag |= dc->stopPipeline(); // wait till the  pipeline stops
         }
-
-        // Output metadata and Increment file
-        eflag |= dc->disk.close();
-        dc->write_stack_metadata();
         dc->file_series.inc();
-        //dc->connect(&dc->disk,0,dc->pipelineEnd(),0);
-
-        eflag |= dc->stopPipeline(); // wait till the  pipeline stops
         dc->transaction_unlock();
         return eflag;
       }
@@ -210,25 +215,27 @@ Error:
       template<class TPixel> unsigned int ScanStack<TPixel>::config (IDevice *d) {return config(dynamic_cast<device::Scanner3D*>(d));}
       template<class TPixel> unsigned int ScanStack<TPixel>::update (IDevice *d) {return update(dynamic_cast<device::Scanner3D*>(d));}
 
+      
       template<class TPixel> unsigned int ScanStack<TPixel>::run    (IDevice *d)
       {
         device::Scanner3D *s = dynamic_cast<device::Scanner3D*>(d);
         device::Digitizer::Config digcfg = s->_scanner2d._digitizer.get_config();
+        unsigned int ecode=1;
         switch(digcfg.kind())
         {
-        case cfg::device::Digitizer_DigitizerType_NIScope:
-          return run_niscope(s);
-          break;
-        case cfg::device::Digitizer_DigitizerType_Alazar:
-          return run_alazar(s);
-          break;
-        case cfg::device::Digitizer_DigitizerType_Simulated:
-          return run_simulated(s);
-          break;
-        default:
-          warning("%s(%d)"ENDL "\tScanStack<>::run() - Got invalid kind() for Digitizer.get_config"ENDL,__FILE__,__LINE__);
+            case cfg::device::Digitizer_DigitizerType_NIScope:
+                ecode=run_niscope(s);
+                break;
+            case cfg::device::Digitizer_DigitizerType_Alazar:
+                ecode=run_alazar(s); // ecode == 0 implies success, error otherwise
+                break;
+            case cfg::device::Digitizer_DigitizerType_Simulated:
+                ecode = run_simulated(s);
+                break;
+            default:
+                warning("%s(%d)"ENDL "\tScanStack<>::run() - Got invalid kind() for Digitizer.get_config"ENDL,__FILE__,__LINE__);
         }
-        return 0; //failure
+        return ecode; //failure - return value is an error code. return 0 on success only
       }
 
       template<class TPixel>
@@ -520,7 +527,7 @@ Error:
           TRY(!d->_scanner2d._daq.startCLK());
           d->_scanner2d._shutter.Open();
           TRY(!d->_scanner2d._daq.startAO());
-          Guarded_Assert_WinErr(fetch_thread=CreateThread(NULL,0,alazar_fetch_stack_thread,&ctx,0,NULL));
+          Guarded_Assert_WinErr(fetch_thread=CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)alazar_fetch_stack_thread,&ctx,0,NULL));
           for(z_um=ummin; ((ummax-z_um)/umstep)>=-0.5f && ctx.running;z_um+=umstep)
           { TS_TIC;
             d->generateAORampZ(z_um);
