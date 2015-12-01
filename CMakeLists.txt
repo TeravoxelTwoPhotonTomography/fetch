@@ -297,6 +297,7 @@ set(FETCH_SRCS
   ${FETCH_ALGO_CUDA_OUT}
   "${PROJECT_SOURCE_DIR}/config.h.in"
   )
+
 add_executable(fetch
   src/apps/fetch.cpp
   ${PROTO_HDRS}

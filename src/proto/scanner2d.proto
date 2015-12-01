@@ -8,9 +8,9 @@ import "daq.proto";
 
 message Scanner2D
 {
-  optional double    frequency_hz         = 1  [default=7920.0];              // Hz                                                                                                            
-  optional uint32    nscans               = 2  [default=512];                 // Number of full resonant periods that make up a frame                                                       
-  optional float     line_duty_cycle      = 3  [default=0.95];                // Fraction of resonant period to acquire (must be less than one)                                                
+  optional double    frequency_hz         = 1  [default=7920.0];              // Hz
+  optional uint32    nscans               = 2  [default=512];                 // Number of full resonant periods that make up a frame
+  optional float     line_duty_cycle      = 3  [default=0.95];                // Fraction of resonant period to acquire (must be less than one)
 
   required DAQ              daq                = 4;
   required Digitizer        digitizer          = 5;
