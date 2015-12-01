@@ -190,7 +190,7 @@ Error:
 }
 #undef EPS
 
-int pipeline_get_output_dims(pipeline_t self, const pipeline_image_t src,unsigned *w, unsigned *h, unsigned *nchan)
+extern "C" int pipeline_get_output_dims(pipeline_t self, const pipeline_image_t src, unsigned *w, unsigned *h, unsigned *nchan)
 { TRY(self && src);
   if(nchan) *nchan=src->nchan;
   if(h)     *h=src->h*2;
