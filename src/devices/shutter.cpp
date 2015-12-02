@@ -125,6 +125,7 @@ namespace fetch
 
     void SimulatedShutter::Set( u8 val )
     { 
+#if 0
       Config c = get_config();
 #pragma warning(push)
 #pragma warning(disable:4800) // forcing to bool
@@ -132,6 +133,7 @@ namespace fetch
 #pragma warning(push)
 
       set_config(c);
+#endif
     }
 
     void SimulatedShutter::Shut( void )
